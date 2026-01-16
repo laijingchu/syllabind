@@ -48,7 +48,7 @@ export default function Marketing() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
            <Link href="/login?mode=signup">
-             <Button size="lg" className="h-12 px-8 text-lg rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
+             <Button size="lg" className="h-12 px-8 text-lg rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all bg-black text-white hover:bg-neutral-800 border-none">
                Sign up
              </Button>
            </Link>
