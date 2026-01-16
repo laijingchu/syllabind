@@ -108,7 +108,7 @@ export default function Profile() {
             <CardContent className="space-y-6">
               
               <div className="space-y-2">
-                <FormLabel>Profile Picture</FormLabel>
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Profile Picture</label>
                 <AvatarUpload 
                   currentAvatarUrl={user.avatarUrl}
                   name={user.name}
