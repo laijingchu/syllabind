@@ -7,6 +7,8 @@ import { PlayCircle, CheckCircle2, Award } from 'lucide-react';
 import { SyllabusCard } from '@/components/SyllabusCard';
 import { pluralize } from '@/lib/utils';
 
+import Catalog from './Catalog';
+
 export default function Dashboard() {
   const { enrollment, getActiveSyllabus, getOverallProgress, syllabi, getSyllabusById } = useStore();
   const activeSyllabus = getActiveSyllabus();
@@ -19,6 +21,11 @@ export default function Dashboard() {
   const isCompleted = activeSyllabus && getOverallProgress(activeSyllabus.id) === 100;
   
   const allCompleted = syllabi.length > 0 && syllabi.every(s => enrollment.completedSyllabusIds.includes(s.id));
+
+  // If no active syllabus (and not all completed), show Catalog
+  if (!activeSyllabus && !allCompleted) {
+    return <Catalog />;
+  }
 
   const suggestedSyllabi = syllabi
     .filter(s => 
