@@ -40,4 +40,7 @@ export interface User {
   id: string;
   name: string;
   isCreator: boolean;
+  bio?: string;
+  expertise?: string;
+  avatarUrl?: string;
 }

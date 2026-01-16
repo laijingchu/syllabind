@@ -7,6 +7,7 @@ interface StoreContextType {
   user: User | null;
   isAuthenticated: boolean;
   toggleCreatorMode: () => void;
+  updateUser: (updatedUser: Partial<User>) => void;
   
   login: (email: string) => void;
   logout: () => void;
@@ -76,6 +77,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (user) {
       setUser(prev => prev ? ({ ...prev, isCreator: !prev.isCreator }) : null);
     }
+  };
+
+  const updateUser = (updatedUser: Partial<User>) => {
+    setUser(prev => prev ? ({ ...prev, ...updatedUser }) : null);
   };
 
   const enrollInSyllabus = (syllabusId: string) => {
@@ -181,6 +186,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         logout,
         signup,
         toggleCreatorMode,
+        updateUser,
         syllabi,
         enrollment,
         enrollInSyllabus,

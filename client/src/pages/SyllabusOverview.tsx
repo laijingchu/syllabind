@@ -18,7 +18,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -29,8 +30,18 @@ export default function SyllabusOverview() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const syllabus = match && params?.id ? getSyllabusById(params.id) : undefined;
+  const { user: currentUser } = useStore();
 
   if (!syllabus) return <div className="text-center py-20">Syllabus not found</div>;
+
+  // In a real app we'd fetch the creator's profile by ID. 
+  // For the mockup, if the current user is the creator (user-1), we show their profile.
+  const creator = currentUser?.id === syllabus.creatorId ? currentUser : {
+    name: "Alex Rivera",
+    expertise: "Cognitive Scientist",
+    bio: "Focused on human-computer interaction and the psychological impact of digital environments. Author of 'The Analog Path'.",
+    avatarUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop"
+  };
 
   const isActive = enrollment.activeSyllabusId === syllabus.id;
   const isCompleted = enrollment.completedSyllabusIds.includes(syllabus.id);
@@ -185,6 +196,23 @@ export default function SyllabusOverview() {
             {isActive && !isCompleted && (
                <p className="text-xs text-center text-muted-foreground">You are currently enrolled.</p>
             )}
+
+            <div className="pt-6 border-t space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Created by</h4>
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={creator.avatarUrl} />
+                  <AvatarFallback><UserIcon className="h-5 w-5" /></AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="font-medium text-sm">{creator.name}</div>
+                  <div className="text-xs text-muted-foreground">{creator.expertise}</div>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed italic">
+                "{creator.bio}"
+              </p>
+            </div>
           </div>
         </div>
       </div>

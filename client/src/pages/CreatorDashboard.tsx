@@ -19,11 +19,18 @@ export default function CreatorDashboard() {
           <h1 className="text-3xl font-serif mb-1">Creator Studio</h1>
           <p className="text-muted-foreground">Manage your syllabi and track learner progress.</p>
         </div>
-        <Link href="/creator/syllabus/new">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" /> Create New Syllabind
-          </Button>
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/creator/profile">
+            <Button variant="outline">
+              Edit Profile
+            </Button>
+          </Link>
+          <Link href="/creator/syllabus/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" /> Create New Syllabind
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-4">

@@ -14,6 +14,7 @@ import Completion from "@/pages/Completion";
 import CreatorDashboard from "@/pages/CreatorDashboard";
 import CreatorEditor from "@/pages/CreatorEditor";
 import CreatorAnalytics from "@/pages/CreatorAnalytics";
+import CreatorProfile from "@/pages/CreatorProfile";
 import Marketing from "@/pages/Marketing";
 import Login from "@/pages/Login";
 
@@ -44,6 +45,7 @@ function Router() {
             <Route path="/creator/syllabus/new" component={CreatorEditor} />
             <Route path="/creator/syllabus/:id/edit" component={CreatorEditor} />
             <Route path="/creator/syllabus/:id/analytics" component={CreatorAnalytics} />
+            <Route path="/creator/profile" component={CreatorProfile} />
           </>
         ) : (
            /* If not authenticated, redirect root to welcome, but allow catalog/preview? 
