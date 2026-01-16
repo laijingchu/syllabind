@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Checkbox } from '@/components/ui/checkbox';
 import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 import { cn, pluralize } from '@/lib/utils';
@@ -346,8 +347,25 @@ export default function SyllabusOverview() {
               {isActive ? 'Continue Learning' : isCompleted ? 'Review Syllabus' : 'Start this Syllabind'}
             </Button>
             
-            {isActive && !isCompleted && (
-               <p className="text-xs text-center text-muted-foreground">You are currently enrolled.</p>
+            {(isActive || isCompleted) && (
+               <div className="flex flex-col items-center gap-3 pt-2">
+                 {isActive && !isCompleted && (
+                   <p className="text-xs text-center text-muted-foreground">You are currently enrolled.</p>
+                 )}
+                 <div className="flex items-center space-x-2 bg-muted/40 p-2.5 rounded-md border border-border/50 w-full justify-center">
+                    <Checkbox 
+                      id="share-profile" 
+                      checked={currentUser?.shareProfile || false}
+                      onCheckedChange={(checked) => updateUser({ shareProfile: checked as boolean })}
+                    />
+                    <label
+                      htmlFor="share-profile"
+                      className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-muted-foreground select-none"
+                    >
+                      Appear in Classmates list
+                    </label>
+                 </div>
+               </div>
             )}
 
             <div className="pt-6 border-t space-y-4">
