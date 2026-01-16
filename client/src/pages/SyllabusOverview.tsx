@@ -352,7 +352,7 @@ export default function SyllabusOverview() {
                  {isActive && !isCompleted && (
                    <p className="text-xs text-center text-muted-foreground">You are currently enrolled.</p>
                  )}
-                 <div className="flex items-center space-x-2 bg-muted/40 p-2.5 rounded-md border border-border/50 w-full justify-center">
+                 <div className="flex items-center space-x-2 bg-muted/40 p-2.5 rounded-md w-full justify-center">
                     <Checkbox 
                       id="share-profile" 
                       checked={currentUser?.shareProfile || false}
