@@ -130,12 +130,19 @@ export default function Dashboard() {
                     )}
                   </div>
                 ) : (
-                  <Link href={`/syllabus/${activeSyllabus.id}/week/${enrollment.currentWeekIndex}`}>
-                    <Button size="lg" className="w-full md:w-auto shadow-lg shadow-primary/20">
-                      <PlayCircle className="mr-2 h-5 w-5" />
-                      Continue to Week {enrollment.currentWeekIndex}
-                    </Button>
-                  </Link>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Link href={`/syllabus/${activeSyllabus.id}/week/${enrollment.currentWeekIndex}`}>
+                      <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/20">
+                        <PlayCircle className="mr-2 h-5 w-5" />
+                        Continue to Week {enrollment.currentWeekIndex}
+                      </Button>
+                    </Link>
+                    <Link href={`/syllabus/${activeSyllabus.id}`}>
+                      <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                        View Syllabus
+                      </Button>
+                    </Link>
+                  </div>
                 )}
               </div>
             </div>
