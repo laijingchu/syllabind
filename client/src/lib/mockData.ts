@@ -111,7 +111,7 @@ export const MOCK_SYLLABI: Syllabus[] = [
     title: 'Systems Thinking 101',
     description: 'Learn to see the world in loops and connections. Understand feedback loops, stocks, and flows.',
     audienceLevel: 'Intermediate',
-    durationWeeks: 2,
+    durationWeeks: 1,
     status: 'published',
     creatorId: 'creator-1',
     weeks: [

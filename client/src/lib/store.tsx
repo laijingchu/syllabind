@@ -145,7 +145,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
      const syllabus = syllabi.find(s => s.id === syllabusId);
      if (!syllabus) return 0;
      
-     const totalSteps = syllabus.weeks.flatMap(w => w.steps);
+     const activeWeeks = syllabus.weeks.filter(w => w.steps.length > 0);
+     const totalSteps = activeWeeks.flatMap(w => w.steps);
      if (totalSteps.length === 0) return 0;
      
      const completedCount = totalSteps.filter(s => enrollment.completedStepIds.includes(s.id)).length;
@@ -159,7 +160,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const syllabus = syllabi.find(s => s.id === enrollment.activeSyllabusId);
     if (!syllabus) return;
 
-    const allStepIds = syllabus.weeks.flatMap(w => w.steps.map(s => s.id));
+    const activeWeeks = syllabus.weeks.filter(w => w.steps.length > 0);
+    const allStepIds = activeWeeks.flatMap(w => w.steps.map(s => s.id));
     const allCompleted = allStepIds.every(id => enrollment.completedStepIds.includes(id));
 
     if (allCompleted && !enrollment.completedSyllabusIds.includes(syllabus.id)) {

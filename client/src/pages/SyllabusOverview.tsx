@@ -100,7 +100,7 @@ export default function SyllabusOverview() {
           <div className="space-y-6">
             <h2 className="text-2xl font-serif">What you'll learn</h2>
             <Accordion type="single" collapsible className="space-y-4">
-              {syllabus.weeks.map((week) => (
+              {syllabus.weeks.filter(w => w.steps.length > 0).map((week) => (
                 <AccordionItem 
                   key={week.index} 
                   value={`week-${week.index}`}
