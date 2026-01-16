@@ -2,7 +2,6 @@ import { useRoute, useLocation } from 'wouter';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { pluralize } from '@/lib/utils';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -20,13 +19,13 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon } from 'lucide-react';
+import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon } from 'lucide-react';
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, pluralize } from '@/lib/utils';
 
 export default function SyllabusOverview() {
   const [match, params] = useRoute('/syllabus/:id');
-  const { getSyllabusById, enrollInSyllabus, enrollment } = useStore();
+  const { getSyllabusById, enrollInSyllabus, enrollment, isStepCompleted, getExerciseText } = useStore();
   const [location, setLocation] = useLocation();
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -34,6 +33,8 @@ export default function SyllabusOverview() {
   const { user: currentUser } = useStore();
 
   if (!syllabus) return <div className="text-center py-20">Syllabus not found</div>;
+
+  const getStepExercise = (stepId: string) => getExerciseText(stepId);
 
   // In a real app we'd fetch the creator's profile by ID. 
   // For the mockup, if the current user is the creator (user-1), we show their profile.
@@ -144,15 +145,40 @@ export default function SyllabusOverview() {
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="pl-16 pr-4 py-2 space-y-3">
-                      {week.steps.map(step => (
-                        <div key={step.id} className="flex items-center gap-3 text-sm text-muted-foreground">
-                          <div className="p-1.5 bg-muted rounded-md shrink-0">
-                            {step.type === 'reading' ? <FileText className="h-3.5 w-3.5" /> : <Dumbbell className="h-3.5 w-3.5" />}
+                      {week.steps.map(step => {
+                        const isDone = isStepCompleted(step.id);
+                        const exerciseLink = step.type === 'exercise' ? getStepExercise(step.id) : null;
+
+                        return (
+                          <div key={step.id} className="space-y-2">
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                              <div className={cn(
+                                "p-1.5 rounded-md shrink-0",
+                                isDone ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                              )}>
+                                {step.type === 'reading' ? <FileText className="h-3.5 w-3.5" /> : <Dumbbell className="h-3.5 w-3.5" />}
+                              </div>
+                              <span className={cn(isDone && "text-foreground font-medium")}>{step.title}</span>
+                              <span className="text-xs opacity-70 ml-auto tabular-nums">{step.estimatedMinutes}m</span>
+                            </div>
+                            
+                            {isDone && exerciseLink && (
+                              <div className="ml-9 pl-3 border-l-2 border-primary/20 pb-1">
+                                <a 
+                                  href={exerciseLink.startsWith('http') ? exerciseLink : `https://${exerciseLink}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-primary hover:underline flex items-center gap-1.5"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <LinkIcon className="h-3 w-3" />
+                                  <span className="truncate max-w-[200px]">{exerciseLink}</span>
+                                </a>
+                              </div>
+                            )}
                           </div>
-                          <span>{step.title}</span>
-                          <span className="text-xs opacity-70 ml-auto tabular-nums">{step.estimatedMinutes}m</span>
-                        </div>
-                      ))}
+                        );
+                      })}
                       
                       {isCompleted && (
                         <div className="pt-2">

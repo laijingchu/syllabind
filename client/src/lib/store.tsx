@@ -31,6 +31,7 @@ interface StoreContextType {
   getActiveSyllabus: () => Syllabus | undefined;
   getSyllabusById: (id: string) => Syllabus | undefined;
   isStepCompleted: (stepId: string) => boolean;
+  getExerciseText: (stepId: string) => string | undefined;
   getProgressForWeek: (syllabusId: string, weekIndex: number) => number; // 0-100
   getOverallProgress: (syllabusId: string) => number; // 0-100
 }
@@ -135,6 +136,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const getActiveSyllabus = () => syllabi.find(s => s.id === enrollment.activeSyllabusId);
   const getSyllabusById = (id: string) => syllabi.find(s => s.id === id);
   const isStepCompleted = (stepId: string) => enrollment.completedStepIds.includes(stepId);
+  const getExerciseText = (stepId: string) => exerciseAnswers[stepId];
 
   const getProgressForWeek = (syllabusId: string, weekIndex: number) => {
     const syllabus = syllabi.find(s => s.id === syllabusId);
@@ -201,6 +203,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         isStepCompleted,
         getProgressForWeek,
         getOverallProgress,
+        getExerciseText,
       }}
     >
       {children}
