@@ -16,7 +16,7 @@ export function SyllabusCard({ syllabus, className }: SyllabusCardProps) {
     <Card className={cn("group overflow-hidden transition-all hover:shadow-md border-border/60", className)}>
       <CardHeader className="pb-4">
         <div className="flex justify-between items-start mb-2">
-          <Badge variant="secondary" className="font-normal bg-secondary/50 hover:bg-secondary/70 text-secondary-foreground">
+          <Badge variant="outline" className="font-normal mb-2">
             {syllabus.audienceLevel}
           </Badge>
           <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
