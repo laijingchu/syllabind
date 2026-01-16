@@ -159,7 +159,7 @@ export default function WeekView() {
 
                   {step.type === 'exercise' && (
                     <div className="mt-4 space-y-3">
-                      <div className="bg-secondary/30 p-4 rounded-lg text-sm italic border border-secondary">
+                      <div className="text-sm font-medium mb-2">
                         {step.promptText}
                       </div>
                       {!isDone ? (
