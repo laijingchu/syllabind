@@ -30,6 +30,8 @@ export default function SyllabusOverview() {
   const { getSyllabusById, enrollInSyllabus, enrollment, isStepCompleted, getExerciseText, getLearnersForSyllabus } = useStore();
   const [location, setLocation] = useLocation();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
+  const { updateUser } = useStore();
 
   const syllabus = match && params?.id ? getSyllabusById(params.id) : undefined;
   const { user: currentUser } = useStore();
@@ -81,14 +83,19 @@ export default function SyllabusOverview() {
       }
     } else {
       // Enroll
-      enrollInSyllabus(syllabus.id);
-      setLocation(`/syllabus/${syllabus.id}/week/1`);
+      setShowPrivacyDialog(true);
     }
   };
 
   const confirmSwitch = () => {
-    enrollInSyllabus(syllabus.id);
     setShowConfirm(false);
+    setShowPrivacyDialog(true);
+  };
+
+  const handleEnroll = (shareProfile: boolean) => {
+    updateUser({ shareProfile });
+    enrollInSyllabus(syllabus.id);
+    setShowPrivacyDialog(false);
     setLocation(`/syllabus/${syllabus.id}/week/1`);
   };
 
@@ -362,6 +369,21 @@ export default function SyllabusOverview() {
           </div>
         </div>
       </div>
+
+      <AlertDialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Join and Connect?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Would you like to share your profile with other classmates? This allows you to connect with others learning {syllabus.title}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" onClick={() => handleEnroll(false)}>Join Privately</Button>
+            <Button onClick={() => handleEnroll(true)}>Join & Share Profile</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
         <AlertDialogContent>
