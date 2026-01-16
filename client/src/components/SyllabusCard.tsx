@@ -1,0 +1,45 @@
+import { Link } from 'wouter';
+import { Syllabus } from '@/lib/types';
+import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Clock, Users, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+interface SyllabusCardProps {
+  syllabus: Syllabus;
+  className?: string;
+}
+
+export function SyllabusCard({ syllabus, className }: SyllabusCardProps) {
+  return (
+    <Card className={cn("group overflow-hidden transition-all hover:shadow-md border-border/60", className)}>
+      <CardHeader className="pb-4">
+        <div className="flex justify-between items-start mb-2">
+          <Badge variant="secondary" className="font-normal bg-secondary/50 hover:bg-secondary/70 text-secondary-foreground">
+            {syllabus.audienceLevel}
+          </Badge>
+          <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <Clock className="h-3 w-3" /> {syllabus.durationWeeks} weeks
+          </span>
+        </div>
+        <h3 className="text-xl font-serif font-medium leading-tight group-hover:text-primary transition-colors">
+          {syllabus.title}
+        </h3>
+      </CardHeader>
+      <CardContent className="pb-4">
+        <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
+          {syllabus.description}
+        </p>
+      </CardContent>
+      <CardFooter>
+        <Link href={`/syllabus/${syllabus.id}`}>
+           <Button variant="outline" className="w-full justify-between group-hover:border-primary/50 group-hover:text-primary transition-colors">
+             View Syllabus
+             <ArrowRight className="h-4 w-4 ml-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+           </Button>
+        </Link>
+      </CardFooter>
+    </Card>
+  );
+}

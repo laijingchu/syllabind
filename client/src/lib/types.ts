@@ -1,0 +1,43 @@
+export type AudienceLevel = 'Beginner' | 'Intermediate' | 'Advanced';
+export type StepType = 'reading' | 'exercise';
+export type SyllabusStatus = 'draft' | 'published';
+
+export interface Step {
+  id: string;
+  type: StepType;
+  title: string;
+  url?: string; // For readings
+  note?: string; // Short context
+  promptText?: string; // For exercises
+  estimatedMinutes?: number;
+}
+
+export interface Week {
+  index: number; // 1-4
+  title?: string; // e.g. "Foundations"
+  steps: Step[];
+}
+
+export interface Syllabus {
+  id: string;
+  title: string;
+  description: string;
+  audienceLevel: AudienceLevel;
+  durationWeeks: number; // 1-4
+  status: SyllabusStatus;
+  weeks: Week[];
+  creatorId: string;
+}
+
+export interface Enrollment {
+  activeSyllabusId: string | null;
+  currentWeekIndex: number; // 1-based
+  completedStepIds: string[]; // List of completed step IDs
+  completedSyllabusIds: string[]; // List of fully completed syllabus IDs
+}
+
+export interface User {
+  id: string;
+  name: string;
+  isCreator: boolean;
+}
