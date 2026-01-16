@@ -67,16 +67,18 @@ export default function Dashboard() {
                 </div>
                 
                 {getOverallProgress(activeSyllabus.id) === 100 ? (
-                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2">
-                    <div className="bg-primary text-primary-foreground h-10 w-10 rounded-full flex items-center justify-center shrink-0">
-                      <Award className="h-6 w-6" />
+                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4 animate-in fade-in slide-in-from-bottom-2">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-primary text-primary-foreground h-10 w-10 rounded-full flex items-center justify-center shrink-0">
+                        <Award className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-primary">Syllabind Completed!</h3>
+                        <p className="text-xs text-muted-foreground">You've earned the completion badge.</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-medium text-primary">Syllabind Completed!</h3>
-                      <p className="text-xs text-muted-foreground">You've earned the completion badge.</p>
-                    </div>
-                    <Link href={`/syllabus/${activeSyllabus.id}/completed`}>
-                      <Button variant="outline" size="sm" className="ml-auto">View Certificate</Button>
+                    <Link href={`/syllabus/${activeSyllabus.id}/completed`} className="w-full sm:w-auto sm:ml-auto">
+                      <Button variant="outline" size="sm" className="w-full sm:w-auto">View Certificate</Button>
                     </Link>
                   </div>
                 ) : (
