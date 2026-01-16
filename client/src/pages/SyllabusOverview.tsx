@@ -106,11 +106,10 @@ export default function SyllabusOverview() {
                   value={`week-${week.index}`}
                   className="border-none"
                 >
-                  <AccordionTrigger className="hover:no-underline py-0 pr-4 rounded-lg hover:bg-muted/50 transition-colors [&[data-state=open]>div]:bg-secondary/30">
+                  <AccordionTrigger className="hover:no-underline py-4 px-4 rounded-lg hover:bg-muted/50 transition-colors [&[data-state=open]>div]:bg-transparent">
                     <div 
                       className={cn(
-                        "flex gap-4 items-start p-4 w-full text-left rounded-lg bg-secondary/20 border border-transparent transition-colors",
-                        isCompleted && "border-primary/20 bg-primary/5"
+                        "flex gap-4 items-start w-full text-left transition-colors",
                       )}
                     >
                       <div className={cn(
