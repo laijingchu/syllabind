@@ -232,9 +232,16 @@ export default function Marketing() {
             ))}
           </ul>
           <div className="pt-2">
-            <a href="#curate">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto">Apply to curate</Button>
-            </a>
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="w-full sm:w-auto"
+              onClick={() => {
+                document.getElementById('curate')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              Apply to curate
+            </Button>
           </div>
         </div>
       </section>
