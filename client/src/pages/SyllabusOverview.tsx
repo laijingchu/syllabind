@@ -371,6 +371,7 @@ export default function SyllabusOverview() {
                  <div className="flex items-center space-x-3 bg-muted/40 p-2.5 rounded-md w-full justify-center">
                     <Switch 
                       id="share-profile" 
+                      className="data-[state=unchecked]:bg-input"
                       checked={currentUser?.shareProfile || false}
                       onCheckedChange={(checked) => {
                         updateUser({ shareProfile: checked as boolean });
