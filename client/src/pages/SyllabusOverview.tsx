@@ -19,7 +19,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon } from 'lucide-react';
+import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { cn, pluralize } from '@/lib/utils';
 
@@ -47,6 +47,7 @@ export default function SyllabusOverview() {
 
   const isActive = enrollment.activeSyllabusId === syllabus.id;
   const isCompleted = enrollment.completedSyllabusIds.includes(syllabus.id);
+  const { getProgressForWeek } = useStore();
 
   const handleStartClick = () => {
     // If it's active and completed, we treat it as review mode, but let's check
@@ -113,36 +114,39 @@ export default function SyllabusOverview() {
           <div className="space-y-6">
             <h2 className="text-2xl font-serif">What you'll learn</h2>
             <Accordion type="single" collapsible className="space-y-4">
-              {syllabus.weeks.filter(w => w.steps.length > 0).map((week) => (
-                <AccordionItem 
-                  key={week.index} 
-                  value={`week-${week.index}`}
-                  className="border-none"
-                >
-                  <AccordionTrigger className="hover:no-underline py-4 px-4 rounded-lg hover:bg-muted/50 transition-colors [&[data-state=open]>div]:bg-transparent">
-                    <div 
-                      className={cn(
-                        "flex gap-4 items-start w-full text-left transition-colors",
-                      )}
-                    >
-                      <div className={cn(
-                        "bg-background h-8 w-8 rounded-full flex items-center justify-center font-mono text-sm font-medium shrink-0 border shadow-sm transition-colors",
-                        isCompleted && "bg-primary text-primary-foreground border-primary"
-                      )}>
-                        {isCompleted ? <Check className="h-4 w-4" /> : week.index}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <h3 className={cn("font-medium text-lg mb-1", isCompleted && "text-primary")}>
-                            {week.title || `Week ${week.index}`}
-                          </h3>
+              {syllabus.weeks.filter(w => w.steps.length > 0).map((week) => {
+                const weekDone = isActive && getProgressForWeek(syllabus.id, week.index) === 100;
+                
+                return (
+                  <AccordionItem 
+                    key={week.index} 
+                    value={`week-${week.index}`}
+                    className="border-none"
+                  >
+                    <AccordionTrigger className="hover:no-underline py-4 px-4 rounded-lg hover:bg-muted/50 transition-colors [&[data-state=open]>div]:bg-transparent">
+                      <div 
+                        className={cn(
+                          "flex gap-4 items-start w-full text-left transition-colors",
+                        )}
+                      >
+                        <div className={cn(
+                          "bg-background h-8 w-8 rounded-full flex items-center justify-center font-mono text-sm font-medium shrink-0 border shadow-sm transition-colors",
+                          weekDone && "bg-primary text-primary-foreground border-primary"
+                        )}>
+                          {weekDone ? <Check className="h-4 w-4" /> : <Lock className="h-3.5 w-3.5 text-muted-foreground/70" />}
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {pluralize(week.steps.length, 'step')} &bull; {week.steps.reduce((acc, s) => acc + (s.estimatedMinutes || 0), 0)} mins est.
-                        </p>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <h3 className={cn("font-medium text-lg mb-1", weekDone && "text-primary")}>
+                              {week.title || `Week ${week.index}`}
+                            </h3>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {pluralize(week.steps.length, 'step')} &bull; {week.steps.reduce((acc, w_step) => acc + (w_step.estimatedMinutes || 0), 0)} mins est.
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </AccordionTrigger>
+                    </AccordionTrigger>
                   <AccordionContent>
                     <div className="pl-16 pr-4 py-2 space-y-3">
                       {week.steps.map(step => {
