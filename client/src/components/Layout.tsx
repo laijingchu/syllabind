@@ -31,8 +31,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </a>
             </Link>
             
-            {isAuthenticated && !user?.isCreator && (
-              <nav className="hidden md:flex items-center gap-6">
+            <nav className="hidden md:flex items-center gap-6">
+              {!isAuthenticated && (
+                <a href="/welcome#curate" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+                  Apply to Curate
+                </a>
+              )}
+              {isAuthenticated && !user?.isCreator && (
                 <Link href="/">
                   <a className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/" ? "text-primary" : "text-muted-foreground")}>
                     Dashboard
@@ -109,7 +114,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       <Button variant="ghost">Log in</Button>
                     </Link>
                     <Link href="/login?mode=signup">
-                      <Button>Get Early Access</Button>
+                      <Button>Sign up</Button>
                     </Link>
                    </>
                 )}

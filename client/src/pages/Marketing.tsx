@@ -28,7 +28,18 @@ export default function Marketing() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-24 pb-20">
+    <div className="max-w-6xl mx-auto space-y-24 pb-20 pt-8">
+      {/* Beta Banner */}
+      <div className="bg-primary/5 border border-primary/20 text-primary p-3 rounded-full text-center text-sm font-medium animate-in fade-in slide-in-from-top-4">
+        <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mr-2">Beta</span>
+        Syllabind is currently in private beta. Early access is by application only.
+      </div>
+      {/* Beta Banner */}
+      <div className="bg-primary/5 border border-primary/20 text-primary-foreground p-3 rounded-full text-center text-sm font-medium animate-in fade-in slide-in-from-top-4">
+        <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mr-2">Beta</span>
+        Syllabind is currently in private beta. Early access is by application only.
+      </div>
+
       {/* A. Hero */}
       <section className="text-center space-y-8 py-12 md:py-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="space-y-4 max-w-3xl mx-auto">
@@ -44,7 +55,7 @@ export default function Marketing() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
            <Link href="/login?mode=signup">
              <Button size="lg" className="h-12 px-8 text-lg rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
-               Get Early Access
+               Sign up
              </Button>
            </Link>
            <Link href="/catalog">
@@ -253,21 +264,21 @@ export default function Marketing() {
         </div>
       </section>
 
-      {/* G. Early Access */}
-      <section className="max-w-xl mx-auto text-center space-y-8 bg-primary/5 rounded-3xl p-8 md:p-12">
+      {/* G. Curate Application */}
+      <section id="curate" className="max-w-xl mx-auto text-center space-y-8 bg-primary/5 rounded-3xl p-8 md:p-12">
         <div className="space-y-4">
-          <h2 className="text-3xl font-serif">Join the early access list</h2>
+          <h2 className="text-3xl font-serif">Apply to Curate</h2>
           <p className="text-muted-foreground">
-            We’re starting Syllabind with a small group of learners and thought leaders who care about deep, structured learning.
+            We are looking for thoughtful curators to build high-quality, finishable learning paths. Tell us about the syllabus you want to bind.
           </p>
         </div>
 
         {submitted ? (
           <div className="bg-background p-6 rounded-lg border shadow-sm animate-in zoom-in duration-300">
             <CheckCircle className="h-12 w-12 text-primary mx-auto mb-4" />
-            <h3 className="text-xl font-medium mb-2">You're on the list!</h3>
-            <p className="text-muted-foreground">Thanks for signing up. We’ll be in touch when the first Syllabinds are ready.</p>
-            <Button className="mt-6" variant="outline" onClick={() => setSubmitted(false)}>Sign up another email</Button>
+            <h3 className="text-xl font-medium mb-2">Application Received</h3>
+            <p className="text-muted-foreground">Thanks for your interest in curating. We’ll review your application and be in touch soon.</p>
+            <Button className="mt-6" variant="outline" onClick={() => setSubmitted(false)}>Send another application</Button>
           </div>
         ) : (
           <form onSubmit={handleQuickSignup} className="space-y-6 text-left">
@@ -285,29 +296,16 @@ export default function Marketing() {
             </div>
             
             <div className="space-y-2">
-              <Label>I'm primarily a...</Label>
-              <RadioGroup value={role} onValueChange={setRole} className="flex gap-4">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="learner" id="learner" />
-                  <Label htmlFor="learner" className="font-normal">Learner</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="creator" id="creator" />
-                  <Label htmlFor="creator" className="font-normal">Creator</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="both" id="both" />
-                  <Label htmlFor="both" className="font-normal">Both</Label>
-                </div>
-              </RadioGroup>
+               <Label htmlFor="expertise">What is your area of expertise?</Label>
+               <Input id="expertise" placeholder="e.g. Behavioral Psychology, Sustainable Design..." className="bg-background" />
             </div>
 
             <div className="space-y-2">
-               <Label htmlFor="interest">What do you want to learn or teach?</Label>
-               <Textarea id="interest" placeholder="e.g. Systems thinking, Product design..." className="bg-background h-20" />
+               <Label htmlFor="interest">Describe the syllabus you want to create</Label>
+               <Textarea id="interest" placeholder="What are the key goals and resources?" className="bg-background h-32" />
             </div>
 
-            <Button type="submit" size="lg" className="w-full">Get Early Access</Button>
+            <Button type="submit" size="lg" className="w-full">Submit Application</Button>
           </form>
         )}
       </section>
