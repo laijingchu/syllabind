@@ -1,11 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Syllabus, Enrollment } from './types';
 import { MOCK_USER, MOCK_SYLLABI, INITIAL_ENROLLMENT } from './mockData';
+import { useLocation } from 'wouter';
 
 interface StoreContextType {
-  user: User;
+  user: User | null;
+  isAuthenticated: boolean;
   toggleCreatorMode: () => void;
   
+  login: (email: string) => void;
+  logout: () => void;
+  signup: (name: string, email: string, isCreator: boolean) => void;
+
   syllabi: Syllabus[];
   enrollment: Enrollment;
   
@@ -30,25 +36,52 @@ interface StoreContextType {
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User>(MOCK_USER);
+  // Auth State
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [, setLocation] = useLocation();
+
+  // App State
   const [syllabi, setSyllabi] = useState<Syllabus[]>(MOCK_SYLLABI);
   const [enrollment, setEnrollment] = useState<Enrollment>(INITIAL_ENROLLMENT);
-  const [exerciseAnswers, setExerciseAnswers] = useState<Record<string, string>>({}); // stepId -> answer
+  const [exerciseAnswers, setExerciseAnswers] = useState<Record<string, string>>({}); 
+
+  const login = (email: string) => {
+    // Mock login - just restore the mock user but with provided email
+    const mockUser = { ...MOCK_USER, name: email.split('@')[0], isCreator: false }; 
+    setUser(mockUser);
+    setIsAuthenticated(true);
+    setLocation('/');
+  };
+
+  const signup = (name: string, email: string, isCreator: boolean) => {
+    const newUser: User = {
+      id: `user-${Math.random().toString(36).substr(2, 9)}`,
+      name,
+      isCreator
+    };
+    setUser(newUser);
+    setIsAuthenticated(true);
+    setLocation('/');
+  };
+
+  const logout = () => {
+    setUser(null);
+    setIsAuthenticated(false);
+    setLocation('/welcome');
+  };
 
   const toggleCreatorMode = () => {
-    setUser(prev => ({ ...prev, isCreator: !prev.isCreator }));
+    if (user) {
+      setUser(prev => prev ? ({ ...prev, isCreator: !prev.isCreator }) : null);
+    }
   };
 
   const enrollInSyllabus = (syllabusId: string) => {
-    // Logic: If already enrolled in another, switch. Reset progress for new one?
-    // PRD: "Switch to this one? ... resets progress for the new one" 
-    // Ideally we might want to keep progress of old ones, but PRD says "Active Syllabus" singular.
-    // Let's keep `completedStepIds` global but `activeSyllabusId` switches.
-    // That way if they come back, progress is remembered (better UX).
     setEnrollment(prev => ({
       ...prev,
       activeSyllabusId: syllabusId,
-      currentWeekIndex: 1, // Start at week 1 of new syllabus
+      currentWeekIndex: 1, 
     }));
   };
 
@@ -104,15 +137,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
      return Math.round((completedCount / totalSteps.length) * 100);
   };
 
-  // Check for week unlocking logic could be here, or in the view component.
-  // PRD: "decide currentWeekIndex based on completedStepIds"
-  // Let's perform a check whenever completedStepIds changes to update currentWeekIndex?
-  // Or just derive it. For MVP, we'll let the user navigate but show locked state if previous week not done.
-
   return (
     <StoreContext.Provider
       value={{
         user,
+        isAuthenticated,
+        login,
+        logout,
+        signup,
         toggleCreatorMode,
         syllabi,
         enrollment,
