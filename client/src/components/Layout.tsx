@@ -107,7 +107,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {location !== '/login' && (
                   <>
                     <Button 
-                      variant="outline"
+                      variant="ghost"
                       onClick={() => {
                         const element = document.getElementById('curate');
                         if (element) {
@@ -120,11 +120,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     >
                       Apply to Curate
                     </Button>
-                    <Link href="/login">
-                      <Button variant="ghost">Log in</Button>
-                    </Link>
                     <Link href="/login?mode=signup">
-                      <Button>Sign up</Button>
+                      <Button>Sign up / Log in</Button>
                     </Link>
                   </>
                 )}
