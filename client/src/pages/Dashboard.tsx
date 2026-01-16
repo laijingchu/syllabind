@@ -31,13 +31,13 @@ export default function Dashboard() {
       <section className="space-y-6">
         <header>
           <h1 className="text-3xl font-serif text-foreground mb-2">
-            Current Focus
+            {allCompleted ? "Current Focus" : isCompleted ? "What's Next" : "Current Focus"}
           </h1>
           <p className="text-muted-foreground">
             {allCompleted 
               ? "You have mastered all available topics." 
               : isCompleted 
-                ? "Start new syllabind" 
+                ? "Select a new topic to start learning." 
                 : "Pick up where you left off."
             }
           </p>
@@ -57,6 +57,7 @@ export default function Dashboard() {
           </Card>
         ) : activeSyllabus ? (
           <>
+          {!isCompleted && (
           <div className="relative rounded-xl border bg-card text-card-foreground shadow-sm">
             <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
                <div className="absolute top-0 right-0 p-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
@@ -134,6 +135,7 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+          )}
           
           {isCompleted && suggestedSyllabi.length > 0 && (
             <div className="space-y-4 pt-4 animate-in fade-in slide-in-from-bottom-4 delay-150">
