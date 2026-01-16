@@ -186,6 +186,7 @@ export default function SyllabusOverview() {
             <Accordion type="single" collapsible className="space-y-4">
               {syllabus.weeks.filter(w => w.steps.length > 0).map((week) => {
                 const weekDone = isActive && getProgressForWeek(syllabus.id, week.index) === 100;
+                const isCurrentWeek = isActive && enrollment.currentWeekIndex === week.index;
                 
                 return (
                   <AccordionItem 
@@ -207,9 +208,12 @@ export default function SyllabusOverview() {
                         </div>
                         <div className="flex-1">
                           <div className="flex justify-between items-start">
-                            <h3 className={cn("font-medium text-lg mb-1", weekDone && "text-primary")}>
-                              {week.title || `Week ${week.index}`}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className={cn("font-medium text-lg mb-1", weekDone && "text-primary")}>
+                                {week.title || `Week ${week.index}`}
+                              </h3>
+                              {isCurrentWeek && <ChevronRight className="h-4 w-4 text-primary animate-pulse" />}
+                            </div>
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {pluralize(week.steps.length, 'step')} &bull; {week.steps.reduce((acc, w_step) => acc + (w_step.estimatedMinutes || 0), 0)} mins est.
