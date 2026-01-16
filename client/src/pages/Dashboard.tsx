@@ -56,6 +56,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         ) : activeSyllabus ? (
+          <>
           <div className="relative rounded-xl border bg-card text-card-foreground shadow-sm">
             <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
                <div className="absolute top-0 right-0 p-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
@@ -114,20 +115,6 @@ export default function Dashboard() {
                         <Button variant="outline" size="sm" className="w-full sm:w-auto">View Certificate</Button>
                       </Link>
                     </div>
-
-                    {suggestedSyllabi.length > 0 && (
-                      <div className="space-y-4 pt-4 border-t border-dashed">
-                        <div className="flex justify-between items-center">
-                          <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Start Something New</h4>
-                          <Link href="/catalog" className="text-sm text-primary hover:underline">Browse Catalog &rarr;</Link>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          {suggestedSyllabi.map(syllabus => (
-                            <SyllabusCard key={syllabus.id} syllabus={syllabus} className="h-full text-left" />
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <div className="flex flex-col sm:flex-row gap-3">
@@ -147,6 +134,21 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+          
+          {isCompleted && suggestedSyllabi.length > 0 && (
+            <div className="space-y-4 pt-4 animate-in fade-in slide-in-from-bottom-4 delay-150">
+              <div className="flex justify-between items-center">
+                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Start Something New</h4>
+                <Link href="/catalog" className="text-sm text-primary hover:underline">Browse Catalog &rarr;</Link>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {suggestedSyllabi.map(syllabus => (
+                  <SyllabusCard key={syllabus.id} syllabus={syllabus} className="h-full text-left" />
+                ))}
+              </div>
+            </div>
+          )}
+          </>
         ) : (
           <Card className="border-dashed border-2 bg-muted/30">
             <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-4">
