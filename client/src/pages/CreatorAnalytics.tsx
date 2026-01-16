@@ -3,6 +3,7 @@ import { useRoute, Link } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { pluralize } from '@/lib/utils';
 import { 
   ArrowLeft, 
   Users, 
@@ -46,10 +47,10 @@ export default function CreatorAnalytics() {
     completionRate: 34,
     averageProgress: 62,
     weekReach: [
-      { week: 'Week 1', percentage: 100 },
-      { week: 'Week 2', percentage: 62 },
-      { week: 'Week 3', percentage: 47 },
-      { week: 'Week 4', percentage: 34 },
+      { week: '1 Week', percentage: 100 },
+      { week: '2 Weeks', percentage: 62 },
+      { week: '3 Weeks', percentage: 47 },
+      { week: '4 Weeks', percentage: 34 },
     ],
     topDropoutStep: {
       weekIndex: 2,
@@ -92,7 +93,7 @@ export default function CreatorAnalytics() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-card/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Learners Started</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{pluralize(0, 'Learner', 'Learners')} Started</CardTitle>
             <Users className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
@@ -103,7 +104,7 @@ export default function CreatorAnalytics() {
         
         <Card className="bg-card/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Learners Completed</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{pluralize(0, 'Learner', 'Learners')} Completed</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
@@ -190,7 +191,7 @@ export default function CreatorAnalytics() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
-              <div className="text-xs font-bold text-orange-600 uppercase tracking-widest mb-1">Week {analytics.topDropoutStep.weekIndex}</div>
+              <div className="text-xs font-bold text-orange-600 uppercase tracking-widest mb-1">{pluralize(analytics.topDropoutStep.weekIndex, 'Week')}</div>
               <h4 className="text-lg font-medium leading-tight mb-2">{analytics.topDropoutStep.stepTitle}</h4>
               <p className="text-sm text-muted-foreground">
                 Consider shortening, replacing, or moving this step if it’s too heavy for most learners.

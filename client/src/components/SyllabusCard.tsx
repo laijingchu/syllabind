@@ -4,7 +4,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge';
 import { Clock, Users, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn, pluralize } from '@/lib/utils';
 
 interface SyllabusCardProps {
   syllabus: Syllabus;
@@ -20,7 +20,7 @@ export function SyllabusCard({ syllabus, className }: SyllabusCardProps) {
             {syllabus.audienceLevel}
           </Badge>
           <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-            <Clock className="h-3 w-3" /> {syllabus.durationWeeks} weeks
+            <Clock className="h-3 w-3" /> {pluralize(syllabus.durationWeeks, 'week')}
           </span>
         </div>
         <h3 className="text-xl font-serif font-medium leading-tight group-hover:text-primary transition-colors">

@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { PlayCircle, CheckCircle2, Award } from 'lucide-react';
 import { SyllabusCard } from '@/components/SyllabusCard';
+import { pluralize } from '@/lib/utils';
 
 export default function Dashboard() {
   const { enrollment, getActiveSyllabus, getOverallProgress, syllabi, getSyllabusById } = useStore();
@@ -94,7 +95,7 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   {getOverallProgress(activeSyllabus.id) < 100 && (
                     <div className="flex justify-between text-sm">
-                      <span className="font-medium">Week {enrollment.currentWeekIndex} of {activeSyllabus.durationWeeks}</span>
+                      <span className="font-medium">{pluralize(enrollment.currentWeekIndex, 'Week')} of {activeSyllabus.durationWeeks}</span>
                     </div>
                   )}
                   <Progress value={getOverallProgress(activeSyllabus.id)} className="h-2" />
@@ -172,7 +173,7 @@ export default function Dashboard() {
         <section className="space-y-6">
           <header>
             <h2 className="text-2xl font-serif text-foreground mb-2">Completed Journeys</h2>
-            <p className="text-muted-foreground">You have successfully completed {completedSyllabi.length} syllabinds!</p>
+            <p className="text-muted-foreground">You have successfully completed {pluralize(completedSyllabi.length, 'syllabind')}!</p>
           </header>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {completedSyllabi.map(s => (

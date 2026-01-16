@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Edit2, Eye, BarChart2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { pluralize } from '@/lib/utils';
 
 export default function CreatorDashboard() {
   const { syllabi } = useStore();
@@ -45,14 +46,14 @@ export default function CreatorDashboard() {
                   </Badge>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {syllabus.durationWeeks} weeks • {syllabus.audienceLevel} • Last updated today
+                  {pluralize(syllabus.durationWeeks, 'week')} • {syllabus.audienceLevel} • Last updated today
                 </div>
               </div>
               
               <div className="flex items-center gap-2">
                 <div className="mr-6 text-right hidden md:block">
-                  <div className="text-sm font-medium">42 Learners</div>
-                  <div className="text-xs text-muted-foreground">12 Active</div>
+                  <div className="text-sm font-medium">{pluralize(42, 'Learner')}</div>
+                  <div className="text-xs text-muted-foreground">{pluralize(12, 'Active')}</div>
                 </div>
                 <Link href={`/creator/syllabus/${syllabus.id}/analytics`}>
                   <Button variant="outline" size="sm">

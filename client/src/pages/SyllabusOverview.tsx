@@ -2,6 +2,7 @@ import { useRoute, useLocation } from 'wouter';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { pluralize } from '@/lib/utils';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -100,11 +101,11 @@ export default function SyllabusOverview() {
           <div className="flex gap-6 text-sm text-muted-foreground border-y py-6">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              <span>{syllabus.durationWeeks} Weeks</span>
+              <span>{pluralize(syllabus.durationWeeks, 'Week')}</span>
             </div>
              <div className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
-              <span>{syllabus.weeks.reduce((acc, w) => acc + w.steps.length, 0)} Steps</span>
+              <span>{pluralize(syllabus.weeks.reduce((acc, w) => acc + w.steps.length, 0), 'Step')}</span>
             </div>
           </div>
 
@@ -136,7 +137,7 @@ export default function SyllabusOverview() {
                           </h3>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {week.steps.length} steps &bull; {week.steps.reduce((acc, s) => acc + (s.estimatedMinutes || 0), 0)} mins est.
+                          {pluralize(week.steps.length, 'step')} &bull; {week.steps.reduce((acc, s) => acc + (s.estimatedMinutes || 0), 0)} mins est.
                         </p>
                       </div>
                     </div>
@@ -181,10 +182,10 @@ export default function SyllabusOverview() {
               </h3>
               <p className="text-sm text-muted-foreground">
                 {isCompleted 
-                  ? `You have successfully completed this ${syllabus.durationWeeks}-week course.` 
+                  ? `You have successfully completed this ${pluralize(syllabus.durationWeeks, 'week')} course.` 
                   : isActive 
                     ? "Pick up where you left off." 
-                    : `Commit to ${syllabus.durationWeeks} weeks of focused learning.`
+                    : `Commit to ${pluralize(syllabus.durationWeeks, 'week')} of focused learning.`
                 }
               </p>
             </div>

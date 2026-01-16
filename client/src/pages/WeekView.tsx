@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, ExternalLink, Lock, CheckCircle, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, pluralize } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function WeekView() {
@@ -64,10 +64,10 @@ export default function WeekView() {
         <div className="bg-muted h-20 w-20 rounded-full flex items-center justify-center mx-auto">
           <Lock className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h2 className="text-2xl font-serif">Week {weekIndex} is Locked</h2>
-        <p className="text-muted-foreground">Complete all steps in Week {weekIndex - 1} to unlock this content.</p>
+        <h2 className="text-2xl font-serif">{pluralize(weekIndex, 'Week')} is Locked</h2>
+        <p className="text-muted-foreground">Complete all steps in {pluralize(weekIndex - 1, 'Week')} to unlock this content.</p>
         <Link href={`/syllabus/${syllabus.id}/week/${weekIndex - 1}`}>
-          <Button>Go to Week {weekIndex - 1}</Button>
+          <Button>Go to {pluralize(weekIndex - 1, 'Week')}</Button>
         </Link>
       </div>
     );
@@ -87,7 +87,7 @@ export default function WeekView() {
         <div className="flex justify-between items-end mb-4">
           <div>
             <h2 className="text-sm font-medium text-primary uppercase tracking-wider mb-1">{syllabus.title}</h2>
-            <h1 className="text-3xl font-serif">{week.title || `Week ${week.index}`}</h1>
+            <h1 className="text-3xl font-serif">{week.title || pluralize(week.index, 'Week')}</h1>
           </div>
           <div className="text-right">
              <div className="text-2xl font-mono font-medium">{progress}%</div>
@@ -138,7 +138,7 @@ export default function WeekView() {
                     </h3>
                     {step.estimatedMinutes && (
                       <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full whitespace-nowrap">
-                        {step.estimatedMinutes} min
+                        {pluralize(step.estimatedMinutes, 'min')}
                       </span>
                     )}
                   </div>
@@ -195,7 +195,7 @@ export default function WeekView() {
       <div className="flex justify-between items-center mt-12 pt-8 border-t">
          {weekIndex > 1 ? (
            <Link href={`/syllabus/${syllabus.id}/week/${weekIndex - 1}`}>
-             <Button variant="ghost"><ChevronLeft className="mr-2 h-4 w-4" /> Previous Week</Button>
+             <Button variant="ghost"><ChevronLeft className="mr-2 h-4 w-4" /> Previous {pluralize(1, 'Week', 'Week')}</Button>
            </Link>
          ) : (
            <div />
@@ -208,7 +208,7 @@ export default function WeekView() {
              </Link>
            ) : (
              <Link href={`/syllabus/${syllabus.id}/week/${weekIndex + 1}`}>
-               <Button>Next Week <ChevronRight className="ml-2 h-4 w-4" /></Button>
+               <Button>Next {pluralize(1, 'Week', 'Week')} <ChevronRight className="ml-2 h-4 w-4" /></Button>
              </Link>
            )
          )}
