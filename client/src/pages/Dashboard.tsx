@@ -17,6 +17,8 @@ export default function Dashboard() {
 
   const isCompleted = activeSyllabus && getOverallProgress(activeSyllabus.id) === 100;
   
+  const allCompleted = syllabi.length > 0 && syllabi.every(s => enrollment.completedSyllabusIds.includes(s.id));
+
   const suggestedSyllabi = syllabi
     .filter(s => 
       (!activeSyllabus || s.id !== activeSyllabus.id) && 
@@ -28,13 +30,32 @@ export default function Dashboard() {
     <div className="max-w-4xl mx-auto space-y-12">
       <section className="space-y-6">
         <header>
-          <h1 className="text-3xl font-serif text-foreground mb-2">Current Focus</h1>
+          <h1 className="text-3xl font-serif text-foreground mb-2">
+            {allCompleted ? "Journey Complete" : "Current Focus"}
+          </h1>
           <p className="text-muted-foreground">
-            {isCompleted ? "Start new syllabind" : "Pick up where you left off."}
+            {allCompleted 
+              ? "You have mastered all available topics." 
+              : isCompleted 
+                ? "Start new syllabind" 
+                : "Pick up where you left off."
+            }
           </p>
         </header>
 
-        {activeSyllabus ? (
+        {allCompleted ? (
+           <Card className="border-dashed border-2 bg-muted/30">
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-4">
+              <div className="bg-primary/10 p-4 rounded-full">
+                <Award className="h-8 w-8 text-primary" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-xl font-medium">All Syllabinds Completed</h3>
+                <p className="text-muted-foreground max-w-sm mx-auto">You've mastered every topic in our catalog. Amazing work!</p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : activeSyllabus ? (
           <div className="relative rounded-xl border bg-card text-card-foreground shadow-sm">
             <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
                <div className="absolute top-0 right-0 p-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
