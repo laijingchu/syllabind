@@ -160,7 +160,7 @@ export default function Dashboard() {
       {completedSyllabi.length > 0 && (
         <section className="space-y-6">
           <header>
-            <h2 className="text-2xl font-serif text-foreground mb-2">Completed Journey</h2>
+            <h2 className="text-2xl font-serif text-foreground mb-2">Completed Journeys</h2>
             <p className="text-muted-foreground">Syllabinds you have successfully finished.</p>
           </header>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
