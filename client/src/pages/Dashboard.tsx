@@ -24,8 +24,19 @@ export default function Dashboard() {
         </header>
 
         {activeSyllabus ? (
-          <div className="relative overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
-            <div className="absolute top-0 right-0 p-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <div className="relative rounded-xl border bg-card text-card-foreground shadow-sm">
+            <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
+               <div className="absolute top-0 right-0 p-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            </div>
+
+            {getOverallProgress(activeSyllabus.id) === 100 && (
+              <div className="absolute -top-6 -right-6 h-28 w-28 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-xl border-4 border-background transform rotate-12 z-20 animate-in zoom-in duration-500">
+                <div className="text-center -ml-1 mt-2">
+                  <Award className="h-8 w-8 mx-auto mb-1" />
+                  <div className="text-[10px] font-bold uppercase tracking-widest">Done</div>
+                </div>
+              </div>
+            )}
             
             <div className="p-8 relative z-10">
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
@@ -36,10 +47,13 @@ export default function Dashboard() {
                   <h2 className="text-3xl font-serif">{activeSyllabus.title}</h2>
                   <p className="text-muted-foreground max-w-xl">{activeSyllabus.description}</p>
                 </div>
-                <div className="flex flex-col items-end gap-2 min-w-[140px]">
-                   <span className="text-2xl font-mono font-medium">{getOverallProgress(activeSyllabus.id)}%</span>
-                   <span className="text-xs text-muted-foreground">Total Completion</span>
-                </div>
+                
+                {getOverallProgress(activeSyllabus.id) < 100 && (
+                   <div className="flex flex-col items-end gap-2 min-w-[140px]">
+                      <span className="text-2xl font-mono font-medium">{getOverallProgress(activeSyllabus.id)}%</span>
+                      <span className="text-xs text-muted-foreground">Total Completion</span>
+                   </div>
+                )}
               </div>
 
               <div className="space-y-6">
