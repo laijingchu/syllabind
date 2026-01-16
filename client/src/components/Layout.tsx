@@ -27,6 +27,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <a className="font-serif text-2xl font-medium tracking-tight hover:opacity-80 transition-opacity flex items-center gap-2">
                 <BookOpen className="h-6 w-6 text-primary" />
                 <span>Syllabind</span>
+                <span className="text-[10px] font-sans font-bold text-primary bg-primary/5 border border-primary/20 px-1.5 py-0.5 rounded-md ml-1.5 align-middle">BETA</span>
                 {user?.isCreator && <span className="text-xs font-sans bg-accent text-accent-foreground px-2 py-0.5 rounded-full ml-2">Creator</span>}
               </a>
             </Link>
@@ -38,28 +39,28 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </a>
               )}
               {isAuthenticated && !user?.isCreator && (
-                <Link href="/">
-                  <a className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/" ? "text-primary" : "text-muted-foreground")}>
-                    Dashboard
-                  </a>
-                </Link>
-                <Link href="/catalog">
-                  <a className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/catalog" ? "text-primary" : "text-muted-foreground")}>
-                    Catalog
-                  </a>
-                </Link>
-              </nav>
-            )}
-            
-            {isAuthenticated && user?.isCreator && (
-               <nav className="hidden md:flex items-center gap-6">
+                <>
+                  <Link href="/">
+                    <a className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/" ? "text-primary" : "text-muted-foreground")}>
+                      Dashboard
+                    </a>
+                  </Link>
+                  <Link href="/catalog">
+                    <a className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/catalog" ? "text-primary" : "text-muted-foreground")}>
+                      Catalog
+                    </a>
+                  </Link>
+                </>
+              )}
+              
+              {isAuthenticated && user?.isCreator && (
                 <Link href="/creator">
                   <a className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/creator" ? "text-primary" : "text-muted-foreground")}>
                     My Syllabi
                   </a>
                 </Link>
-              </nav>
-            )}
+              )}
+            </nav>
           </div>
 
           <div className="flex items-center gap-4">
@@ -109,14 +110,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
             ) : (
               <div className="flex items-center gap-4">
                 {location !== '/login' && (
-                   <>
+                  <>
                     <Link href="/login">
                       <Button variant="ghost">Log in</Button>
                     </Link>
                     <Link href="/login?mode=signup">
                       <Button>Sign up</Button>
                     </Link>
-                   </>
+                  </>
                 )}
               </div>
             )}

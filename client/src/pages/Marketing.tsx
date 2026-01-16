@@ -34,11 +34,6 @@ export default function Marketing() {
         <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mr-2">Beta</span>
         Syllabind is currently in private beta. Early access is by application only.
       </div>
-      {/* Beta Banner */}
-      <div className="bg-primary/5 border border-primary/20 text-primary-foreground p-3 rounded-full text-center text-sm font-medium animate-in fade-in slide-in-from-top-4">
-        <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mr-2">Beta</span>
-        Syllabind is currently in private beta. Early access is by application only.
-      </div>
 
       {/* A. Hero */}
       <section className="text-center space-y-8 py-12 md:py-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
