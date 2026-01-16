@@ -30,7 +30,7 @@ export default function Dashboard() {
             </div>
 
             {getOverallProgress(activeSyllabus.id) === 100 && (
-              <div className="absolute -top-6 -right-6 h-28 w-28 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-xl border-4 border-background transform rotate-12 z-20 animate-in zoom-in duration-500">
+              <div className="absolute -top-6 -right-6 h-28 w-28 text-primary-foreground rounded-full flex items-center justify-center shadow-xl border-4 border-background transform rotate-12 z-20 animate-in zoom-in duration-500 bg-[#ffffff]">
                 <div className="text-center -ml-1 mt-2">
                   <Award className="h-8 w-8 mx-auto mb-1" />
                   <div className="text-[10px] font-bold uppercase tracking-widest">Done</div>
@@ -107,7 +107,6 @@ export default function Dashboard() {
           </Card>
         )}
       </section>
-
       {completedSyllabi.length > 0 && (
         <section className="space-y-6">
           <header>
