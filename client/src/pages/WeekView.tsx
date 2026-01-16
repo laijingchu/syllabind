@@ -75,7 +75,11 @@ export default function WeekView() {
   }
 
   const isLastWeek = weekIndex === syllabus.durationWeeks;
-  const allDone = progress === 100;
+  const allReadingsDone = week.steps
+    .filter(s => s.type === 'reading')
+    .every(s => isStepCompleted(s.id));
+  
+  const allDone = allReadingsDone;
 
   return (
     <div className="max-w-3xl mx-auto pb-20">
@@ -176,13 +180,6 @@ export default function WeekView() {
                             disabled={!exerciseText[step.id]?.trim()}
                           >
                             Save Link
-                          </Button>
-                          <Button 
-                            variant="ghost"
-                            onClick={() => markStepComplete(step.id)}
-                            className="ml-2"
-                          >
-                            Skip & Mark Complete
                           </Button>
                         </div>
                       ) : (
