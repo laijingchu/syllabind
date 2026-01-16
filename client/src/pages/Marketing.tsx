@@ -30,11 +30,10 @@ export default function Marketing() {
   return (
     <div className="max-w-6xl mx-auto space-y-24 pb-20 pt-8">
       {/* Beta Banner */}
-      <div className="bg-primary/5 border border-primary/20 text-primary p-3 rounded-full text-center text-sm font-medium animate-in fade-in slide-in-from-top-4">
+      <div className="bg-primary/5 border border-primary/20 text-primary p-3 rounded-full text-center text-sm font-medium animate-in fade-in slide-in-from-top-4 mt-[0px] mb-[0px]">
         <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mr-2">Beta</span>
         Syllabind is currently in private beta. Learners can sign up now, but curation access is by application only.
       </div>
-
       {/* A. Hero */}
       <section className="text-center space-y-8 py-12 md:py-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="space-y-4 max-w-3xl mx-auto">
@@ -188,7 +187,6 @@ export default function Marketing() {
            ))}
         </div>
       </section>
-
       {/* E. Split Section */}
       <section className="grid md:grid-cols-2 gap-12 items-center bg-card rounded-2xl border p-8 md:p-12 shadow-sm">
         <div className="space-y-6">
@@ -245,7 +243,6 @@ export default function Marketing() {
           </div>
         </div>
       </section>
-
       {/* F. Testimonials */}
       <section className="space-y-12">
         <h2 className="text-3xl font-serif text-center">What early learners say</h2>
@@ -275,7 +272,6 @@ export default function Marketing() {
           ))}
         </div>
       </section>
-
       {/* G. Curate Application */}
       <section id="curate" className="max-w-xl mx-auto text-center space-y-8 bg-primary/5 rounded-3xl p-8 md:p-12">
         <div className="space-y-4">
