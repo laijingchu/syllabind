@@ -158,7 +158,21 @@ export default function SyllabusOverview() {
                               )}>
                                 {step.type === 'reading' ? <FileText className="h-3.5 w-3.5" /> : <Dumbbell className="h-3.5 w-3.5" />}
                               </div>
-                              <span className={cn(isDone && "text-foreground font-medium")}>{step.title}</span>
+                              <span className={cn(isDone && "text-foreground font-medium")}>
+                                {isDone && step.type === 'reading' && step.url ? (
+                                  <a 
+                                    href={step.url.startsWith('http') ? step.url : `https://${step.url}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:underline text-primary"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {step.title}
+                                  </a>
+                                ) : (
+                                  step.title
+                                )}
+                              </span>
                               <span className="text-xs opacity-70 ml-auto tabular-nums">{step.estimatedMinutes}m</span>
                             </div>
                             
