@@ -55,27 +55,62 @@ export default function Marketing() {
         </div>
 
         {/* Hero Visual */}
-        <div className="relative mt-12 mx-auto max-w-4xl rounded-xl border bg-card shadow-2xl overflow-hidden aspect-[16/9] group">
-          <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent z-10" />
-           {/* Abstract UI representation */}
-           <div className="p-8 grid grid-cols-[1fr_2fr] gap-8 h-full opacity-80">
-              <div className="space-y-4">
-                <div className="h-8 w-3/4 bg-primary/20 rounded-md" />
-                <div className="h-4 w-1/2 bg-muted rounded-md" />
-                <div className="space-y-2 mt-8">
-                  {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="flex gap-2 items-center">
-                      <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px]">{i}</div>
-                      <div className="h-4 w-full bg-muted/50 rounded-md" />
+        <div className="relative mt-12 mx-auto max-w-4xl rounded-xl border bg-card shadow-2xl overflow-hidden aspect-[16/9] group text-left">
+          <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent z-10 pointer-events-none" />
+           
+           <div className="flex h-full">
+              {/* Sidebar Mock */}
+              <div className="w-1/3 bg-secondary/20 border-r p-6 space-y-6 hidden sm:block">
+                 <div className="space-y-2">
+                    <div className="h-2 w-20 bg-muted rounded-full" />
+                    <div className="h-6 w-32 bg-primary/20 rounded-md" />
+                 </div>
+                 <div className="space-y-3 pt-4">
+                    <div className="flex items-center gap-3 p-2 bg-background rounded-md border shadow-sm">
+                       <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">1</div>
+                       <div className="text-xs font-medium">Foundations</div>
                     </div>
-                  ))}
-                </div>
+                    <div className="flex items-center gap-3 p-2 opacity-50">
+                       <div className="h-5 w-5 rounded-full border border-muted flex items-center justify-center text-[10px]">2</div>
+                       <div className="text-xs font-medium">Tools & Setup</div>
+                    </div>
+                    <div className="flex items-center gap-3 p-2 opacity-50">
+                       <div className="h-5 w-5 rounded-full border border-muted flex items-center justify-center text-[10px]">3</div>
+                       <div className="text-xs font-medium">Deep Dive</div>
+                    </div>
+                 </div>
               </div>
-              <div className="bg-muted/10 rounded-lg p-6 border border-border/50">
-                 <div className="h-6 w-1/3 bg-primary/10 rounded-md mb-6" />
+
+              {/* Main Content Mock */}
+              <div className="flex-1 p-6 md:p-8 space-y-6 bg-card">
+                 <div className="space-y-2">
+                    <div className="text-xs font-semibold text-primary uppercase tracking-wider">Week 1</div>
+                    <h3 className="text-2xl font-serif">The Philosophy of Less</h3>
+                    <div className="h-1 w-full bg-muted overflow-hidden rounded-full">
+                       <div className="h-full w-1/3 bg-primary" />
+                    </div>
+                 </div>
+
                  <div className="space-y-4">
-                   <div className="h-24 bg-card rounded-md border shadow-sm p-4" />
-                   <div className="h-24 bg-card rounded-md border shadow-sm p-4" />
+                    {/* Step 1 */}
+                    <div className="flex gap-4 p-4 border rounded-lg bg-background shadow-sm">
+                       <div className="h-5 w-5 rounded border-2 border-primary bg-primary text-primary-foreground flex items-center justify-center">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="20 6 9 17 4 12" /></svg>
+                       </div>
+                       <div>
+                          <div className="text-sm font-medium line-through text-muted-foreground">Reading: Why We Are Distracted</div>
+                          <div className="text-xs text-muted-foreground mt-1">15 min read • James Williams</div>
+                       </div>
+                    </div>
+
+                    {/* Step 2 */}
+                    <div className="flex gap-4 p-4 border rounded-lg bg-background shadow-sm">
+                       <div className="h-5 w-5 rounded border-2 border-muted" />
+                       <div>
+                          <div className="text-sm font-medium">Exercise: Audit Your Screen Time</div>
+                          <div className="text-xs text-muted-foreground mt-1">Check your stats and write down top 3 apps.</div>
+                       </div>
+                    </div>
                  </div>
               </div>
            </div>
