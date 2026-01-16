@@ -28,7 +28,8 @@ export default function Marketing() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-24 pb-20 pt-8">
+    <div className="bg-white min-h-screen">
+      <div className="max-w-6xl mx-auto space-y-24 pb-20 pt-8">
       {/* Beta Banner */}
       <div className="bg-primary/5 border border-primary/20 text-primary p-3 rounded-full text-center text-sm font-medium animate-in fade-in slide-in-from-top-4 mt-[0px] mb-[0px]">
         <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mr-2">Beta</span>
@@ -317,6 +318,7 @@ export default function Marketing() {
           </form>
         )}
       </section>
+      </div>
     </div>
   );
 }
