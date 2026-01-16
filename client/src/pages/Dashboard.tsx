@@ -51,7 +51,7 @@ export default function Dashboard() {
               </div>
               <div className="space-y-1">
                 <h3 className="text-xl font-medium">All Syllabinds Completed</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto">You've mastered every topic in our catalog. Amazing work!</p>
+                <p className="text-muted-foreground max-w-sm mx-auto">You've mastered every topic in our catalog. Amazing work! We will email you when new syllabinds become available.</p>
               </div>
             </CardContent>
           </Card>
