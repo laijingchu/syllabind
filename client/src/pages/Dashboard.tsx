@@ -1,6 +1,6 @@
 import { useStore } from '@/lib/store';
 import { Link } from 'wouter';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { PlayCircle, CheckCircle2, Award } from 'lucide-react';
@@ -165,18 +165,20 @@ export default function Dashboard() {
           </header>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {completedSyllabi.map(s => (
-               <div key={s.id} className="flex items-center gap-4 p-4 border rounded-lg bg-card/50">
-                  <div className="bg-primary/10 p-3 rounded-full text-primary">
-                    <Award className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h4 className="font-medium">{s.title}</h4>
-                    <p className="text-xs text-muted-foreground">Completed</p>
-                  </div>
-                  <Button variant="ghost" size="sm" className="ml-auto" asChild>
-                    <Link href={`/syllabus/${s.id}/completed`}>View</Link>
-                  </Button>
-               </div>
+               <Link key={s.id} href={`/syllabus/${s.id}`}>
+                 <div className="flex items-center gap-4 p-4 border rounded-lg bg-card/50 hover:bg-muted/50 transition-colors cursor-pointer group">
+                    <div className="bg-primary/10 p-3 rounded-full text-primary">
+                      <Award className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium group-hover:text-primary transition-colors">{s.title}</h4>
+                      <p className="text-xs text-muted-foreground">Completed</p>
+                    </div>
+                    <div className={buttonVariants({ variant: "ghost", size: "sm", className: "ml-auto" })}>
+                      View
+                    </div>
+                 </div>
+               </Link>
             ))}
           </div>
         </section>
