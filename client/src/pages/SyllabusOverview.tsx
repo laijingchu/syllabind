@@ -30,12 +30,29 @@ export default function SyllabusOverview() {
   const isCompleted = enrollment.completedSyllabusIds.includes(syllabus.id);
 
   const handleStartClick = () => {
+    // If it's active and completed, we treat it as review mode, but let's check
+    // If user clicked "Start this Syllabind" on a NEW syllabus while OLD one is completed:
+    
     if (isActive) {
-      // Continue
+      // Continue or Review
       setLocation(`/syllabus/${syllabus.id}/week/${enrollment.currentWeekIndex}`);
     } else if (enrollment.activeSyllabusId) {
-      // Prompt switch
-      setShowConfirm(true);
+      // Check if the ACTIVE syllabus is actually 100% complete.
+      // If so, we can just switch silently without nagging.
+      // We need to import getOverallProgress from store or calculate it.
+      // But `getOverallProgress` isn't exposed directly here... let's add it or use helper.
+      // Actually we have `enrollment.completedSyllabusIds`.
+      
+      const isActiveCompleted = enrollment.completedSyllabusIds.includes(enrollment.activeSyllabusId);
+      
+      if (isActiveCompleted) {
+         // Active one is done, so just switch to new one silently
+         enrollInSyllabus(syllabus.id);
+         setLocation(`/syllabus/${syllabus.id}/week/1`);
+      } else {
+         // Active one is IN PROGRESS, so prompt switch
+         setShowConfirm(true);
+      }
     } else {
       // Enroll
       enrollInSyllabus(syllabus.id);
