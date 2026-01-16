@@ -313,7 +313,7 @@ export default function Marketing() {
                <Textarea id="interest" placeholder="What are the key goals and resources?" className="bg-background h-32" />
             </div>
 
-            <Button type="submit" size="lg" className="w-full">Submit Application</Button>
+            <Button type="submit" size="lg" className="w-full bg-black text-white hover:bg-neutral-800">Submit Application</Button>
           </form>
         )}
       </section>
