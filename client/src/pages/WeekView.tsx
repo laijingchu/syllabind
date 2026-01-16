@@ -30,9 +30,15 @@ export default function WeekView() {
   const week = syllabus?.weeks.find(w => w.index === weekIndex);
 
   // Locking Logic
-  // A week is locked if the previous week is not 100% complete.
+  // A week is locked if the previous week's readings are not all done.
   // Exception: Week 1 is always unlocked.
-  const isLocked = weekIndex > 1 && getProgressForWeek(syllabusId!, weekIndex - 1) < 100;
+  const previousWeekReadingsDone = weekIndex > 1 ? (
+    syllabus?.weeks.find(w => w.index === weekIndex - 1)?.steps
+      .filter(s => s.type === 'reading')
+      .every(s => isStepCompleted(s.id))
+  ) : true;
+
+  const isLocked = weekIndex > 1 && !previousWeekReadingsDone;
   // Also locked if we try to jump ahead multiple weeks, but the recursive logic above covers it if we assume linear progression.
   // Actually, standard logic: Week N is locked if Week N-1 is not complete.
   
@@ -223,7 +229,7 @@ export default function WeekView() {
              </Link>
            ) : (
              <Link href={`/syllabus/${syllabus.id}/week/${weekIndex + 1}`}>
-               <Button>Next {pluralize(1, 'Week', 'Week')} <ChevronRight className="ml-2 h-4 w-4" /></Button>
+               <Button>Next <ChevronRight className="ml-2 h-4 w-4" /></Button>
              </Link>
            )
          )}
