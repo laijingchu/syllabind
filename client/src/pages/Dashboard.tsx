@@ -31,7 +31,7 @@ export default function Dashboard() {
       <section className="space-y-6">
         <header>
           <h1 className="text-3xl font-serif text-foreground mb-2">
-            {allCompleted ? "Journey Complete" : "Current Focus"}
+            Current Focus
           </h1>
           <p className="text-muted-foreground">
             {allCompleted 
