@@ -30,7 +30,9 @@ export default function Dashboard() {
             <div className="p-8 relative z-10">
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
                 <div className="space-y-2">
-                  <div className="text-sm font-medium text-primary uppercase tracking-wider">In Progress</div>
+                  <div className="text-sm font-medium text-primary uppercase tracking-wider">
+                    {getOverallProgress(activeSyllabus.id) === 100 ? 'Completed' : 'In Progress'}
+                  </div>
                   <h2 className="text-3xl font-serif">{activeSyllabus.title}</h2>
                   <p className="text-muted-foreground max-w-xl">{activeSyllabus.description}</p>
                 </div>
@@ -42,9 +44,11 @@ export default function Dashboard() {
 
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium">Week {enrollment.currentWeekIndex} of {activeSyllabus.durationWeeks}</span>
-                  </div>
+                  {getOverallProgress(activeSyllabus.id) < 100 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">Week {enrollment.currentWeekIndex} of {activeSyllabus.durationWeeks}</span>
+                    </div>
+                  )}
                   <Progress value={getOverallProgress(activeSyllabus.id)} className="h-2" />
                 </div>
                 
