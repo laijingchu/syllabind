@@ -115,7 +115,7 @@ export default function Marketing() {
             <CardTitle className="font-serif">Active Learning</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">Don't just read. Respond to prompts, complete exercises, and apply what you learn.</p>
+            <p className="text-muted-foreground">Don't just read. Respond to prompts, complete exercises, and build meaningful, fun projects.</p>
           </CardContent>
         </Card>
       </section>
