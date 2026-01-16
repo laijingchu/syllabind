@@ -203,7 +203,7 @@ export default function SyllabusOverview() {
                         )}
                       >
                         <div className={cn(
-                          "bg-background h-8 w-8 rounded-full flex items-center justify-center font-mono text-sm font-medium shrink-0 border shadow-sm transition-colors",
+                          "bg-background h-8 w-8 rounded-full flex items-center justify-center font-mono text-sm font-medium shrink-0 border transition-colors",
                           weekDone && "bg-primary text-primary-foreground border-primary",
                           isCurrentWeek && !weekDone && "border-primary text-primary ring-2 ring-primary/20"
                         )}>
