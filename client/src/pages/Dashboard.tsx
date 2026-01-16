@@ -51,7 +51,7 @@ export default function Dashboard() {
               </div>
               <div className="space-y-1">
                 <h3 className="text-xl font-medium">All Syllabinds Completed</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto">You've mastered every topic in our catalog. Amazing work! We will email you when new syllabinds become available.</p>
+                <p className="text-muted-foreground max-w-sm mx-auto">You've mastered every topic in our catalog. Amazing work! You will receive an email notification when new syllabinds become available.</p>
               </div>
             </CardContent>
           </Card>
@@ -161,7 +161,7 @@ export default function Dashboard() {
         <section className="space-y-6">
           <header>
             <h2 className="text-2xl font-serif text-foreground mb-2">Completed Journeys</h2>
-            <p className="text-muted-foreground">Syllabinds you have successfully finished.</p>
+            <p className="text-muted-foreground">You have successfully completed {completedSyllabi.length} syllabinds!</p>
           </header>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {completedSyllabi.map(s => (
