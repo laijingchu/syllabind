@@ -121,9 +121,9 @@ export default function SyllabusOverview() {
               {learner.user.bio && <p className="text-xs text-muted-foreground line-clamp-2">{learner.user.bio}</p>}
             </div>
           </div>
-          <div className="flex gap-2 justify-center pt-1">
+          <div className="flex gap-2 justify-start pt-1">
             {learner.user.linkedin && (
-              <a href={`https://linkedin.com/in/${learner.user.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-[#0077b5] transition-colors">
+              <a href={`https://linkedin.com/in/${learner.user.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-[#0077b5] transition-colors ml-[-6px]">
                 <Linkedin className="h-4 w-4" />
               </a>
             )}
@@ -279,6 +279,44 @@ export default function SyllabusOverview() {
             })}
             </Accordion>
           </div>
+
+          {/* Classmates Section moved here */}
+          {(inProgressLearners.length > 0 || completedLearners.length > 0) && (
+            <div className="pt-8 space-y-6">
+               <div className="flex justify-between items-baseline border-b pb-4">
+                 <h2 className="text-2xl font-serif">Classmates</h2>
+                 <span className="text-sm text-muted-foreground">{learners.length} enrolled</span>
+               </div>
+               
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                 {inProgressLearners.length > 0 && (
+                   <div className="space-y-3">
+                     <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">In Progress</p>
+                     <div className="flex -space-x-3 overflow-hidden py-1">
+                       {inProgressLearners.map(learner => (
+                         <LearnerAvatar key={learner.user.id} learner={learner} />
+                       ))}
+                     </div>
+                   </div>
+                 )}
+
+                 {completedLearners.length > 0 && (
+                    <div className="space-y-3">
+                     <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Completed</p>
+                     <div className="flex -space-x-3 overflow-hidden py-1">
+                       {completedLearners.map(learner => (
+                         <LearnerAvatar key={learner.user.id} learner={learner} />
+                       ))}
+                     </div>
+                   </div>
+                 )}
+               </div>
+               
+               <p className="text-sm text-muted-foreground">
+                 Connect with others learning {syllabus.title}.
+               </p>
+            </div>
+          )}
         </div>
 
         <div className="sticky top-24">
@@ -321,42 +359,6 @@ export default function SyllabusOverview() {
                 "{creator.bio}"
               </p>
             </div>
-
-            {/* Classmates Section */}
-            {(inProgressLearners.length > 0 || completedLearners.length > 0) && (
-              <div className="pt-6 border-t space-y-4">
-                 <div className="flex justify-between items-baseline">
-                   <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Classmates</h4>
-                   <span className="text-xs text-muted-foreground">{learners.length} enrolled</span>
-                 </div>
-                 
-                 {inProgressLearners.length > 0 && (
-                   <div className="space-y-2">
-                     <p className="text-[10px] font-medium text-muted-foreground uppercase">In Progress</p>
-                     <div className="flex -space-x-2 overflow-hidden py-1">
-                       {inProgressLearners.map(learner => (
-                         <LearnerAvatar key={learner.user.id} learner={learner} />
-                       ))}
-                     </div>
-                   </div>
-                 )}
-
-                 {completedLearners.length > 0 && (
-                    <div className="space-y-2">
-                     <p className="text-[10px] font-medium text-muted-foreground uppercase">Completed</p>
-                     <div className="flex -space-x-2 overflow-hidden py-1">
-                       {completedLearners.map(learner => (
-                         <LearnerAvatar key={learner.user.id} learner={learner} />
-                       ))}
-                     </div>
-                   </div>
-                 )}
-                 
-                 <p className="text-xs text-muted-foreground">
-                   Connect with others learning {syllabus.title}.
-                 </p>
-              </div>
-            )}
           </div>
         </div>
       </div>
