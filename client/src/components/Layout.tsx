@@ -33,11 +33,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </Link>
             
             <nav className="hidden md:flex items-center gap-6">
-              {!isAuthenticated && (
-                <a href="/welcome#curate" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
-                  Apply to Curate
-                </a>
-              )}
               {isAuthenticated && !user?.isCreator && (
                 <>
                   <Link href="/">
@@ -111,6 +106,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-4">
                 {location !== '/login' && (
                   <>
+                    <button 
+                      onClick={() => {
+                        const element = document.getElementById('curate');
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth' });
+                        } else {
+                          window.location.href = '/welcome#curate';
+                        }
+                      }}
+                      className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary hidden md:block"
+                    >
+                      Apply to Curate
+                    </button>
                     <Link href="/login">
                       <Button variant="ghost">Log in</Button>
                     </Link>
