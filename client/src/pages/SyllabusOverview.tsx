@@ -213,7 +213,11 @@ export default function SyllabusOverview() {
                               <h3 className={cn("font-medium text-lg mb-1", weekDone && "text-primary")}>
                                 {week.title || `Week ${week.index}`}
                               </h3>
-                              {isCurrentWeek && <ChevronRight className="h-4 w-4 text-primary animate-pulse" />}
+                              {isCurrentWeek && (
+                                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] uppercase tracking-wider bg-primary/10 text-primary border-primary/20">
+                                  Current
+                                </Badge>
+                              )}
                             </div>
                           </div>
                           <p className="text-sm text-muted-foreground">
