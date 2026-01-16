@@ -122,7 +122,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setEnrollment(prev => ({
       ...prev,
       currentWeekIndex: syllabus.durationWeeks,
-      completedStepIds: Array.from(new Set([...prev.completedStepIds, ...allStepIds]))
+      completedStepIds: Array.from(new Set([...prev.completedStepIds, ...allStepIds])),
+      completedSyllabusIds: Array.from(new Set([...prev.completedSyllabusIds, syllabus.id]))
     }));
   };
 
@@ -150,6 +151,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
      const completedCount = totalSteps.filter(s => enrollment.completedStepIds.includes(s.id)).length;
      return Math.round((completedCount / totalSteps.length) * 100);
   };
+
+  // Check for completion whenever steps change
+  useEffect(() => {
+    if (!enrollment.activeSyllabusId) return;
+    
+    const syllabus = syllabi.find(s => s.id === enrollment.activeSyllabusId);
+    if (!syllabus) return;
+
+    const allStepIds = syllabus.weeks.flatMap(w => w.steps.map(s => s.id));
+    const allCompleted = allStepIds.every(id => enrollment.completedStepIds.includes(id));
+
+    if (allCompleted && !enrollment.completedSyllabusIds.includes(syllabus.id)) {
+      setEnrollment(prev => ({
+        ...prev,
+        completedSyllabusIds: [...prev.completedSyllabusIds, syllabus.id]
+      }));
+    }
+  }, [enrollment.completedStepIds, enrollment.activeSyllabusId, syllabi]);
 
   return (
     <StoreContext.Provider
