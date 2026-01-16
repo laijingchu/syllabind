@@ -118,38 +118,40 @@ export default function SyllabusOverview() {
             )}
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top" align="center" className="p-4 w-64 space-y-3 bg-white text-popover-foreground border shadow-xl">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-12 w-12">
+        <TooltipContent side="top" align="center" className="p-3 w-60 bg-popover text-popover-foreground border shadow-xl">
+          <div className="flex items-start gap-3">
+            <Avatar className="h-9 w-9 shrink-0 border border-border/50 mt-0.5">
               <AvatarImage src={learner.user.avatarUrl} />
               <AvatarFallback>{learner.user.name.charAt(0)}</AvatarFallback>
             </Avatar>
-            <div>
-              <p className="font-medium text-sm">{learner.user.name}</p>
-              {learner.user.bio && <p className="text-xs text-muted-foreground line-clamp-2">{learner.user.bio}</p>}
+            <div className="flex-1 space-y-1.5 min-w-0">
+              <div className="space-y-0.5">
+                <p className="font-medium text-sm leading-tight truncate">{learner.user.name}</p>
+                {learner.user.bio && <p className="text-xs text-muted-foreground line-clamp-2 leading-snug">{learner.user.bio}</p>}
+              </div>
+              <div className="flex gap-0.5 -ml-1">
+                {learner.user.linkedin && (
+                  <a href={`https://linkedin.com/in/${learner.user.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-[#0077b5] transition-colors">
+                    <Linkedin className="h-3.5 w-3.5" />
+                  </a>
+                )}
+                {learner.user.twitter && (
+                  <a href={`https://twitter.com/${learner.user.twitter}`} target="_blank" rel="noopener noreferrer" className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-[#1DA1F2] transition-colors">
+                    <Twitter className="h-3.5 w-3.5" />
+                  </a>
+                )}
+                {learner.user.threads && (
+                  <a href={`https://threads.net/@${learner.user.threads}`} target="_blank" rel="noopener noreferrer" className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+                    <MessageCircle className="h-3.5 w-3.5" />
+                  </a>
+                )}
+                 {learner.user.website && (
+                  <a href={learner.user.website} target="_blank" rel="noopener noreferrer" className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-primary transition-colors">
+                    <Globe className="h-3.5 w-3.5" />
+                  </a>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="flex gap-2 justify-start pt-1">
-            {learner.user.linkedin && (
-              <a href={`https://linkedin.com/in/${learner.user.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-[#0077b5] transition-colors ml-[-6px]">
-                <Linkedin className="h-4 w-4" />
-              </a>
-            )}
-            {learner.user.twitter && (
-              <a href={`https://twitter.com/${learner.user.twitter}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-[#1DA1F2] transition-colors">
-                <Twitter className="h-4 w-4" />
-              </a>
-            )}
-            {learner.user.threads && (
-              <a href={`https://threads.net/@${learner.user.threads}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-black dark:hover:text-white transition-colors">
-                <MessageCircle className="h-4 w-4" />
-              </a>
-            )}
-             {learner.user.website && (
-              <a href={learner.user.website} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-primary transition-colors">
-                <Globe className="h-4 w-4" />
-              </a>
-            )}
           </div>
         </TooltipContent>
       </Tooltip>
