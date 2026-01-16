@@ -1,10 +1,64 @@
-import { Syllabus, User, Enrollment } from './types';
+import { Syllabus, User, Enrollment, LearnerProfile } from './types';
 
 export const MOCK_USER: User = {
   id: 'user-1',
   name: 'Alex Learner',
   isCreator: false,
+  bio: 'Lifelong learner passionate about technology and design.',
+  linkedin: 'alexlearner',
+  twitter: 'alexlearner',
+  shareProfile: true,
 };
+
+export const MOCK_LEARNERS: LearnerProfile[] = [
+  {
+    user: {
+      id: 'user-2',
+      name: 'Sarah Chen',
+      isCreator: false,
+      avatarUrl: 'https://api.dicebear.com/7.x/notionists/svg?seed=Sarah',
+      bio: 'Product Designer at TechCo',
+      linkedin: 'sarahchen',
+      twitter: 'schen_design',
+    },
+    status: 'completed',
+    joinedDate: '2023-10-15',
+  },
+  {
+    user: {
+      id: 'user-3',
+      name: 'Marcus Johnson',
+      isCreator: false,
+      avatarUrl: 'https://api.dicebear.com/7.x/notionists/svg?seed=Marcus',
+      bio: 'Software Engineer learning design systems',
+      website: 'https://marcus.dev',
+    },
+    status: 'in-progress',
+    joinedDate: '2023-11-02',
+  },
+  {
+    user: {
+      id: 'user-4',
+      name: 'Emily Davis',
+      isCreator: false,
+      avatarUrl: 'https://api.dicebear.com/7.x/notionists/svg?seed=Emily',
+      bio: 'Marketing Specialist',
+      threads: 'emilyd_marketing',
+    },
+    status: 'in-progress',
+    joinedDate: '2023-11-10',
+  },
+  {
+    user: {
+      id: 'user-5',
+      name: 'David Wilson',
+      isCreator: false,
+      avatarUrl: 'https://api.dicebear.com/7.x/notionists/svg?seed=David',
+    },
+    status: 'completed',
+    joinedDate: '2023-09-20',
+  }
+];
 
 export const INITIAL_ENROLLMENT: Enrollment = {
   activeSyllabusId: null,

@@ -19,13 +19,15 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 import { cn, pluralize } from '@/lib/utils';
+import { LearnerProfile } from '@/lib/types';
 
 export default function SyllabusOverview() {
   const [match, params] = useRoute('/syllabus/:id');
-  const { getSyllabusById, enrollInSyllabus, enrollment, isStepCompleted, getExerciseText } = useStore();
+  const { getSyllabusById, enrollInSyllabus, enrollment, isStepCompleted, getExerciseText, getLearnersForSyllabus } = useStore();
   const [location, setLocation] = useLocation();
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -48,6 +50,10 @@ export default function SyllabusOverview() {
   const isActive = enrollment.activeSyllabusId === syllabus.id;
   const isCompleted = enrollment.completedSyllabusIds.includes(syllabus.id);
   const { getProgressForWeek } = useStore();
+
+  const learners = getLearnersForSyllabus(syllabus.id);
+  const inProgressLearners = learners.filter(l => l.status === 'in-progress');
+  const completedLearners = learners.filter(l => l.status === 'completed');
 
   const handleStartClick = () => {
     // If it's active and completed, we treat it as review mode, but let's check
@@ -85,6 +91,62 @@ export default function SyllabusOverview() {
     setShowConfirm(false);
     setLocation(`/syllabus/${syllabus.id}/week/1`);
   };
+
+  const LearnerAvatar = ({ learner }: { learner: LearnerProfile }) => (
+    <TooltipProvider delayDuration={0}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="group relative cursor-pointer">
+            <Avatar className="h-10 w-10 border-2 border-background ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
+              <AvatarImage src={learner.user.avatarUrl} alt={learner.user.name} />
+              <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                {learner.user.name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            {learner.status === 'completed' && (
+              <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-0.5 border border-background">
+                <Check className="h-2 w-2" />
+              </div>
+            )}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top" align="center" className="p-4 w-64 space-y-3">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-12 w-12">
+              <AvatarImage src={learner.user.avatarUrl} />
+              <AvatarFallback>{learner.user.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-medium text-sm">{learner.user.name}</p>
+              {learner.user.bio && <p className="text-xs text-muted-foreground line-clamp-2">{learner.user.bio}</p>}
+            </div>
+          </div>
+          <div className="flex gap-2 justify-center pt-1">
+            {learner.user.linkedin && (
+              <a href={`https://linkedin.com/in/${learner.user.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-[#0077b5] transition-colors">
+                <Linkedin className="h-4 w-4" />
+              </a>
+            )}
+            {learner.user.twitter && (
+              <a href={`https://twitter.com/${learner.user.twitter}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-[#1DA1F2] transition-colors">
+                <Twitter className="h-4 w-4" />
+              </a>
+            )}
+            {learner.user.threads && (
+              <a href={`https://threads.net/@${learner.user.threads}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-black dark:hover:text-white transition-colors">
+                <MessageCircle className="h-4 w-4" />
+              </a>
+            )}
+             {learner.user.website && (
+              <a href={learner.user.website} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-primary transition-colors">
+                <Globe className="h-4 w-4" />
+              </a>
+            )}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -259,6 +321,42 @@ export default function SyllabusOverview() {
                 "{creator.bio}"
               </p>
             </div>
+
+            {/* Classmates Section */}
+            {(inProgressLearners.length > 0 || completedLearners.length > 0) && (
+              <div className="pt-6 border-t space-y-4">
+                 <div className="flex justify-between items-baseline">
+                   <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Classmates</h4>
+                   <span className="text-xs text-muted-foreground">{learners.length} enrolled</span>
+                 </div>
+                 
+                 {inProgressLearners.length > 0 && (
+                   <div className="space-y-2">
+                     <p className="text-[10px] font-medium text-muted-foreground uppercase">In Progress</p>
+                     <div className="flex -space-x-2 overflow-hidden py-1">
+                       {inProgressLearners.map(learner => (
+                         <LearnerAvatar key={learner.user.id} learner={learner} />
+                       ))}
+                     </div>
+                   </div>
+                 )}
+
+                 {completedLearners.length > 0 && (
+                    <div className="space-y-2">
+                     <p className="text-[10px] font-medium text-muted-foreground uppercase">Completed</p>
+                     <div className="flex -space-x-2 overflow-hidden py-1">
+                       {completedLearners.map(learner => (
+                         <LearnerAvatar key={learner.user.id} learner={learner} />
+                       ))}
+                     </div>
+                   </div>
+                 )}
+                 
+                 <p className="text-xs text-muted-foreground">
+                   Connect with others learning {syllabus.title}.
+                 </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

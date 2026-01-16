@@ -17,6 +17,7 @@ import CreatorAnalytics from "@/pages/CreatorAnalytics";
 import CreatorProfile from "@/pages/CreatorProfile";
 import Marketing from "@/pages/Marketing";
 import Login from "@/pages/Login";
+import Profile from "@/pages/Profile";
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
   const { isAuthenticated } = useStore();
@@ -40,6 +41,7 @@ function Router() {
             <Route path="/syllabus/:id" component={SyllabusOverview} />
             <Route path="/syllabus/:id/week/:index" component={WeekView} />
             <Route path="/syllabus/:id/completed" component={Completion} />
+            <Route path="/profile" component={Profile} />
             
             <Route path="/creator" component={CreatorDashboard} />
             <Route path="/creator/syllabus/new" component={CreatorEditor} />

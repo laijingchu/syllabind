@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Syllabus, Enrollment } from './types';
-import { MOCK_USER, MOCK_SYLLABI, INITIAL_ENROLLMENT } from './mockData';
+import { User, Syllabus, Enrollment, LearnerProfile } from './types';
+import { MOCK_USER, MOCK_SYLLABI, INITIAL_ENROLLMENT, MOCK_LEARNERS } from './mockData';
 import { useLocation } from 'wouter';
 
 interface StoreContextType {
@@ -34,6 +34,7 @@ interface StoreContextType {
   getExerciseText: (stepId: string) => string | undefined;
   getProgressForWeek: (syllabusId: string, weekIndex: number) => number; // 0-100
   getOverallProgress: (syllabusId: string) => number; // 0-100
+  getLearnersForSyllabus: (syllabusId: string) => LearnerProfile[];
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -48,6 +49,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [syllabi, setSyllabi] = useState<Syllabus[]>(MOCK_SYLLABI);
   const [enrollment, setEnrollment] = useState<Enrollment>(INITIAL_ENROLLMENT);
   const [exerciseAnswers, setExerciseAnswers] = useState<Record<string, string>>({}); 
+  const [learners] = useState<LearnerProfile[]>(MOCK_LEARNERS);
 
   const login = (email: string) => {
     // Mock login - just restore the mock user but with provided email
@@ -160,6 +162,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
      return Math.round((completedCount / totalSteps.length) * 100);
   };
 
+  const getLearnersForSyllabus = (syllabusId: string) => {
+    // In a real app, this would filter by syllabus ID. 
+    // For mock, we just return the mock learners plus the current user if enrolled
+    const activeLearners = [...learners];
+    
+    // Add current user if enrolled and opted in
+    if (user && user.shareProfile && enrollment.activeSyllabusId === syllabusId) {
+       // Check if not already in list
+       if (!activeLearners.some(l => l.user.id === user.id)) {
+         activeLearners.push({
+           user: user,
+           status: getOverallProgress(syllabusId) === 100 ? 'completed' : 'in-progress',
+           joinedDate: new Date().toISOString()
+         });
+       }
+    }
+    return activeLearners;
+  };
+
   // Check for completion whenever steps change
   useEffect(() => {
     if (!enrollment.activeSyllabusId) return;
@@ -204,6 +225,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         getProgressForWeek,
         getOverallProgress,
         getExerciseText,
+        getLearnersForSyllabus,
       }}
     >
       {children}

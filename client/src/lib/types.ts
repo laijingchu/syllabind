@@ -43,4 +43,17 @@ export interface User {
   bio?: string;
   expertise?: string;
   avatarUrl?: string;
+  // Social links
+  linkedin?: string;
+  website?: string;
+  twitter?: string;
+  threads?: string;
+  // Preferences
+  shareProfile?: boolean;
+}
+
+export interface LearnerProfile {
+  user: User;
+  status: 'in-progress' | 'completed';
+  joinedDate: string;
 }
