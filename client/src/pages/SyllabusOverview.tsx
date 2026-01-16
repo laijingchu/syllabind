@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
@@ -367,8 +368,8 @@ export default function SyllabusOverview() {
                  {isActive && !isCompleted && (
                    <p className="text-xs text-center text-muted-foreground">You are currently enrolled.</p>
                  )}
-                 <div className="flex items-center space-x-2 bg-muted/40 p-2.5 rounded-md w-full justify-center">
-                    <Checkbox 
+                 <div className="flex items-center space-x-3 bg-muted/40 p-2.5 rounded-md w-full justify-center">
+                    <Switch 
                       id="share-profile" 
                       checked={currentUser?.shareProfile || false}
                       onCheckedChange={(checked) => {
