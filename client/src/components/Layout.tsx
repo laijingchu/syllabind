@@ -106,7 +106,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-4">
                 {location !== '/login' && (
                   <>
-                    <button 
+                    <Button 
+                      variant="outline"
                       onClick={() => {
                         const element = document.getElementById('curate');
                         if (element) {
@@ -115,10 +116,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
                           window.location.href = '/welcome#curate';
                         }
                       }}
-                      className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary hidden md:block"
+                      className="hidden md:inline-flex"
                     >
                       Apply to Curate
-                    </button>
+                    </Button>
                     <Link href="/login">
                       <Button variant="ghost">Log in</Button>
                     </Link>
