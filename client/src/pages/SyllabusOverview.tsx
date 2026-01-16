@@ -290,7 +290,7 @@ export default function SyllabusOverview() {
 
           {/* Classmates Section moved here */}
           {(inProgressLearners.length > 0 || completedLearners.length > 0) && (
-            <div className="pt-8 space-y-6">
+            <div id="classmates-section" className="pt-8 space-y-6 scroll-mt-24">
                <div className="flex justify-between items-baseline border-b pb-4">
                  <h2 className="text-2xl font-serif">Classmates</h2>
                  <span className="text-sm text-muted-foreground">{learners.length} enrolled</span>
@@ -356,7 +356,13 @@ export default function SyllabusOverview() {
                     <Checkbox 
                       id="share-profile" 
                       checked={currentUser?.shareProfile || false}
-                      onCheckedChange={(checked) => updateUser({ shareProfile: checked as boolean })}
+                      onCheckedChange={(checked) => {
+                        const isChecking = checked as boolean;
+                        updateUser({ shareProfile: isChecking });
+                        if (isChecking) {
+                          document.getElementById('classmates-section')?.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }}
                     />
                     <label
                       htmlFor="share-profile"
