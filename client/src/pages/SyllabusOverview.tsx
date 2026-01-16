@@ -165,8 +165,17 @@ export default function SyllabusOverview() {
         <div className="sticky top-24">
           <div className="border rounded-xl p-6 bg-card shadow-sm space-y-6">
             <div className="space-y-2">
-              <h3 className="font-medium text-lg">Ready to start?</h3>
-              <p className="text-sm text-muted-foreground">Commit to {syllabus.durationWeeks} weeks of focused learning.</p>
+              <h3 className="font-medium text-lg">
+                {isCompleted ? "Syllabind Completed" : isActive ? "Continue Learning" : "Ready to start?"}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {isCompleted 
+                  ? `You have successfully completed this ${syllabus.durationWeeks}-week course.` 
+                  : isActive 
+                    ? "Pick up where you left off." 
+                    : `Commit to ${syllabus.durationWeeks} weeks of focused learning.`
+                }
+              </p>
             </div>
             
             <Button size="lg" className="w-full" onClick={handleStartClick}>
