@@ -192,13 +192,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const allStepIds = activeWeeks.flatMap(w => w.steps.map(s => s.id));
     const allCompleted = allStepIds.every(id => enrollment.completedStepIds.includes(id));
 
+    let updates: Partial<Enrollment> = {};
+
     if (allCompleted && !enrollment.completedSyllabusIds.includes(syllabus.id)) {
+      updates.completedSyllabusIds = [...enrollment.completedSyllabusIds, syllabus.id];
+    }
+
+    // Check current week completion to advance index
+    const currentWeek = syllabus.weeks.find(w => w.index === enrollment.currentWeekIndex);
+    if (currentWeek && currentWeek.steps.length > 0) {
+        const isWeekDone = currentWeek.steps.every(s => enrollment.completedStepIds.includes(s.id));
+        // Only advance if we are not at the end
+        if (isWeekDone && enrollment.currentWeekIndex < syllabus.durationWeeks) {
+            updates.currentWeekIndex = enrollment.currentWeekIndex + 1;
+        }
+    }
+
+    if (Object.keys(updates).length > 0) {
       setEnrollment(prev => ({
         ...prev,
-        completedSyllabusIds: [...prev.completedSyllabusIds, syllabus.id]
+        ...updates
       }));
     }
-  }, [enrollment.completedStepIds, enrollment.activeSyllabusId, syllabi]);
+  }, [enrollment.completedStepIds, enrollment.activeSyllabusId, syllabi, enrollment.currentWeekIndex, enrollment.completedSyllabusIds]);
 
   return (
     <StoreContext.Provider
