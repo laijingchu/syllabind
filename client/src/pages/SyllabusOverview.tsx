@@ -311,9 +311,11 @@ export default function SyllabusOverview() {
                  {inProgressLearners.length > 0 && (
                    <div className="space-y-3">
                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">In Progress</p>
-                     <div className="flex -space-x-3 overflow-hidden py-1">
-                       {inProgressLearners.map(learner => (
-                         <LearnerAvatar key={learner.user.id} learner={learner} />
+                     <div className="flex -space-x-3 overflow-hidden py-1 pl-1">
+                       {inProgressLearners.map((learner, index) => (
+                         <div key={learner.user.id} style={{ zIndex: inProgressLearners.length - index, position: 'relative' }}>
+                            <LearnerAvatar learner={learner} />
+                         </div>
                        ))}
                      </div>
                    </div>
@@ -322,9 +324,11 @@ export default function SyllabusOverview() {
                  {completedLearners.length > 0 && (
                     <div className="space-y-3">
                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Completed</p>
-                     <div className="flex -space-x-3 overflow-hidden py-1">
-                       {completedLearners.map(learner => (
-                         <LearnerAvatar key={learner.user.id} learner={learner} />
+                     <div className="flex -space-x-3 overflow-hidden py-1 pl-1">
+                       {completedLearners.map((learner, index) => (
+                         <div key={learner.user.id} style={{ zIndex: completedLearners.length - index, position: 'relative' }}>
+                            <LearnerAvatar learner={learner} />
+                         </div>
                        ))}
                      </div>
                    </div>
