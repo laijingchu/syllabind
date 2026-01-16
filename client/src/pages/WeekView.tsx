@@ -5,10 +5,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ExternalLink, Lock, CheckCircle, ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Lock, CheckCircle, ChevronRight, ChevronLeft, Check, Link as LinkIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn, pluralize } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Input } from '@/components/ui/input';
 
 export default function WeekView() {
   const [match, params] = useRoute('/syllabus/:id/week/:index');
@@ -164,9 +165,9 @@ export default function WeekView() {
                       </div>
                       {!isDone ? (
                         <div className="space-y-3">
-                          <Textarea 
-                            placeholder="Type your reflection here..." 
-                            className="min-h-[100px] bg-background"
+                          <Input 
+                            placeholder="Paste your link here (e.g., https://...)" 
+                            className="bg-background"
                             value={exerciseText[step.id] || ''}
                             onChange={(e) => handleExerciseChange(step.id, e.target.value)}
                           />
@@ -178,9 +179,19 @@ export default function WeekView() {
                           </Button>
                         </div>
                       ) : (
-                        <div className="bg-background border p-4 rounded-lg text-sm text-muted-foreground">
-                           <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-primary">Your Answer</div>
-                           {exerciseText[step.id] || "Completed"}
+                        <div className="bg-background border p-4 rounded-lg text-sm text-muted-foreground flex items-center justify-between">
+                           <div>
+                             <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-primary">Your Link</div>
+                             <a 
+                               href={exerciseText[step.id]?.startsWith('http') ? exerciseText[step.id] : `https://${exerciseText[step.id]}`} 
+                               target="_blank" 
+                               rel="noopener noreferrer"
+                               className="text-primary hover:underline font-medium break-all"
+                             >
+                               {exerciseText[step.id]}
+                             </a>
+                           </div>
+                           <LinkIcon className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
                         </div>
                       )}
                     </div>
