@@ -213,7 +213,8 @@ export default function SyllabusOverview() {
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-              ))}
+              );
+            })}
             </Accordion>
           </div>
         </div>
