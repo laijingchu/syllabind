@@ -35,9 +35,7 @@ export default function Marketing() {
           <h1 className="text-5xl md:text-7xl font-serif font-medium tracking-tight text-foreground">
             Syllabind<span className="text-primary">.</span>
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground font-serif italic">
-            One calm syllabus through the chaos.
-          </p>
+          <p className="text-xl md:text-2xl text-muted-foreground font-serif italic">Stay on top of chaos with one calm syllabus at a time.</p>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Turn expert listicles into four-week learning journeys you can actually finish.
           </p>
@@ -83,7 +81,6 @@ export default function Marketing() {
            </div>
         </div>
       </section>
-
       {/* B. "Why" Section */}
       <section className="max-w-3xl mx-auto text-center space-y-6">
         <h2 className="text-3xl md:text-4xl font-serif">The internet made learning infinite.<br/>It also made it unbearable.</h2>
@@ -92,7 +89,6 @@ export default function Marketing() {
           The constant anxiety of being behind. We replaced the joy of learning with the stress of collecting.
         </p>
       </section>
-
       {/* C. "What is Syllabind" Section */}
       <section className="grid md:grid-cols-3 gap-8">
         <Card className="bg-secondary/30 border-transparent hover:bg-secondary/50 transition-colors">
@@ -123,7 +119,6 @@ export default function Marketing() {
           </CardContent>
         </Card>
       </section>
-
       {/* E. Split Section */}
       <section className="grid md:grid-cols-2 gap-12 items-center bg-card rounded-2xl border p-8 md:p-12 shadow-sm">
         <div className="space-y-6">
@@ -163,7 +158,6 @@ export default function Marketing() {
           </ul>
         </div>
       </section>
-
       {/* G. Early Access */}
       <section className="max-w-xl mx-auto text-center space-y-8 bg-primary/5 rounded-3xl p-8 md:p-12">
         <div className="space-y-4">
