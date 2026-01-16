@@ -175,7 +175,14 @@ export default function WeekView() {
                             onClick={() => handleExerciseSubmit(step.id)}
                             disabled={!exerciseText[step.id]?.trim()}
                           >
-                            Save & Mark Complete
+                            Save Link
+                          </Button>
+                          <Button 
+                            variant="ghost"
+                            onClick={() => markStepComplete(step.id)}
+                            className="ml-2"
+                          >
+                            Skip & Mark Complete
                           </Button>
                         </div>
                       ) : (
