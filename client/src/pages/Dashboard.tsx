@@ -48,12 +48,27 @@ export default function Dashboard() {
                   <Progress value={getOverallProgress(activeSyllabus.id)} className="h-2" />
                 </div>
                 
-                <Link href={`/syllabus/${activeSyllabus.id}/week/${enrollment.currentWeekIndex}`}>
-                  <Button size="lg" className="w-full md:w-auto shadow-lg shadow-primary/20">
-                    <PlayCircle className="mr-2 h-5 w-5" />
-                    Continue to Week {enrollment.currentWeekIndex}
-                  </Button>
-                </Link>
+                {getOverallProgress(activeSyllabus.id) === 100 ? (
+                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2">
+                    <div className="bg-primary text-primary-foreground h-10 w-10 rounded-full flex items-center justify-center shrink-0">
+                      <Award className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-primary">Syllabind Completed!</h3>
+                      <p className="text-xs text-muted-foreground">You've earned the completion badge.</p>
+                    </div>
+                    <Link href={`/syllabus/${activeSyllabus.id}/completed`}>
+                      <Button variant="outline" size="sm" className="ml-auto">View Certificate</Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <Link href={`/syllabus/${activeSyllabus.id}/week/${enrollment.currentWeekIndex}`}>
+                    <Button size="lg" className="w-full md:w-auto shadow-lg shadow-primary/20">
+                      <PlayCircle className="mr-2 h-5 w-5" />
+                      Continue to Week {enrollment.currentWeekIndex}
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
           </div>

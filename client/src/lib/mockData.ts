@@ -67,12 +67,42 @@ export const MOCK_SYLLABI: Syllabus[] = [
       {
         index: 3,
         title: 'Reclaiming Leisure',
-        steps: [],
+        steps: [
+            {
+                id: 'step-3-1',
+                type: 'reading',
+                title: 'The Value of Boredom',
+                url: 'https://example.com/boredom',
+                estimatedMinutes: 25,
+            },
+            {
+                id: 'step-3-2',
+                type: 'exercise',
+                title: 'A Walk Without Phone',
+                promptText: 'Go for a 30-minute walk without your phone. Notice 5 things you usually miss.',
+                estimatedMinutes: 30,
+            }
+        ],
       },
       {
         index: 4,
         title: 'Deep Work Habits',
-        steps: [],
+        steps: [
+            {
+                id: 'step-4-1',
+                type: 'reading',
+                title: 'Deep Work: Rules for Focused Success',
+                url: 'https://example.com/deepwork',
+                estimatedMinutes: 40,
+            },
+            {
+                id: 'step-4-2',
+                type: 'exercise',
+                title: 'Schedule Deep Work Blocks',
+                promptText: 'Plan your next week. Block out at least three 90-minute sessions for deep work.',
+                estimatedMinutes: 15,
+            }
+        ],
       },
     ],
   },
