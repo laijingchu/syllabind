@@ -1,4 +1,4 @@
-import { useRoute, useLocation } from 'wouter';
+import { useRoute, useLocation, Link } from 'wouter';
 import { useStore } from '@/lib/store';
 import { Syllabus, Week, Step, StepType } from '@/lib/types';
 import { useState, useEffect } from 'react';
@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trash2, Plus, GripVertical, Save, ArrowLeft } from 'lucide-react';
+import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
@@ -112,6 +112,13 @@ export default function CreatorEditor() {
             <h1 className="text-2xl font-serif">{isNew ? 'Create New Syllabind' : 'Edit Syllabind'}</h1>
          </div>
          <div className="flex gap-2">
+            {!isNew && (
+              <Link href={`/creator/syllabus/${params?.id}/analytics`}>
+                <Button variant="ghost">
+                  <BarChart2 className="mr-2 h-4 w-4" /> Analytics
+                </Button>
+              </Link>
+            )}
             <Button variant="outline" onClick={handleSave}>Save Draft</Button>
             <Button onClick={() => { setFormData({...formData, status: 'published'}); handleSave(); }}>Publish</Button>
          </div>

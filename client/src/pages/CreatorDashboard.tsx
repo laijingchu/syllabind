@@ -1,7 +1,7 @@
 import { useStore } from '@/lib/store';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit2, Eye } from 'lucide-react';
+import { Plus, Edit2, Eye, BarChart2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -47,6 +47,11 @@ export default function CreatorDashboard() {
                   <div className="text-sm font-medium">42 Learners</div>
                   <div className="text-xs text-muted-foreground">12 Active</div>
                 </div>
+                <Link href={`/creator/syllabus/${syllabus.id}/analytics`}>
+                  <Button variant="outline" size="sm">
+                    <BarChart2 className="mr-2 h-3 w-3" /> Analytics
+                  </Button>
+                </Link>
                 <Link href={`/creator/syllabus/${syllabus.id}/edit`}>
                   <Button variant="outline" size="sm">
                     <Edit2 className="mr-2 h-3 w-3" /> Edit

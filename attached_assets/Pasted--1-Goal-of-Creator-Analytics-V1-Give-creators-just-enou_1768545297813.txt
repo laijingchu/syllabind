@@ -1,0 +1,169 @@
+### 1. Goal of Creator Analytics (V1)
+
+Give creators **just enough data** to answer:
+
+1. Are people actually starting my Syllabind?  
+2. Are they finishing?  
+3. Where do they fall off?  
+
+No heavy dashboards, no cohorts, just a few honest numbers.
+
+---
+
+### 2. Where analytics lives
+
+**Page:** `CreatorAnalyticsPage` or a tab on the Syllabus editor
+
+- Route: `/creator/syllabus/:id/analytics`
+- Entry points:
+    - From Creator Dashboard row: button **“Analytics”**
+    - From Syllabus Editor: top-right tab **“Analytics”**
+
+---
+
+### 3. Metrics to show (per Syllabind)
+
+#### 3.1 High-level counters
+
+At the top:
+
+1. **Learners started**  
+    - Definition: number of unique learners who have ever started this Syllabind.
+    - Label: `Learners started: 127`
+2. **Learners completed**  
+    - Definition: unique learners with this Syllabind marked `completed`.
+    - Label: `Learners completed: 43`
+3. **Completion rate**  
+    - `completionRate = learnersCompleted / learnersStarted`
+    - Label: `Completion rate: 34%`
+4. **Average progress** (optional but nice)  
+    - Average % of steps completed across all learners who started.
+    - Label: `Average progress: 62% of steps`
+
+Frontend-only version: you can **fake these numbers** from a mock dataset.
+
+---
+
+#### 3.2 Week‑by‑week drop-off
+
+Show a simple bar/step chart:
+
+- Title: **How far learners get**
+- For each week `1..durationWeeks`, show % of learners who reached that week at least once.
+
+Example display:
+
+- Week 1 – `100%` (everyone starts here)
+- Week 2 – `62%`
+- Week 3 – `47%`
+- Week 4 – `34%`
+
+Under the chart:
+
+- Text:
+    
+    `Most learners stop between Week 1 and Week 2.` (just pick the steepest drop).
+    
+
+Frontend: compute this from mock `enrollments` + `stepProgress` or hard-code for now.
+
+---
+
+#### 3.3 “Most common dropout spot”
+
+We keep it very simple:
+
+- Title: **Most common dropout step**
+- Show:
+    - Week number
+    - Step title
+
+Example:
+
+> **Most common dropout step:**
+> 
+
+> Week 2 – “Read: Long industry report on AI adoption”
+> 
+
+This can be calculated as:
+
+- For each step, count “learners who reached this step but did not complete it and didn’t complete the syllabus”.
+- Pick the step with the highest count.
+
+For frontend only, you can mock: pick a step in Week 2 and label it as the top dropout.
+
+---
+
+### 4. Page layout (wireframe in words)
+
+**Top:**
+
+- Syllabus title
+- Status tag: Draft / Published
+
+**Section 1: Key stats (cards)**
+
+- Card 1: Learners started
+- Card 2: Learners completed
+- Card 3: Completion rate
+- Card 4 (optional): Average progress
+
+**Section 2: Progress through weeks**
+
+- Heading: “How far learners get”
+- Bar chart or horizontal bars per week with %.
+- Caption line describing main drop-off.
+
+**Section 3: Dropout insight**
+
+- Heading: “Most common dropout spot”
+- Highlighted week + step title.
+- Small helper text:
+    - `Consider shortening, replacing, or moving this step if it’s too heavy for most learners.`
+
+Later, you can add:
+
+- A basic list: “Other friction points” (2–3 next worst steps).
+
+---
+
+### 5. Interactions
+
+- If there is **no data yet** (0 learners started):
+    - Replace numbers with:
+        - `–` or `0`
+        - Empty state text: *“No learners have started this Syllabind yet. Once people begin, you’ll see starts, completions, and drop-off here.”*
+- Filters (optional, can skip for V1):
+    - Time range (Last 30 days / All-time).
+    - For now, default to **All-time** only.
+
+---
+
+### 6. Frontend-only implementation notes
+
+Since you’re only building client side now:
+
+- Represent “analytics data” as a **mock object**:
+
+```tsx
+type SyllabusAnalytics = {
+  syllabusId: string;
+  learnersStarted: number;
+  learnersCompleted: number;
+  completionRate: number; // 0–1
+  averageProgress: number; // 0–1
+  weekReachPercentages: number[]; // [1.0, 0.62, 0.47, 0.34]
+  topDropoutStep: {
+    weekIndex: number;
+    stepId: string;
+    stepTitle: string;
+  } | null;
+};
+```
+
+- In `CreatorAnalyticsPage`, you:
+    - Look up `SyllabusAnalytics` for the current syllabus id.
+    - Render the cards / chart / dropout block.
+
+When you later wire up a backend, you can use this exact shape for a `/api/creator/syllabus/:id/analytics` response.
