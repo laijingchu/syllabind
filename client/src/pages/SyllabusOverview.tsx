@@ -357,11 +357,8 @@ export default function SyllabusOverview() {
                       id="share-profile" 
                       checked={currentUser?.shareProfile || false}
                       onCheckedChange={(checked) => {
-                        const isChecking = checked as boolean;
-                        updateUser({ shareProfile: isChecking });
-                        if (isChecking) {
-                          document.getElementById('classmates-section')?.scrollIntoView({ behavior: 'smooth' });
-                        }
+                        updateUser({ shareProfile: checked as boolean });
+                        document.getElementById('classmates-section')?.scrollIntoView({ behavior: 'smooth' });
                       }}
                     />
                     <label
