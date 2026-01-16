@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'wouter';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
-import { BookOpen, User, LogOut, PenTool } from 'lucide-react';
+import { BookOpen, User, LogOut, PenTool, Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,7 +15,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, logout, toggleCreatorMode } = useStore();
+  const { user, isAuthenticated, logout, toggleCreatorMode, completeActiveSyllabus } = useStore();
   const [location] = useLocation();
 
   return (
@@ -88,6 +88,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         <span>Switch to Creator</span>
                       </>
                     )}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={completeActiveSyllabus}>
+                    <Bug className="mr-2 h-4 w-4" />
+                    <span>Debug: Complete Syllabus</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={logout}>

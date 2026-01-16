@@ -24,6 +24,7 @@ interface StoreContextType {
   // Creator Actions
   createSyllabus: (syllabus: Syllabus) => void;
   updateSyllabus: (syllabus: Syllabus) => void;
+  completeActiveSyllabus: () => void; // Debug tool
   
   // Helpers
   getActiveSyllabus: () => Syllabus | undefined;
@@ -112,6 +113,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setSyllabi(prev => prev.map(s => s.id === updatedSyllabus.id ? updatedSyllabus : s));
   };
 
+  const completeActiveSyllabus = () => {
+    if (!enrollment.activeSyllabusId) return;
+    const syllabus = syllabi.find(s => s.id === enrollment.activeSyllabusId);
+    if (!syllabus) return;
+
+    const allStepIds = syllabus.weeks.flatMap(w => w.steps.map(s => s.id));
+    setEnrollment(prev => ({
+      ...prev,
+      currentWeekIndex: syllabus.durationWeeks,
+      completedStepIds: Array.from(new Set([...prev.completedStepIds, ...allStepIds]))
+    }));
+  };
+
   const getActiveSyllabus = () => syllabi.find(s => s.id === enrollment.activeSyllabusId);
   const getSyllabusById = (id: string) => syllabi.find(s => s.id === id);
   const isStepCompleted = (stepId: string) => enrollment.completedStepIds.includes(stepId);
@@ -154,6 +168,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         saveExercise,
         createSyllabus,
         updateSyllabus,
+        completeActiveSyllabus,
         getActiveSyllabus,
         getSyllabusById,
         isStepCompleted,
