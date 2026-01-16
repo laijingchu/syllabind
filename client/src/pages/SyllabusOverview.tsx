@@ -110,7 +110,7 @@ export default function SyllabusOverview() {
             )}
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top" align="center" className="p-4 w-64 space-y-3">
+        <TooltipContent side="top" align="center" className="p-4 w-64 space-y-3 bg-popover text-popover-foreground border shadow-xl">
           <div className="flex items-center gap-3">
             <Avatar className="h-12 w-12">
               <AvatarImage src={learner.user.avatarUrl} />
