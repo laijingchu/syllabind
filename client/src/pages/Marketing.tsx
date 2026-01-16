@@ -208,6 +208,11 @@ export default function Marketing() {
               </li>
             ))}
           </ul>
+          <div className="pt-2">
+            <Link href="/login?mode=signup">
+              <Button size="lg" className="w-full sm:w-auto">Sign up</Button>
+            </Link>
+          </div>
         </div>
         <div className="space-y-6 border-t md:border-t-0 md:border-l border-border pt-8 md:pt-0 md:pl-12">
            <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
@@ -226,6 +231,11 @@ export default function Marketing() {
               </li>
             ))}
           </ul>
+          <div className="pt-2">
+            <a href="#curate">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto">Apply to curate</Button>
+            </a>
+          </div>
         </div>
       </section>
 
