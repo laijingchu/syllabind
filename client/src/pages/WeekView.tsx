@@ -90,9 +90,9 @@ export default function WeekView() {
   return (
     <div className="max-w-3xl mx-auto pb-20">
       <header className="mb-10">
-        <Link href="/">
+        <Link href={`/syllabus/${syllabus.id}`}>
           <a className="text-sm text-muted-foreground hover:text-primary mb-4 flex items-center gap-1 transition-colors">
-            <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+            <ArrowLeft className="h-4 w-4" /> Back to Syllabus Overview
           </a>
         </Link>
         <div className="flex justify-between items-end mb-4">
