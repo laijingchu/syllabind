@@ -15,12 +15,23 @@ export default function Dashboard() {
     .map(id => getSyllabusById(id))
     .filter((s): s is typeof s & {} => !!s); // Type guard
 
+  const isCompleted = activeSyllabus && getOverallProgress(activeSyllabus.id) === 100;
+  
+  const suggestedSyllabi = syllabi
+    .filter(s => 
+      (!activeSyllabus || s.id !== activeSyllabus.id) && 
+      !enrollment.completedSyllabusIds.includes(s.id)
+    )
+    .slice(0, 3);
+
   return (
     <div className="max-w-4xl mx-auto space-y-12">
       <section className="space-y-6">
         <header>
           <h1 className="text-3xl font-serif text-foreground mb-2">Current Focus</h1>
-          <p className="text-muted-foreground">Pick up where you left off.</p>
+          <p className="text-muted-foreground">
+            {isCompleted ? "Start new syllabind" : "Pick up where you left off."}
+          </p>
         </header>
 
         {activeSyllabus ? (
@@ -67,19 +78,35 @@ export default function Dashboard() {
                 </div>
                 
                 {getOverallProgress(activeSyllabus.id) === 100 ? (
-                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4 animate-in fade-in slide-in-from-bottom-2">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-primary text-primary-foreground h-10 w-10 rounded-full flex items-center justify-center shrink-0">
-                        <Award className="h-6 w-6" />
+                  <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2">
+                    <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-primary text-primary-foreground h-10 w-10 rounded-full flex items-center justify-center shrink-0">
+                          <Award className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-primary">Syllabind Completed!</h3>
+                          <p className="text-xs text-muted-foreground">You've earned the completion badge.</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-medium text-primary">Syllabind Completed!</h3>
-                        <p className="text-xs text-muted-foreground">You've earned the completion badge.</p>
-                      </div>
+                      <Link href={`/syllabus/${activeSyllabus.id}/completed`} className="w-full sm:w-auto sm:ml-auto">
+                        <Button variant="outline" size="sm" className="w-full sm:w-auto">View Certificate</Button>
+                      </Link>
                     </div>
-                    <Link href={`/syllabus/${activeSyllabus.id}/completed`} className="w-full sm:w-auto sm:ml-auto">
-                      <Button variant="outline" size="sm" className="w-full sm:w-auto">View Certificate</Button>
-                    </Link>
+
+                    {suggestedSyllabi.length > 0 && (
+                      <div className="space-y-4 pt-4 border-t border-dashed">
+                        <div className="flex justify-between items-center">
+                          <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Start Something New</h4>
+                          <Link href="/catalog" className="text-sm text-primary hover:underline">Browse Catalog &rarr;</Link>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {suggestedSyllabi.map(syllabus => (
+                            <SyllabusCard key={syllabus.id} syllabus={syllabus} className="h-full text-left" />
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <Link href={`/syllabus/${activeSyllabus.id}/week/${enrollment.currentWeekIndex}`}>
