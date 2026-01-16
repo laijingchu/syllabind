@@ -182,7 +182,7 @@ export default function SyllabusOverview() {
               {isActive ? 'Continue Learning' : isCompleted ? 'Review Syllabus' : 'Start this Syllabind'}
             </Button>
             
-            {isActive && (
+            {isActive && !isCompleted && (
                <p className="text-xs text-center text-muted-foreground">You are currently enrolled.</p>
             )}
           </div>
