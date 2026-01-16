@@ -154,6 +154,35 @@ export default function Marketing() {
           </CardContent>
         </Card>
       </section>
+      {/* D. Calm Learning Principles */}
+      <section className="max-w-4xl mx-auto space-y-12">
+        <div className="text-center space-y-4">
+          <h2 className="text-3xl font-serif">Calm Learning Principles</h2>
+          <p className="text-muted-foreground text-lg">We designed Syllabind to be the antidote to information overload.</p>
+        </div>
+        
+        <div className="grid md:grid-cols-2 gap-x-12 gap-y-10">
+           {[
+             { title: "One syllabus at a time", desc: "Each learner can have only one active Syllabind. Finish it before you start another." },
+             { title: "Four weeks max", desc: "Long enough to go deep, short enough to actually finish. No endless courses." },
+             { title: "Weekly time caps", desc: "Respect your time. ~2h reading + ~2h exercises per week. Quality over quantity." },
+             { title: "No previewing ahead", desc: "Stay present. Future weeks unlock only when you reach them." },
+             { title: "Active > Passive", desc: "Don't just consume. Every few readings includes a prompt to apply what you learned." },
+             { title: "Trackable completion", desc: "A clear finish line. Earn your badge when all steps and submissions are done." }
+           ].map((item, i) => (
+             <div key={i} className="flex gap-4">
+               <div className="h-8 w-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-serif font-medium shrink-0">
+                 {i + 1}
+               </div>
+               <div>
+                 <h3 className="font-medium text-lg mb-1">{item.title}</h3>
+                 <p className="text-muted-foreground leading-relaxed">{item.desc}</p>
+               </div>
+             </div>
+           ))}
+        </div>
+      </section>
+
       {/* E. Split Section */}
       <section className="grid md:grid-cols-2 gap-12 items-center bg-card rounded-2xl border p-8 md:p-12 shadow-sm">
         <div className="space-y-6">
@@ -193,6 +222,37 @@ export default function Marketing() {
           </ul>
         </div>
       </section>
+
+      {/* F. Testimonials */}
+      <section className="space-y-12">
+        <h2 className="text-3xl font-serif text-center">What early learners say</h2>
+        <div className="grid md:grid-cols-3 gap-6">
+          {[
+            { quote: "Finally, I finished a course on AI instead of just bookmarking 50 threads about it.", author: "Sarah J.", role: "Product Manager" },
+            { quote: "The 'one at a time' rule is genius. It forced me to focus and actually do the work.", author: "David K.", role: "Developer" },
+            { quote: "I love that I can't jump ahead. It makes me enjoy the current week's readings more.", author: "Elena R.", role: "Designer" }
+          ].map((t, i) => (
+            <Card key={i} className="bg-muted/30 border-none shadow-none">
+              <CardContent className="pt-6 space-y-4">
+                <div className="text-primary text-4xl font-serif leading-none opacity-20">"</div>
+                <p className="text-lg italic text-muted-foreground relative z-10 -mt-4 mb-4">
+                   {t.quote}
+                </p>
+                <div className="flex items-center gap-3 pt-4 border-t border-border/50">
+                   <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                      {t.author.charAt(0)}
+                   </div>
+                   <div>
+                      <div className="font-medium text-sm">{t.author}</div>
+                      <div className="text-xs text-muted-foreground">{t.role}</div>
+                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
       {/* G. Early Access */}
       <section className="max-w-xl mx-auto text-center space-y-8 bg-primary/5 rounded-3xl p-8 md:p-12">
         <div className="space-y-4">
