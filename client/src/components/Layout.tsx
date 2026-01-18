@@ -33,7 +33,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </Link>
             
             <nav className="hidden md:flex items-center gap-6">
-              {isAuthenticated && !user?.isCreator && (
+              {isAuthenticated && (
                 <>
                   <Link href="/">
                     <a className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/" ? "text-primary" : "text-muted-foreground")}>
@@ -45,13 +45,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       Catalog
                     </a>
                   </Link>
+                  {user?.isCreator && (
+                    <Link href="/creator">
+                      <a className={cn("text-sm font-medium transition-colors hover:text-primary", location.startsWith("/creator") ? "text-primary" : "text-muted-foreground")}>
+                        My Syllabind
+                      </a>
+                    </Link>
+                  )}
                 </>
-              )}
-              
-              {isAuthenticated && user?.isCreator && (
-                <Link href="/creator">
-                  <a className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/creator" ? "text-primary" : "text-muted-foreground")}>My Syllabinds</a>
-                </Link>
               )}
             </nav>
           </div>
