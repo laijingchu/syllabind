@@ -96,7 +96,7 @@ export default function CreatorLearners() {
       <div className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-             <Link href={`/creator/editor/${syllabus.id}`}>
+             <Link href={`/creator/syllabus/${syllabus.id}/edit`}>
                <Button variant="ghost" size="sm" className="gap-2">
                  <ArrowLeft className="h-4 w-4" /> Back to Editor
                </Button>

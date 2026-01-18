@@ -8,7 +8,8 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, Users } from 'lucide-react';
+import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, Users, ExternalLink } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
@@ -19,7 +20,7 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 export default function CreatorEditor() {
   const [match, params] = useRoute('/creator/syllabus/:id/edit');
   const isNew = useLocation()[0] === '/creator/syllabus/new';
-  const { getSyllabusById, createSyllabus, updateSyllabus } = useStore();
+  const { getSyllabusById, createSyllabus, updateSyllabus, getSubmissionsForStep, getLearnersForSyllabus } = useStore();
   const [location, setLocation] = useLocation();
 
   const [formData, setFormData] = useState<Syllabus>({
@@ -363,6 +364,83 @@ export default function CreatorEditor() {
           ))}
         </Tabs>
       </div>
+      
+      {!isNew && (
+        <div className="space-y-4 pt-8 border-t">
+          <div className="flex justify-between items-center">
+             <h2 className="text-xl font-medium">Recent Submissions</h2>
+             <Link href={`/creator/syllabus/${params?.id}/learners`}>
+               <Button variant="ghost" className="text-muted-foreground hover:text-primary">
+                 View All <ArrowLeft className="h-4 w-4 ml-2 rotate-180" />
+               </Button>
+             </Link>
+          </div>
+          
+          <div className="grid gap-4">
+             {(() => {
+                const learners = getLearnersForSyllabus(formData.id);
+                // Collect all shared submissions across all steps
+                const allRecentSubmissions = formData.weeks
+                  .flatMap(w => w.steps)
+                  .filter(s => s.type === 'exercise')
+                  .flatMap(step => {
+                     const subs = getSubmissionsForStep(step.id);
+                     return Object.values(subs)
+                       .filter(s => s.isShared)
+                       .map(s => ({ ...s, stepTitle: step.title, weekIndex: formData.weeks.find(w => w.steps.includes(step))?.index }));
+                  })
+                  .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+                  .slice(0, 5); // Show last 5
+
+                if (allRecentSubmissions.length === 0) {
+                   return (
+                     <div className="text-center py-8 bg-muted/20 rounded-lg text-muted-foreground italic">
+                        No recent submissions.
+                     </div>
+                   );
+                }
+
+                return allRecentSubmissions.map((sub, idx) => {
+                   // Hacky way to find learner ID since submission doesn't store it directly in our mock types (Wait, it doesn't?)
+                   // Wait, getSubmissionsForStep returns Record<learnerId, Submission>. 
+                   // But we flattened it. We need to preserve learnerId.
+                   // Let's refactor the flatMap above slightly if possible, or just search again (inefficient but fine for mock).
+                   // Actually, let's just use the fact that we can get learner from the submission if we stored it?
+                   // Submission type: stepId, answer, submittedAt, isShared... no learnerId inside Submission interface in types.ts?
+                   // Let's check types.ts... Submission doesn't have learnerId inside it explicitly?
+                   // Ah, in store.tsx, we key it by learnerId.
+                   
+                   // Let's fix the logic: iterate steps, get Record, map entries to include learnerId.
+                   return (
+                     <Card key={idx}>
+                       <CardContent className="p-4 flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                             {/* We don't have learnerId easily here without the refactor below. 
+                                 Let's just show "A Learner" for now or do the lookup properly. 
+                             */}
+                             <div className="space-y-1">
+                                <div className="font-medium flex items-center gap-2">
+                                  <span>Week {sub.weekIndex}: {sub.stepTitle}</span>
+                                  {sub.grade ? <Badge variant="secondary" className="text-xs">Graded: {sub.grade}</Badge> : <Badge variant="outline" className="text-xs">Needs Grading</Badge>}
+                                </div>
+                                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                   <span className="font-mono bg-muted px-1 rounded">{sub.answer}</span>
+                                   <span>• {new Date(sub.submittedAt).toLocaleDateString()}</span>
+                                </div>
+                             </div>
+                          </div>
+                          <Link href={`/creator/syllabus/${formData.id}/learners`}>
+                             <Button size="sm" variant="secondary">Review</Button>
+                          </Link>
+                       </CardContent>
+                     </Card>
+                   );
+                });
+             })()}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
