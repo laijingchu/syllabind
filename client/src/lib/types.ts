@@ -8,6 +8,12 @@ export interface Step {
   title: string;
   url?: string; // For readings
   note?: string; // Short context
+  
+  // New Metadata Fields
+  author?: string; 
+  creationDate?: string; // or publish date
+  mediaType?: 'Book' | 'Youtube video' | 'Blog/Article' | 'Podcast';
+
   promptText?: string; // For exercises
   estimatedMinutes?: number;
 }

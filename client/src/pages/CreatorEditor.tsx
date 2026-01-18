@@ -8,7 +8,7 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, Users, ExternalLink } from 'lucide-react';
+import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, Users, ExternalLink, Wand2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -152,6 +152,31 @@ export default function CreatorEditor() {
       description: "Share this link with anyone to preview your syllabus before publishing.",
       duration: 3000,
     });
+  };
+
+  const handleAutoFill = async (weekIndex: number, stepId: string) => {
+    // Mock auto-fill logic
+    // In a real app, this would call an API with the URL to scrape metadata
+    const step = formData.weeks.find(w => w.index === weekIndex)?.steps.find(s => s.id === stepId);
+    if (!step?.url) return;
+
+    toast({ title: "Analyzing URL...", description: "AI is extracting metadata from the link." });
+    
+    // Simulate AI delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Mock data based on simple heuristic or random
+    const isBook = step.url.includes('amazon') || step.url.includes('goodreads');
+    const isVideo = step.url.includes('youtube') || step.url.includes('vimeo');
+    
+    updateStep(weekIndex, stepId, 'title', isBook ? "The Design of Everyday Things" : "Understanding Cognitive Load");
+    updateStep(weekIndex, stepId, 'author', isBook ? "Don Norman" : "Jane Doe");
+    updateStep(weekIndex, stepId, 'creationDate', "2023-05-15");
+    updateStep(weekIndex, stepId, 'mediaType', isBook ? "Book" : isVideo ? "Youtube video" : "Blog/Article");
+    updateStep(weekIndex, stepId, 'note', "<p>This is a seminal work in the field. Pay attention to the concept of affordances.</p>");
+    updateStep(weekIndex, stepId, 'estimatedMinutes', 45);
+
+    toast({ title: "Metadata Extracted", description: "Fields have been auto-filled." });
   };
 
   return (
@@ -313,8 +338,59 @@ export default function CreatorEditor() {
                                <>
                                  <div className="grid gap-2">
                                    <Label>URL</Label>
-                                   <Input value={step.url || ''} onChange={e => updateStep(week.index, step.id, 'url', e.target.value)} placeholder="https://..." />
+                                   <div className="flex gap-2">
+                                     <Input 
+                                       value={step.url || ''} 
+                                       onChange={e => updateStep(week.index, step.id, 'url', e.target.value)} 
+                                       placeholder="https://..." 
+                                     />
+                                     <Button 
+                                       variant="secondary" 
+                                       size="icon"
+                                       onClick={() => handleAutoFill(week.index, step.id)}
+                                       disabled={!step.url}
+                                       title="Auto-fill with AI"
+                                     >
+                                       <Wand2 className="h-4 w-4" />
+                                     </Button>
+                                   </div>
                                  </div>
+                                 
+                                 <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid gap-2">
+                                      <Label>Author</Label>
+                                      <Input 
+                                        value={step.author || ''} 
+                                        onChange={e => updateStep(week.index, step.id, 'author', e.target.value)} 
+                                        placeholder="e.g. Plato" 
+                                      />
+                                    </div>
+                                    <div className="grid gap-2">
+                                      <Label>Creation/Publish Date</Label>
+                                      <Input 
+                                        type="date"
+                                        value={step.creationDate || ''} 
+                                        onChange={e => updateStep(week.index, step.id, 'creationDate', e.target.value)} 
+                                      />
+                                    </div>
+                                 </div>
+
+                                 <div className="grid gap-2">
+                                    <Label>Media Type</Label>
+                                    <Select 
+                                      value={step.mediaType || 'Blog/Article'} 
+                                      onValueChange={(v: any) => updateStep(week.index, step.id, 'mediaType', v)}
+                                    >
+                                      <SelectTrigger><SelectValue /></SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Book">Book</SelectItem>
+                                        <SelectItem value="Youtube video">Youtube video</SelectItem>
+                                        <SelectItem value="Blog/Article">Blog/Article</SelectItem>
+                                        <SelectItem value="Podcast">Podcast</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                 </div>
+
                                  <div className="grid gap-2">
                                    <Label>Description</Label>
                                    <RichTextEditor 
