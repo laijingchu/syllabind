@@ -15,6 +15,7 @@ export interface Step {
 export interface Week {
   index: number; // 1-4
   title?: string; // e.g. "Foundations"
+  description?: string; // Weekly summary
   steps: Step[];
 }
 

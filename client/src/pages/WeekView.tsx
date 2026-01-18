@@ -99,6 +99,12 @@ export default function WeekView() {
           <div>
             <h2 className="text-sm font-medium text-primary uppercase tracking-wider mb-1">{syllabus.title}</h2>
             <h1 className="text-3xl font-serif">{week.title || pluralize(week.index, 'Week')}</h1>
+            {week.description && (
+              <div 
+                className="text-muted-foreground mt-2 prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 max-w-none text-base"
+                dangerouslySetInnerHTML={{ __html: week.description }}
+              />
+            )}
           </div>
           <div className="text-right">
              <div className="text-2xl font-mono font-medium">{progress}%</div>

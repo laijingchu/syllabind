@@ -220,6 +220,19 @@ export default function CreatorEditor() {
                       />
                     </div>
 
+                    <div className="space-y-2">
+                       <Label>Weekly Summary (Optional)</Label>
+                       <RichTextEditor
+                          value={week.description || ''}
+                          onChange={value => {
+                             const newWeeks = [...formData.weeks];
+                             newWeeks.find(w => w.index === week.index)!.description = value;
+                             setFormData({...formData, weeks: newWeeks});
+                          }}
+                          placeholder="What is the theme for this week?"
+                       />
+                    </div>
+
                     <div className="space-y-4 mt-6">
                       {week.steps.map((step, idx) => (
                         <div key={step.id} className="border rounded-lg p-4 bg-muted/20 relative group">
