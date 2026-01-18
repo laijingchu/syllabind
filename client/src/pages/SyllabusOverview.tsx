@@ -22,7 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle } from 'lucide-react';
+import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { cn, pluralize } from '@/lib/utils';
 import { LearnerProfile } from '@/lib/types';
@@ -37,6 +37,7 @@ export default function SyllabusOverview() {
 
   const syllabus = match && params?.id ? getSyllabusById(params.id) : undefined;
   const { user: currentUser } = useStore();
+  const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
 
   if (!syllabus) return <div className="text-center py-20">Syllabus not found</div>;
 
@@ -161,6 +162,14 @@ export default function SyllabusOverview() {
 
   return (
     <div className="max-w-4xl mx-auto">
+      {isPreview && (
+        <div className="mb-6 bg-amber-500/15 border border-amber-500/20 text-amber-600 dark:text-amber-500 px-4 py-3 rounded-lg flex items-center gap-3">
+          <AlertTriangle className="h-5 w-5 shrink-0" />
+          <p className="text-sm font-medium">
+            Draft Preview: You are viewing a private draft. This content is not yet public.
+          </p>
+        </div>
+      )}
       <div className="grid md:grid-cols-[2fr_1fr] gap-12 items-start">
         <div className="space-y-8">
           <div>
