@@ -1,4 +1,5 @@
-import { useEditor, EditorContent, Editor, BubbleMenu } from '@tiptap/react';
+import { useEditor, EditorContent, Editor } from '@tiptap/react';
+import { BubbleMenu } from '@tiptap/react/menus';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -32,7 +33,7 @@ const EditorBubbleMenu = ({ editor }: { editor: Editor }) => {
   };
 
   return (
-    <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} className="flex overflow-hidden rounded-md border bg-zinc-900 text-zinc-50 shadow-xl">
+    <BubbleMenu editor={editor} className="flex overflow-hidden rounded-md border bg-zinc-900 text-zinc-50 shadow-xl">
       <Button
         variant="ghost"
         size="sm"
