@@ -34,20 +34,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <nav className="hidden md:flex items-center gap-6">
               {isAuthenticated && (
                 <>
-                  {!user?.isCreator ? (
-                    <>
-                      <Link href="/">
-                        <a className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/" ? "text-primary" : "text-muted-foreground")}>
-                          Dashboard
-                        </a>
-                      </Link>
-                      <Link href="/catalog">
-                        <a className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/catalog" ? "text-primary" : "text-muted-foreground")}>
-                          Catalog
-                        </a>
-                      </Link>
-                    </>
-                  ) : (
+                  <Link href="/">
+                    <a className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/" ? "text-primary" : "text-muted-foreground")}>
+                      Dashboard
+                    </a>
+                  </Link>
+                  <Link href="/catalog">
+                    <a className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/catalog" ? "text-primary" : "text-muted-foreground")}>
+                      Catalog
+                    </a>
+                  </Link>
+                  {user?.isCreator && (
                     <Link href="/creator">
                       <a className={cn("text-sm font-medium transition-colors hover:text-primary", location.startsWith("/creator") ? "text-primary" : "text-muted-foreground")}>
                         Curator Studio
