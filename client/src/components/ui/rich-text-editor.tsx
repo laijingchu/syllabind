@@ -3,10 +3,11 @@ import { BubbleMenu } from '@tiptap/react/menus';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
-import { Bold, Italic, Link as LinkIcon, List, ListOrdered, Heading1, Heading2, Quote, CheckCircle2 } from 'lucide-react';
+import { Bold, Italic, Link as LinkIcon, List, ListOrdered, Heading1, Heading2, Quote, CheckCircle2, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from './button';
 import { cn } from '@/lib/utils';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from '@/hooks/use-toast';
 
 interface RichTextEditorProps {
   value: string;
@@ -87,6 +88,8 @@ const EditorBubbleMenu = ({ editor }: { editor: Editor }) => {
 };
 
 export function RichTextEditor({ value, onChange, placeholder, className, isSaving, lastSaved }: RichTextEditorProps) {
+  const [isImproving, setIsImproving] = useState(false);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -122,10 +125,46 @@ export function RichTextEditor({ value, onChange, placeholder, className, isSavi
     }
   }, [value, editor]);
 
+  const handleImproveWriting = async () => {
+    if (!editor || isImproving || editor.isEmpty) return;
+
+    setIsImproving(true);
+    // Simulate AI delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // In a real app, this would call an API
+    toast({ 
+      title: "Writing Improved", 
+      description: "Suggestions for clarity and grammar have been applied.",
+    });
+    
+    setIsImproving(false);
+  };
+
   return (
     <div className="group relative">
       {editor && <EditorBubbleMenu editor={editor} />}
-      <EditorContent editor={editor} className="[&_.ProseMirror]:min-h-[120px]" />
+      <div className="relative">
+        <EditorContent editor={editor} className="[&_.ProseMirror]:min-h-[120px]" />
+        
+        {/* Improve Writing Button */}
+        {editor && !editor.isEmpty && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary hover:bg-transparent"
+            onClick={handleImproveWriting}
+            disabled={isImproving}
+          >
+            {isImproving ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+            ) : (
+              <Sparkles className="h-4 w-4 mr-1.5" />
+            )}
+            <span className="text-xs">Improve writing</span>
+          </Button>
+        )}
+      </div>
       
       {/* Save indicator attached to the editor */}
       {(isSaving !== undefined || lastSaved !== undefined) && (
