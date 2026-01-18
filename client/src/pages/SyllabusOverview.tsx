@@ -177,9 +177,10 @@ export default function SyllabusOverview() {
              <h1 className="text-4xl md:text-5xl font-serif text-foreground mb-6 leading-tight">
                {syllabus.title}
              </h1>
-             <p className="text-xl text-muted-foreground leading-relaxed">
-               {syllabus.description}
-             </p>
+             <div 
+               className="text-xl text-muted-foreground leading-relaxed prose dark:prose-invert prose-p:my-2 prose-headings:my-3 prose-ul:list-disc prose-ul:pl-5 max-w-none"
+               dangerouslySetInnerHTML={{ __html: syllabus.description }}
+             />
           </div>
 
           <div className="flex gap-6 text-sm text-muted-foreground border-y py-6">

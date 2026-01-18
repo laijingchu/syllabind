@@ -4,7 +4,7 @@ import { Syllabus, Week, Step, StepType } from '@/lib/types';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -154,9 +154,9 @@ export default function CreatorEditor() {
           </div>
           <div className="space-y-2">
             <Label>Description</Label>
-            <Textarea 
+            <RichTextEditor 
               value={formData.description} 
-              onChange={e => setFormData({...formData, description: e.target.value})} 
+              onChange={(value: string) => setFormData({...formData, description: value})} 
               placeholder="What will they learn?"
             />
           </div>
@@ -253,7 +253,11 @@ export default function CreatorEditor() {
                              {step.type === 'exercise' && (
                                <div className="grid gap-2">
                                  <Label>Prompt</Label>
-                                 <Textarea value={step.promptText || ''} onChange={e => updateStep(week.index, step.id, 'promptText', e.target.value)} placeholder="What should they do?" />
+                                 <RichTextEditor 
+                                    value={step.promptText || ''} 
+                                    onChange={(value: string) => updateStep(week.index, step.id, 'promptText', value)} 
+                                    placeholder="What should they do?" 
+                                 />
                                </div>
                              )}
 

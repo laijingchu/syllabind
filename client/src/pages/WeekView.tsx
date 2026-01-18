@@ -170,9 +170,10 @@ export default function WeekView() {
 
                   {step.type === 'exercise' && (
                     <div className="mt-4 space-y-3">
-                      <div className="text-sm font-medium mb-2">
-                        {step.promptText}
-                      </div>
+                      <div 
+                        className="text-sm font-medium mb-2 prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 max-w-none"
+                        dangerouslySetInnerHTML={{ __html: step.promptText || '' }}
+                      />
                       {!isDone ? (
                         <div className="space-y-3">
                           <Input 
