@@ -163,18 +163,6 @@ export default function CreatorEditor() {
             <h1 className="text-2xl font-serif">{isNew ? 'Create New Syllabind' : 'Edit Syllabind'}</h1>
          </div>
          <div className="flex gap-2 items-center">
-            {lastSaved && (
-              <span className="text-xs text-muted-foreground mr-2 flex items-center gap-1.5 transition-opacity duration-500">
-                {isSaving ? (
-                  <>Saving...</>
-                ) : (
-                  <>
-                    <CheckCircle2 className="h-3 w-3 text-green-500" />
-                    Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </>
-                )}
-              </span>
-            )}
             {!isNew && (
               <>
                 <Button variant="outline" onClick={handleShareDraft} className="gap-2">
@@ -211,6 +199,8 @@ export default function CreatorEditor() {
               value={formData.description} 
               onChange={(value: string) => setFormData({...formData, description: value})} 
               placeholder="What will they learn?"
+              isSaving={isSaving}
+              lastSaved={lastSaved}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -283,6 +273,8 @@ export default function CreatorEditor() {
                              setFormData({...formData, weeks: newWeeks});
                           }}
                           placeholder="What is the theme for this week?"
+                          isSaving={isSaving}
+                          lastSaved={lastSaved}
                        />
                     </div>
 
@@ -321,6 +313,8 @@ export default function CreatorEditor() {
                                       value={step.note || ''} 
                                       onChange={(value: string) => updateStep(week.index, step.id, 'note', value)} 
                                       placeholder="Why should they read this?" 
+                                      isSaving={isSaving}
+                                      lastSaved={lastSaved}
                                    />
                                  </div>
                                </>
@@ -333,6 +327,8 @@ export default function CreatorEditor() {
                                     value={step.promptText || ''} 
                                     onChange={(value: string) => updateStep(week.index, step.id, 'promptText', value)} 
                                     placeholder="What should they do?" 
+                                    isSaving={isSaving}
+                                    lastSaved={lastSaved}
                                  />
                                </div>
                              )}
