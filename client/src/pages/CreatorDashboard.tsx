@@ -17,7 +17,7 @@ export default function CreatorDashboard() {
     <div className="space-y-8 max-w-5xl mx-auto">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-serif mb-1">Creator Studio</h1>
+          <h1 className="text-3xl font-serif mb-1">Curator Studio</h1>
           <p className="text-muted-foreground">Manage your syllabi and track learner progress.</p>
         </div>
         <div className="flex items-center gap-4">

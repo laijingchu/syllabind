@@ -28,7 +28,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <BookOpen className="h-6 w-6 text-primary" />
                 <span>Syllabind</span>
                 <span className="text-[10px] font-sans font-bold text-primary bg-primary/5 border border-primary/20 px-1.5 py-0.5 rounded-md ml-1.5 align-middle">BETA</span>
-                {user?.isCreator && <span className="text-xs font-sans bg-accent text-accent-foreground px-2 py-0.5 rounded-full ml-2">Creator</span>}
               </a>
             </Link>
             
@@ -48,7 +47,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   {user?.isCreator && (
                     <Link href="/creator">
                       <a className={cn("text-sm font-medium transition-colors hover:text-primary", location.startsWith("/creator") ? "text-primary" : "text-muted-foreground")}>
-                        My Syllabind
+                        Curator Studio
                       </a>
                     </Link>
                   )}
