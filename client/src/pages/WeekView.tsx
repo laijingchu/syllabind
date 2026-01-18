@@ -154,7 +154,12 @@ export default function WeekView() {
                     )}
                   </div>
                   
-                  {step.note && <p className="text-muted-foreground text-sm">{step.note}</p>}
+                  {step.note && (
+                    <div 
+                      className="text-muted-foreground text-sm prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 max-w-none"
+                      dangerouslySetInnerHTML={{ __html: step.note }}
+                    />
+                  )}
                   
                   {step.type === 'reading' && step.url && (
                     <a 

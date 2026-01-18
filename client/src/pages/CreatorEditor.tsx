@@ -244,10 +244,20 @@ export default function CreatorEditor() {
                              </div>
 
                              {step.type === 'reading' && (
-                               <div className="grid gap-2">
-                                 <Label>URL</Label>
-                                 <Input value={step.url || ''} onChange={e => updateStep(week.index, step.id, 'url', e.target.value)} placeholder="https://..." />
-                               </div>
+                               <>
+                                 <div className="grid gap-2">
+                                   <Label>URL</Label>
+                                   <Input value={step.url || ''} onChange={e => updateStep(week.index, step.id, 'url', e.target.value)} placeholder="https://..." />
+                                 </div>
+                                 <div className="grid gap-2">
+                                   <Label>Description</Label>
+                                   <RichTextEditor 
+                                      value={step.note || ''} 
+                                      onChange={(value: string) => updateStep(week.index, step.id, 'note', value)} 
+                                      placeholder="Why should they read this?" 
+                                   />
+                                 </div>
+                               </>
                              )}
 
                              {step.type === 'exercise' && (
