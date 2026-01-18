@@ -314,21 +314,22 @@ export default function CreatorEditor() {
                     <div className="space-y-8 mt-10">
                       {week.steps.map((step, idx) => (
                         <div key={step.id} className="border rounded-lg p-6 bg-muted/20 relative group">
-                          <Button 
-                             variant="ghost" 
-                             size="icon" 
-                             className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
-                             onClick={() => removeStep(week.index, step.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center justify-between mb-6">
+                             <div className="flex items-center gap-3">
+                               <Badge variant="outline" className="text-xs uppercase px-2 py-0.5 tracking-wider font-semibold">{step.type}</Badge>
+                               <span className="text-xs text-muted-foreground font-medium">Step {idx + 1}</span>
+                             </div>
+                             <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                onClick={() => removeStep(week.index, step.id)}
+                             >
+                               <Trash2 className="h-4 w-4" />
+                             </Button>
+                          </div>
                           
                           <div className="grid gap-8">
-                             <div className="flex items-center gap-2 mb-2">
-                               <Badge variant="outline" className="text-xs uppercase">{step.type}</Badge>
-                               <span className="text-xs text-muted-foreground">Step {idx + 1}</span>
-                             </div>
-                             
                              <div className="grid gap-2">
                                <Label>Title</Label>
                                <Input value={step.title} onChange={e => updateStep(week.index, step.id, 'title', e.target.value)} />
