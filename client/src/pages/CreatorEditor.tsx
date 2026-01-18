@@ -217,7 +217,7 @@ export default function CreatorEditor() {
         <CardHeader>
           <CardTitle>Basics</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-10">
           <div className="space-y-2">
             <Label>Title</Label>
             <Input 
@@ -236,7 +236,7 @@ export default function CreatorEditor() {
               lastSaved={lastSaved}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-10">
             <div className="space-y-2">
               <Label>Audience Level</Label>
               <Select 
@@ -280,9 +280,9 @@ export default function CreatorEditor() {
           </TabsList>
           
           {formData.weeks.map(week => (
-            <TabsContent key={week.index} value={`week-${week.index}`} className="space-y-4 mt-4">
+            <TabsContent key={week.index} value={`week-${week.index}`} className="space-y-10 mt-8">
               <Card>
-                 <CardContent className="pt-6 space-y-4">
+                 <CardContent className="pt-6 space-y-10">
                     <div className="space-y-2">
                       <Label>Week Title (Optional)</Label>
                       <Input 
@@ -311,9 +311,9 @@ export default function CreatorEditor() {
                        />
                     </div>
 
-                    <div className="space-y-4 mt-6">
+                    <div className="space-y-8 mt-10">
                       {week.steps.map((step, idx) => (
-                        <div key={step.id} className="border rounded-lg p-4 bg-muted/20 relative group">
+                        <div key={step.id} className="border rounded-lg p-6 bg-muted/20 relative group">
                           <Button 
                              variant="ghost" 
                              size="icon" 
@@ -323,7 +323,7 @@ export default function CreatorEditor() {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                           
-                          <div className="grid gap-4">
+                          <div className="grid gap-8">
                              <div className="flex items-center gap-2 mb-2">
                                <Badge variant="outline" className="text-xs uppercase">{step.type}</Badge>
                                <span className="text-xs text-muted-foreground">Step {idx + 1}</span>
@@ -356,7 +356,7 @@ export default function CreatorEditor() {
                                    </div>
                                  </div>
                                  
-                                 <div className="grid grid-cols-2 gap-4">
+                                 <div className="grid grid-cols-2 gap-8">
                                     <div className="grid gap-2">
                                       <Label>Author</Label>
                                       <Input 
