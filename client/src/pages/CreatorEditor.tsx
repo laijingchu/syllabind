@@ -8,7 +8,7 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2 } from 'lucide-react';
+import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
@@ -177,6 +177,13 @@ export default function CreatorEditor() {
             )}
             <Button variant="outline" onClick={handleSave}>Save Draft</Button>
             <Button onClick={() => { setFormData({...formData, status: 'published'}); handleSave(); }}>Publish</Button>
+            {!isNew && (
+              <Link href={`/creator/syllabus/${params?.id}/learners`}>
+                <Button variant="outline" className="gap-2">
+                   <Users className="h-4 w-4" /> Learners
+                </Button>
+              </Link>
+            )}
          </div>
       </div>
 
