@@ -50,9 +50,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               
               {isAuthenticated && user?.isCreator && (
                 <Link href="/creator">
-                  <a className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/creator" ? "text-primary" : "text-muted-foreground")}>
-                    My Syllabi
-                  </a>
+                  <a className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/creator" ? "text-primary" : "text-muted-foreground")}>My Syllabinds</a>
                 </Link>
               )}
             </nav>
