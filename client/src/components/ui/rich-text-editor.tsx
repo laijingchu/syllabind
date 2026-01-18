@@ -146,39 +146,40 @@ export function RichTextEditor({ value, onChange, placeholder, className, isSavi
       {editor && <EditorBubbleMenu editor={editor} />}
       <div className="relative">
         <EditorContent editor={editor} className="[&_.ProseMirror]:min-h-[120px]" />
+      </div>
         
-        {/* Improve Writing Button */}
+      {/* Save indicator & Improve writing attached to the editor */}
+      <div className="absolute -bottom-7 right-0 flex items-center gap-4 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300">
         {editor && !editor.isEmpty && (
           <Button
             variant="ghost"
             size="sm"
-            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary hover:bg-transparent"
+            className="h-auto p-0 text-muted-foreground hover:text-primary hover:bg-transparent"
             onClick={handleImproveWriting}
             disabled={isImproving}
           >
             {isImproving ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+              <Loader2 className="h-3 w-3 animate-spin mr-1.5" />
             ) : (
-              <Sparkles className="h-4 w-4 mr-1.5" />
+              <Sparkles className="h-3 w-3 mr-1.5 text-primary/60" />
             )}
             <span className="text-xs">Improve writing</span>
           </Button>
         )}
+
+        {(isSaving !== undefined || lastSaved !== undefined) && (
+          <div className="flex items-center gap-1.5">
+            {isSaving ? (
+              <span className="text-xs text-muted-foreground">Saving...</span>
+            ) : lastSaved ? (
+              <>
+                <CheckCircle2 className="h-3 w-3 text-green-500/70" />
+                <span className="text-xs text-muted-foreground/70">Saved</span>
+              </>
+            ) : null}
+          </div>
+        )}
       </div>
-      
-      {/* Save indicator attached to the editor */}
-      {(isSaving !== undefined || lastSaved !== undefined) && (
-        <div className="absolute -bottom-6 right-0 flex items-center gap-1.5 opacity-0 group-focus-within:opacity-100 transition-opacity duration-300">
-          {isSaving ? (
-            <span className="text-xs text-muted-foreground">Saving...</span>
-          ) : lastSaved ? (
-            <>
-               <CheckCircle2 className="h-3 w-3 text-green-500/70" />
-               <span className="text-xs text-muted-foreground/70">Saved</span>
-            </>
-          ) : null}
-        </div>
-      )}
     </div>
   );
 }
