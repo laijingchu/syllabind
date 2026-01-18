@@ -8,10 +8,11 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2 } from 'lucide-react';
+import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
+import { useDebounce } from '@/hooks/use-debounce';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -31,6 +32,10 @@ export default function CreatorEditor() {
     creatorId: 'user-1',
     weeks: Array.from({ length: 4 }, (_, i) => ({ index: i + 1, steps: [] as Step[], title: '' })),
   });
+  
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const debouncedFormData = useDebounce(formData, 1000);
 
   useEffect(() => {
     if (!isNew && params?.id) {
@@ -40,6 +45,42 @@ export default function CreatorEditor() {
       }
     }
   }, [isNew, params?.id, getSyllabusById]);
+
+  // Auto-save effect
+  useEffect(() => {
+    // Skip initial load or empty title
+    if (!formData.title) return;
+
+    const save = async () => {
+      setIsSaving(true);
+      // Simulate network delay for realism
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      if (isNew) {
+        // We don't auto-create new ones to avoid pollution, but we can update if ID exists in store
+        // For mock, let's just update
+        const existing = getSyllabusById(formData.id);
+        if (existing) {
+           updateSyllabus(debouncedFormData);
+        } else {
+           // If it's brand new, maybe we don't autosave until first manual save?
+           // Or we just autosave draft. Let's autosave draft.
+           // createSyllabus(debouncedFormData); // This might duplicate if not careful.
+           // Better strategy for mock: Only update if it's not "new" route or handled carefully.
+           // Let's stick to updating purely in memory.
+           updateSyllabus(debouncedFormData);
+        }
+      } else {
+        updateSyllabus(debouncedFormData);
+      }
+      
+      setLastSaved(new Date());
+      setIsSaving(false);
+    };
+
+    save();
+  }, [debouncedFormData]);
+
 
   // Adjust weeks array when duration changes
   const handleDurationChange = (weeksStr: string) => {
@@ -121,7 +162,19 @@ export default function CreatorEditor() {
             </Button>
             <h1 className="text-2xl font-serif">{isNew ? 'Create New Syllabind' : 'Edit Syllabind'}</h1>
          </div>
-         <div className="flex gap-2">
+         <div className="flex gap-2 items-center">
+            {lastSaved && (
+              <span className="text-xs text-muted-foreground mr-2 flex items-center gap-1.5 transition-opacity duration-500">
+                {isSaving ? (
+                  <>Saving...</>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </>
+                )}
+              </span>
+            )}
             {!isNew && (
               <>
                 <Button variant="outline" onClick={handleShareDraft} className="gap-2">
