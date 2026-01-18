@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react';
 import { cn, pluralize } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 
 export default function WeekView() {
   const [match, params] = useRoute('/syllabus/:id/week/:index');
@@ -20,7 +21,8 @@ export default function WeekView() {
     markStepIncomplete, 
     isStepCompleted,
     saveExercise,
-    getProgressForWeek
+    getProgressForWeek,
+    getSubmission
   } = useStore();
   const [location, setLocation] = useLocation();
 
@@ -48,14 +50,19 @@ export default function WeekView() {
 
   // Exercise State Management (Local buffer before saving)
   const [exerciseText, setExerciseText] = useState<Record<string, string>>({});
+  const [isShared, setIsShared] = useState<Record<string, boolean>>({});
 
   const handleExerciseChange = (stepId: string, val: string) => {
     setExerciseText(prev => ({ ...prev, [stepId]: val }));
   };
+  
+  const handleShareChange = (stepId: string, val: boolean) => {
+    setIsShared(prev => ({ ...prev, [stepId]: val }));
+  };
 
   const handleExerciseSubmit = (stepId: string) => {
     if (exerciseText[stepId]?.trim()) {
-      saveExercise(stepId, exerciseText[stepId]);
+      saveExercise(stepId, exerciseText[stepId], isShared[stepId] || false);
     }
   };
 
@@ -186,34 +193,76 @@ export default function WeekView() {
                         dangerouslySetInnerHTML={{ __html: step.promptText || '' }}
                       />
                       {!isDone ? (
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                           <Input 
                             placeholder="Paste your link here (e.g., https://...)" 
                             className="bg-background"
                             value={exerciseText[step.id] || ''}
                             onChange={(e) => handleExerciseChange(step.id, e.target.value)}
                           />
+                          <div className="flex items-center space-x-2">
+                             <Checkbox 
+                                id={`share-${step.id}`} 
+                                checked={isShared[step.id] || false}
+                                onCheckedChange={(c) => handleShareChange(step.id, c as boolean)}
+                             />
+                             <Label htmlFor={`share-${step.id}`} className="text-sm text-muted-foreground font-normal cursor-pointer select-none">
+                               Share submission with Creator for feedback
+                             </Label>
+                          </div>
                           <Button 
                             onClick={() => handleExerciseSubmit(step.id)}
                             disabled={!exerciseText[step.id]?.trim()}
                           >
-                            Save Link
+                            Save & Complete
                           </Button>
                         </div>
                       ) : (
-                        <div className="bg-background border p-4 rounded-lg text-sm text-muted-foreground flex items-center justify-between">
-                           <div>
-                             <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-primary">Your Link</div>
-                             <a 
-                               href={exerciseText[step.id]?.startsWith('http') ? exerciseText[step.id] : `https://${exerciseText[step.id]}`} 
-                               target="_blank" 
-                               rel="noopener noreferrer"
-                               className="text-primary hover:underline font-medium break-all"
-                             >
-                               {exerciseText[step.id]}
-                             </a>
+                        <div className="space-y-4">
+                           <div className="bg-background border p-4 rounded-lg text-sm text-muted-foreground flex items-center justify-between group">
+                              <div>
+                                <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-primary flex items-center gap-2">
+                                  Your Link 
+                                  {getSubmission(step.id)?.isShared && <Badge variant="secondary" className="text-[10px] h-4 px-1">Shared</Badge>}
+                                </div>
+                                <a 
+                                  href={exerciseText[step.id]?.startsWith('http') ? exerciseText[step.id] : `https://${exerciseText[step.id]}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline font-medium break-all"
+                                >
+                                  {exerciseText[step.id] || getSubmission(step.id)?.answer}
+                                </a>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => markStepIncomplete(step.id)}>
+                                   <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                                   <span className="sr-only">Edit</span>
+                                </Button>
+                              </div>
                            </div>
-                           <LinkIcon className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
+                           
+                           {getSubmission(step.id)?.grade && (
+                             <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <h4 className="font-semibold text-sm">Creator Feedback</h4>
+                                  <Badge>{getSubmission(step.id)?.grade}</Badge>
+                                </div>
+                                {getSubmission(step.id)?.feedback && (
+                                   <div 
+                                     className="text-sm prose dark:prose-invert max-w-none"
+                                     dangerouslySetInnerHTML={{ __html: getSubmission(step.id)?.feedback || '' }}
+                                   />
+                                )}
+                                {getSubmission(step.id)?.rubricUrl && (
+                                  <div className="pt-2 border-t border-primary/10 mt-2">
+                                    <a href={getSubmission(step.id)?.rubricUrl} target="_blank" rel="noopener noreferrer" className="text-xs flex items-center gap-1 text-primary hover:underline">
+                                      <ExternalLink className="h-3 w-3" /> View Rubric
+                                    </a>
+                                  </div>
+                                )}
+                             </div>
+                           )}
                         </div>
                       )}
                     </div>

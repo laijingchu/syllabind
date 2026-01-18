@@ -14,6 +14,7 @@ import Completion from "@/pages/Completion";
 import CreatorDashboard from "@/pages/CreatorDashboard";
 import CreatorEditor from "@/pages/CreatorEditor";
 import CreatorAnalytics from "@/pages/CreatorAnalytics";
+import CreatorLearners from "@/pages/CreatorLearners";
 import CreatorProfile from "@/pages/CreatorProfile";
 import Marketing from "@/pages/Marketing";
 import Login from "@/pages/Login";
@@ -46,6 +47,7 @@ function Router() {
             <Route path="/creator" component={CreatorDashboard} />
             <Route path="/creator/syllabus/new" component={CreatorEditor} />
             <Route path="/creator/syllabus/:id/edit" component={CreatorEditor} />
+            <Route path="/creator/syllabus/:id/learners" component={CreatorLearners} />
             <Route path="/creator/syllabus/:id/analytics" component={CreatorAnalytics} />
             <Route path="/creator/profile" component={CreatorProfile} />
           </>

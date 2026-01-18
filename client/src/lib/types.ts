@@ -37,9 +37,29 @@ export interface Enrollment {
   completedSyllabusIds: string[]; // List of fully completed syllabus IDs
 }
 
+export interface Submission {
+  stepId: string;
+  answer: string; // URL or text
+  submittedAt: string;
+  isShared: boolean; // Learner opt-in
+  
+  // Creator feedback
+  feedback?: string; // Rich text
+  grade?: string; // e.g. "A", "Pass", "85/100"
+  rubricUrl?: string; // URL to grading rubric
+}
+
+export interface Cohort {
+  id: string;
+  name: string;
+  syllabusId: string;
+  learnerIds: string[];
+}
+
 export interface User {
   id: string;
   name: string;
+  email?: string;
   isCreator: boolean;
   bio?: string;
   expertise?: string;
@@ -57,4 +77,5 @@ export interface LearnerProfile {
   user: User;
   status: 'in-progress' | 'completed';
   joinedDate: string;
+  cohortId?: string; // Assigned cohort
 }

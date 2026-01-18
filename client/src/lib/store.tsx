@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Syllabus, Enrollment, LearnerProfile } from './types';
+import { User, Syllabus, Enrollment, LearnerProfile, Submission, Cohort } from './types';
 import { MOCK_USER, MOCK_SYLLABI, INITIAL_ENROLLMENT, MOCK_LEARNERS } from './mockData';
 import { useLocation } from 'wouter';
 
@@ -20,21 +20,29 @@ interface StoreContextType {
   enrollInSyllabus: (syllabusId: string) => void;
   markStepComplete: (stepId: string) => void;
   markStepIncomplete: (stepId: string) => void;
-  saveExercise: (stepId: string, answer: string) => void; // Mock save
+  saveExercise: (stepId: string, answer: string, isShared: boolean) => void;
   
   // Creator Actions
   createSyllabus: (syllabus: Syllabus) => void;
   updateSyllabus: (syllabus: Syllabus) => void;
   completeActiveSyllabus: () => void; // Debug tool
   
+  // Cohort & Feedback Actions
+  cohorts: Cohort[];
+  createCohort: (name: string, syllabusId: string) => void;
+  assignLearnerToCohort: (cohortId: string, learnerId: string) => void;
+  provideFeedback: (stepId: string, learnerId: string, feedback: Partial<Submission>) => void;
+  getSubmissionsForStep: (stepId: string) => Record<string, Submission>; // learnerId -> Submission
+  
   // Helpers
   getActiveSyllabus: () => Syllabus | undefined;
   getSyllabusById: (id: string) => Syllabus | undefined;
   isStepCompleted: (stepId: string) => boolean;
-  getExerciseText: (stepId: string) => string | undefined;
+  getSubmission: (stepId: string) => Submission | undefined;
   getProgressForWeek: (syllabusId: string, weekIndex: number) => number; // 0-100
   getOverallProgress: (syllabusId: string) => number; // 0-100
   getLearnersForSyllabus: (syllabusId: string) => LearnerProfile[];
+  getExerciseText: (stepId: string) => string | undefined;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -48,7 +56,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // App State
   const [syllabi, setSyllabi] = useState<Syllabus[]>(MOCK_SYLLABI);
   const [enrollment, setEnrollment] = useState<Enrollment>(INITIAL_ENROLLMENT);
-  const [exerciseAnswers, setExerciseAnswers] = useState<Record<string, string>>({}); 
+  
+  // Submissions: Map of stepId -> (Map of learnerId -> Submission)
+  // For the current user (mock), we store it separately or integrate it?
+  // Let's simplify: 
+  // We need to store submissions for ALL learners to show them in the dashboard.
+  // But since this is a mock, we only really have "state" for the current user.
+  // The MOCK_LEARNERS don't really do anything.
+  // To make the dashboard work, we need to generate mock submissions for MOCK_LEARNERS.
+  
+  const [userSubmissions, setUserSubmissions] = useState<Record<string, Submission>>({}); 
+  
+  // Mock cohorts
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  
+  // Mock learner assignments (learnerId -> cohortId)
+  const [learnerCohorts, setLearnerCohorts] = useState<Record<string, string>>({});
+
   const [learners] = useState<LearnerProfile[]>(MOCK_LEARNERS);
 
   const login = (email: string) => {
@@ -108,8 +132,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
-  const saveExercise = (stepId: string, answer: string) => {
-    setExerciseAnswers(prev => ({ ...prev, [stepId]: answer }));
+  const saveExercise = (stepId: string, answer: string, isShared: boolean) => {
+    setUserSubmissions(prev => ({
+      ...prev,
+      [stepId]: {
+        ...prev[stepId], // Preserve existing feedback if any
+        stepId,
+        answer,
+        submittedAt: new Date().toISOString(),
+        isShared,
+      }
+    }));
     markStepComplete(stepId);
   };
 
@@ -119,6 +152,67 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const updateSyllabus = (updatedSyllabus: Syllabus) => {
     setSyllabi(prev => prev.map(s => s.id === updatedSyllabus.id ? updatedSyllabus : s));
+  };
+
+  const createCohort = (name: string, syllabusId: string) => {
+    const newCohort: Cohort = {
+      id: `cohort-${Math.random().toString(36).substr(2, 9)}`,
+      name,
+      syllabusId,
+      learnerIds: []
+    };
+    setCohorts(prev => [...prev, newCohort]);
+  };
+
+  const assignLearnerToCohort = (cohortId: string, learnerId: string) => {
+    setCohorts(prev => prev.map(c => {
+      if (c.id === cohortId) {
+        // If learner is already in another cohort for this syllabus, remove them?
+        // For simplicity, we just add them here.
+        return { ...c, learnerIds: [...c.learnerIds, learnerId] };
+      }
+      return c;
+    }));
+    setLearnerCohorts(prev => ({ ...prev, [learnerId]: cohortId }));
+  };
+  
+  // This is a bit tricky with mock data. 
+  // We need to store feedback for MOCK learners too.
+  // Let's create a separate state for "all submissions" including mock ones.
+  // Initialize with some mock submissions for the mock learners.
+  const [allSubmissions, setAllSubmissions] = useState<Record<string, Record<string, Submission>>>({
+     // stepId -> { learnerId -> Submission }
+  });
+
+  const provideFeedback = (stepId: string, learnerId: string, feedback: Partial<Submission>) => {
+     // If it's the current user
+     if (user && learnerId === user.id) {
+       setUserSubmissions(prev => ({
+         ...prev,
+         [stepId]: { ...prev[stepId], ...feedback }
+       }));
+     } else {
+       // Mock learner
+       setAllSubmissions(prev => ({
+         ...prev,
+         [stepId]: {
+           ...prev[stepId],
+           [learnerId]: {
+             ...prev[stepId]?.[learnerId],
+             ...feedback
+           } as Submission
+         }
+       }));
+     }
+  };
+
+  const getSubmissionsForStep = (stepId: string) => {
+    // Combine mock submissions and user submission
+    const result = { ...allSubmissions[stepId] };
+    if (user && userSubmissions[stepId] && userSubmissions[stepId].isShared) {
+      result[user.id] = userSubmissions[stepId];
+    }
+    return result;
   };
 
   const completeActiveSyllabus = () => {
@@ -138,7 +232,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const getActiveSyllabus = () => syllabi.find(s => s.id === enrollment.activeSyllabusId);
   const getSyllabusById = (id: string) => syllabi.find(s => s.id === id);
   const isStepCompleted = (stepId: string) => enrollment.completedStepIds.includes(stepId);
-  const getExerciseText = (stepId: string) => exerciseAnswers[stepId];
+  const getSubmission = (stepId: string) => userSubmissions[stepId];
+  const getExerciseText = (stepId: string) => userSubmissions[stepId]?.answer; // Backwards compat shim
 
   const getProgressForWeek = (syllabusId: string, weekIndex: number) => {
     const syllabus = syllabi.find(s => s.id === syllabusId);
@@ -165,7 +260,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const getLearnersForSyllabus = (syllabusId: string) => {
     // In a real app, this would filter by syllabus ID. 
     // For mock, we just return the mock learners plus the current user if enrolled
-    const activeLearners = [...learners];
+    const activeLearners = learners.map(l => ({
+      ...l,
+      cohortId: learnerCohorts[l.user.id]
+    }));
     
     // Add current user if enrolled and opted in
     if (user && user.shareProfile && enrollment.activeSyllabusId === syllabusId) {
@@ -174,12 +272,39 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
          activeLearners.push({
            user: user,
            status: getOverallProgress(syllabusId) === 100 ? 'completed' : 'in-progress',
-           joinedDate: new Date().toISOString()
+           joinedDate: new Date().toISOString(),
+           cohortId: learnerCohorts[user.id]
          });
        }
     }
     return activeLearners;
   };
+
+  // Initial populate of mock submissions for testing
+  useEffect(() => {
+    if (Object.keys(allSubmissions).length === 0 && syllabi.length > 0) {
+      // Find an exercise step
+      const step = syllabi[0].weeks[0].steps.find(s => s.type === 'exercise');
+      if (step) {
+         setAllSubmissions({
+           [step.id]: {
+             [MOCK_LEARNERS[0].user.id]: {
+               stepId: step.id,
+               answer: "https://codepen.io/example",
+               submittedAt: new Date().toISOString(),
+               isShared: true
+             },
+             [MOCK_LEARNERS[1].user.id]: {
+                stepId: step.id,
+                answer: "https://github.com/example",
+                submittedAt: new Date().toISOString(),
+                isShared: true
+             }
+           }
+         });
+      }
+    }
+  }, [syllabi]);
 
   // Check for completion whenever steps change
   useEffect(() => {
@@ -235,6 +360,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         createSyllabus,
         updateSyllabus,
         completeActiveSyllabus,
+        cohorts,
+        createCohort,
+        assignLearnerToCohort,
+        provideFeedback,
+        getSubmissionsForStep,
         getActiveSyllabus,
         getSyllabusById,
         isStepCompleted,
@@ -242,6 +372,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         getOverallProgress,
         getExerciseText,
         getLearnersForSyllabus,
+        getSubmission,
       }}
     >
       {children}
