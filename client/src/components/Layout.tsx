@@ -24,11 +24,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href={isAuthenticated ? "/" : "/welcome"}>
-              <a className="font-serif text-2xl font-medium tracking-tight hover:opacity-80 transition-opacity flex items-center gap-2">
+              <span className="font-serif text-2xl font-medium tracking-tight hover:opacity-80 transition-opacity flex items-center gap-2 cursor-pointer">
                 <BookOpen className="h-6 w-6 text-primary" />
                 <span>Syllabind</span>
                 <span className="text-[10px] font-sans font-bold text-primary bg-primary/5 border border-primary/20 px-1.5 py-0.5 rounded-md ml-1.5 align-middle">BETA</span>
-              </a>
+              </span>
             </Link>
             
             <nav className="hidden md:flex items-center gap-6">

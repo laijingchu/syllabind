@@ -1,9 +1,21 @@
-import { pgTable, text, varchar, integer, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, jsonb, timestamp, varchar, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { sql } from "drizzle-orm";
+
+// Session storage table.
+// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  }
+);
 
 export const users = pgTable("users", {
-  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   replitId: text("replit_id").unique(),
   username: text("username").notNull().unique(),
   name: text("name"),
@@ -19,20 +31,20 @@ export const users = pgTable("users", {
 });
 
 export const syllabi = pgTable("syllabi", {
-  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
   audienceLevel: text("audience_level").notNull(), // 'Beginner', 'Intermediate', 'Advanced'
   durationWeeks: integer("duration_weeks").notNull(),
   status: text("status").notNull().default('draft'), // 'draft', 'published'
   content: jsonb("content").notNull(), // Stores weeks and steps
-  creatorId: integer("creator_id").references(() => users.id),
+  creatorId: varchar("creator_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const enrollments = pgTable("enrollments", {
-  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  userId: integer("user_id").references(() => users.id),
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id),
   syllabusId: integer("syllabus_id").references(() => syllabi.id),
   status: text("status").notNull().default('in-progress'), // 'in-progress', 'completed'
   currentWeekIndex: integer("current_week_index").default(1),

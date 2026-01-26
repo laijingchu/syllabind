@@ -2,8 +2,10 @@ import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { StoreProvider, useStore } from "@/lib/store";
 import { Layout } from "@/components/Layout";
+import { useAuth } from "@/hooks/use-auth";
+import { Loader2 } from "lucide-react";
+import { StoreProvider } from "@/lib/store";
 import NotFound from "@/pages/not-found";
 
 import Dashboard from "@/pages/Dashboard";
@@ -21,12 +23,33 @@ import Login from "@/pages/Login";
 import Profile from "@/pages/Profile";
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
-  const { isAuthenticated } = useStore();
-  return isAuthenticated ? <Component {...rest} /> : <Redirect to="/welcome" />;
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Redirect to="/welcome" />;
+  }
+
+  return <Component {...rest} />;
 }
 
 function Router() {
-  const { isAuthenticated } = useStore();
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <Layout>
@@ -34,39 +57,19 @@ function Router() {
         <Route path="/welcome" component={Marketing} />
         <Route path="/login" component={Login} />
         
-        {/* Protected Routes - Redirect to /welcome if not logged in */}
-        {isAuthenticated ? (
-          <>
-            <Route path="/" component={Dashboard} />
-            <Route path="/catalog" component={Catalog} />
-            <Route path="/syllabus/:id" component={SyllabusOverview} />
-            <Route path="/syllabus/:id/week/:index" component={WeekView} />
-            <Route path="/syllabus/:id/completed" component={Completion} />
-            <Route path="/profile" component={Profile} />
-            
-            <Route path="/creator" component={CreatorDashboard} />
-            <Route path="/creator/syllabus/new" component={CreatorEditor} />
-            <Route path="/creator/syllabus/:id/edit" component={CreatorEditor} />
-            <Route path="/creator/syllabus/:id/learners" component={CreatorLearners} />
-            <Route path="/creator/syllabus/:id/analytics" component={CreatorAnalytics} />
-            <Route path="/creator/profile" component={CreatorProfile} />
-          </>
-        ) : (
-           /* If not authenticated, redirect root to welcome, but allow catalog/preview? 
-              PRD says "Secondary text link: See a sample Syllabind -> anchors to ... or separate route"
-              Let's allow catalog and syllabus overview publicly for now?
-              PRD: "Open sample (no login) -> read-only demo of Week 1 view."
-              Okay, let's open up Catalog and Syllabus routes.
-           */
-           <>
-             <Route path="/" component={() => <Redirect to="/welcome" />} />
-             <Route path="/catalog" component={Catalog} />
-             <Route path="/syllabus/:id" component={SyllabusOverview} />
-             <Route path="/syllabus/:id/week/:index" component={WeekView} />
-             {/* If they try to access creator routes or others, 404 or redirect */}
-             <Route path="/creator" component={() => <Redirect to="/login" />} />
-           </>
-        )}
+        <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
+        <Route path="/catalog" component={Catalog} />
+        <Route path="/syllabus/:id" component={SyllabusOverview} />
+        <Route path="/syllabus/:id/week/:index" component={WeekView} />
+        <Route path="/syllabus/:id/completed" component={() => <ProtectedRoute component={Completion} />} />
+        <Route path="/profile" component={() => <ProtectedRoute component={Profile} />} />
+        
+        <Route path="/creator" component={() => <ProtectedRoute component={CreatorDashboard} />} />
+        <Route path="/creator/syllabus/new" component={() => <ProtectedRoute component={CreatorEditor} />} />
+        <Route path="/creator/syllabus/:id/edit" component={() => <ProtectedRoute component={CreatorEditor} />} />
+        <Route path="/creator/syllabus/:id/learners" component={() => <ProtectedRoute component={CreatorLearners} />} />
+        <Route path="/creator/syllabus/:id/analytics" component={() => <ProtectedRoute component={CreatorAnalytics} />} />
+        <Route path="/creator/profile" component={() => <ProtectedRoute component={CreatorProfile} />} />
         
         <Route component={NotFound} />
       </Switch>

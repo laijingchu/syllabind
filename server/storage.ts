@@ -9,11 +9,11 @@ import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByReplitId(replitId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, user: Partial<User>): Promise<User>;
+  updateUser(id: string, user: Partial<User>): Promise<User>;
 
   // Syllabus operations
   getSyllabus(id: number): Promise<Syllabus | undefined>;
@@ -23,14 +23,14 @@ export interface IStorage {
   deleteSyllabus(id: number): Promise<void>;
 
   // Enrollment operations
-  getEnrollment(userId: number, syllabusId: number): Promise<Enrollment | undefined>;
-  getUserEnrollments(userId: number): Promise<Enrollment[]>;
+  getEnrollment(userId: string, syllabusId: number): Promise<Enrollment | undefined>;
+  getUserEnrollments(userId: string): Promise<Enrollment[]>;
   createEnrollment(enrollment: InsertEnrollment): Promise<Enrollment>;
   updateEnrollment(id: number, enrollment: Partial<Enrollment>): Promise<Enrollment>;
 }
 
 export class DatabaseStorage implements IStorage {
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
@@ -50,7 +50,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUser(id: number, update: Partial<User>): Promise<User> {
+  async updateUser(id: string, update: Partial<User>): Promise<User> {
     const [user] = await db.update(users).set(update).where(eq(users.id, id)).returning();
     return user;
   }
@@ -78,14 +78,14 @@ export class DatabaseStorage implements IStorage {
     await db.delete(syllabi).where(eq(syllabi.id, id));
   }
 
-  async getEnrollment(userId: number, syllabusId: number): Promise<Enrollment | undefined> {
+  async getEnrollment(userId: string, syllabusId: number): Promise<Enrollment | undefined> {
     const [enrollment] = await db.select().from(enrollments).where(
       and(eq(enrollments.userId, userId), eq(enrollments.syllabusId, syllabusId))
     );
     return enrollment;
   }
 
-  async getUserEnrollments(userId: number): Promise<Enrollment[]> {
+  async getUserEnrollments(userId: string): Promise<Enrollment[]> {
     return await db.select().from(enrollments).where(eq(enrollments.userId, userId));
   }
 
