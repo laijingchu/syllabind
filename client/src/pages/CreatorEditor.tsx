@@ -67,32 +67,17 @@ export default function CreatorEditor() {
 
   // Auto-save effect
   useEffect(() => {
-    // Skip initial load or empty title
-    if (!formData.title) return;
+    // Skip initial load, empty title, or unsaved syllabi (negative IDs)
+    if (!formData.title || formData.id < 0) return;
 
     const save = async () => {
       setIsSaving(true);
       // Simulate network delay for realism
       await new Promise(resolve => setTimeout(resolve, 500));
-      
-      if (isNew) {
-        // We don't auto-create new ones to avoid pollution, but we can update if ID exists in store
-        // For mock, let's just update
-        const existing = getSyllabusById(formData.id);
-        if (existing) {
-           updateSyllabus(debouncedFormData);
-        } else {
-           // If it's brand new, maybe we don't autosave until first manual save?
-           // Or we just autosave draft. Let's autosave draft.
-           // createSyllabus(debouncedFormData); // This might duplicate if not careful.
-           // Better strategy for mock: Only update if it's not "new" route or handled carefully.
-           // Let's stick to updating purely in memory.
-           updateSyllabus(debouncedFormData);
-        }
-      } else {
-        updateSyllabus(debouncedFormData);
-      }
-      
+
+      // Only auto-save existing syllabi (positive IDs)
+      updateSyllabus(debouncedFormData);
+
       setLastSaved(new Date());
       setIsSaving(false);
     };
@@ -165,13 +150,23 @@ export default function CreatorEditor() {
     setFormData({ ...formData, weeks: newWeeks });
   };
 
-  const handleSave = () => {
+  const handleSave = (statusOverride?: 'draft' | 'published') => {
+    const dataToSave = statusOverride ? { ...formData, status: statusOverride } : formData;
+
     if (isNew) {
-      createSyllabus(formData);
+      createSyllabus(dataToSave);
     } else {
-      updateSyllabus(formData);
+      updateSyllabus(dataToSave);
     }
-    toast({ title: "Syllabus saved", description: "Your changes have been saved successfully." });
+
+    const message = statusOverride === 'published'
+      ? "Syllabus published successfully!"
+      : "Your changes have been saved successfully.";
+
+    toast({
+      title: statusOverride === 'published' ? "Syllabus Published" : "Syllabus saved",
+      description: message
+    });
     setLocation('/creator');
   };
 
@@ -232,8 +227,8 @@ export default function CreatorEditor() {
                 </Link>
               </>
             )}
-            <Button variant="outline" onClick={handleSave}>Save Draft</Button>
-            <Button onClick={() => { setFormData({...formData, status: 'published'}); handleSave(); }}>Publish</Button>
+            <Button variant="outline" onClick={() => handleSave()}>Save Draft</Button>
+            <Button onClick={() => handleSave('published')}>Publish</Button>
             {!isNew && (
               <Link href={`/creator/syllabus/${params?.id}/learners`}>
                 <Button variant="outline" className="gap-2">
