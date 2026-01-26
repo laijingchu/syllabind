@@ -16,7 +16,11 @@ export const sessions = pgTable(
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").unique(),
+  password: text("password"),
   replitId: text("replit_id").unique(),
+  googleId: text("google_id").unique(),
+  appleId: text("apple_id").unique(),
   username: text("username").notNull().unique(),
   name: text("name"),
   avatarUrl: text("avatar_url"),
@@ -28,6 +32,7 @@ export const users = pgTable("users", {
   twitter: text("twitter"),
   threads: text("threads"),
   shareProfile: boolean("share_profile").default(true),
+  authProvider: text("auth_provider").default('email'),
 });
 
 export const syllabi = pgTable("syllabi", {

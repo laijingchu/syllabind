@@ -80,15 +80,59 @@ This table tracks which learners are enrolled in which syllabi and their progres
 
 #### Sessions Table
 
-This table is required by Replit Auth and Express-session to store active user sessions. When users log in, their session data is stored here and referenced by a session ID cookie in their browser.
+This table is required by Replit Auth and Express-session to store active user sessions. When users log in, their session data is stored here and referenced by a session ID cookie in their browser. The `sess` field stores the complete session state including authentication tokens and user information.
 
 ```typescript
 {
-  sid: string PRIMARY KEY,
-  sess: JSONB,                       // Session data
-  expire: timestamp
+  sid: string PRIMARY KEY,           // Session identifier (stored in cookie)
+  sess: JSONB,                       // Session data object (structure below)
+  expire: timestamp                  // Session expiration time
 }
 ```
+
+**Session Object Structure (`sess` field):**
+```json
+{
+  "cookie": {
+    "originalMaxAge": 604800000,     // 1 week in milliseconds
+    "expires": "2026-02-02T...",     // Cookie expiration timestamp
+    "httpOnly": true,                // Prevents client-side JS access
+    "secure": true,                  // HTTPS only
+    "path": "/"
+  },
+  "passport": {
+    "user": {
+      // User identity from database
+      "id": "uuid",                  // User's database ID
+      "replitId": "string",          // Replit OAuth identifier
+      "username": "string",          // Username (unique)
+      "name": "string",              // Display name
+      "avatarUrl": "string",         // Profile picture URL
+      "isCreator": boolean,          // Creator role flag
+
+      // OAuth tokens and claims (added by Replit Auth)
+      "claims": {                    // OIDC ID token claims
+        "sub": "string",             // Subject (Replit user ID)
+        "email": "string",           // User email
+        "email_verified": boolean,   // Email verification status
+        "name": "string",            // Full name
+        "nickname": "string",        // Username
+        "first_name": "string",
+        "last_name": "string",
+        "profile_image_url": "string",
+        "exp": number,               // Token expiration (Unix timestamp)
+        "iat": number,               // Issued at (Unix timestamp)
+        ...                          // Additional OIDC claims
+      },
+      "access_token": "string",      // OAuth 2.0 access token
+      "refresh_token": "string",     // OAuth 2.0 refresh token for renewal
+      "expires_at": number           // Token expiration time (Unix timestamp)
+    }
+  }
+}
+```
+
+**Note:** Passport.js is configured to serialize the entire user object (not just the user ID), so all user data and OAuth tokens are stored in the session for quick access without database queries.
 
 ---
 

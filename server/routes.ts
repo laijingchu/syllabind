@@ -1,16 +1,15 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
+import { setupCustomAuth, isAuthenticated } from "./auth";
 import { insertSyllabusSchema, insertEnrollmentSchema, insertUserSchema } from "@shared/schema";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Set up authentication first
-  await setupAuth(app);
-  registerAuthRoutes(app);
+  // Set up custom authentication
+  setupCustomAuth(app);
 
   // Syllabus API
   app.get("/api/syllabi", async (_req, res) => {

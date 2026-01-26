@@ -6,11 +6,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ArrowRight, BookOpen, CheckCircle, Clock, Zap } from 'lucide-react';
-import { useStore } from '@/lib/store';
 import { useState } from 'react';
 
 export default function Marketing() {
-  const { signup } = useStore();
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('learner');
