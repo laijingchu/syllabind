@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupCustomAuth, isAuthenticated } from "./auth";
@@ -8,6 +9,41 @@ import {
   insertUserSchema,
   insertSubmissionSchema
 } from "@shared/schema";
+import multer from "multer";
+import * as path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Configure multer for file uploads
+const uploadStorage = multer.diskStorage({
+  destination: function (_req, _file, cb) {
+    cb(null, path.join(__dirname, "../uploads"));
+  },
+  filename: function (_req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: uploadStorage,
+  limits: {
+    fileSize: 2 * 1024 * 1024, // 2MB limit
+  },
+  fileFilter: (_req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed!"));
+    }
+  }
+});
 
 export async function registerRoutes(
   httpServer: Server,
@@ -15,6 +51,9 @@ export async function registerRoutes(
 ): Promise<Server> {
   // Set up custom authentication
   setupCustomAuth(app);
+
+  // Serve uploaded files statically
+  app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
   // ========== USER ROUTES ==========
 
@@ -39,6 +78,12 @@ export async function registerRoutes(
   // Update user profile
   app.put("/api/users/me", isAuthenticated, async (req, res) => {
     const userId = (req.user as any).id;
+
+    // Validate avatarUrl if present - reject blob URLs
+    if (req.body.avatarUrl && typeof req.body.avatarUrl === 'string' && req.body.avatarUrl.startsWith('blob:')) {
+      return res.status(400).json({ message: "Invalid avatar URL: blob URLs are not allowed" });
+    }
+
     const updated = await storage.updateUser(userId, req.body);
     const { password, ...userWithoutPassword } = updated;
     res.json(userWithoutPassword);
@@ -53,6 +98,38 @@ export async function registerRoutes(
     const updated = await storage.updateUser(userId, { isCreator: !user.isCreator });
     const { password, ...userWithoutPassword } = updated;
     res.json(userWithoutPassword);
+  });
+
+  // Debug route to check uploads path
+  app.get("/api/debug/uploads-path", (req, res) => {
+    res.json({
+      __dirname,
+      uploadsPath: path.join(__dirname, "../uploads"),
+      resolved: path.resolve(__dirname, "../uploads")
+    });
+  });
+
+  // Upload avatar image
+  app.post("/api/upload", isAuthenticated, (req, res) => {
+    console.log("Upload request received from user:", (req.user as any)?.username || "unauthenticated");
+    console.log("Request headers:", req.headers['content-type']);
+
+    upload.single("file")(req, res, (err) => {
+      if (err) {
+        console.error("Multer error:", err);
+        return res.status(400).json({ message: err.message || "Failed to upload file" });
+      }
+
+      if (!req.file) {
+        console.error("No file in request");
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Return the URL to access the uploaded file
+      const fileUrl = `/uploads/${req.file.filename}`;
+      console.log("File uploaded successfully:", fileUrl);
+      res.json({ url: fileUrl });
+    });
   });
 
   // ========== SYLLABUS ROUTES ==========

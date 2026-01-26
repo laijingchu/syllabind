@@ -89,10 +89,27 @@ app.use((req, res, next) => {
     {
       port,
       host: "0.0.0.0",
-      reusePort: true,
     },
     () => {
       log(`serving on port ${port}`);
     },
   );
+
+  // Graceful shutdown on SIGTERM and SIGINT
+  const shutdown = () => {
+    log('Shutting down gracefully...');
+    httpServer.close(() => {
+      log('Server closed');
+      process.exit(0);
+    });
+
+    // Force shutdown after 5 seconds if graceful shutdown fails
+    setTimeout(() => {
+      log('Forcing shutdown');
+      process.exit(1);
+    }, 5000);
+  };
+
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 })();

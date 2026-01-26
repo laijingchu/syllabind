@@ -12,11 +12,34 @@ interface AvatarUploadProps {
 }
 
 export function AvatarUpload({ currentAvatarUrl, name, onUpload, onRemove }: AvatarUploadProps) {
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
-      const objectUrl = URL.createObjectURL(file);
-      onUpload(objectUrl);
+      // Create FormData and upload to server
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        console.log("Uploading file:", file.name, file.type, file.size);
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          console.error("Upload failed:", response.status, data);
+          throw new Error(data.message || "Upload failed");
+        }
+
+        console.log("Upload successful:", data);
+        onUpload(data.url);
+      } catch (error) {
+        console.error("Failed to upload avatar:", error);
+        alert(`Failed to upload image: ${error instanceof Error ? error.message : "Please try again."}`);
+      }
     }
   }, [onUpload]);
 

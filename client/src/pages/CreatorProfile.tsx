@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Save, User as UserIcon } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ArrowLeft, Save } from 'lucide-react';
+import { AvatarUpload } from '@/components/AvatarUpload';
 import { toast } from '@/hooks/use-toast';
 
 export default function CreatorProfile() {
@@ -30,6 +30,33 @@ export default function CreatorProfile() {
       });
     }
   }, [user]);
+
+  const handleAvatarUpload = (url: string) => {
+    // Prevent blob URLs from being saved
+    if (url.startsWith('blob:')) {
+      console.error('Blob URL detected, not saving:', url);
+      toast({
+        title: "Upload error",
+        description: "Invalid image URL. Please try uploading again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    updateUser({ avatarUrl: url });
+    toast({
+      title: "Avatar updated",
+      description: "Looking good!",
+    });
+  };
+
+  const handleAvatarRemove = () => {
+    updateUser({ avatarUrl: undefined });
+    toast({
+      title: "Avatar removed",
+      description: "Your profile picture has been removed.",
+    });
+  };
 
   const handleSave = () => {
     updateUser(formData);
@@ -59,23 +86,14 @@ export default function CreatorProfile() {
             <CardTitle>Public Profile</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex flex-col items-center gap-4 py-4">
-              <Avatar className="h-24 w-24 border-4 border-muted">
-                <AvatarImage src={formData.avatarUrl} />
-                <AvatarFallback className="bg-primary/10 text-primary">
-                  <UserIcon className="h-10 w-10" />
-                </AvatarFallback>
-              </Avatar>
-              <div className="space-y-2 w-full max-w-sm">
-                <Label htmlFor="avatarUrl">Avatar URL</Label>
-                <Input 
-                  id="avatarUrl"
-                  value={formData.avatarUrl}
-                  onChange={e => setFormData({ ...formData, avatarUrl: e.target.value })}
-                  placeholder="https://images.unsplash.com/..."
-                />
-                <p className="text-[10px] text-muted-foreground italic">Use a direct image link from Unsplash or similar.</p>
-              </div>
+            <div className="space-y-2">
+              <Label>Profile Picture</Label>
+              <AvatarUpload
+                currentAvatarUrl={formData.avatarUrl}
+                name={formData.name}
+                onUpload={handleAvatarUpload}
+                onRemove={handleAvatarRemove}
+              />
             </div>
 
             <div className="grid gap-4">

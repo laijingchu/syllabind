@@ -25,7 +25,14 @@
       "Bash(netstat:*)",
       "Bash(npm run kill:*)",
       "Bash(npm run test:quick:*)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(test:*)",
+      "Bash(node -e:*)",
+      "Bash(npm run dev:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(xargs:*)",
+      "Bash(bash:*)"
     ]
   }
 }

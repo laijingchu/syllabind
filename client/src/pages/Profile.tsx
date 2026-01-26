@@ -73,6 +73,17 @@ export default function Profile() {
   }
 
   const handleAvatarUpload = (url: string) => {
+    // Prevent blob URLs from being saved
+    if (url.startsWith('blob:')) {
+      console.error('Blob URL detected, not saving:', url);
+      toast({
+        title: "Upload error",
+        description: "Invalid image URL. Please try uploading again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     updateUser({ avatarUrl: url });
     toast({
       title: "Avatar updated",
