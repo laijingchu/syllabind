@@ -27,7 +27,7 @@ export default function CreatorAnalytics() {
   const [match, params] = useRoute('/creator/syllabus/:id/analytics');
   const { getSyllabusById } = useStore();
   
-  const syllabus = match && params?.id ? getSyllabusById(params.id) : undefined;
+  const syllabus = match && params?.id ? getSyllabusById(parseInt(params.id)) : undefined;
 
   if (!syllabus) {
     return (

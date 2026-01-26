@@ -23,7 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle, AlertTriangle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn, pluralize } from '@/lib/utils';
 import { LearnerProfile } from '@/lib/types';
 
@@ -33,15 +33,16 @@ export default function SyllabusOverview() {
   const [location, setLocation] = useLocation();
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
+  const [learners, setLearners] = useState<LearnerProfile[]>([]);
   const { updateUser } = useStore();
 
-  const syllabus = match && params?.id ? getSyllabusById(params.id) : undefined;
+  const syllabus = match && params?.id ? getSyllabusById(parseInt(params.id)) : undefined;
   const { user: currentUser } = useStore();
   const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
 
   if (!syllabus) return <div className="text-center py-20">Syllabus not found</div>;
 
-  const getStepExercise = (stepId: string) => getExerciseText(stepId);
+  const getStepExercise = (stepId: number) => getExerciseText(stepId);
 
   // In a real app we'd fetch the creator's profile by ID. 
   // For the mockup, if the current user is the creator (user-1), we show their profile.
@@ -52,11 +53,17 @@ export default function SyllabusOverview() {
     avatarUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop"
   };
 
-  const isActive = enrollment.activeSyllabusId === syllabus.id;
-  const isCompleted = enrollment.completedSyllabusIds.includes(syllabus.id);
+  const isActive = enrollment?.activeSyllabusId === syllabus.id;
+  const isCompleted = enrollment?.completedSyllabusIds?.includes(syllabus.id);
   const { getProgressForWeek } = useStore();
 
-  const learners = getLearnersForSyllabus(syllabus.id);
+  // Fetch learners asynchronously
+  useEffect(() => {
+    if (syllabus?.id) {
+      getLearnersForSyllabus(syllabus.id).then(setLearners);
+    }
+  }, [syllabus?.id]);
+
   const inProgressLearners = learners.filter(l => l.status === 'in-progress');
   const completedLearners = learners.filter(l => l.status === 'completed');
 
@@ -66,15 +73,15 @@ export default function SyllabusOverview() {
     
     if (isActive) {
       // Continue or Review
-      setLocation(`/syllabus/${syllabus.id}/week/${enrollment.currentWeekIndex}`);
-    } else if (enrollment.activeSyllabusId) {
+      setLocation(`/syllabus/${syllabus.id}/week/${enrollment?.currentWeekIndex || 1}`);
+    } else if (enrollment?.activeSyllabusId) {
       // Check if the ACTIVE syllabus is actually 100% complete.
       // If so, we can just switch silently without nagging.
       // We need to import getOverallProgress from store or calculate it.
       // But `getOverallProgress` isn't exposed directly here... let's add it or use helper.
       // Actually we have `enrollment.completedSyllabusIds`.
       
-      const isActiveCompleted = enrollment.completedSyllabusIds.includes(enrollment.activeSyllabusId);
+      const isActiveCompleted = enrollment?.completedSyllabusIds?.includes(enrollment.activeSyllabusId);
       
       if (isActiveCompleted) {
          // Active one is done, so just switch to new one silently
@@ -95,9 +102,9 @@ export default function SyllabusOverview() {
     setShowPrivacyDialog(true);
   };
 
-  const handleEnroll = (shareProfile: boolean) => {
-    updateUser({ shareProfile });
-    enrollInSyllabus(syllabus.id);
+  const handleEnroll = async (shareProfile: boolean) => {
+    await updateUser({ shareProfile });
+    await enrollInSyllabus(syllabus.id);
     setShowPrivacyDialog(false);
     setLocation(`/syllabus/${syllabus.id}/week/1`);
   };

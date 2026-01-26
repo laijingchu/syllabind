@@ -26,7 +26,7 @@ export default function WeekView() {
   } = useStore();
   const [location, setLocation] = useLocation();
 
-  const syllabusId = params?.id;
+  const syllabusId = params?.id ? parseInt(params.id) : undefined;
   const weekIndex = parseInt(params?.index || '1');
   const syllabus = syllabusId ? getSyllabusById(syllabusId) : undefined;
   const week = syllabus?.weeks.find(w => w.index === weekIndex);
@@ -49,20 +49,20 @@ export default function WeekView() {
   const progress = getProgressForWeek(syllabus.id, weekIndex);
 
   // Exercise State Management (Local buffer before saving)
-  const [exerciseText, setExerciseText] = useState<Record<string, string>>({});
-  const [isShared, setIsShared] = useState<Record<string, boolean>>({});
+  const [exerciseText, setExerciseText] = useState<Record<number, string>>({});
+  const [isShared, setIsShared] = useState<Record<number, boolean>>({});
 
-  const handleExerciseChange = (stepId: string, val: string) => {
+  const handleExerciseChange = (stepId: number, val: string) => {
     setExerciseText(prev => ({ ...prev, [stepId]: val }));
   };
-  
-  const handleShareChange = (stepId: string, val: boolean) => {
+
+  const handleShareChange = (stepId: number, val: boolean) => {
     setIsShared(prev => ({ ...prev, [stepId]: val }));
   };
 
-  const handleExerciseSubmit = (stepId: string) => {
+  const handleExerciseSubmit = async (stepId: number) => {
     if (exerciseText[stepId]?.trim()) {
-      saveExercise(stepId, exerciseText[stepId], isShared[stepId] || false);
+      await saveExercise(stepId, exerciseText[stepId], isShared[stepId] || false);
     }
   };
 

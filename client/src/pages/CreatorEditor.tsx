@@ -15,23 +15,30 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
 
-const generateId = () => Math.random().toString(36).substr(2, 9);
+const generateTempId = () => -Math.floor(Math.random() * 1000000); // Temporary negative IDs for unsaved items
 
 export default function CreatorEditor() {
   const [match, params] = useRoute('/creator/syllabus/:id/edit');
   const isNew = useLocation()[0] === '/creator/syllabus/new';
   const { getSyllabusById, createSyllabus, updateSyllabus, getSubmissionsForStep, getLearnersForSyllabus } = useStore();
   const [location, setLocation] = useLocation();
+  const [learners, setLearners] = useState<any[]>([]);
 
   const [formData, setFormData] = useState<Syllabus>({
-    id: generateId(),
+    id: generateTempId(),
     title: '',
     description: '',
     audienceLevel: 'Beginner',
     durationWeeks: 4,
     status: 'draft',
     creatorId: 'user-1',
-    weeks: Array.from({ length: 4 }, (_, i) => ({ index: i + 1, steps: [] as Step[], title: '' })),
+    weeks: Array.from({ length: 4 }, (_, i) => ({
+      id: generateTempId(),
+      syllabusId: generateTempId(),
+      index: i + 1,
+      steps: [] as Step[],
+      title: ''
+    })),
   });
   
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -40,7 +47,7 @@ export default function CreatorEditor() {
 
   useEffect(() => {
     if (!isNew && params?.id) {
-      const existing = getSyllabusById(params.id);
+      const existing = getSyllabusById(parseInt(params.id));
       if (existing) {
         setFormData(existing);
       }
@@ -82,6 +89,12 @@ export default function CreatorEditor() {
     save();
   }, [debouncedFormData]);
 
+  // Fetch learners when syllabus ID changes
+  useEffect(() => {
+    if (formData.id && formData.id > 0) { // Only fetch for real IDs, not temp negative IDs
+      getLearnersForSyllabus(formData.id).then(setLearners);
+    }
+  }, [formData.id]);
 
   // Adjust weeks array when duration changes
   const handleDurationChange = (weeksStr: string) => {
@@ -89,7 +102,13 @@ export default function CreatorEditor() {
     const newWeeks = [...formData.weeks];
     if (count > newWeeks.length) {
       for (let i = newWeeks.length; i < count; i++) {
-        newWeeks.push({ index: i + 1, steps: [], title: '' });
+        newWeeks.push({
+          id: generateTempId(),
+          syllabusId: formData.id,
+          index: i + 1,
+          steps: [],
+          title: ''
+        });
       }
     } else {
       newWeeks.splice(count);
@@ -98,22 +117,23 @@ export default function CreatorEditor() {
   };
 
   const addStep = (weekIndex: number, type: StepType) => {
-    const newStep: Step = {
-      id: generateId(),
-      type,
-      title: type === 'reading' ? 'New Reading' : 'New Exercise',
-      estimatedMinutes: 15
-    };
-    
     const newWeeks = [...formData.weeks];
     const week = newWeeks.find(w => w.index === weekIndex);
     if (week) {
+      const newStep: Step = {
+        id: generateTempId(),
+        weekId: week.id,
+        position: week.steps.length + 1,
+        type,
+        title: type === 'reading' ? 'New Reading' : 'New Exercise',
+        estimatedMinutes: 15
+      };
       week.steps.push(newStep);
     }
     setFormData({ ...formData, weeks: newWeeks });
   };
 
-  const updateStep = (weekIndex: number, stepId: string, field: keyof Step, value: any) => {
+  const updateStep = (weekIndex: number, stepId: number, field: keyof Step, value: any) => {
     const newWeeks = [...formData.weeks];
     const week = newWeeks.find(w => w.index === weekIndex);
     if (week) {
@@ -125,7 +145,7 @@ export default function CreatorEditor() {
     setFormData({ ...formData, weeks: newWeeks });
   };
 
-  const removeStep = (weekIndex: number, stepId: string) => {
+  const removeStep = (weekIndex: number, stepId: number) => {
     const newWeeks = [...formData.weeks];
     const week = newWeeks.find(w => w.index === weekIndex);
     if (week) {
@@ -154,7 +174,7 @@ export default function CreatorEditor() {
     });
   };
 
-  const handleAutoFill = async (weekIndex: number, stepId: string) => {
+  const handleAutoFill = async (weekIndex: number, stepId: number) => {
     // Mock auto-fill logic
     // In a real app, this would call an API with the URL to scrape metadata
     const step = formData.weeks.find(w => w.index === weekIndex)?.steps.find(s => s.id === stepId);
@@ -455,7 +475,7 @@ export default function CreatorEditor() {
           
           <div className="grid gap-4">
              {(() => {
-                const learners = getLearnersForSyllabus(formData.id);
+                // Learners are now loaded via useEffect below
                 // Collect all shared submissions across all steps
                 const allRecentSubmissions = formData.weeks
                   .flatMap(w => w.steps)

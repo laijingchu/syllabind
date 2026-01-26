@@ -3,14 +3,16 @@ export type StepType = 'reading' | 'exercise';
 export type SyllabusStatus = 'draft' | 'published';
 
 export interface Step {
-  id: string;
+  id: number; // Changed from string to number for normalized DB
+  weekId: number; // Foreign key to weeks table
+  position: number; // Order within week
   type: StepType;
   title: string;
   url?: string; // For readings
   note?: string; // Short context
-  
+
   // New Metadata Fields
-  author?: string; 
+  author?: string;
   creationDate?: string; // or publish date
   mediaType?: 'Book' | 'Youtube video' | 'Blog/Article' | 'Podcast';
 
@@ -19,6 +21,8 @@ export interface Step {
 }
 
 export interface Week {
+  id: number; // Primary key
+  syllabusId: number; // Foreign key to syllabi table
   index: number; // 1-4
   title?: string; // e.g. "Foundations"
   description?: string; // Weekly summary
@@ -26,44 +30,64 @@ export interface Week {
 }
 
 export interface Syllabus {
-  id: string;
+  id: number; // Changed from string to number for normalized DB
   title: string;
   description: string;
   audienceLevel: AudienceLevel;
   durationWeeks: number; // 1-4
   status: SyllabusStatus;
   weeks: Week[];
-  creatorId: string;
+  creatorId: string; // Username (unique) instead of UUID
 }
 
 export interface Enrollment {
-  activeSyllabusId: string | null;
+  id?: number; // Enrollment ID
+  activeSyllabusId: number | null; // Changed from string to number
   currentWeekIndex: number; // 1-based
-  completedStepIds: string[]; // List of completed step IDs
-  completedSyllabusIds: string[]; // List of fully completed syllabus IDs
+  completedStepIds: number[]; // Changed from string[] to number[]
+  completedSyllabusIds: number[]; // Changed from string[] to number[]
 }
 
 export interface Submission {
-  stepId: string;
+  id?: number; // Submission ID
+  enrollmentId: number; // Which enrollment this belongs to
+  stepId: number; // Changed from string to number
   answer: string; // URL or text
   submittedAt: string;
   isShared: boolean; // Learner opt-in
-  
+
   // Creator feedback
   feedback?: string; // Rich text
   grade?: string; // e.g. "A", "Pass", "85/100"
   rubricUrl?: string; // URL to grading rubric
 }
 
+export interface CompletedStep {
+  enrollmentId: number;
+  stepId: number;
+  completedAt: string; // ISO timestamp
+}
+
 export interface Cohort {
-  id: string;
+  id: number;
   name: string;
-  syllabusId: string;
-  learnerIds: string[];
+  syllabusId: number;               // FK to syllabi
+  creatorId?: string;               // Username of creator
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CohortMember {
+  cohortId: number;
+  studentId: string;                // Username of student
+  joinedAt: string;
+  role: string;                     // 'member', 'moderator', etc.
 }
 
 export interface User {
   id: string;
+  username: string;
   name: string;
   email?: string;
   isCreator: boolean;

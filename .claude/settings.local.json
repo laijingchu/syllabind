@@ -1,7 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(npx drizzle-kit:*)",
+      "Bash(npm run db:push:*)",
+      "Bash(psql:*)",
+      "Bash(tsx:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run check:*)",
+      "Bash(npm run db:seed:*)",
+      "Bash(curl:*)"
     ]
   }
 }

@@ -31,32 +31,45 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Plus, Users, Search, Filter, ExternalLink, Check, MoreHorizontal } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LearnerProfile, Submission } from '@/lib/types';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { cn } from '@/lib/utils';
 
 export default function CreatorLearners() {
   const [match, params] = useRoute('/creator/syllabus/:id/learners');
-  const { getSyllabusById, getLearnersForSyllabus, cohorts, createCohort, assignLearnerToCohort, getSubmissionsForStep, provideFeedback } = useStore();
+  const { getSyllabusById, getLearnersForSyllabus, getSubmissionsForStep } = useStore();
   const [, setLocation] = useLocation();
+  const [learners, setLearners] = useState<LearnerProfile[]>([]);
 
-  const syllabusId = params?.id;
+  const syllabusId = params?.id ? parseInt(params.id) : undefined;
   const syllabus = syllabusId ? getSyllabusById(syllabusId) : undefined;
+
+  // Mock cohort data (not yet implemented in store)
+  const cohorts: any[] = [];
+  const createCohort = (name: string, syllabusId: number) => console.log('Create cohort:', name, syllabusId);
+  const assignLearnerToCohort = (learnerId: string, cohortId: number) => console.log('Assign learner:', learnerId, cohortId);
+  const provideFeedback = (stepId: number, learnerId: string, feedback: string, grade: string, rubricUrl: string) => console.log('Provide feedback:', stepId, learnerId, feedback, grade, rubricUrl);
 
   const [activeTab, setActiveTab] = useState('learners');
   const [newCohortName, setNewCohortName] = useState('');
   const [selectedLearner, setSelectedLearner] = useState<string | null>(null); // For cohort assignment dialog
-  const [selectedSubmission, setSelectedSubmission] = useState<{ stepId: string, learnerId: string, submission: Submission } | null>(null); // For grading dialog
+  const [selectedSubmission, setSelectedSubmission] = useState<{ stepId: number, learnerId: string, submission: Submission } | null>(null); // For grading dialog
   
   // Feedback state
   const [feedbackText, setFeedbackText] = useState('');
   const [grade, setGrade] = useState('');
   const [rubricUrl, setRubricUrl] = useState('');
 
+  // Fetch learners asynchronously
+  useEffect(() => {
+    if (syllabus?.id) {
+      getLearnersForSyllabus(syllabus.id).then(setLearners);
+    }
+  }, [syllabus?.id]);
+
   if (!syllabus) return <div>Syllabus not found</div>;
 
-  const learners = getLearnersForSyllabus(syllabus.id);
   const syllabusCohorts = cohorts.filter(c => c.syllabusId === syllabus.id);
 
   // Get all exercise steps for this syllabus
@@ -70,10 +83,11 @@ export default function CreatorLearners() {
   };
 
   const handleAssignCohort = (learnerId: string, cohortId: string) => {
-    assignLearnerToCohort(cohortId, learnerId);
+    const cohortIdNum = cohortId === "unassigned" ? 0 : parseInt(cohortId);
+    assignLearnerToCohort(learnerId, cohortIdNum);
   };
 
-  const openGrading = (stepId: string, learnerId: string, submission: Submission) => {
+  const openGrading = (stepId: number, learnerId: string, submission: Submission) => {
     setSelectedSubmission({ stepId, learnerId, submission });
     setFeedbackText(submission.feedback || '');
     setGrade(submission.grade || '');
@@ -82,11 +96,7 @@ export default function CreatorLearners() {
 
   const saveFeedback = () => {
     if (selectedSubmission) {
-      provideFeedback(selectedSubmission.stepId, selectedSubmission.learnerId, {
-        feedback: feedbackText,
-        grade,
-        rubricUrl
-      });
+      provideFeedback(selectedSubmission.stepId, selectedSubmission.learnerId, feedbackText, grade, rubricUrl);
       setSelectedSubmission(null);
     }
   };

@@ -12,7 +12,7 @@ export default function Completion() {
   // In a real app we'd mark it as completed in store here if not already.
   // For MVP we assume the button in WeekView took us here.
   
-  const syllabus = params?.id ? getSyllabusById(params.id) : undefined;
+  const syllabus = params?.id ? getSyllabusById(parseInt(params.id)) : undefined;
 
   useEffect(() => {
     // Fire confetti on mount

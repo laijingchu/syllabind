@@ -14,13 +14,13 @@ export default function Dashboard() {
   const activeSyllabus = getActiveSyllabus();
 
   // Filter completed syllabi
-  const completedSyllabi = enrollment.completedSyllabusIds
+  const completedSyllabi = (enrollment?.completedSyllabusIds || [])
     .map(id => getSyllabusById(id))
     .filter((s): s is typeof s & {} => !!s); // Type guard
 
   const isCompleted = activeSyllabus && getOverallProgress(activeSyllabus.id) === 100;
-  
-  const allCompleted = syllabi.length > 0 && syllabi.every(s => enrollment.completedSyllabusIds.includes(s.id));
+
+  const allCompleted = syllabi.length > 0 && syllabi.every(s => enrollment?.completedSyllabusIds?.includes(s.id));
 
   // If no active syllabus (and not all completed), show Catalog
   if (!activeSyllabus && !allCompleted) {
@@ -28,9 +28,9 @@ export default function Dashboard() {
   }
 
   const suggestedSyllabi = syllabi
-    .filter(s => 
-      (!activeSyllabus || s.id !== activeSyllabus.id) && 
-      !enrollment.completedSyllabusIds.includes(s.id)
+    .filter(s =>
+      (!activeSyllabus || s.id !== activeSyllabus.id) &&
+      !enrollment?.completedSyllabusIds?.includes(s.id)
     )
     .slice(0, 3);
 
@@ -102,7 +102,7 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   {getOverallProgress(activeSyllabus.id) < 100 && (
                     <div className="flex justify-between text-sm">
-                      <span className="font-medium">{pluralize(enrollment.currentWeekIndex, 'Week')} of {activeSyllabus.durationWeeks}</span>
+                      <span className="font-medium">{pluralize(enrollment?.currentWeekIndex || 1, 'Week')} of {activeSyllabus.durationWeeks}</span>
                     </div>
                   )}
                   <Progress value={getOverallProgress(activeSyllabus.id)} className="h-2" />
@@ -127,10 +127,10 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <Link href={`/syllabus/${activeSyllabus.id}/week/${enrollment.currentWeekIndex}`}>
+                    <Link href={`/syllabus/${activeSyllabus.id}/week/${enrollment?.currentWeekIndex || 1}`}>
                       <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/20">
                         <PlayCircle className="mr-2 h-5 w-5" />
-                        Continue to Week {enrollment.currentWeekIndex}
+                        Continue to Week {enrollment?.currentWeekIndex || 1}
                       </Button>
                     </Link>
                     <Link href={`/syllabus/${activeSyllabus.id}`}>
