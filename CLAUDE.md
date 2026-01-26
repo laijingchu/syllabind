@@ -52,6 +52,43 @@ tsx server/migrate-jsonb-to-normalized.ts
 npm run check            # Run TypeScript compiler check
 ```
 
+### Testing
+
+```bash
+# Run all backend tests (sequential, low CPU usage)
+npm test
+
+# Run tests in parallel (faster, more CPU intensive)
+npm run test:parallel
+
+# Run tests without coverage analysis (faster)
+npm run test:quick
+
+# Run a specific test file
+npm run test:single server/__tests__/storage.test.ts
+
+# Run tests in watch mode (re-runs on file changes)
+npm run test:watch
+```
+
+**Test Organization:**
+- Backend tests only: `server/__tests__/`
+- Test setup: `jest.setup.js`, `jest.afterEnv.js`
+- Mock utilities: `server/__tests__/setup/mocks.ts`
+- Focus: Business logic, API routes, storage layer
+
+**After Making Changes:**
+1. After any non-trivial code change, run `npm test`
+2. If tests fail, fix the code and re-run tests until they pass
+3. Always write or update tests for new features
+4. Update existing tests when changing functionality
+
+**Test Coverage Thresholds:**
+- Branches: 60%
+- Functions: 65%
+- Lines: 70%
+- Statements: 70%
+
 ## Architecture Overview
 
 ### Monorepo Structure
@@ -272,3 +309,9 @@ Required environment variables:
 1. Always keep `architecture.md` updated whenever a change is made.
 2. In databases, Avoid the use of JSONB Column and use normalized schema by default. Explicitly ask for permission if JSONB is determined to be a superior solution for a given problem.
 3. Keep commented out dev notes consolidated and readable. Do not spell out entire thought process.
+4. No need to keep asking for permission for reading files or running commands
+5. **Testing Protocol:**
+   - After making any non-trivial change to backend code, run `npm test`
+   - If tests fail, fix the code and re-run tests until they pass
+   - Always write or update tests for new features or modified functionality
+   - Test files should cover: storage operations, API routes, auth workflows, and business logic

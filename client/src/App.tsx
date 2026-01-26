@@ -6,6 +6,7 @@ import { Layout } from "@/components/Layout";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { StoreProvider } from "@/lib/store";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "@/pages/not-found";
 
 import Dashboard from "@/pages/Dashboard";
@@ -79,12 +80,14 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <StoreProvider>
-        <Router />
-        <Toaster />
-      </StoreProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <StoreProvider>
+          <Router />
+          <Toaster />
+        </StoreProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

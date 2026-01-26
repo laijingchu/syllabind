@@ -6,12 +6,47 @@ import { Card, CardContent } from '@/components/ui/card';
 import { PlayCircle, CheckCircle2, Award } from 'lucide-react';
 import { SyllabusCard } from '@/components/SyllabusCard';
 import { pluralize } from '@/lib/utils';
+import { useState, useEffect } from 'react';
+import { Syllabus } from '@/lib/types';
 
 import Catalog from './Catalog';
 
 export default function Dashboard() {
-  const { enrollment, getActiveSyllabus, getOverallProgress, syllabi, getSyllabusById } = useStore();
-  const activeSyllabus = getActiveSyllabus();
+  const { enrollment, getActiveSyllabus, syllabi, getSyllabusById, completedStepIds } = useStore();
+  const activeSyllabusMetadata = getActiveSyllabus();
+  const [activeSyllabus, setActiveSyllabus] = useState<Syllabus | undefined>(undefined);
+
+  // Fetch full syllabus data with weeks and steps
+  useEffect(() => {
+    if (activeSyllabusMetadata?.id) {
+      fetch(`/api/syllabi/${activeSyllabusMetadata.id}`, {
+        credentials: 'include'
+      })
+        .then(res => {
+          if (!res.ok) throw new Error(`Failed to fetch syllabus: ${res.status}`);
+          return res.json();
+        })
+        .then(data => setActiveSyllabus(data))
+        .catch(err => {
+          console.error('Failed to fetch full syllabus:', err);
+          setActiveSyllabus(undefined);
+        });
+    } else {
+      setActiveSyllabus(undefined);
+    }
+  }, [activeSyllabusMetadata?.id]);
+
+  // Local helper to compute overall progress
+  const getOverallProgress = (syllabusId: number) => {
+    const syllabus = syllabusId === activeSyllabus?.id ? activeSyllabus : getSyllabusById(syllabusId);
+    if (!syllabus || !syllabus.weeks) return 0;
+
+    const allStepIds = syllabus.weeks.flatMap(week => week.steps.map(step => step.id));
+    if (allStepIds.length === 0) return 0;
+
+    const completedCount = allStepIds.filter(id => completedStepIds.includes(id)).length;
+    return Math.round((completedCount / allStepIds.length) * 100);
+  };
 
   // Filter completed syllabi
   const completedSyllabi = (enrollment?.completedSyllabusIds || [])
@@ -23,8 +58,13 @@ export default function Dashboard() {
   const allCompleted = syllabi.length > 0 && syllabi.every(s => enrollment?.completedSyllabusIds?.includes(s.id));
 
   // If no active syllabus (and not all completed), show Catalog
-  if (!activeSyllabus && !allCompleted) {
+  if (!activeSyllabusMetadata && !allCompleted) {
     return <Catalog />;
+  }
+
+  // Wait for full syllabus data to load
+  if (activeSyllabusMetadata && !activeSyllabus) {
+    return <div className="max-w-4xl mx-auto py-20 text-center">Loading...</div>;
   }
 
   const suggestedSyllabi = syllabi

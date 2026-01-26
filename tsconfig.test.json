@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "server/**/*.test.ts",
+    "server/__tests__/**/*",
+    "jest.setup.js",
+    "jest.afterEnv.js"
+  ],
+  "exclude": [],
+  "compilerOptions": {
+    "types": ["node", "jest"],
+    "noEmit": true,
+    "typeRoots": ["./node_modules/@types", "./server/__tests__"]
+  }
+}

@@ -11,25 +11,65 @@ import { cn, pluralize } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Syllabus } from '@/lib/types';
 
 export default function WeekView() {
   const [match, params] = useRoute('/syllabus/:id/week/:index');
-  const { 
-    getSyllabusById, 
-    enrollment, 
-    markStepComplete, 
-    markStepIncomplete, 
+  const {
+    getSyllabusById,
+    enrollment,
+    markStepComplete,
+    markStepIncomplete,
     isStepCompleted,
     saveExercise,
-    getProgressForWeek,
-    getSubmission
+    getSubmission,
+    completedStepIds
   } = useStore();
   const [location, setLocation] = useLocation();
 
+  // All state hooks at the top
+  const [syllabus, setSyllabus] = useState<Syllabus | undefined>(undefined);
+  const [exerciseText, setExerciseText] = useState<Record<number, string>>({});
+  const [isShared, setIsShared] = useState<Record<number, boolean>>({});
+
   const syllabusId = params?.id ? parseInt(params.id) : undefined;
   const weekIndex = parseInt(params?.index || '1');
-  const syllabus = syllabusId ? getSyllabusById(syllabusId) : undefined;
+
+  // Fetch full syllabus with weeks and steps
+  useEffect(() => {
+    if (syllabusId) {
+      fetch(`/api/syllabi/${syllabusId}`, {
+        credentials: 'include'
+      })
+        .then(res => {
+          if (!res.ok) throw new Error(`Failed to fetch syllabus: ${res.status}`);
+          return res.json();
+        })
+        .then(data => setSyllabus(data))
+        .catch(err => {
+          console.error('Failed to fetch syllabus:', err);
+          setSyllabus(undefined);
+        });
+    }
+  }, [syllabusId]);
+
+  // Completion Check
+  useEffect(() => {
+    // If all steps in this week are done, and this is the last week, we might want to prompt completion.
+    // Or just let them click "Finish".
+  }, [syllabus, weekIndex]);
+
   const week = syllabus?.weeks.find(w => w.index === weekIndex);
+
+  // Local helper to compute week progress using local syllabus state
+  const getWeekProgress = (weekIdx: number) => {
+    const wk = syllabus?.weeks.find(w => w.index === weekIdx);
+    if (!wk || wk.steps.length === 0) return 0;
+
+    const weekStepIds = wk.steps.map(step => step.id);
+    const completedCount = weekStepIds.filter(id => completedStepIds.includes(id)).length;
+    return Math.round((completedCount / weekStepIds.length) * 100);
+  };
 
   // Locking Logic
   // A week is locked if the previous week's readings are not all done.
@@ -41,16 +81,10 @@ export default function WeekView() {
   ) : true;
 
   const isLocked = weekIndex > 1 && !previousWeekReadingsDone;
-  // Also locked if we try to jump ahead multiple weeks, but the recursive logic above covers it if we assume linear progression.
-  // Actually, standard logic: Week N is locked if Week N-1 is not complete.
-  
+
   if (!syllabus || !week) return <div>Not found</div>;
 
-  const progress = getProgressForWeek(syllabus.id, weekIndex);
-
-  // Exercise State Management (Local buffer before saving)
-  const [exerciseText, setExerciseText] = useState<Record<number, string>>({});
-  const [isShared, setIsShared] = useState<Record<number, boolean>>({});
+  const progress = getWeekProgress(weekIndex);
 
   const handleExerciseChange = (stepId: number, val: string) => {
     setExerciseText(prev => ({ ...prev, [stepId]: val }));
@@ -65,12 +99,6 @@ export default function WeekView() {
       await saveExercise(stepId, exerciseText[stepId], isShared[stepId] || false);
     }
   };
-
-  // Completion Check
-  useEffect(() => {
-    // If all steps in this week are done, and this is the last week, we might want to prompt completion.
-    // Or just let them click "Finish".
-  }, [progress]);
 
   if (isLocked) {
     return (

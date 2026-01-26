@@ -394,7 +394,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const getOverallProgress = (syllabusId: number) => {
     const syllabus = getSyllabusById(syllabusId);
-    if (!syllabus) return 0;
+    if (!syllabus || !syllabus.weeks) return 0;
 
     const allStepIds = syllabus.weeks.flatMap(week => week.steps.map(step => step.id));
     if (allStepIds.length === 0) return 0;
@@ -405,7 +405,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const getProgressForWeek = (syllabusId: number, weekIndex: number) => {
     const syllabus = getSyllabusById(syllabusId);
-    if (!syllabus) return 0;
+    if (!syllabus || !syllabus.weeks) return 0;
 
     const week = syllabus.weeks.find(w => w.index === weekIndex);
     if (!week || week.steps.length === 0) return 0;

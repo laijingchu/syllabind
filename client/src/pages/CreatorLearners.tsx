@@ -32,7 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Plus, Users, Search, Filter, ExternalLink, Check, MoreHorizontal } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { LearnerProfile, Submission } from '@/lib/types';
+import { LearnerProfile, Submission, Syllabus } from '@/lib/types';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { cn } from '@/lib/utils';
 
@@ -40,35 +40,46 @@ export default function CreatorLearners() {
   const [match, params] = useRoute('/creator/syllabus/:id/learners');
   const { getSyllabusById, getLearnersForSyllabus, getSubmissionsForStep } = useStore();
   const [, setLocation] = useLocation();
+
+  // All state hooks at the top
   const [learners, setLearners] = useState<LearnerProfile[]>([]);
+  const [syllabus, setSyllabus] = useState<Syllabus | undefined>(undefined);
+  const [activeTab, setActiveTab] = useState('learners');
+  const [newCohortName, setNewCohortName] = useState('');
+  const [selectedLearner, setSelectedLearner] = useState<string | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<{ stepId: number, learnerId: string, submission: Submission } | null>(null);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [grade, setGrade] = useState('');
+  const [rubricUrl, setRubricUrl] = useState('');
 
   const syllabusId = params?.id ? parseInt(params.id) : undefined;
-  const syllabus = syllabusId ? getSyllabusById(syllabusId) : undefined;
+
+  // Fetch full syllabus with weeks and steps
+  useEffect(() => {
+    if (syllabusId) {
+      fetch(`/api/syllabi/${syllabusId}`, {
+        credentials: 'include'
+      })
+        .then(res => res.json())
+        .then(data => setSyllabus(data))
+        .catch(err => console.error('Failed to fetch syllabus:', err));
+    }
+  }, [syllabusId]);
+
+  // Fetch learners asynchronously
+  useEffect(() => {
+    if (syllabusId) {
+      getLearnersForSyllabus(syllabusId).then(setLearners);
+    }
+  }, [syllabusId]);
+
+  if (!syllabus) return <div>Loading...</div>;
 
   // Mock cohort data (not yet implemented in store)
   const cohorts: any[] = [];
   const createCohort = (name: string, syllabusId: number) => console.log('Create cohort:', name, syllabusId);
   const assignLearnerToCohort = (learnerId: string, cohortId: number) => console.log('Assign learner:', learnerId, cohortId);
   const provideFeedback = (stepId: number, learnerId: string, feedback: string, grade: string, rubricUrl: string) => console.log('Provide feedback:', stepId, learnerId, feedback, grade, rubricUrl);
-
-  const [activeTab, setActiveTab] = useState('learners');
-  const [newCohortName, setNewCohortName] = useState('');
-  const [selectedLearner, setSelectedLearner] = useState<string | null>(null); // For cohort assignment dialog
-  const [selectedSubmission, setSelectedSubmission] = useState<{ stepId: number, learnerId: string, submission: Submission } | null>(null); // For grading dialog
-  
-  // Feedback state
-  const [feedbackText, setFeedbackText] = useState('');
-  const [grade, setGrade] = useState('');
-  const [rubricUrl, setRubricUrl] = useState('');
-
-  // Fetch learners asynchronously
-  useEffect(() => {
-    if (syllabus?.id) {
-      getLearnersForSyllabus(syllabus.id).then(setLearners);
-    }
-  }, [syllabus?.id]);
-
-  if (!syllabus) return <div>Syllabus not found</div>;
 
   const syllabusCohorts = cohorts.filter(c => c.syllabusId === syllabus.id);
 

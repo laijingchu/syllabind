@@ -25,7 +25,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn, pluralize } from '@/lib/utils';
-import { LearnerProfile } from '@/lib/types';
+import { LearnerProfile, Syllabus } from '@/lib/types';
 
 export default function SyllabusOverview() {
   const [match, params] = useRoute('/syllabus/:id');
@@ -34,35 +34,67 @@ export default function SyllabusOverview() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
   const [learners, setLearners] = useState<LearnerProfile[]>([]);
+  const [syllabus, setSyllabus] = useState<Syllabus | undefined>(undefined);
+  const [creator, setCreator] = useState<any>(undefined);
   const { updateUser } = useStore();
 
-  const syllabus = match && params?.id ? getSyllabusById(parseInt(params.id)) : undefined;
-  const { user: currentUser } = useStore();
+  const syllabusId = match && params?.id ? parseInt(params.id) : undefined;
+  const { user: currentUser, completedStepIds } = useStore();
   const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
 
-  if (!syllabus) return <div className="text-center py-20">Syllabus not found</div>;
+  // Fetch full syllabus with weeks and steps
+  useEffect(() => {
+    if (syllabusId) {
+      fetch(`/api/syllabi/${syllabusId}`, {
+        credentials: 'include'
+      })
+        .then(res => {
+          if (!res.ok) throw new Error(`Failed to fetch syllabus: ${res.status}`);
+          return res.json();
+        })
+        .then(data => setSyllabus(data))
+        .catch(err => {
+          console.error('Failed to fetch syllabus:', err);
+          setSyllabus(undefined);
+        });
+    }
+  }, [syllabusId]);
+
+  // Fetch learners asynchronously
+  useEffect(() => {
+    if (syllabusId) {
+      getLearnersForSyllabus(syllabusId).then(setLearners);
+    }
+  }, [syllabusId]);
+
+  // Fetch creator profile
+  useEffect(() => {
+    if (syllabus?.creatorId) {
+      fetch(`/api/users/${syllabus.creatorId}`, {
+        credentials: 'include'
+      })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => setCreator(data))
+        .catch(err => console.error('Failed to fetch creator:', err));
+    }
+  }, [syllabus?.creatorId]);
+
+  if (!syllabus) return <div className="text-center py-20">Loading...</div>;
 
   const getStepExercise = (stepId: number) => getExerciseText(stepId);
 
-  // In a real app we'd fetch the creator's profile by ID. 
-  // For the mockup, if the current user is the creator (user-1), we show their profile.
-  const creator = currentUser?.id === syllabus.creatorId ? currentUser : {
-    name: "Alex Rivera",
-    expertise: "Cognitive Scientist",
-    bio: "Focused on human-computer interaction and the psychological impact of digital environments. Author of 'The Analog Path'.",
-    avatarUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop"
+  // Local helper to compute week progress
+  const getWeekProgress = (weekIndex: number) => {
+    const week = syllabus.weeks.find(w => w.index === weekIndex);
+    if (!week || week.steps.length === 0) return 0;
+
+    const weekStepIds = week.steps.map(step => step.id);
+    const completedCount = weekStepIds.filter(id => completedStepIds.includes(id)).length;
+    return Math.round((completedCount / weekStepIds.length) * 100);
   };
 
   const isActive = enrollment?.activeSyllabusId === syllabus.id;
   const isCompleted = enrollment?.completedSyllabusIds?.includes(syllabus.id);
-  const { getProgressForWeek } = useStore();
-
-  // Fetch learners asynchronously
-  useEffect(() => {
-    if (syllabus?.id) {
-      getLearnersForSyllabus(syllabus.id).then(setLearners);
-    }
-  }, [syllabus?.id]);
 
   const inProgressLearners = learners.filter(l => l.status === 'in-progress');
   const completedLearners = learners.filter(l => l.status === 'completed');
@@ -205,7 +237,7 @@ export default function SyllabusOverview() {
             <h2 className="text-2xl font-serif">What you'll learn</h2>
             <Accordion type="single" collapsible className="space-y-4">
               {syllabus.weeks.filter(w => w.steps.length > 0).map((week) => {
-                const weekDone = isActive && getProgressForWeek(syllabus.id, week.index) === 100;
+                const weekDone = isActive && getWeekProgress(week.index) === 100;
                 const isCurrentWeek = isActive && enrollment.currentWeekIndex === week.index;
                 
                 return (

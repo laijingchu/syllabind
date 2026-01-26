@@ -38,6 +38,8 @@ export interface Syllabus {
   status: SyllabusStatus;
   weeks: Week[];
   creatorId: string; // Username (unique) instead of UUID
+  createdAt?: string | Date | null;
+  updatedAt?: string | Date | null;
 }
 
 export interface Enrollment {
