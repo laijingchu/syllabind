@@ -23,7 +23,9 @@
       "Bash(fuser:*)",
       "Bash(ss:*)",
       "Bash(netstat:*)",
-      "Bash(npm run kill:*)"
+      "Bash(npm run kill:*)",
+      "Bash(npm run test:quick:*)",
+      "Bash(tee:*)"
     ]
   }
 }

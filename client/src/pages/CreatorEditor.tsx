@@ -49,7 +49,18 @@ export default function CreatorEditor() {
     if (!isNew && params?.id) {
       const existing = getSyllabusById(parseInt(params.id));
       if (existing) {
-        setFormData(existing);
+        // Ensure weeks array exists
+        const weeksArray = existing.weeks || [];
+        setFormData({
+          ...existing,
+          weeks: weeksArray.length > 0 ? weeksArray : Array.from({ length: existing.durationWeeks || 4 }, (_, i) => ({
+            id: generateTempId(),
+            syllabusId: existing.id,
+            index: i + 1,
+            steps: [] as Step[],
+            title: ''
+          }))
+        });
       }
     }
   }, [isNew, params?.id, getSyllabusById]);
@@ -294,12 +305,12 @@ export default function CreatorEditor() {
         <h2 className="text-xl font-medium">Curriculum</h2>
         <Tabs defaultValue="week-1" className="w-full">
           <TabsList>
-            {formData.weeks.map(w => (
+            {formData.weeks?.map(w => (
               <TabsTrigger key={w.index} value={`week-${w.index}`}>Week {w.index}</TabsTrigger>
             ))}
           </TabsList>
-          
-          {formData.weeks.map(week => (
+
+          {formData.weeks?.map(week => (
             <TabsContent key={week.index} value={`week-${week.index}`} className="space-y-10 mt-8">
               <Card>
                  <CardContent className="pt-6 space-y-10">
@@ -477,7 +488,7 @@ export default function CreatorEditor() {
              {(() => {
                 // Learners are now loaded via useEffect below
                 // Collect all shared submissions across all steps
-                const allRecentSubmissions = formData.weeks
+                const allRecentSubmissions = (formData.weeks || [])
                   .flatMap(w => w.steps)
                   .filter(s => s.type === 'exercise')
                   .flatMap(step => {

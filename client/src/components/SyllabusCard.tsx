@@ -28,15 +28,16 @@ export function SyllabusCard({ syllabus, className }: SyllabusCardProps) {
         </h3>
       </CardHeader>
       <CardContent className="pb-4">
-        <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
-          {syllabus.description}
-        </p>
+        <div
+          className="text-sm text-muted-foreground line-clamp-3 leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: syllabus.description }}
+        />
       </CardContent>
       <CardFooter>
         <Link href={`/syllabus/${syllabus.id}`}>
            <Button variant="outline" className="w-full justify-between group-hover:border-primary/50 group-hover:text-primary transition-colors">
              View Syllabus
-             <ArrowRight className="h-4 w-4 ml-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+             <ArrowRight className="h-4 w-4 ml-2 opacity-50 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
            </Button>
         </Link>
       </CardFooter>

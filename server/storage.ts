@@ -122,7 +122,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateSyllabus(id: number, update: Partial<Syllabus>): Promise<Syllabus> {
-    const [syllabus] = await db.update(syllabi).set(update).where(eq(syllabi.id, id)).returning();
+    // Filter out readonly fields and nested objects that aren't part of the syllabi table
+    const { createdAt, updatedAt, weeks, ...updateData } = update;
+
+    // Automatically set updatedAt to current time
+    const [syllabus] = await db.update(syllabi).set({
+      ...updateData,
+      updatedAt: new Date()
+    }).where(eq(syllabi.id, id)).returning();
     return syllabus;
   }
 
@@ -152,7 +159,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateEnrollment(id: number, update: Partial<Enrollment>): Promise<Enrollment> {
-    const [enrollment] = await db.update(enrollments).set(update).where(eq(enrollments.id, id)).returning();
+    // Filter out readonly timestamp fields
+    const { joinedAt, ...updateData } = update;
+
+    const [enrollment] = await db.update(enrollments).set(updateData).where(eq(enrollments.id, id)).returning();
     return enrollment;
   }
 

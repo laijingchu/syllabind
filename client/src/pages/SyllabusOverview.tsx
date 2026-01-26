@@ -437,22 +437,24 @@ export default function SyllabusOverview() {
                </div>
             )}
 
-            <div className="pt-6 border-t space-y-4">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Created by</h4>
-              <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={creator.avatarUrl} />
-                  <AvatarFallback><UserIcon className="h-5 w-5" /></AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-medium text-sm">{creator.name}</div>
-                  <div className="text-xs text-muted-foreground">{creator.expertise}</div>
+            {creator && (
+              <div className="pt-6 border-t space-y-4">
+                <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Created by</h4>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={creator.avatarUrl} />
+                    <AvatarFallback><UserIcon className="h-5 w-5" /></AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-medium text-sm">{creator.name}</div>
+                    <div className="text-xs text-muted-foreground">{creator.expertise}</div>
+                  </div>
                 </div>
+                <p className="text-xs text-muted-foreground leading-relaxed italic">
+                  "{creator.bio}"
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed italic">
-                "{creator.bio}"
-              </p>
-            </div>
+            )}
           </div>
         </div>
       </div>

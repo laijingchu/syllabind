@@ -105,14 +105,13 @@ export default function Dashboard() {
           </Card>
         ) : activeSyllabus ? (
           <>
-          {!isCompleted && (
           <div className="relative rounded-xl border bg-card text-card-foreground shadow-sm">
             <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
                <div className="absolute top-0 right-0 p-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             </div>
 
             {getOverallProgress(activeSyllabus.id) === 100 && (
-              <div className="absolute -top-6 -right-6 h-28 w-28 text-primary-foreground rounded-full flex items-center justify-center shadow-xl border-4 border-background transform rotate-12 z-20 animate-in zoom-in duration-500 bg-[#ffffff]">
+              <div className="absolute -top-6 -right-6 h-28 w-28 text-foreground rounded-full flex items-center justify-center shadow-xl border-4 border-background transform rotate-12 z-20 animate-in zoom-in duration-500 bg-[#ffffff]">
                 <div className="text-center -ml-1 mt-2">
                   <Award className="h-8 w-8 mx-auto mb-1" />
                   <div className="text-[10px] font-bold uppercase tracking-widest">Done</div>
@@ -127,7 +126,10 @@ export default function Dashboard() {
                     {getOverallProgress(activeSyllabus.id) === 100 ? 'Completed' : 'In Progress'}
                   </div>
                   <h2 className="text-3xl font-serif">{activeSyllabus.title}</h2>
-                  <p className="text-muted-foreground max-w-xl">{activeSyllabus.description}</p>
+                  <div
+                    className="text-muted-foreground max-w-xl prose dark:prose-invert prose-p:my-0"
+                    dangerouslySetInnerHTML={{ __html: activeSyllabus.description }}
+                  />
                 </div>
                 
                 {getOverallProgress(activeSyllabus.id) < 100 && (
@@ -183,8 +185,7 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-          )}
-          
+
           {isCompleted && suggestedSyllabi.length > 0 && (
             <div className="space-y-4 pt-4 animate-in fade-in slide-in-from-bottom-4 delay-150">
               <div className="flex justify-between items-center">
