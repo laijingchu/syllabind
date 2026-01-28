@@ -32,7 +32,10 @@
       "Bash(find:*)",
       "Bash(ls:*)",
       "Bash(xargs:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_zqe0TRY2jDbg@ep-jolly-surf-ahuyky2x.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require\" tsx:*)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_zqe0TRY2jDbg@ep-jolly-surf-ahuyky2x.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require\" psql:*)",
+      "Bash(npx tsx:*)"
     ]
   }
 }

@@ -102,14 +102,14 @@ export default function WeekView() {
 
   if (isLocked) {
     return (
-      <div className="max-w-2xl mx-auto py-20 text-center space-y-6">
-        <div className="bg-muted h-20 w-20 rounded-full flex items-center justify-center mx-auto">
-          <Lock className="h-8 w-8 text-muted-foreground" />
+      <div className="max-w-2xl mx-auto py-12 sm:py-20 px-4 text-center space-y-4 sm:space-y-6">
+        <div className="bg-muted h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center mx-auto">
+          <Lock className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
         </div>
-        <h2 className="text-2xl font-serif">{pluralize(weekIndex, 'Week')} is Locked</h2>
-        <p className="text-muted-foreground">Complete all steps in {pluralize(weekIndex - 1, 'Week')} to unlock this content.</p>
+        <h2 className="text-xl sm:text-2xl font-serif">{pluralize(weekIndex, 'Week')} is Locked</h2>
+        <p className="text-sm sm:text-base text-muted-foreground">Complete all steps in {pluralize(weekIndex - 1, 'Week')} to unlock this content.</p>
         <Link href={`/syllabus/${syllabus.id}/week/${weekIndex - 1}`}>
-          <Button>Go to {pluralize(weekIndex - 1, 'Week')}</Button>
+          <Button className="w-full sm:w-auto">Go to {pluralize(weekIndex - 1, 'Week')}</Button>
         </Link>
       </div>
     );
@@ -123,27 +123,27 @@ export default function WeekView() {
   const allDone = allReadingsDone;
 
   return (
-    <div className="max-w-3xl mx-auto pb-20">
-      <header className="mb-10">
+    <div className="max-w-3xl mx-auto pb-20 px-4 sm:px-0">
+      <header className="mb-6 sm:mb-10">
         <Link href={`/syllabus/${syllabus.id}`}>
           <a className="text-sm text-muted-foreground hover:text-primary mb-4 flex items-center gap-1 transition-colors">
-            <ArrowLeft className="h-4 w-4" /> Back to Syllabus Overview
+            <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Back to Syllabus Overview</span><span className="sm:hidden">Back</span>
           </a>
         </Link>
-        <div className="flex justify-between items-end mb-4">
-          <div>
-            <h2 className="text-sm font-medium text-primary uppercase tracking-wider mb-1">{syllabus.title}</h2>
-            <h1 className="text-3xl font-serif">{week.title || pluralize(week.index, 'Week')}</h1>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 sm:gap-4 mb-4">
+          <div className="min-w-0">
+            <h2 className="text-xs sm:text-sm font-medium text-primary uppercase tracking-wider mb-1 truncate">{syllabus.title}</h2>
+            <h1 className="text-2xl sm:text-3xl font-serif">{week.title || pluralize(week.index, 'Week')}</h1>
             {week.description && (
-              <div 
-                className="text-muted-foreground mt-2 prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 max-w-none text-base"
+              <div
+                className="text-muted-foreground mt-2 prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 max-w-none text-sm sm:text-base"
                 dangerouslySetInnerHTML={{ __html: week.description }}
               />
             )}
           </div>
-          <div className="text-right">
-             <div className="text-2xl font-mono font-medium">{progress}%</div>
-             <div className="text-xs text-muted-foreground">Week Completed</div>
+          <div className="flex items-center sm:block sm:text-right gap-2">
+             <div className="text-xl sm:text-2xl font-mono font-medium">{progress}%</div>
+             <div className="text-xs text-muted-foreground">completed</div>
           </div>
         </div>
         <Progress value={progress} className="h-2" />
@@ -158,41 +158,48 @@ export default function WeekView() {
           const isDone = isStepCompleted(step.id);
           
           return (
-            <motion.div 
+            <motion.div
               key={step.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
               className={cn(
-                "p-6 rounded-xl border bg-card transition-all duration-300",
+                "p-4 sm:p-6 rounded-xl border bg-card transition-all duration-300",
                 isDone ? "border-primary/20 bg-primary/5" : "border-border shadow-sm hover:shadow-md"
               )}
             >
-              <div className="flex gap-4 items-start">
-                <div className="mt-1">
+              <div className="flex gap-3 sm:gap-4 items-start">
+                <div className="mt-0.5 sm:mt-1 shrink-0">
                    {step.type === 'reading' ? (
-                     <Checkbox 
-                       checked={isDone} 
+                     <Checkbox
+                       checked={isDone}
                        onCheckedChange={(c) => c ? markStepComplete(step.id) : markStepIncomplete(step.id)}
-                       className="h-6 w-6 border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                       className="h-5 w-5 sm:h-6 sm:w-6 border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                      />
                    ) : (
-                     <div className={cn("h-6 w-6 rounded-full border-2 flex items-center justify-center", isDone ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30")}>
+                     <div className={cn("h-5 w-5 sm:h-6 sm:w-6 rounded-full border-2 flex items-center justify-center", isDone ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30")}>
                         {isDone && <Check className="h-3 w-3" />}
                      </div>
                    )}
                 </div>
-                
-                <div className="flex-1 space-y-3">
-                  <div className="flex justify-between items-start">
-                    <h3 className={cn("text-lg font-medium", isDone && "text-muted-foreground line-through decoration-primary/30")}>
+
+                <div className="flex-1 space-y-2 sm:space-y-3 min-w-0">
+                  <div className="space-y-1">
+                    <h3 className={cn("text-base sm:text-lg font-medium leading-tight", isDone && "text-muted-foreground line-through decoration-primary/30")}>
                       {step.title}
                     </h3>
-                    {step.estimatedMinutes && (
-                      <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full whitespace-nowrap">
-                        {pluralize(step.estimatedMinutes, 'min')}
-                      </span>
-                    )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {step.creationDate && (
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(step.creationDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                        </span>
+                      )}
+                      {step.estimatedMinutes && (
+                        <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 sm:py-1 rounded-full">
+                          {pluralize(step.estimatedMinutes, 'min')}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   
                   {step.note && (
@@ -247,23 +254,23 @@ export default function WeekView() {
                         </div>
                       ) : (
                         <div className="space-y-4">
-                           <div className="bg-background border p-4 rounded-lg text-sm text-muted-foreground flex items-center justify-between group">
-                              <div>
-                                <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-primary flex items-center gap-2">
-                                  Your Link 
-                                  {getSubmission(step.id)?.isShared && <Badge variant="secondary" className="text-[10px] h-4 px-1">Shared</Badge>}
+                           <div className="bg-background border p-3 sm:p-4 rounded-lg text-sm text-muted-foreground group">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-primary flex items-center gap-2">
+                                    Your Link
+                                    {getSubmission(step.id)?.isShared && <Badge variant="secondary" className="text-[10px] h-4 px-1">Shared</Badge>}
+                                  </div>
+                                  <a
+                                    href={exerciseText[step.id]?.startsWith('http') ? exerciseText[step.id] : `https://${exerciseText[step.id]}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary hover:underline font-medium break-all text-sm"
+                                  >
+                                    {exerciseText[step.id] || getSubmission(step.id)?.answer}
+                                  </a>
                                 </div>
-                                <a 
-                                  href={exerciseText[step.id]?.startsWith('http') ? exerciseText[step.id] : `https://${exerciseText[step.id]}`} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-primary hover:underline font-medium break-all"
-                                >
-                                  {exerciseText[step.id] || getSubmission(step.id)?.answer}
-                                </a>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => markStepIncomplete(step.id)}>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onClick={() => markStepIncomplete(step.id)}>
                                    <LinkIcon className="h-4 w-4 text-muted-foreground" />
                                    <span className="sr-only">Edit</span>
                                 </Button>
@@ -302,23 +309,29 @@ export default function WeekView() {
         })}
       </div>
 
-      <div className="flex justify-between items-center mt-12 pt-8 border-t">
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t">
          {weekIndex > 1 ? (
            <Link href={`/syllabus/${syllabus.id}/week/${weekIndex - 1}`}>
-             <Button variant="ghost"><ChevronLeft className="mr-2 h-4 w-4" /> Previous {pluralize(1, 'Week', 'Week')}</Button>
+             <Button variant="ghost" className="w-full sm:w-auto justify-center">
+               <ChevronLeft className="mr-2 h-4 w-4" /> Previous Week
+             </Button>
            </Link>
          ) : (
-           <div />
+           <div className="hidden sm:block" />
          )}
 
          {allDone && (
            isLastWeek ? (
              <Link href={`/syllabus/${syllabus.id}/completed`}>
-               <Button size="lg" className="animate-pulse">Finish Syllabind <CheckCircle className="ml-2 h-4 w-4" /></Button>
+               <Button size="lg" className="animate-pulse w-full sm:w-auto justify-center">
+                 Finish Syllabind <CheckCircle className="ml-2 h-4 w-4" />
+               </Button>
              </Link>
            ) : (
              <Link href={`/syllabus/${syllabus.id}/week/${weekIndex + 1}`}>
-               <Button>Next <ChevronRight className="ml-2 h-4 w-4" /></Button>
+               <Button className="w-full sm:w-auto justify-center">
+                 Next Week <ChevronRight className="ml-2 h-4 w-4" />
+               </Button>
              </Link>
            )
          )}

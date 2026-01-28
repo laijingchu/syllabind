@@ -231,7 +231,7 @@ npm run db:seed
 
 **All test accounts use password:** `password123`
 
-See `SEEDING_GUIDE.md` for detailed documentation on test accounts, data structure, and customization options.
+See `docs/SEEDING_GUIDE.md` for detailed documentation on test accounts, data structure, and customization options.
 
 **⚠️ Important:** The seed script should only be run in development. All mock data has been removed from the frontend, so seeding is required to test the application.
 
@@ -306,7 +306,7 @@ Required environment variables:
 - TailwindCSS utility classes for styling (no CSS modules)
 - 
 ## Instructions
-1. Always keep `architecture.md` updated whenever a change is made.
+1. Always update `architecture.md` after any non-trivial change.
 2. In databases, Avoid the use of JSONB Column and use normalized schema by default. Explicitly ask for permission if JSONB is determined to be a superior solution for a given problem.
 3. Keep commented out dev notes consolidated and readable. Do not spell out entire thought process.
 4. No need to keep asking for permission for reading files or running commands

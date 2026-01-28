@@ -32,6 +32,17 @@ const allowlist = [
   "zod-validation-error",
 ];
 
+// Banner to inject __dirname and __filename polyfills for CJS output
+const cjsBanner = `
+const __filename = require('url').fileURLToPath(require('url').pathToFileURL(__filename).href);
+const __dirname = require('path').dirname(__filename);
+`.trim();
+
+// Simpler banner that works for CJS
+const cjsShimBanner = `
+var __import_meta_url = typeof document === 'undefined' ? require('url').pathToFileURL(__filename).href : (document.currentScript && document.currentScript.src || new URL('index.cjs', document.baseURI).href);
+`.trim();
+
 async function buildAll() {
   await rm("dist", { recursive: true, force: true });
 
@@ -54,6 +65,10 @@ async function buildAll() {
     outfile: "dist/index.cjs",
     define: {
       "process.env.NODE_ENV": '"production"',
+      "import.meta.url": "__import_meta_url",
+    },
+    banner: {
+      js: cjsShimBanner,
     },
     minify: true,
     external: externals,

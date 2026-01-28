@@ -1,0 +1,33 @@
+id,syllabusId,index,title,description
+1,1,1,Foundations: Vibe Coding vs AI-Assisted Engineering,Understand the spectrum from casual vibe coding to production-grade AI-assisted development. Learn the mental models and workflows and critical judgment calls that separate productive AI-assisted development from frustrating guesswork.
+2,1,2,Design Tokens & CSS Variables,Master the foundational layer of design-code alignment. Learn how to structure design tokens and naming conventions and CSS variables that AI tools can understand and generate consistently.
+3,1,3,Figma-to-Code with MCP & Code Connect,Connect your design system in Figma directly to your codebase using Model Context Protocol (MCP) and Code Connect. Learn to structure Figma files so AI agents produce design-informed code generation.
+4,1,4,Production Component Architecture with shadcn/ui,Build production-grade UI with shadcn/ui and Tailwind CSS. Learn why AI coding tools love shadcn/ui transparent architecture and how to customize components while maintaining design system consistency.
+5,2,1,Understanding the AI Revolution,Explore the history and evolution of large language models from transformers to GPT-4. Understand how these models work at a conceptual level and why they represent a paradigm shift in technology.
+6,2,2,AI Tools for Product Workflows,Survey the landscape of AI tools available to product builders. Learn to evaluate AI assistants and understand their capabilities and limitations and integrate them into your daily workflow.
+7,2,3,Building AI-Enhanced Products,Learn frameworks for incorporating AI into product design. Understand prompt engineering basics and API integration patterns and how to design user experiences around AI capabilities.
+8,2,4,AI Product Strategy & Ethics,Develop strategic thinking about AI product development. Consider ethical implications and bias and responsible AI practices while building products that leverage these powerful technologies.
+9,3,1,Constitutional Foundations,Explore the origins and principles of the US Constitution. Understand the framers intent and the structure of government and the foundational concepts of federalism and separation of powers and checks and balances.
+10,3,2,The Three Branches of Government,Deep dive into the legislative and executive and judicial branches. Understand how laws are made and enforced and interpreted and how the branches interact with each other.
+11,3,3,Rights Liberties and Citizenship,Examine the Bill of Rights and subsequent amendments. Understand civil liberties and civil rights and what it means to be a citizen in a democratic society.
+12,3,4,Civic Action: Creating Change in Your Community,Learn how ordinary citizens can influence policy and create social change. From voting to organizing to advocacy discover practical ways to participate in democracy.
+13,4,1,Typography Essentials,Master the art of selecting and arranging type. Learn font anatomy and hierarchy and pairing and spacing to create readable and visually appealing text layouts.
+14,4,2,Color Theory & Application,Understand the color wheel and color harmonies and color psychology. Learn to create effective color palettes that communicate the right message and evoke desired emotions.
+15,4,3,Layout & Composition,Learn principles of visual hierarchy and grid systems and alignment and spacing. Understand how to guide the viewers eye and create balanced engaging compositions.
+16,4,4,Design in Practice,Apply all design principles together in real projects. Create cohesive designs that combine typography and color and layout into professional visual communications.
+17,5,1,Finding Your Idea & Market,Learn to identify business opportunities and validate your ideas. Understand market research and problem identification and how to find your niche in the digital economy.
+18,5,2,Building Your MVP,Learn lean startup methodology and how to build a minimum viable product. Understand no-code tools and rapid prototyping and getting to market quickly.
+19,5,3,Launch & Growth Strategies,Master product launch tactics and growth strategies. Learn about digital marketing and customer acquisition and building sustainable growth engines.
+20,5,4,Monetization & Scaling,Understand business models and pricing strategies and how to scale your operation. Learn from successful solopreneurs and micro-SaaS founders.
+21,6,1,Learning to Code in the AI Age,Understand how to approach programming in the AI era. Learn HTML basics and set up your development environment while building good learning habits.
+22,6,2,CSS for Visual Delight,Master CSS styling and animations to create visually engaging web experiences. Learn transitions and keyframes and modern layout techniques.
+23,6,3,JavaScript Fundamentals,Learn core JavaScript concepts including variables and functions and DOM manipulation. Build interactive features for your web pages.
+24,6,4,Frontend Frameworks Survey,Survey the modern frontend framework landscape. Compare React and Vue and Svelte to understand when and why to use each one.
+25,7,0,Why Learning Still Matters,Understanding why deep learning skills matter more than ever in a world of instant AI answers
+26,7,1,The Science of Memory,"Evidence-based techniques for long-term retention including spaced repetition, active recall, and desirable difficulties"
+27,7,2,Practical Learning Techniques,"Hands-on methods including the Feynman Technique, metacognition, and the Pomodoro method"
+28,7,3,Assessment and Lifelong Learning,How educational institutions assess learning in the AI age and building habits for continuous growth
+29,8,1,Classical Foundations of Educational Philosophy,"Discover how Plato, Aristotle, and Rousseau shaped our understanding of education's purpose - from philosopher-kings to natural learning."
+30,8,2,Modern Philosophy: Democracy and Liberal Education,Explore Dewey's vision of education for democracy and Newman's defense of liberal education as cultivation of mind.
+31,8,3,The Evolution of Educational Institutions,Trace the development from Plato's Academy through medieval universities to understand how curriculum and institutions evolved.
+32,8,4,Technology and the Democratization Question,Critically examine whether MOOCs and platforms like Khan Academy have fulfilled their promise to democratize education.

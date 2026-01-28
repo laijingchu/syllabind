@@ -130,11 +130,17 @@ This table tracks which learners (students) are enrolled in which syllabi and th
   id: serial PRIMARY KEY,
   studentId: text FK(users.username) ON UPDATE CASCADE ON DELETE CASCADE,
   syllabusId: integer FK(syllabi.id),
-  status: text('in-progress', 'completed') DEFAULT 'in-progress',
+  status: text('in-progress', 'completed', 'dropped') DEFAULT 'in-progress',
   currentWeekIndex: integer DEFAULT 1,
+  shareProfile: boolean DEFAULT false,   // Per-enrollment classmates visibility
   joinedAt: timestamp DEFAULT now()
 }
 ```
+
+**Enrollment Status Values:**
+- `in-progress`: User is actively working on this syllabus (only one per user)
+- `completed`: User finished all content in this syllabus
+- `dropped`: User switched to a different syllabus (automatically set when enrolling in new syllabus)
 
 #### Completed Steps Table
 
@@ -343,6 +349,7 @@ interface Enrollment {
   currentWeekIndex: number;          // 1-based
   completedStepIds: number[];        // Changed from string[] to number[]
   completedSyllabusIds: number[];    // Changed from string[] to number[]
+  shareProfile?: boolean;            // Per-enrollment classmates visibility
 }
 ```
 
@@ -583,7 +590,7 @@ All methods now make real API calls to the backend. The store provides methods o
 - `updateUser(updates)` - PUT to `/api/users/me`
 
 **Learner Actions:**
-- `enrollInSyllabus(syllabusId)` - POST to `/api/enrollments`
+- `enrollInSyllabus(syllabusId, shareProfile?)` - POST to `/api/enrollments` (accepts optional shareProfile)
 - `markStepComplete(stepId)` - POST to `/api/enrollments/:id/steps/:id/complete`
 - `markStepIncomplete(stepId)` - DELETE to `/api/enrollments/:id/steps/:id/complete`
 - `saveExercise(stepId, answer, isShared)` - POST to `/api/submissions`
@@ -592,15 +599,22 @@ All methods now make real API calls to the backend. The store provides methods o
 **Creator Actions:**
 - `createSyllabus(syllabus)` - POST to `/api/syllabi`
 - `updateSyllabus(syllabus)` - PUT to `/api/syllabi/:id`
-- `getLearnersForSyllabus(syllabusId)` - GET from `/api/syllabi/:id/learners`
+- `getLearnersForSyllabus(syllabusId)` - GET from `/api/syllabi/:id/classmates` (public, filters by enrollment shareProfile)
+- `updateEnrollmentShareProfile(enrollmentId, shareProfile)` - PATCH to `/api/enrollments/:id/share-profile`
 
 **Query Methods:**
 - `getActiveSyllabus()` - Get current enrolled syllabus from local state
-- `getSyllabusById(id)` - Get syllabus from local state
+- `getSyllabusById(id)` - Get syllabus from local state (basic metadata only, no weeks/steps)
 - `isStepCompleted(stepId)` - Check step completion in local state
 - `getProgressForWeek(syllabusId, weekIndex)` - Calculate week progress
 - `getOverallProgress(syllabusId)` - Calculate total progress
 - `getSubmission(stepId)` - Get submission from local state
+
+**Important Data Loading Patterns:**
+- The cached `syllabi` list from `/api/syllabi` contains only basic metadata (no weeks/steps)
+- Pages that need full curriculum (weeks/steps) must fetch directly from `/api/syllabi/:id`
+- `SyllabusOverview` and `CreatorEditor` both fetch full content via direct API calls
+- This prevents loading heavy curriculum data for catalog browsing
 
 #### React Query
 
@@ -650,7 +664,12 @@ PUT    /api/syllabi/:id         - Update syllabus
 DELETE /api/syllabi/:id         - Delete syllabus
 POST   /api/syllabi/:id/publish - Publish/unpublish syllabus
 GET    /api/creator/syllabi     - Get creator's syllabi (including drafts)
-GET    /api/syllabi/:id/learners - Get learners for syllabus
+GET    /api/syllabi/:id/learners    - Get all learners for syllabus (creator only)
+```
+
+**Public (Auth Required):**
+```
+GET    /api/syllabi/:id/classmates  - Get classmates who opted in (shareProfile=true)
 ```
 
 ### Enrollment Endpoints (Auth Required)
@@ -658,7 +677,8 @@ GET    /api/syllabi/:id/learners - Get learners for syllabus
 ```
 GET    /api/enrollments     - Get user's enrollments
 POST   /api/enrollments     - Enroll in syllabus
-PUT    /api/enrollments/:id - Update enrollment progress
+PUT    /api/enrollments/:id              - Update enrollment progress
+PATCH  /api/enrollments/:id/share-profile - Toggle enrollment shareProfile
 ```
 
 ### Progress Tracking Endpoints (Auth Required)
@@ -680,8 +700,38 @@ PUT    /api/submissions/:id/feedback    - Provide feedback (creator only)
 ### Analytics Endpoints (Auth + Creator + Ownership)
 
 ```
+GET    /api/syllabi/:id/analytics                  - Comprehensive analytics dashboard
 GET    /api/syllabi/:id/analytics/completion-rates - Step completion rates
 GET    /api/syllabi/:id/analytics/completion-times - Average completion times
+```
+
+**Comprehensive Analytics Response (`/api/syllabi/:id/analytics`):**
+```typescript
+{
+  learnersStarted: number;           // Total enrollments
+  learnersCompleted: number;         // Enrollments with status='completed'
+  completionRate: number;            // Percentage of completers
+  averageProgress: number;           // Average % of steps completed
+  weekReach: Array<{                 // Learner reach per week
+    week: string;                    // "Week 1", "Week 2", etc.
+    weekIndex: number;
+    percentage: number;              // % of learners who reached this week
+    learnerCount: number;
+    learnerNames: string[];          // Names of learners who reached this week
+  }>;
+  stepDropoff: Array<{               // Step-level dropoff data
+    stepId: number;
+    weekIndex: number;
+    stepTitle: string;
+    dropoffRate: number;             // % drop from previous step
+    completionCount: number;
+  }>;
+  topDropoutStep: {                  // Highest dropoff step (or null)
+    weekIndex: number;
+    stepTitle: string;
+    dropoffRate: number;
+  } | null;
+}
 ```
 
 ---
@@ -699,7 +749,7 @@ The learner journey focuses on structured, progressive learning. Learners browse
 - **Week-by-week Progress**: Structured learning path with locked weeks
 - **Step Tracking**: Mark readings/exercises as complete
 - **Exercise Submission**: Submit URLs or text answers
-- **Profile Sharing**: Opt-in to be featured on creator's learner list
+- **Profile Sharing**: Per-enrollment opt-in to appear in classmates list (independent per syllabus)
 - **Completion Celebration**: Confetti animation + completion badge
 
 ### Creator Experience
@@ -919,4 +969,26 @@ psql "$DATABASE_URL" -f migrations/manual_username_migration.sql
 
 ---
 
-**Last Updated:** 2026-01-26 21:45:00 UTC
+**Last Updated:** 2026-01-28
+
+---
+
+## Recent Changes
+
+### Single Active Enrollment (2026-01-28)
+
+Implemented single-active-syllabus behavior for learners:
+- Users can only have one `in-progress` enrollment at a time
+- When enrolling in a new syllabus, previous in-progress enrollments are automatically marked as `dropped`
+- Dropped enrollments are excluded from analytics, learner lists, and classmate lists
+- Re-enrolling in a previously dropped syllabus reactivates that enrollment
+- Completed enrollments are preserved and not affected by switching
+
+### Real-Time Analytics Dashboard (2026-01-28)
+
+Added comprehensive analytics endpoint that provides real data for the Creator Analytics page:
+- **Learner Metrics:** Total enrollments, completions, and completion rate
+- **Progress Tracking:** Average progress percentage across all learners
+- **Week Reach Chart:** Shows what percentage of learners reached each week
+- **Dropout Analysis:** Identifies the step with highest dropoff rate
+- **Friction Points:** Lists top steps where learners stop progressing

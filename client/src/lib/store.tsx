@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 import { Syllabus, Enrollment, LearnerProfile, Submission } from './types';
 
@@ -29,10 +30,11 @@ interface StoreContextType {
   getActiveSyllabus: () => Syllabus | undefined;
   getSyllabusById: (id: number) => Syllabus | undefined;
   getOverallProgress: (syllabusId: number) => number;
-  enrollInSyllabus: (syllabusId: number) => Promise<void>;
+  enrollInSyllabus: (syllabusId: number, shareProfile?: boolean) => Promise<void>;
   isStepCompleted: (stepId: number) => boolean;
   getExerciseText: (stepId: number) => string | null;
   getLearnersForSyllabus: (syllabusId: number) => Promise<LearnerProfile[]>;
+  updateEnrollmentShareProfile: (enrollmentId: number, shareProfile: boolean) => Promise<void>;
   updateUser: (updates: any) => Promise<void>;
   getProgressForWeek: (syllabusId: number, weekIndex: number) => number;
   createSyllabus: (syllabus: any) => Promise<Syllabus>;
@@ -46,6 +48,7 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, logout, isLoading } = useAuth();
+  const queryClient = useQueryClient();
   const [syllabi, setSyllabi] = useState<Syllabus[]>([]);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -149,13 +152,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const enrollInSyllabus = async (syllabusId: number) => {
+  const enrollInSyllabus = async (syllabusId: number, shareProfile?: boolean) => {
     try {
       const res = await fetch('/api/enrollments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ syllabusId })
+        body: JSON.stringify({ syllabusId, shareProfile: shareProfile === true })
       });
 
       if (!res.ok) {
@@ -298,8 +301,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       if (!res.ok) throw new Error('Failed to update user');
 
-      // Reload to refresh user state
-      window.location.reload();
+      const updatedUser = await res.json();
+      queryClient.setQueryData(["/api/auth/me"], updatedUser);
     } catch (err) {
       console.error('Failed to update user:', err);
       throw err;
@@ -353,7 +356,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const getLearnersForSyllabus = async (syllabusId: number): Promise<LearnerProfile[]> => {
     try {
-      const res = await fetch(`/api/syllabi/${syllabusId}/learners`, {
+      const res = await fetch(`/api/syllabi/${syllabusId}/classmates`, {
         credentials: 'include'
       });
 
@@ -363,6 +366,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error('Failed to fetch learners:', err);
       return [];
+    }
+  };
+
+  const updateEnrollmentShareProfile = async (enrollmentId: number, shareProfile: boolean) => {
+    try {
+      const res = await fetch(`/api/enrollments/${enrollmentId}/share-profile`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ shareProfile })
+      });
+      if (!res.ok) throw new Error('Failed to update share profile');
+    } catch (err) {
+      console.error('Failed to update enrollment share profile:', err);
+      throw err;
     }
   };
 
@@ -450,6 +468,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       isStepCompleted,
       getExerciseText,
       getLearnersForSyllabus,
+      updateEnrollmentShareProfile,
       updateUser,
       getProgressForWeek,
       createSyllabus,

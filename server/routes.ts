@@ -11,6 +11,7 @@ import {
 } from "@shared/schema";
 import multer from "multer";
 import * as path from "path";
+import fs from "fs/promises";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -84,7 +85,24 @@ export async function registerRoutes(
       return res.status(400).json({ message: "Invalid avatar URL: blob URLs are not allowed" });
     }
 
-    const updated = await storage.updateUser(userId, req.body);
+    const allowedFields = ['name', 'bio', 'expertise', 'linkedin', 'website', 'twitter', 'threads', 'shareProfile', 'avatarUrl'] as const;
+    const profileUpdate: Record<string, any> = {};
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        profileUpdate[field] = req.body[field];
+      }
+    }
+
+    // Delete old avatar file from disk when removing or replacing
+    if ('avatarUrl' in req.body) {
+      const currentUser = await storage.getUser(userId);
+      if (currentUser?.avatarUrl?.startsWith('/uploads/')) {
+        const oldPath = path.join(process.cwd(), currentUser.avatarUrl);
+        fs.unlink(oldPath).catch(() => {});
+      }
+    }
+
+    const updated = await storage.updateUser(userId, profileUpdate);
     const { password, ...userWithoutPassword } = updated;
     res.json(userWithoutPassword);
   });
@@ -220,6 +238,13 @@ export async function registerRoutes(
     res.json(learners);
   });
 
+  // Get classmates for a syllabus (public — only shows users who opted in)
+  app.get("/api/syllabi/:id/classmates", async (req, res) => {
+    const syllabusId = parseInt(req.params.id);
+    const classmates = await storage.getClassmatesBySyllabusId(syllabusId);
+    res.json(classmates);
+  });
+
   // Publish/unpublish syllabus
   app.post("/api/syllabi/:id/publish", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
@@ -245,14 +270,28 @@ export async function registerRoutes(
 
   app.post("/api/enrollments", isAuthenticated, async (req, res) => {
     const username = (req.user as any).username;
-    const parsed = insertEnrollmentSchema.safeParse({ ...req.body, studentId: username });
+    const { shareProfile, ...enrollmentBody } = req.body;
+    const parsed = insertEnrollmentSchema.safeParse({
+      ...enrollmentBody,
+      studentId: username,
+      shareProfile: shareProfile === true
+    });
     if (!parsed.success) return res.status(400).json(parsed.error);
 
-    // Check if already enrolled
+    // Check if already enrolled in this specific syllabus
     const existing = await storage.getEnrollment(username, parsed.data.syllabusId!);
     if (existing) {
+      // If previously dropped, reactivate the enrollment
+      if (existing.status === 'dropped') {
+        await storage.dropActiveEnrollments(username, parsed.data.syllabusId!);
+        const reactivated = await storage.updateEnrollment(existing.id, { status: 'in-progress' });
+        return res.json(reactivated);
+      }
       return res.status(409).json({ message: "Already enrolled in this syllabus" });
     }
+
+    // Drop any other in-progress enrollments (user can only have one active syllabus)
+    await storage.dropActiveEnrollments(username);
 
     const enrollment = await storage.createEnrollment(parsed.data);
     res.json(enrollment);
@@ -270,6 +309,26 @@ export async function registerRoutes(
     }
 
     const updated = await storage.updateEnrollment(id, req.body);
+    res.json(updated);
+  });
+
+  // Toggle enrollment shareProfile
+  app.patch("/api/enrollments/:id/share-profile", isAuthenticated, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const username = (req.user as any).username;
+
+    const enrollment = await storage.getEnrollmentById(id);
+    if (!enrollment) return res.status(404).json({ message: "Enrollment not found" });
+    if (enrollment.studentId !== username) {
+      return res.status(403).json({ error: "Not your enrollment" });
+    }
+
+    const { shareProfile } = req.body;
+    if (typeof shareProfile !== 'boolean') {
+      return res.status(400).json({ error: "shareProfile must be a boolean" });
+    }
+
+    const updated = await storage.updateEnrollmentShareProfile(id, shareProfile);
     res.json(updated);
   });
 
@@ -353,6 +412,20 @@ export async function registerRoutes(
   });
 
   // Analytics API (creator only)
+  app.get("/api/syllabi/:id/analytics", isAuthenticated, async (req, res) => {
+    const syllabusId = parseInt(req.params.id);
+    const username = (req.user as any).username;
+
+    // Verify user is creator
+    const syllabus = await storage.getSyllabus(syllabusId);
+    if (!syllabus || syllabus.creatorId !== username) {
+      return res.status(403).json({ error: "Only creator can view analytics" });
+    }
+
+    const analytics = await storage.getSyllabusAnalytics(syllabusId);
+    res.json(analytics);
+  });
+
   app.get("/api/syllabi/:id/analytics/completion-rates", isAuthenticated, async (req, res) => {
     const syllabusId = parseInt(req.params.id);
     const username = (req.user as any).username;

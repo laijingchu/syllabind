@@ -54,6 +54,8 @@ export interface IStorage {
 
   // Learner operations
   getLearnersBySyllabusId(syllabusId: number): Promise<any[]>;
+  getClassmatesBySyllabusId(syllabusId: number): Promise<any[]>;
+  updateEnrollmentShareProfile(enrollmentId: number, shareProfile: boolean): Promise<Enrollment>;
 
   // Enrollment operations
   getEnrollment(studentId: string, syllabusId: number): Promise<Enrollment | undefined>;
@@ -95,6 +97,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUser(id: string, update: Partial<User>): Promise<User> {
+    if (!update || Object.keys(update).length === 0) {
+      const existing = await this.getUser(id);
+      if (!existing) throw new Error("User not found");
+      return existing;
+    }
     const [user] = await db.update(users).set(update).where(eq(users.id, id)).returning();
     return user;
   }
@@ -123,7 +130,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateSyllabus(id: number, update: Partial<Syllabus>): Promise<Syllabus> {
     // Filter out readonly fields and nested objects that aren't part of the syllabi table
-    const { createdAt, updatedAt, weeks, ...updateData } = update;
+    const { createdAt, updatedAt, weeks, ...updateData } = update as Partial<Syllabus> & { weeks?: unknown };
 
     // Automatically set updatedAt to current time
     const [syllabus] = await db.update(syllabi).set({
@@ -145,7 +152,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserEnrollments(studentId: string): Promise<Enrollment[]> {
-    return await db.select().from(enrollments).where(eq(enrollments.studentId, studentId));
+    // Return only active enrollments (exclude dropped)
+    return await db.select()
+      .from(enrollments)
+      .where(and(
+        eq(enrollments.studentId, studentId),
+        sql`${enrollments.status} != 'dropped'`
+      ));
   }
 
   async getEnrollmentById(id: number): Promise<Enrollment | undefined> {
@@ -156,6 +169,26 @@ export class DatabaseStorage implements IStorage {
   async createEnrollment(insertEnrollment: InsertEnrollment): Promise<Enrollment> {
     const [enrollment] = await db.insert(enrollments).values(insertEnrollment).returning();
     return enrollment;
+  }
+
+  // Mark all in-progress enrollments for a user as dropped (used when switching syllabi)
+  async dropActiveEnrollments(studentId: string, exceptSyllabusId?: number): Promise<void> {
+    if (exceptSyllabusId) {
+      await db.update(enrollments)
+        .set({ status: 'dropped' })
+        .where(and(
+          eq(enrollments.studentId, studentId),
+          eq(enrollments.status, 'in-progress'),
+          sql`${enrollments.syllabusId} != ${exceptSyllabusId}`
+        ));
+    } else {
+      await db.update(enrollments)
+        .set({ status: 'dropped' })
+        .where(and(
+          eq(enrollments.studentId, studentId),
+          eq(enrollments.status, 'in-progress')
+        ));
+    }
   }
 
   async updateEnrollment(id: number, update: Partial<Enrollment>): Promise<Enrollment> {
@@ -314,10 +347,13 @@ export class DatabaseStorage implements IStorage {
 
   // Learner operations
   async getLearnersBySyllabusId(syllabusId: number): Promise<any[]> {
-    // Get all enrollments for this syllabus
+    // Get all active enrollments for this syllabus (exclude dropped)
     const enrollmentsData = await db.select()
       .from(enrollments)
-      .where(eq(enrollments.syllabusId, syllabusId));
+      .where(and(
+        eq(enrollments.syllabusId, syllabusId),
+        sql`${enrollments.status} != 'dropped'`
+      ));
 
     // Get user data for each enrollment
     const learners = await Promise.all(
@@ -333,6 +369,204 @@ export class DatabaseStorage implements IStorage {
     );
 
     return learners;
+  }
+
+  async getClassmatesBySyllabusId(syllabusId: number): Promise<any[]> {
+    // Get active enrollments that opted into sharing (exclude dropped)
+    const enrollmentsData = await db.select()
+      .from(enrollments)
+      .where(and(
+        eq(enrollments.syllabusId, syllabusId),
+        eq(enrollments.shareProfile, true),
+        sql`${enrollments.status} != 'dropped'`
+      ));
+
+    const classmates = await Promise.all(
+      enrollmentsData.map(async (enrollment) => {
+        const user = await this.getUserByUsername(enrollment.studentId!);
+        if (!user) return null;
+        return {
+          user: {
+            id: user.id,
+            username: user.username,
+            name: user.name,
+            avatarUrl: user.avatarUrl,
+            bio: user.bio,
+            linkedin: user.linkedin,
+            twitter: user.twitter,
+            threads: user.threads,
+            website: user.website,
+          },
+          status: enrollment.status,
+          joinedDate: enrollment.joinedAt?.toISOString(),
+          enrollmentId: enrollment.id
+        };
+      })
+    );
+
+    return classmates.filter(Boolean);
+  }
+
+  async updateEnrollmentShareProfile(enrollmentId: number, shareProfile: boolean): Promise<Enrollment> {
+    const [enrollment] = await db.update(enrollments)
+      .set({ shareProfile })
+      .where(eq(enrollments.id, enrollmentId))
+      .returning();
+    return enrollment;
+  }
+
+  // Comprehensive analytics for a syllabus
+  async getSyllabusAnalytics(syllabusId: number): Promise<{
+    learnersStarted: number;
+    learnersCompleted: number;
+    completionRate: number;
+    averageProgress: number;
+    weekReach: Array<{ week: string; weekIndex: number; percentage: number; learnerCount: number; learnerNames: string[] }>;
+    stepDropoff: Array<{ stepId: number; weekIndex: number; stepTitle: string; dropoffRate: number; completionCount: number }>;
+    topDropoutStep: { weekIndex: number; stepTitle: string; dropoffRate: number } | null;
+  }> {
+    // Get all active enrollments for this syllabus (exclude dropped)
+    const syllabusEnrollments = await db.select()
+      .from(enrollments)
+      .where(and(
+        eq(enrollments.syllabusId, syllabusId),
+        sql`${enrollments.status} != 'dropped'`
+      ));
+
+    const learnersStarted = syllabusEnrollments.length;
+    const learnersCompleted = syllabusEnrollments.filter(e => e.status === 'completed').length;
+    const completionRate = learnersStarted > 0 ? Math.round((learnersCompleted / learnersStarted) * 100) : 0;
+
+    // Get syllabus content structure
+    const syllabusWeeks = await db.select()
+      .from(weeks)
+      .where(eq(weeks.syllabusId, syllabusId))
+      .orderBy(asc(weeks.index));
+
+    // Get all steps with their week info
+    const allSteps: Array<{ stepId: number; weekId: number; weekIndex: number; stepTitle: string; position: number }> = [];
+    for (const week of syllabusWeeks) {
+      const weekSteps = await db.select()
+        .from(steps)
+        .where(eq(steps.weekId, week.id))
+        .orderBy(asc(steps.position));
+      for (const step of weekSteps) {
+        allSteps.push({
+          stepId: step.id,
+          weekId: week.id,
+          weekIndex: week.index,
+          stepTitle: step.title,
+          position: step.position
+        });
+      }
+    }
+
+    const totalSteps = allSteps.length;
+
+    // Get completion data for each enrollment
+    let totalProgressSum = 0;
+    const weekReachCounts: Record<number, number> = {};
+    const weekCurrentLearners: Record<number, string[]> = {}; // Learners currently AT this week
+    const stepCompletionCounts: Record<number, number> = {};
+
+    // Initialize counts and learner arrays
+    for (const week of syllabusWeeks) {
+      weekReachCounts[week.index] = 0;
+      weekCurrentLearners[week.index] = [];
+    }
+    for (const step of allSteps) {
+      stepCompletionCounts[step.stepId] = 0;
+    }
+
+    // Calculate progress for each enrollment
+    for (const enrollment of syllabusEnrollments) {
+      const completedStepIds = await this.getCompletedSteps(enrollment.id);
+      const completedCount = completedStepIds.length;
+
+      // Get learner name for this enrollment
+      const learner = await this.getUserByUsername(enrollment.studentId!);
+      const learnerName = learner?.name || enrollment.studentId || 'Unknown';
+
+      // Calculate individual progress
+      const progress = totalSteps > 0 ? (completedCount / totalSteps) * 100 : 0;
+      totalProgressSum += progress;
+
+      // Track step completions
+      for (const stepId of completedStepIds) {
+        if (stepCompletionCounts[stepId] !== undefined) {
+          stepCompletionCounts[stepId]++;
+        }
+      }
+
+      // Determine which weeks were reached (at least started)
+      const completedStepSet = new Set(completedStepIds);
+      for (const week of syllabusWeeks) {
+        const weekSteps = allSteps.filter(s => s.weekIndex === week.index);
+        const hasAnyStepInWeek = weekSteps.some(s => completedStepSet.has(s.stepId));
+        // Count if learner has reached this week
+        if (hasAnyStepInWeek || (enrollment.currentWeekIndex && enrollment.currentWeekIndex >= week.index)) {
+          weekReachCounts[week.index]++;
+        }
+      }
+
+      // Track which week the learner is currently on (their active position)
+      // Only show in the week they're currently at, not all weeks they've passed
+      const currentWeek = enrollment.currentWeekIndex || 1;
+      if (weekCurrentLearners[currentWeek]) {
+        weekCurrentLearners[currentWeek].push(learnerName);
+      }
+    }
+
+    const averageProgress = learnersStarted > 0 ? Math.round(totalProgressSum / learnersStarted) : 0;
+
+    // Build week reach data
+    const weekReach = syllabusWeeks.map(week => ({
+      week: `Week ${week.index}`,
+      weekIndex: week.index,
+      percentage: learnersStarted > 0 ? Math.round((weekReachCounts[week.index] / learnersStarted) * 100) : 0,
+      learnerCount: weekReachCounts[week.index],
+      learnerNames: weekCurrentLearners[week.index] // Learners currently AT this week
+    }));
+
+    // Calculate step dropoff rates
+    const stepDropoff = allSteps.map((step, index) => {
+      const completionCount = stepCompletionCounts[step.stepId];
+      const previousStepCompletion = index > 0
+        ? stepCompletionCounts[allSteps[index - 1].stepId]
+        : learnersStarted;
+
+      const dropoffRate = previousStepCompletion > 0
+        ? Math.round(((previousStepCompletion - completionCount) / previousStepCompletion) * 100)
+        : 0;
+
+      return {
+        stepId: step.stepId,
+        weekIndex: step.weekIndex,
+        stepTitle: step.stepTitle,
+        dropoffRate: Math.max(0, dropoffRate),
+        completionCount
+      };
+    });
+
+    // Find top dropout step (highest dropoff rate with meaningful sample)
+    const significantDropoffs = stepDropoff.filter(s => s.dropoffRate > 0);
+    const topDropoutStep = significantDropoffs.length > 0
+      ? significantDropoffs.reduce((max, s) => s.dropoffRate > max.dropoffRate ? s : max)
+      : null;
+
+    return {
+      learnersStarted,
+      learnersCompleted,
+      completionRate,
+      averageProgress,
+      weekReach,
+      stepDropoff,
+      topDropoutStep: topDropoutStep ? {
+        weekIndex: topDropoutStep.weekIndex,
+        stepTitle: topDropoutStep.stepTitle,
+        dropoffRate: topDropoutStep.dropoffRate
+      } : null
+    };
   }
 }
 

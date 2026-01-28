@@ -8,6 +8,7 @@ import { SyllabusCard } from '@/components/SyllabusCard';
 import { pluralize } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { Syllabus } from '@/lib/types';
+import { AnimatedCard, AnimatedPage } from '@/components/ui/animated-container';
 
 import Catalog from './Catalog';
 
@@ -75,37 +76,40 @@ export default function Dashboard() {
     .slice(0, 3);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12">
+    <AnimatedPage className="max-w-4xl mx-auto space-y-12">
       <section className="space-y-6">
         <header>
           <h1 className="text-3xl font-serif text-foreground mb-2">
             {allCompleted ? "Current Focus" : isCompleted ? "What's Next" : "Current Focus"}
           </h1>
           <p className="text-muted-foreground">
-            {allCompleted 
-              ? "You have mastered all available topics." 
-              : isCompleted 
-                ? "Select a new topic to start learning." 
+            {allCompleted
+              ? "You have mastered all available topics."
+              : isCompleted
+                ? "Select a new topic to start learning."
                 : "Pick up where you left off."
             }
           </p>
         </header>
 
         {allCompleted ? (
-           <Card className="border-dashed border-2 bg-muted/30">
-            <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-              <div className="bg-primary/10 p-4 rounded-full">
-                <Award className="h-8 w-8 text-primary" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-xl font-medium">All Syllabinds Completed</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto">You've mastered every topic in our catalog. Amazing work! You will receive an email notification when new syllabinds become available.</p>
-              </div>
-            </CardContent>
-          </Card>
+           <AnimatedCard delay={0.1}>
+            <Card className="border-dashed border-2 bg-muted/30">
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-4">
+                <div className="bg-primary/10 p-4 rounded-full">
+                  <Award className="h-8 w-8 text-primary" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-xl font-medium">All Syllabinds Completed</h3>
+                  <p className="text-muted-foreground max-w-sm mx-auto">You've mastered every topic in our catalog. Amazing work! You will receive an email notification when new syllabinds become available.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </AnimatedCard>
         ) : activeSyllabus ? (
           <>
-          <div className="relative rounded-xl border bg-card text-card-foreground shadow-sm">
+          <AnimatedCard delay={0.1}>
+            <div className="relative rounded-xl border bg-card text-card-foreground shadow-sm">
             <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
                <div className="absolute top-0 right-0 p-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             </div>
@@ -162,9 +166,14 @@ export default function Dashboard() {
                           <p className="text-xs text-muted-foreground">You've earned the completion badge.</p>
                         </div>
                       </div>
-                      <Link href={`/syllabus/${activeSyllabus.id}/completed`} className="w-full sm:w-auto sm:ml-auto">
-                        <Button variant="outline" size="sm" className="w-full sm:w-auto">View Certificate</Button>
-                      </Link>
+                      <div className="flex gap-2 w-full sm:w-auto sm:ml-auto">
+                        <Link href={`/syllabus/${activeSyllabus.id}`} className="w-full sm:w-auto">
+                          <Button variant="outline" size="sm" className="w-full sm:w-auto">View Syllabus</Button>
+                        </Link>
+                        <Link href={`/syllabus/${activeSyllabus.id}/completed`} className="w-full sm:w-auto">
+                          <Button variant="outline" size="sm" className="w-full sm:w-auto">View Certificate</Button>
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -185,65 +194,72 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+          </AnimatedCard>
 
           {isCompleted && suggestedSyllabi.length > 0 && (
-            <div className="space-y-4 pt-4 animate-in fade-in slide-in-from-bottom-4 delay-150">
-              <div className="flex justify-between items-center">
-                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Start Something New</h4>
-                <Link href="/catalog" className="text-sm text-primary hover:underline">Browse Catalog &rarr;</Link>
+            <AnimatedCard delay={0.2}>
+              <div className="space-y-4 pt-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Start Something New</h4>
+                  <Link href="/catalog" className="text-sm text-primary hover:underline">Browse Catalog &rarr;</Link>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {suggestedSyllabi.map(syllabus => (
+                    <SyllabusCard key={syllabus.id} syllabus={syllabus} className="h-full text-left" />
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {suggestedSyllabi.map(syllabus => (
-                  <SyllabusCard key={syllabus.id} syllabus={syllabus} className="h-full text-left" />
-                ))}
-              </div>
-            </div>
+            </AnimatedCard>
           )}
           </>
         ) : (
-          <Card className="border-dashed border-2 bg-muted/30">
-            <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-              <div className="bg-muted p-4 rounded-full">
-                <BookOpenIcon className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-xl font-medium">No active Syllabind</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto">You are not currently enrolled in any syllabus. Browse the catalog to find your next topic.</p>
-              </div>
-              <Link href="/catalog">
-                <Button>Browse Catalog</Button>
-              </Link>
-            </CardContent>
-          </Card>
+          <AnimatedCard delay={0.1}>
+            <Card className="border-dashed border-2 bg-muted/30">
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-4">
+                <div className="bg-muted p-4 rounded-full">
+                  <BookOpenIcon className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-xl font-medium">No active Syllabind</h3>
+                  <p className="text-muted-foreground max-w-sm mx-auto">You are not currently enrolled in any syllabus. Browse the catalog to find your next topic.</p>
+                </div>
+                <Link href="/catalog">
+                  <Button>Browse Catalog</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </AnimatedCard>
         )}
       </section>
       {completedSyllabi.length > 0 && (
-        <section className="space-y-6">
-          <header>
-            <h2 className="text-2xl font-serif text-foreground mb-2">Completed Journeys</h2>
-            <p className="text-muted-foreground">You have successfully completed {pluralize(completedSyllabi.length, 'syllabind')}!</p>
-          </header>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {completedSyllabi.map(s => (
-               <Link key={s.id} href={`/syllabus/${s.id}`}>
-                 <div className="flex items-center gap-4 p-4 border rounded-lg bg-card/50 hover:bg-muted/50 transition-colors cursor-pointer group">
-                    <div className="bg-primary/10 p-3 rounded-full text-primary">
-                      <Award className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium group-hover:text-primary transition-colors">{s.title}</h4>
-                      <p className="text-xs text-muted-foreground">Completed</p>
-                    </div>
-                    <div className={buttonVariants({ variant: "ghost", size: "sm", className: "ml-auto" })}>
-                      View
-                    </div>
-                 </div>
-               </Link>
-            ))}
-          </div>
-        </section>
+        <AnimatedCard delay={0.2}>
+          <section className="space-y-6">
+            <header>
+              <h2 className="text-2xl font-serif text-foreground mb-2">Completed Journeys</h2>
+              <p className="text-muted-foreground">You have successfully completed {pluralize(completedSyllabi.length, 'syllabind')}!</p>
+            </header>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {completedSyllabi.map(s => (
+                 <Link key={s.id} href={`/syllabus/${s.id}`}>
+                   <div className="flex items-center gap-4 p-4 border rounded-lg bg-card/50 hover:bg-muted/50 transition-colors cursor-pointer group">
+                      <div className="bg-primary/10 p-3 rounded-full text-primary">
+                        <Award className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium group-hover:text-primary transition-colors">{s.title}</h4>
+                        <p className="text-xs text-muted-foreground">Completed</p>
+                      </div>
+                      <div className={buttonVariants({ variant: "ghost", size: "sm", className: "ml-auto" })}>
+                        View
+                      </div>
+                   </div>
+                 </Link>
+              ))}
+            </div>
+          </section>
+        </AnimatedCard>
       )}
-    </div>
+    </AnimatedPage>
   );
 }
 

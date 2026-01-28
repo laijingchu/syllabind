@@ -92,7 +92,7 @@ export default function Profile() {
   };
 
   const handleAvatarRemove = () => {
-    updateUser({ avatarUrl: undefined });
+    updateUser({ avatarUrl: null });
   };
 
   return (

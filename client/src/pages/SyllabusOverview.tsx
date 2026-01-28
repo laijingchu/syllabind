@@ -2,6 +2,7 @@ import { useRoute, useLocation } from 'wouter';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { AnimatedPage, AnimatedCard } from '@/components/ui/animated-container';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -29,14 +30,14 @@ import { LearnerProfile, Syllabus } from '@/lib/types';
 
 export default function SyllabusOverview() {
   const [match, params] = useRoute('/syllabus/:id');
-  const { getSyllabusById, enrollInSyllabus, enrollment, isStepCompleted, getExerciseText, getLearnersForSyllabus } = useStore();
+  const { getSyllabusById, enrollInSyllabus, enrollment, isStepCompleted, getExerciseText, getLearnersForSyllabus, updateEnrollmentShareProfile } = useStore();
   const [location, setLocation] = useLocation();
-  const [showConfirm, setShowConfirm] = useState(false);
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
   const [learners, setLearners] = useState<LearnerProfile[]>([]);
   const [syllabus, setSyllabus] = useState<Syllabus | undefined>(undefined);
   const [creator, setCreator] = useState<any>(undefined);
-  const { updateUser } = useStore();
+  const [enrollmentShareProfile, setEnrollmentShareProfile] = useState(false);
+  const [existingEnrollment, setExistingEnrollment] = useState<{ id: number; currentWeekIndex: number } | null>(null);
 
   const syllabusId = match && params?.id ? parseInt(params.id) : undefined;
   const { user: currentUser, completedStepIds } = useStore();
@@ -67,6 +68,24 @@ export default function SyllabusOverview() {
     }
   }, [syllabusId]);
 
+  // Fetch current enrollment for this syllabus (if any)
+  useEffect(() => {
+    if (syllabusId && currentUser) {
+      fetch(`/api/enrollments`, { credentials: 'include' })
+        .then(res => res.ok ? res.json() : [])
+        .then((data: any[]) => {
+          const match = data.find((e: any) => e.syllabusId === syllabusId);
+          if (match) {
+            setEnrollmentShareProfile(match.shareProfile || false);
+            setExistingEnrollment({ id: match.id, currentWeekIndex: match.currentWeekIndex || 1 });
+          } else {
+            setExistingEnrollment(null);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [syllabusId, currentUser]);
+
   // Fetch creator profile
   useEffect(() => {
     if (syllabus?.creatorId) {
@@ -93,63 +112,71 @@ export default function SyllabusOverview() {
     return Math.round((completedCount / weekStepIds.length) * 100);
   };
 
-  const isActive = enrollment?.activeSyllabusId === syllabus.id;
+  // Calculate effective current week (advances when all steps in current week are done)
+  const getEffectiveCurrentWeek = () => {
+    if (!existingEnrollment || !syllabus.weeks.length) return 1;
+
+    let effectiveWeek = existingEnrollment.currentWeekIndex || 1;
+    const sortedWeeks = [...syllabus.weeks].sort((a, b) => a.index - b.index);
+
+    for (const week of sortedWeeks) {
+      if (week.index < effectiveWeek) continue;
+      if (week.steps.length === 0) continue;
+
+      const weekStepIds = week.steps.map(step => step.id);
+      const allDone = weekStepIds.every(id => completedStepIds.includes(id));
+
+      if (allDone && week.index < sortedWeeks[sortedWeeks.length - 1].index) {
+        // This week is complete, move to next
+        effectiveWeek = week.index + 1;
+      } else {
+        // Found the current incomplete week (or last week)
+        break;
+      }
+    }
+
+    return effectiveWeek;
+  };
+
+  const effectiveCurrentWeek = getEffectiveCurrentWeek();
+
+  const isEnrolled = existingEnrollment !== null;
+  const isActive = isEnrolled; // User is enrolled in this syllabus
   const isCompleted = enrollment?.completedSyllabusIds?.includes(syllabus.id);
 
   const inProgressLearners = learners.filter(l => l.status === 'in-progress');
   const completedLearners = learners.filter(l => l.status === 'completed');
 
   const handleStartClick = () => {
-    // If it's active and completed, we treat it as review mode, but let's check
-    // If user clicked "Start this Syllabind" on a NEW syllabus while OLD one is completed:
-    
-    if (isActive) {
-      // Continue or Review
-      setLocation(`/syllabus/${syllabus.id}/week/${enrollment?.currentWeekIndex || 1}`);
-    } else if (enrollment?.activeSyllabusId) {
-      // Check if the ACTIVE syllabus is actually 100% complete.
-      // If so, we can just switch silently without nagging.
-      // We need to import getOverallProgress from store or calculate it.
-      // But `getOverallProgress` isn't exposed directly here... let's add it or use helper.
-      // Actually we have `enrollment.completedSyllabusIds`.
-      
-      const isActiveCompleted = enrollment?.completedSyllabusIds?.includes(enrollment.activeSyllabusId);
-      
-      if (isActiveCompleted) {
-         // Active one is done, so just switch to new one silently
-         enrollInSyllabus(syllabus.id);
-         setLocation(`/syllabus/${syllabus.id}/week/1`);
-      } else {
-         // Active one is IN PROGRESS, so prompt switch
-         setShowConfirm(true);
-      }
-    } else {
-      // Enroll
-      setShowPrivacyDialog(true);
+    // Already enrolled in this syllabus - just navigate to effective current week
+    if (existingEnrollment) {
+      setLocation(`/syllabus/${syllabus.id}/week/${effectiveCurrentWeek}`);
+      return;
     }
-  };
 
-  const confirmSwitch = () => {
-    setShowConfirm(false);
+    // Not enrolled - show privacy dialog to enroll
     setShowPrivacyDialog(true);
   };
 
   const handleEnroll = async (shareProfile: boolean) => {
-    await updateUser({ shareProfile });
-    await enrollInSyllabus(syllabus.id);
+    await enrollInSyllabus(syllabus.id, shareProfile);
+    setEnrollmentShareProfile(shareProfile);
     setShowPrivacyDialog(false);
     setLocation(`/syllabus/${syllabus.id}/week/1`);
   };
 
-  const LearnerAvatar = ({ learner }: { learner: LearnerProfile }) => (
+  const LearnerAvatar = ({ learner }: { learner: LearnerProfile }) => {
+    const avatarSrc = learner.user.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${learner.user.name || learner.user.username}`;
+    const initial = (learner.user.name || learner.user.username || '?').charAt(0);
+    return (
     <TooltipProvider delayDuration={0}>
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="group relative cursor-pointer">
             <Avatar className="h-10 w-10 border-2 border-background ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
-              <AvatarImage src={learner.user.avatarUrl} alt={learner.user.name} />
+              <AvatarImage src={avatarSrc} alt={learner.user.name || learner.user.username} />
               <AvatarFallback className="bg-muted text-muted-foreground text-xs">
-                {learner.user.name.charAt(0)}
+                {initial}
               </AvatarFallback>
             </Avatar>
             {learner.status === 'completed' && (
@@ -162,8 +189,8 @@ export default function SyllabusOverview() {
         <TooltipContent side="top" align="center" className="p-3 w-60 bg-popover text-popover-foreground border shadow-xl">
           <div className="flex items-start gap-3">
             <Avatar className="h-9 w-9 shrink-0 border border-border/50 mt-0.5">
-              <AvatarImage src={learner.user.avatarUrl} />
-              <AvatarFallback>{learner.user.name.charAt(0)}</AvatarFallback>
+              <AvatarImage src={avatarSrc} />
+              <AvatarFallback>{initial}</AvatarFallback>
             </Avatar>
             <div className="flex-1 space-y-1.5 min-w-0">
               <div className="space-y-0.5">
@@ -198,9 +225,10 @@ export default function SyllabusOverview() {
       </Tooltip>
     </TooltipProvider>
   );
+  };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <AnimatedPage className="max-w-4xl mx-auto">
       {isPreview && (
         <div className="mb-6 bg-amber-500/15 border border-amber-500/20 text-amber-600 dark:text-amber-500 px-4 py-3 rounded-lg flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 shrink-0" />
@@ -222,15 +250,24 @@ export default function SyllabusOverview() {
              />
           </div>
 
-          <div className="flex gap-6 text-sm text-muted-foreground border-y py-6">
+          <div className="flex flex-wrap gap-6 text-sm text-muted-foreground border-y py-6">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
               <span>{pluralize(syllabus.durationWeeks, 'Week')}</span>
             </div>
-             <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               <span>{pluralize(syllabus.weeks.reduce((acc, w) => acc + w.steps.length, 0), 'Step')}</span>
             </div>
+            {syllabus.updatedAt && syllabus.updatedAt !== syllabus.createdAt ? (
+              <div className="flex items-center gap-2">
+                <span>Updated {new Date(syllabus.updatedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+              </div>
+            ) : syllabus.createdAt ? (
+              <div className="flex items-center gap-2">
+                <span>Created {new Date(syllabus.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+              </div>
+            ) : null}
           </div>
 
           <div className="space-y-6">
@@ -238,7 +275,7 @@ export default function SyllabusOverview() {
             <Accordion type="single" collapsible className="space-y-4">
               {syllabus.weeks.filter(w => w.steps.length > 0).map((week) => {
                 const weekDone = isActive && getWeekProgress(week.index) === 100;
-                const isCurrentWeek = isActive && enrollment.currentWeekIndex === week.index;
+                const isCurrentWeek = isActive && effectiveCurrentWeek === week.index;
                 
                 return (
                   <AccordionItem 
@@ -329,11 +366,24 @@ export default function SyllabusOverview() {
                         );
                       })}
                       
+                      {/* Mobile-only Continue Learning button for current week */}
+                      {isCurrentWeek && !weekDone && !isCompleted && (
+                        <div className="pt-4 md:hidden">
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            onClick={() => setLocation(`/syllabus/${syllabus.id}/week/${week.index}`)}
+                          >
+                            Continue Learning
+                          </Button>
+                        </div>
+                      )}
+
                       {isCompleted && (
                         <div className="pt-2">
-                          <Button 
-                            variant="secondary" 
-                            size="sm" 
+                          <Button
+                            variant="secondary"
+                            size="sm"
                             className="w-full"
                             onClick={() => setLocation(`/syllabus/${syllabus.id}/week/${week.index}`)}
                           >
@@ -418,13 +468,18 @@ export default function SyllabusOverview() {
                    <p className="text-xs text-center text-muted-foreground">You are currently enrolled.</p>
                  )}
                  <div className="flex items-center space-x-3 bg-muted/40 p-2.5 rounded-md w-full justify-center">
-                    <Switch 
-                      id="share-profile" 
+                    <Switch
+                      id="share-profile"
                       className="data-[state=unchecked]:bg-input"
-                      checked={currentUser?.shareProfile || false}
-                      onCheckedChange={(checked) => {
-                        updateUser({ shareProfile: checked as boolean });
-                        document.getElementById('classmates-section')?.scrollIntoView({ behavior: 'smooth' });
+                      checked={enrollmentShareProfile}
+                      onCheckedChange={async (checked) => {
+                        if (enrollment?.id) {
+                          await updateEnrollmentShareProfile(enrollment.id, checked as boolean);
+                          setEnrollmentShareProfile(checked as boolean);
+                          // Refresh classmates list
+                          if (syllabusId) getLearnersForSyllabus(syllabusId).then(setLearners);
+                          document.getElementById('classmates-section')?.scrollIntoView({ behavior: 'smooth' });
+                        }
                       }}
                     />
                     <label
@@ -441,9 +496,9 @@ export default function SyllabusOverview() {
               <div className="pt-6 border-t space-y-4">
                 <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Created by</h4>
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={creator.avatarUrl} />
-                    <AvatarFallback><UserIcon className="h-5 w-5" /></AvatarFallback>
+                  <Avatar className="h-9 w-9 border border-border">
+                    <AvatarImage src={creator.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${creator.name}`} alt={creator.name} />
+                    <AvatarFallback>{creator.name?.charAt(0) || '?'}</AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="font-medium text-sm">{creator.name}</div>
@@ -473,21 +528,6 @@ export default function SyllabusOverview() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Switch Syllabus?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You are currently enrolled in another syllabus. Switching will pause your progress there and start this one. You can only have one active syllabus at a time to maintain focus.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSwitch}>Switch Syllabus</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+    </AnimatedPage>
   );
 }

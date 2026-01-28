@@ -51,7 +51,7 @@ export default function CreatorProfile() {
   };
 
   const handleAvatarRemove = () => {
-    updateUser({ avatarUrl: undefined });
+    updateUser({ avatarUrl: null });
     toast({
       title: "Avatar removed",
       description: "Your profile picture has been removed.",

@@ -13,7 +13,21 @@ import { eq } from "drizzle-orm";
  * - Completed steps
  *
  * Run with: tsx server/seed.ts
+ *
+ * NOTE: Fixed UUIDs are used for test users to ensure consistency
+ * between production and development environments.
  */
+
+// Fixed UUIDs for test users - consistent across all environments
+// Exported for use in tests
+export const TEST_USER_IDS = {
+  janesmith: "11111111-1111-1111-1111-111111111111",
+  alexlearner: "22222222-2222-2222-2222-222222222222",
+  sarahchen: "33333333-3333-3333-3333-333333333333",
+  marcusj: "44444444-4444-4444-4444-444444444444",
+  emilyd: "55555555-5555-5555-5555-555555555555",
+  davidw: "66666666-6666-6666-6666-666666666666",
+} as const;
 
 async function seed() {
   console.log("🌱 Starting database seed...\n");
@@ -23,7 +37,7 @@ async function seed() {
     console.log("📝 Creating creator user...");
     const creatorPassword = await hashPassword("password123");
     const [creator] = await db.insert(users).values({
-      id: crypto.randomUUID(),
+      id: TEST_USER_IDS.janesmith,
       username: "janesmith",
       email: "jane@example.com",
       password: creatorPassword,
@@ -43,7 +57,7 @@ async function seed() {
 
     const learnersData = [
       {
-        id: crypto.randomUUID(),
+        id: TEST_USER_IDS.alexlearner,
         username: "alexlearner",
         email: "alex@example.com",
         password: learnerPassword,
@@ -55,7 +69,7 @@ async function seed() {
         shareProfile: true,
       },
       {
-        id: crypto.randomUUID(),
+        id: TEST_USER_IDS.sarahchen,
         username: "sarahchen",
         email: "sarah@example.com",
         password: learnerPassword,
@@ -68,7 +82,7 @@ async function seed() {
         shareProfile: true,
       },
       {
-        id: crypto.randomUUID(),
+        id: TEST_USER_IDS.marcusj,
         username: "marcusj",
         email: "marcus@example.com",
         password: learnerPassword,
@@ -80,7 +94,7 @@ async function seed() {
         shareProfile: true,
       },
       {
-        id: crypto.randomUUID(),
+        id: TEST_USER_IDS.emilyd,
         username: "emilyd",
         email: "emily@example.com",
         password: learnerPassword,
@@ -92,7 +106,7 @@ async function seed() {
         shareProfile: true,
       },
       {
-        id: crypto.randomUUID(),
+        id: TEST_USER_IDS.davidw,
         username: "davidw",
         email: "david@example.com",
         password: learnerPassword,
@@ -277,6 +291,7 @@ async function seed() {
       syllabusId: syllabus1.id,
       status: "in-progress",
       currentWeekIndex: 2,
+      shareProfile: true,
       joinedAt: new Date("2024-01-10"),
     }).returning();
     console.log(`✅ ${learners[0].username} enrolled in: ${syllabus1.title} (week 2)`);
@@ -287,6 +302,7 @@ async function seed() {
       syllabusId: syllabus1.id,
       status: "completed",
       currentWeekIndex: 4,
+      shareProfile: true,
       joinedAt: new Date("2023-10-15"),
     }).returning();
     console.log(`✅ ${learners[1].username} enrolled in: ${syllabus1.title} (completed)`);
@@ -297,6 +313,7 @@ async function seed() {
       syllabusId: syllabus1.id,
       status: "in-progress",
       currentWeekIndex: 1,
+      shareProfile: true,
       joinedAt: new Date("2024-01-15"),
     }).returning();
     console.log(`✅ ${learners[2].username} enrolled in: ${syllabus1.title} (week 1)`);
@@ -307,6 +324,7 @@ async function seed() {
       syllabusId: syllabus2.id,
       status: "in-progress",
       currentWeekIndex: 1,
+      shareProfile: true,
       joinedAt: new Date("2024-01-20"),
     }).returning();
     console.log(`✅ ${learners[3].username} enrolled in: ${syllabus2.title} (week 1)`);
@@ -390,13 +408,13 @@ async function seed() {
     console.log(`   • Multiple steps marked as completed\n`);
     console.log("🔑 Login credentials (all users):");
     console.log("   Password: password123\n");
-    console.log("👤 Test Users:");
-    console.log("   • janesmith (creator)");
-    console.log("   • alexlearner (in progress on Digital Minimalism)");
-    console.log("   • sarahchen (completed Digital Minimalism)");
-    console.log("   • marcusj (just started Digital Minimalism)");
-    console.log("   • emilyd (in progress on Systems Thinking)");
-    console.log("   • davidw (completed Systems Thinking)\n");
+    console.log("👤 Test Users (with fixed IDs for consistency across environments):");
+    console.log(`   • janesmith (creator) - ID: ${TEST_USER_IDS.janesmith}`);
+    console.log(`   • alexlearner (in progress on Digital Minimalism) - ID: ${TEST_USER_IDS.alexlearner}`);
+    console.log(`   • sarahchen (completed Digital Minimalism) - ID: ${TEST_USER_IDS.sarahchen}`);
+    console.log(`   • marcusj (just started Digital Minimalism) - ID: ${TEST_USER_IDS.marcusj}`);
+    console.log(`   • emilyd (in progress on Systems Thinking) - ID: ${TEST_USER_IDS.emilyd}`);
+    console.log(`   • davidw (completed Systems Thinking) - ID: ${TEST_USER_IDS.davidw}\n`);
     console.log("🚀 Ready to test! Run: npm run dev");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 

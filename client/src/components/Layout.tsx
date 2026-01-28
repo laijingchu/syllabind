@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
-import { BookOpen, User, LogOut, PenTool, Bug } from 'lucide-react';
+import { BookOpen, User, LogOut, PenTool, Bug, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,24 +13,101 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, logout, toggleCreatorMode, completeActiveSyllabus } = useStore();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleMobileNavClick = (path: string) => {
+    setMobileMenuOpen(false);
+    setLocation(path);
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/85 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
+            {/* Mobile hamburger menu */}
+            {isAuthenticated && (
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild className="md:hidden">
+                  <Button variant="ghost" size="icon" className="-mr-5">
+                    <Menu className="h-6 w-6" />
+                    <span className="sr-only">Toggle menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[280px] sm:w-[320px]">
+                  <SheetHeader className="text-left">
+                    <SheetTitle className="flex items-center gap-2">
+                      <BookOpen className="h-5 w-5 text-primary" />
+                      <span className="font-serif">Syllabind</span>
+                    </SheetTitle>
+                  </SheetHeader>
+                  <nav className="flex flex-col gap-2 mt-8">
+                    <button
+                      onClick={() => handleMobileNavClick("/")}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
+                        location === "/" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                      )}
+                    >
+                      <span className="font-medium">Dashboard</span>
+                    </button>
+                    <button
+                      onClick={() => handleMobileNavClick("/catalog")}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
+                        location === "/catalog" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                      )}
+                    >
+                      <span className="font-medium">Catalog</span>
+                    </button>
+                    {user?.isCreator && (
+                      <button
+                        onClick={() => handleMobileNavClick("/creator")}
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
+                          location.startsWith("/creator") ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                        )}
+                      >
+                        <span className="font-medium">Curator Studio</span>
+                      </button>
+                    )}
+                    <div className="border-t my-4" />
+                    <button
+                      onClick={() => handleMobileNavClick("/profile")}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
+                        location === "/profile" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                      )}
+                    >
+                      <User className="h-4 w-4" />
+                      <span className="font-medium">Edit Profile</span>
+                    </button>
+                  </nav>
+                </SheetContent>
+              </Sheet>
+            )}
+
+            {/* Logo - always visible */}
             <Link href={isAuthenticated ? "/" : "/welcome"}>
               <span className="font-serif text-2xl font-medium tracking-tight hover:opacity-80 transition-opacity flex items-center gap-2 cursor-pointer">
-                <BookOpen className="h-6 w-6 text-primary" />
+                <BookOpen className="h-6 w-6 text-primary hidden md:block" />
                 <span>Syllabind</span>
                 <span className="text-[10px] font-sans font-bold text-primary bg-primary/5 border border-primary/20 px-1.5 py-0.5 rounded-md ml-1.5 align-middle">BETA</span>
               </span>
             </Link>
-            
+
+            {/* Desktop navigation */}
             <nav className="hidden md:flex items-center gap-6">
               {isAuthenticated && (
                 <>
@@ -135,7 +212,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="container mx-auto px-4 py-8 md:py-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pt-[0px] pb-[0px]">
+      <main className="container mx-auto px-4 py-8 md:py-12 animate-in fade-in slide-in-from-bottom-4 duration-700 mt-8">
         {children}
       </main>
     </div>
