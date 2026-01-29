@@ -305,45 +305,40 @@ Required environment variables:
 - Component props destructuring at function signature
 - TailwindCSS utility classes for styling (no CSS modules)
 
-### Semantic CSS Classes
+### Semantic Class Names
 
-Page sections use semantic class names defined in `client/src/styles/sections.css` with `@apply` directives.
-
-**Tailwind v4 Limitation:** Responsive variants (`sm:`, `md:`, `lg:`) do NOT work inside `@apply`. Keep responsive utilities inline in JSX.
-
-**Convention:**
-- Sections get semantic class names (e.g., `syllabus-metadata`, `curriculum-section`)
-- Direct children/items get semantic names (e.g., `metadata-duration`, `metadata-steps`)
-- Lower-level elements (icons, text) keep inline Tailwind utilities
-- Responsive utilities stay inline in JSX, not in `@apply`
+Page sections include semantic class names alongside Tailwind utilities for easy identification in prompts and debugging. The semantic name comes first, followed by Tailwind utilities.
 
 **Pattern:**
 ```tsx
-// Good - semantic class + inline responsive
-<div className="classmates-grid sm:grid-cols-2">
-  <div className="metadata-duration">
-    <Clock className="h-4 w-4" />
-    <span>4 Weeks</span>
-  </div>
+<div className="syllabus-metadata flex flex-wrap gap-6 text-sm">
+  <div className="metadata-duration flex items-center gap-2">...</div>
+  <div className="metadata-steps flex items-center gap-2">...</div>
 </div>
 ```
 
-**CSS file (`client/src/styles/sections.css`):**
-```css
-/* Base styles only - NO responsive variants */
-.classmates-grid {
-  @apply grid grid-cols-1 gap-8;
-}
-.metadata-duration {
-  @apply flex items-center gap-2;
-}
-```
+**SyllabusOverview semantic classes:**
+- `preview-banner` - Draft preview warning
+- `syllabus-header` - Title, badge, description
+- `syllabus-metadata` - Duration/steps/date row
+  - `metadata-duration`, `metadata-steps`, `metadata-date`
+- `curriculum-section` - Week accordion
+- `classmates-section` - Learner avatars
+  - `classmates-header`, `classmates-grid`, `classmates-group`, `classmates-avatars`
+- `enrollment-sidebar` - Sticky CTA card
+  - `enrollment-card`, `enrollment-cta`, `enrollment-status`, `enrollment-visibility`
+- `creator-card` - Creator profile
+  - `creator-info`
 
-**Reusable Section Components:**
-- Located in `client/src/components/sections/`
-- Use for patterns repeated across multiple pages
-- Examples: `PageHeader`, `EmptyState`, `SearchBar`
-- 
+### Reusable Section Components
+
+Located in `client/src/components/sections/`:
+- `PageHeader` - Page title with optional back button and actions
+- `EmptyState` - Empty state display with icon and action
+- `SearchBar` - Search input with count display
+
+Use for patterns repeated across multiple pages.
+
 ## Instructions
 1. Always update `architecture.md` after any non-trivial change.
 2. In databases, Avoid the use of JSONB Column and use normalized schema by default. Explicitly ask for permission if JSONB is determined to be a superior solution for a given problem.

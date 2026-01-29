@@ -100,10 +100,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Logo - always visible */}
             <Link href={isAuthenticated ? "/" : "/welcome"}>
-              <span className="font-serif text-2xl font-medium tracking-tight hover:opacity-80 transition-opacity flex items-center gap-2 cursor-pointer">
+              <span className="font-serif text-2xl font-medium tracking-tight hover:opacity-80 transition-opacity flex items-center gap-2 md:gap-6 cursor-pointer">
                 <BookOpen className="h-6 w-6 text-primary hidden md:block" />
-                <span>Syllabind</span>
-                <span className="text-[10px] font-sans font-bold text-primary bg-primary/5 border border-primary/20 px-1.5 py-0.5 rounded-md ml-1.5 align-middle">BETA</span>
+                <span className="flex items-center gap-2">
+                  <span>Syllabind</span>
+                  <span className="text-[10px] font-sans font-bold text-primary bg-primary/5 border border-primary/20 px-1.5 py-0.5 rounded-md align-middle">BETA</span>
+                </span>
               </span>
             </Link>
 
@@ -212,7 +214,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="container mx-auto px-4 py-8 md:py-12 animate-in fade-in slide-in-from-bottom-4 duration-700 mt-8">
+      <main className="container mx-auto px-4 py-8 md:py-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pt-[0px] pb-[0px]">
         {children}
       </main>
     </div>
