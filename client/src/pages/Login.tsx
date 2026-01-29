@@ -18,6 +18,10 @@ export default function Login() {
   const urlParams = new URLSearchParams(window.location.search);
   const isSignupInit = urlParams.get('mode') === 'signup';
   const [activeTab, setActiveTab] = useState(isSignupInit ? 'signup' : 'login');
+
+  // Get returnTo from URL params, validate it starts with / to prevent open redirect
+  const rawReturnTo = urlParams.get('returnTo') || '/';
+  const returnTo = rawReturnTo.startsWith('/') ? rawReturnTo : '/';
   const [isLoading, setIsLoading] = useState(false);
 
   // Login Form
@@ -49,7 +53,10 @@ export default function Login() {
       
       await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       toast({ title: 'Welcome back!', description: 'You have successfully logged in.' });
-      setLocation('/');
+      // Redirect to returnTo or sessionStorage fallback (for OAuth), then clear it
+      const redirectTarget = sessionStorage.getItem('syllabind_returnTo') || returnTo;
+      sessionStorage.removeItem('syllabind_returnTo');
+      setLocation(redirectTarget);
     } catch (error: any) {
       toast({ 
         title: 'Login failed', 
@@ -85,7 +92,10 @@ export default function Login() {
       
       await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       toast({ title: 'Account created!', description: 'Welcome to Syllabind.' });
-      setLocation('/');
+      // Redirect to returnTo or sessionStorage fallback (for OAuth), then clear it
+      const redirectTarget = sessionStorage.getItem('syllabind_returnTo') || returnTo;
+      sessionStorage.removeItem('syllabind_returnTo');
+      setLocation(redirectTarget);
     } catch (error: any) {
       toast({ 
         title: 'Registration failed', 
@@ -98,11 +108,15 @@ export default function Login() {
   };
 
   const handleGoogleAuth = () => {
-    window.location.href = '/api/auth/google';
+    // Store returnTo for OAuth callback (survives redirect round-trip)
+    sessionStorage.setItem('syllabind_returnTo', returnTo);
+    window.location.href = `/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`;
   };
 
   const handleAppleAuth = () => {
-    window.location.href = '/api/auth/apple';
+    // Store returnTo for OAuth callback (survives redirect round-trip)
+    sessionStorage.setItem('syllabind_returnTo', returnTo);
+    window.location.href = `/api/auth/apple?returnTo=${encodeURIComponent(returnTo)}`;
   };
 
   return (

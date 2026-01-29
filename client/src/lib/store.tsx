@@ -33,7 +33,7 @@ interface StoreContextType {
   enrollInSyllabus: (syllabusId: number, shareProfile?: boolean) => Promise<void>;
   isStepCompleted: (stepId: number) => boolean;
   getExerciseText: (stepId: number) => string | null;
-  getLearnersForSyllabus: (syllabusId: number) => Promise<LearnerProfile[]>;
+  getLearnersForSyllabus: (syllabusId: number) => Promise<{ classmates: LearnerProfile[]; totalEnrolled: number }>;
   updateEnrollmentShareProfile: (enrollmentId: number, shareProfile: boolean) => Promise<void>;
   updateUser: (updates: any) => Promise<void>;
   getProgressForWeek: (syllabusId: number, weekIndex: number) => number;
@@ -354,7 +354,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const getLearnersForSyllabus = async (syllabusId: number): Promise<LearnerProfile[]> => {
+  const getLearnersForSyllabus = async (syllabusId: number): Promise<{ classmates: LearnerProfile[]; totalEnrolled: number }> => {
     try {
       const res = await fetch(`/api/syllabi/${syllabusId}/classmates`, {
         credentials: 'include'
@@ -362,10 +362,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       if (!res.ok) throw new Error('Failed to fetch learners');
 
-      return await res.json();
+      const data = await res.json();
+      // Handle both old format (array) and new format (object with classmates/totalEnrolled)
+      if (Array.isArray(data)) {
+        return { classmates: data, totalEnrolled: data.length };
+      }
+      return {
+        classmates: Array.isArray(data.classmates) ? data.classmates : [],
+        totalEnrolled: typeof data.totalEnrolled === 'number' ? data.totalEnrolled : 0
+      };
     } catch (err) {
       console.error('Failed to fetch learners:', err);
-      return [];
+      return { classmates: [], totalEnrolled: 0 };
     }
   };
 

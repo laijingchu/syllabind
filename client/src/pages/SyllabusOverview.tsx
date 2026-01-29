@@ -23,7 +23,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle, AlertTriangle } from 'lucide-react';
+import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle, AlertTriangle, Share2 } from 'lucide-react';
+import { ShareDialog } from '@/components/ShareDialog';
 import { useState, useEffect } from 'react';
 import { cn, pluralize } from '@/lib/utils';
 import { LearnerProfile, Syllabus } from '@/lib/types';
@@ -33,7 +34,9 @@ export default function SyllabusOverview() {
   const { getSyllabusById, enrollInSyllabus, enrollment, isStepCompleted, getExerciseText, getLearnersForSyllabus, updateEnrollmentShareProfile } = useStore();
   const [location, setLocation] = useLocation();
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
   const [learners, setLearners] = useState<LearnerProfile[]>([]);
+  const [totalEnrolled, setTotalEnrolled] = useState(0);
   const [syllabus, setSyllabus] = useState<Syllabus | undefined>(undefined);
   const [creator, setCreator] = useState<any>(undefined);
   const [enrollmentShareProfile, setEnrollmentShareProfile] = useState(false);
@@ -64,7 +67,10 @@ export default function SyllabusOverview() {
   // Fetch learners asynchronously
   useEffect(() => {
     if (syllabusId) {
-      getLearnersForSyllabus(syllabusId).then(setLearners);
+      getLearnersForSyllabus(syllabusId).then(({ classmates, totalEnrolled }) => {
+        setLearners(classmates);
+        setTotalEnrolled(totalEnrolled);
+      });
     }
   }, [syllabusId]);
 
@@ -144,8 +150,8 @@ export default function SyllabusOverview() {
   const isActive = isEnrolled; // User is enrolled in this syllabus
   const isCompleted = enrollment?.completedSyllabusIds?.includes(syllabus.id);
 
-  const inProgressLearners = learners.filter(l => l.status === 'in-progress');
-  const completedLearners = learners.filter(l => l.status === 'completed');
+  const inProgressLearners = (learners || []).filter(l => l.status === 'in-progress');
+  const completedLearners = (learners || []).filter(l => l.status === 'completed');
 
   const handleStartClick = () => {
     // Already enrolled in this syllabus - just navigate to effective current week
@@ -154,7 +160,13 @@ export default function SyllabusOverview() {
       return;
     }
 
-    // Not enrolled - show privacy dialog to enroll
+    // Not authenticated - redirect to login with returnTo
+    if (!currentUser) {
+      setLocation(`/login?returnTo=${encodeURIComponent(`/syllabus/${syllabus.id}`)}`);
+      return;
+    }
+
+    // Authenticated but not enrolled - show privacy dialog to enroll
     setShowPrivacyDialog(true);
   };
 
@@ -230,7 +242,7 @@ export default function SyllabusOverview() {
   return (
     <AnimatedPage className="max-w-4xl mx-auto">
       {isPreview && (
-        <div className="mb-6 bg-amber-500/15 border border-amber-500/20 text-amber-600 dark:text-amber-500 px-4 py-3 rounded-lg flex items-center gap-3">
+        <div className="preview-banner">
           <AlertTriangle className="h-5 w-5 shrink-0" />
           <p className="text-sm font-medium">
             Draft Preview: You are viewing a private draft. This content is not yet public.
@@ -239,38 +251,38 @@ export default function SyllabusOverview() {
       )}
       <div className="grid md:grid-cols-[2fr_1fr] gap-12 items-start">
         <div className="space-y-8">
-          <div>
+          <div className="syllabus-header">
              <Badge variant="outline" className="mb-4">{syllabus.audienceLevel}</Badge>
              <h1 className="text-4xl md:text-5xl font-serif text-foreground mb-6 leading-tight">
                {syllabus.title}
              </h1>
-             <div 
+             <div
                className="text-xl text-muted-foreground leading-relaxed prose dark:prose-invert prose-p:my-2 prose-headings:my-3 prose-ul:list-disc prose-ul:pl-5 max-w-none"
                dangerouslySetInnerHTML={{ __html: syllabus.description }}
              />
           </div>
 
-          <div className="flex flex-wrap gap-6 text-sm text-muted-foreground border-y py-6">
-            <div className="flex items-center gap-2">
+          <div className="syllabus-metadata">
+            <div className="metadata-duration">
               <Clock className="h-4 w-4" />
               <span>{pluralize(syllabus.durationWeeks, 'Week')}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="metadata-steps">
               <BookOpen className="h-4 w-4" />
               <span>{pluralize(syllabus.weeks.reduce((acc, w) => acc + w.steps.length, 0), 'Step')}</span>
             </div>
             {syllabus.updatedAt && syllabus.updatedAt !== syllabus.createdAt ? (
-              <div className="flex items-center gap-2">
+              <div className="metadata-date">
                 <span>Updated {new Date(syllabus.updatedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
               </div>
             ) : syllabus.createdAt ? (
-              <div className="flex items-center gap-2">
+              <div className="metadata-date">
                 <span>Created {new Date(syllabus.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
               </div>
             ) : null}
           </div>
 
-          <div className="space-y-6">
+          <div className="curriculum-section">
             <h2 className="text-2xl font-serif">What you'll learn</h2>
             <Accordion type="single" collapsible className="space-y-4">
               {syllabus.weeks.filter(w => w.steps.length > 0).map((week) => {
@@ -399,19 +411,19 @@ export default function SyllabusOverview() {
             </Accordion>
           </div>
 
-          {/* Classmates Section moved here */}
+          {/* Classmates Section */}
           {(inProgressLearners.length > 0 || completedLearners.length > 0) && (
-            <div id="classmates-section" className="pt-8 space-y-6 scroll-mt-24">
-               <div className="flex justify-between items-baseline border-b pb-4">
+            <div id="classmates-section" className="classmates-section">
+               <div className="classmates-header">
                  <h2 className="text-2xl font-serif">Classmates</h2>
-                 <span className="text-sm text-muted-foreground">{learners.length} enrolled</span>
+                 <span className="text-sm text-muted-foreground">{totalEnrolled} enrolled</span>
                </div>
-               
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+
+               <div className="classmates-grid sm:grid-cols-2">
                  {inProgressLearners.length > 0 && (
-                   <div className="space-y-3">
+                   <div className="classmates-group">
                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">In Progress</p>
-                     <div className="flex -space-x-3 overflow-hidden py-1 pl-1">
+                     <div className="classmates-avatars">
                        {inProgressLearners.map((learner, index) => (
                          <div key={learner.user.id} style={{ zIndex: inProgressLearners.length - index, position: 'relative' }}>
                             <LearnerAvatar learner={learner} />
@@ -422,9 +434,9 @@ export default function SyllabusOverview() {
                  )}
 
                  {completedLearners.length > 0 && (
-                    <div className="space-y-3">
+                    <div className="classmates-group">
                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Completed</p>
-                     <div className="flex -space-x-3 overflow-hidden py-1 pl-1">
+                     <div className="classmates-avatars">
                        {completedLearners.map((learner, index) => (
                          <div key={learner.user.id} style={{ zIndex: completedLearners.length - index, position: 'relative' }}>
                             <LearnerAvatar learner={learner} />
@@ -434,7 +446,7 @@ export default function SyllabusOverview() {
                    </div>
                  )}
                </div>
-               
+
                <p className="text-sm text-muted-foreground">
                  Connect with others learning {syllabus.title}.
                </p>
@@ -442,32 +454,37 @@ export default function SyllabusOverview() {
           )}
         </div>
 
-        <div className="sticky top-24">
-          <div className="border rounded-xl p-6 bg-card shadow-sm space-y-6">
-            <div className="space-y-2">
+        <div className="enrollment-sidebar">
+          <div className="enrollment-card">
+            <div className="enrollment-cta">
               <h3 className="font-medium text-lg">
                 {isCompleted ? "Syllabind Completed" : isActive ? "Continue Learning" : "Ready to start?"}
               </h3>
               <p className="text-sm text-muted-foreground">
-                {isCompleted 
-                  ? `You have successfully completed this ${pluralize(syllabus.durationWeeks, 'week')} course.` 
-                  : isActive 
-                    ? "Pick up where you left off." 
+                {isCompleted
+                  ? `You have successfully completed this ${pluralize(syllabus.durationWeeks, 'week')} course.`
+                  : isActive
+                    ? "Pick up where you left off."
                     : `Commit to ${pluralize(syllabus.durationWeeks, 'week')} of focused learning.`
                 }
               </p>
             </div>
-            
+
             <Button size="lg" className="w-full" onClick={handleStartClick}>
               {isActive ? 'Continue Learning' : isCompleted ? 'Review Syllabus' : 'Start this Syllabind'}
             </Button>
-            
+
+            <Button variant="outline" className="w-full" onClick={() => setShowShareDialog(true)}>
+              <Share2 className="h-4 w-4 mr-2" />
+              Share with a Friend
+            </Button>
+
             {(isActive || isCompleted) && (
-               <div className="flex flex-col items-center gap-3 pt-2">
+               <div className="enrollment-status">
                  {isActive && !isCompleted && (
                    <p className="text-xs text-center text-muted-foreground">You are currently enrolled.</p>
                  )}
-                 <div className="flex items-center space-x-3 bg-muted/40 p-2.5 rounded-md w-full justify-center">
+                 <div className="enrollment-visibility">
                     <Switch
                       id="share-profile"
                       className="data-[state=unchecked]:bg-input"
@@ -477,7 +494,10 @@ export default function SyllabusOverview() {
                           await updateEnrollmentShareProfile(enrollment.id, checked as boolean);
                           setEnrollmentShareProfile(checked as boolean);
                           // Refresh classmates list
-                          if (syllabusId) getLearnersForSyllabus(syllabusId).then(setLearners);
+                          if (syllabusId) getLearnersForSyllabus(syllabusId).then(({ classmates, totalEnrolled }) => {
+                            setLearners(classmates);
+                            setTotalEnrolled(totalEnrolled);
+                          });
                           document.getElementById('classmates-section')?.scrollIntoView({ behavior: 'smooth' });
                         }
                       }}
@@ -493,9 +513,9 @@ export default function SyllabusOverview() {
             )}
 
             {creator && (
-              <div className="pt-6 border-t space-y-4">
+              <div className="creator-card">
                 <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Created by</h4>
-                <div className="flex items-center gap-3">
+                <div className="creator-info">
                   <Avatar className="h-9 w-9 border border-border">
                     <AvatarImage src={creator.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${creator.name}`} alt={creator.name} />
                     <AvatarFallback>{creator.name?.charAt(0) || '?'}</AvatarFallback>
@@ -528,6 +548,12 @@ export default function SyllabusOverview() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ShareDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        title="Share this Syllabind"
+      />
     </AnimatedPage>
   );
 }

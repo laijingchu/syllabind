@@ -5,7 +5,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ExternalLink, Lock, CheckCircle, ChevronRight, ChevronLeft, Check, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Lock, CheckCircle, ChevronRight, ChevronLeft, Check, Link as LinkIcon, Share2 } from 'lucide-react';
+import { ShareDialog } from '@/components/ShareDialog';
 import { useState, useEffect } from 'react';
 import { cn, pluralize } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -31,6 +32,7 @@ export default function WeekView() {
   const [syllabus, setSyllabus] = useState<Syllabus | undefined>(undefined);
   const [exerciseText, setExerciseText] = useState<Record<number, string>>({});
   const [isShared, setIsShared] = useState<Record<number, boolean>>({});
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   const syllabusId = params?.id ? parseInt(params.id) : undefined;
   const weekIndex = parseInt(params?.index || '1');
@@ -125,11 +127,16 @@ export default function WeekView() {
   return (
     <div className="max-w-3xl mx-auto pb-20 px-4 sm:px-0">
       <header className="mb-6 sm:mb-10">
-        <Link href={`/syllabus/${syllabus.id}`}>
-          <a className="text-sm text-muted-foreground hover:text-primary mb-4 flex items-center gap-1 transition-colors">
-            <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Back to Syllabus Overview</span><span className="sm:hidden">Back</span>
-          </a>
-        </Link>
+        <div className="flex justify-between items-center mb-4">
+          <Link href={`/syllabus/${syllabus.id}`}>
+            <a className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors">
+              <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Back to Syllabus Overview</span><span className="sm:hidden">Back</span>
+            </a>
+          </Link>
+          <Button variant="ghost" size="sm" onClick={() => setShowShareDialog(true)}>
+            <Share2 className="h-4 w-4 mr-2" /> Share
+          </Button>
+        </div>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 sm:gap-4 mb-4">
           <div className="min-w-0">
             <h2 className="text-xs sm:text-sm font-medium text-primary uppercase tracking-wider mb-1 truncate">{syllabus.title}</h2>
@@ -336,6 +343,12 @@ export default function WeekView() {
            )
          )}
       </div>
+
+      <ShareDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        title="Share this Week"
+      />
     </div>
   );
 }

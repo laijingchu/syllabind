@@ -95,7 +95,7 @@ export default function CreatorEditor() {
   // Fetch learners when syllabus ID changes
   useEffect(() => {
     if (formData.id && formData.id > 0) { // Only fetch for real IDs, not temp negative IDs
-      getLearnersForSyllabus(formData.id).then(setLearners);
+      getLearnersForSyllabus(formData.id).then(({ classmates }) => setLearners(classmates));
     }
   }, [formData.id]);
 

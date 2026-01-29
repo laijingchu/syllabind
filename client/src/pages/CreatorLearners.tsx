@@ -69,7 +69,7 @@ export default function CreatorLearners() {
   // Fetch learners asynchronously
   useEffect(() => {
     if (syllabusId) {
-      getLearnersForSyllabus(syllabusId).then(setLearners);
+      getLearnersForSyllabus(syllabusId).then(({ classmates }) => setLearners(classmates));
     }
   }, [syllabusId]);
 

@@ -54,7 +54,7 @@ export interface IStorage {
 
   // Learner operations
   getLearnersBySyllabusId(syllabusId: number): Promise<any[]>;
-  getClassmatesBySyllabusId(syllabusId: number): Promise<any[]>;
+  getClassmatesBySyllabusId(syllabusId: number): Promise<{ classmates: any[]; totalEnrolled: number }>;
   updateEnrollmentShareProfile(enrollmentId: number, shareProfile: boolean): Promise<Enrollment>;
 
   // Enrollment operations
@@ -371,7 +371,16 @@ export class DatabaseStorage implements IStorage {
     return learners;
   }
 
-  async getClassmatesBySyllabusId(syllabusId: number): Promise<any[]> {
+  async getClassmatesBySyllabusId(syllabusId: number): Promise<{ classmates: any[]; totalEnrolled: number }> {
+    // Get total active enrollment count (including private users)
+    const [countResult] = await db.select({ count: sql<number>`count(*)` })
+      .from(enrollments)
+      .where(and(
+        eq(enrollments.syllabusId, syllabusId),
+        sql`${enrollments.status} != 'dropped'`
+      ));
+    const totalEnrolled = Number(countResult?.count || 0);
+
     // Get active enrollments that opted into sharing (exclude dropped)
     const enrollmentsData = await db.select()
       .from(enrollments)
@@ -404,7 +413,7 @@ export class DatabaseStorage implements IStorage {
       })
     );
 
-    return classmates.filter(Boolean);
+    return { classmates: classmates.filter(Boolean), totalEnrolled };
   }
 
   async updateEnrollmentShareProfile(enrollmentId: number, shareProfile: boolean): Promise<Enrollment> {

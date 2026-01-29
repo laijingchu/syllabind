@@ -18,6 +18,10 @@ export function registerGoogleAuthRoutes(app: Express): void {
     const state = crypto.randomBytes(32).toString('hex');
     (req as any).session.oauthState = state;
 
+    // Store returnTo for post-auth redirect (validate it starts with / to prevent open redirect)
+    const returnTo = (req.query.returnTo as string) || '/';
+    (req as any).session.oauthReturnTo = returnTo.startsWith('/') ? returnTo : '/';
+
     const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
     const scope = encodeURIComponent("openid email profile");
     
@@ -136,7 +140,11 @@ export function registerGoogleAuthRoutes(app: Express): void {
 
       // Set session
       (req as any).session.userId = user.id;
-      res.redirect("/");
+
+      // Redirect to stored returnTo or default to /
+      const returnTo = (req as any).session.oauthReturnTo || '/';
+      delete (req as any).session.oauthReturnTo;
+      res.redirect(returnTo);
     } catch (error) {
       console.error("Google auth error:", error);
       res.redirect("/login?error=google_auth_failed");

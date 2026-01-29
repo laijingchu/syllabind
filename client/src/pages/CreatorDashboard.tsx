@@ -22,10 +22,10 @@ export default function CreatorDashboard() {
       const counts: Record<number, { total: number, active: number }> = {};
 
       for (const syllabus of mySyllabi) {
-        const learners = await getLearnersForSyllabus(syllabus.id);
-        const activeLearners = learners.filter(l => l.status === 'in-progress');
+        const { classmates, totalEnrolled } = await getLearnersForSyllabus(syllabus.id);
+        const activeLearners = (classmates || []).filter(l => l.status === 'in-progress');
         counts[syllabus.id] = {
-          total: learners.length,
+          total: totalEnrolled,
           active: activeLearners.length
         };
       }

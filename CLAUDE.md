@@ -304,6 +304,45 @@ Required environment variables:
 - Use Drizzle ORM query builder (not raw SQL)
 - Component props destructuring at function signature
 - TailwindCSS utility classes for styling (no CSS modules)
+
+### Semantic CSS Classes
+
+Page sections use semantic class names defined in `client/src/styles/sections.css` with `@apply` directives.
+
+**Tailwind v4 Limitation:** Responsive variants (`sm:`, `md:`, `lg:`) do NOT work inside `@apply`. Keep responsive utilities inline in JSX.
+
+**Convention:**
+- Sections get semantic class names (e.g., `syllabus-metadata`, `curriculum-section`)
+- Direct children/items get semantic names (e.g., `metadata-duration`, `metadata-steps`)
+- Lower-level elements (icons, text) keep inline Tailwind utilities
+- Responsive utilities stay inline in JSX, not in `@apply`
+
+**Pattern:**
+```tsx
+// Good - semantic class + inline responsive
+<div className="classmates-grid sm:grid-cols-2">
+  <div className="metadata-duration">
+    <Clock className="h-4 w-4" />
+    <span>4 Weeks</span>
+  </div>
+</div>
+```
+
+**CSS file (`client/src/styles/sections.css`):**
+```css
+/* Base styles only - NO responsive variants */
+.classmates-grid {
+  @apply grid grid-cols-1 gap-8;
+}
+.metadata-duration {
+  @apply flex items-center gap-2;
+}
+```
+
+**Reusable Section Components:**
+- Located in `client/src/components/sections/`
+- Use for patterns repeated across multiple pages
+- Examples: `PageHeader`, `EmptyState`, `SearchBar`
 - 
 ## Instructions
 1. Always update `architecture.md` after any non-trivial change.
