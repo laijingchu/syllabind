@@ -50,7 +50,9 @@ async function migrateData() {
     for (const syllabus of allSyllabi) {
       console.log(`\n📖 Migrating syllabus: "${syllabus.title}" (ID: ${syllabus.id})`);
 
-      const content = syllabus.content as unknown as SyllabusContent;
+      // NOTE: This migration script has already been run. The 'content' field was removed from the schema.
+      // This script is kept for reference only and should not be run again.
+      const content = (syllabus as any).content as unknown as SyllabusContent;
 
       if (!content || !content.weeks || !Array.isArray(content.weeks)) {
         console.log(`  ⚠️  Skipping - no valid weeks data`);

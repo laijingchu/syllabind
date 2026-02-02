@@ -1,3 +1,5 @@
+/// <reference types="jest" />
+
 // Mock user for testing
 export const mockUser = {
   id: 'test-user-id-123',
