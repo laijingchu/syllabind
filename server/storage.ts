@@ -6,7 +6,8 @@ import {
   type Step, type InsertStep,
   type Submission, type InsertSubmission,
   type CompletedStep, type InsertCompletedStep,
-  users, syllabi, enrollments, weeks, steps, submissions, completedSteps
+  type ChatMessage, type InsertChatMessage,
+  users, syllabi, enrollments, weeks, steps, submissions, completedSteps, chatMessages
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, asc } from "drizzle-orm";
@@ -41,10 +42,12 @@ export interface IStorage {
   // Week operations
   createWeek(week: InsertWeek): Promise<Week>;
   getWeeksBySyllabusId(syllabusId: number): Promise<Week[]>;
+  updateWeek(weekId: number, updates: Partial<Week>): Promise<Week>;
 
   // Step operations
   createStep(step: InsertStep): Promise<Step>;
   getStepsByWeekId(weekId: number): Promise<Step[]>;
+  deleteStep(stepId: number): Promise<void>;
 
   // Submission operations
   createSubmission(submission: InsertSubmission): Promise<Submission>;
@@ -73,6 +76,10 @@ export interface IStorage {
   // Analytics
   getStepCompletionRates(syllabusId: number): Promise<Array<{ stepId: number; completionCount: number; completionRate: number }>>;
   getAverageCompletionTimes(syllabusId: number): Promise<Array<{ stepId: number; avgMinutes: number }>>;
+
+  // Chat messages
+  getChatMessages(syllabusId: number): Promise<ChatMessage[]>;
+  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -576,6 +583,35 @@ export class DatabaseStorage implements IStorage {
         dropoffRate: topDropoutStep.dropoffRate
       } : null
     };
+  }
+
+  async updateWeek(weekId: number, updates: Partial<Week>): Promise<Week> {
+    const [week] = await db
+      .update(weeks)
+      .set(updates)
+      .where(eq(weeks.id, weekId))
+      .returning();
+    return week;
+  }
+
+  async deleteStep(stepId: number): Promise<void> {
+    await db.delete(steps).where(eq(steps.id, stepId));
+  }
+
+  async getChatMessages(syllabusId: number): Promise<ChatMessage[]> {
+    return await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.syllabusId, syllabusId))
+      .orderBy(asc(chatMessages.createdAt));
+  }
+
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    const [chatMessage] = await db
+      .insert(chatMessages)
+      .values(message)
+      .returning();
+    return chatMessage;
   }
 }
 

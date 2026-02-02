@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
+import { CurriculumChatPanel } from '@/components/CurriculumChatPanel';
 
 const generateTempId = () => -Math.floor(Math.random() * 1000000); // Temporary negative IDs for unsaved items
 
@@ -44,6 +45,11 @@ export default function CreatorEditor() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const debouncedFormData = useDebounce(formData, 1000);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState<{
+    currentWeek: number;
+    status: string;
+  }>({ currentWeek: 0, status: '' });
 
   // Fetch full syllabus with weeks and steps when editing
   useEffect(() => {
@@ -155,6 +161,136 @@ export default function CreatorEditor() {
       week.steps = week.steps.filter(s => s.id !== stepId);
     }
     setFormData({ ...formData, weeks: newWeeks });
+  };
+
+  const handleAutogenerate = async () => {
+    if (!formData.title || !formData.description) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in title and description before autogenerating.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    let syllabusId = formData.id;
+    if (isNew || syllabusId < 0) {
+      const created = await createSyllabus({
+        ...formData,
+        status: 'generating'
+      });
+      syllabusId = created.id;
+      setFormData({ ...formData, id: syllabusId });
+    }
+
+    setIsGenerating(true);
+    setGenerationProgress({ currentWeek: 0, status: 'Starting generation...' });
+
+    try {
+      const response = await fetch('/api/generate-curriculum', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ syllabusId })
+      });
+
+      if (!response.ok) throw new Error('Failed to start generation');
+
+      const { websocketUrl } = await response.json();
+
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(`${protocol}//${window.location.host}${websocketUrl}`);
+
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+
+        switch (message.type) {
+          case 'week_started':
+            setGenerationProgress({
+              currentWeek: message.data.weekIndex,
+              status: `Generating Week ${message.data.weekIndex}...`
+            });
+            break;
+
+          case 'searching':
+            setGenerationProgress(prev => ({
+              ...prev,
+              status: `Searching: ${message.data.query}`
+            }));
+            break;
+
+          case 'week_completed':
+            const week = message.data.week;
+            setFormData(prev => {
+              const newWeeks = [...prev.weeks];
+              const weekIndex = week.weekIndex - 1;
+              if (newWeeks[weekIndex]) {
+                newWeeks[weekIndex] = {
+                  ...newWeeks[weekIndex],
+                  title: week.title,
+                  description: week.description,
+                  steps: week.steps
+                };
+              }
+              return { ...prev, weeks: newWeeks };
+            });
+            break;
+
+          case 'generation_complete':
+            setIsGenerating(false);
+            toast({
+              title: "Curriculum Generated!",
+              description: "Your curriculum has been generated. Review and make any edits.",
+            });
+            fetch(`/api/syllabi/${syllabusId}`, { credentials: 'include' })
+              .then(res => res.json())
+              .then(updated => setFormData(updated));
+            break;
+
+          case 'error':
+            setIsGenerating(false);
+            toast({
+              title: "Generation Error",
+              description: message.data.message,
+              variant: "destructive"
+            });
+            break;
+        }
+      };
+
+      ws.onerror = () => {
+        setIsGenerating(false);
+        toast({
+          title: "Connection Error",
+          description: "Lost connection to generation service.",
+          variant: "destructive"
+        });
+      };
+
+    } catch (error) {
+      setIsGenerating(false);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleChatUpdate = async () => {
+    if (formData.id > 0) {
+      const response = await fetch(`/api/syllabi/${formData.id}`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const updated = await response.json();
+        setFormData(updated);
+        toast({
+          title: "Curriculum Updated",
+          description: "Changes from chat applied.",
+        });
+      }
+    }
   };
 
   const handleSave = (statusOverride?: 'draft' | 'published') => {
@@ -300,6 +436,26 @@ export default function CreatorEditor() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          <div className="pt-4 border-t">
+            <Button
+              onClick={handleAutogenerate}
+              disabled={isGenerating || !formData.title || !formData.description}
+              className="w-full gap-2"
+            >
+              <Wand2 className="h-4 w-4" />
+              {isGenerating ? 'Generating...' : 'Autogenerate Curriculum with AI'}
+            </Button>
+            {isGenerating && (
+              <div className="mt-3 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                  <span>
+                    Week {generationProgress.currentWeek}/{formData.durationWeeks}: {generationProgress.status}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -539,6 +695,13 @@ export default function CreatorEditor() {
              })()}
           </div>
         </div>
+      )}
+
+      {formData.id > 0 && (
+        <CurriculumChatPanel
+          syllabusId={formData.id}
+          onCurriculumUpdate={handleChatUpdate}
+        />
       )}
 
     </div>

@@ -454,5 +454,70 @@ export async function registerRoutes(
     res.json(times);
   });
 
+  // ========== AI CURRICULUM GENERATION ==========
+
+  app.post("/api/generate-curriculum", isAuthenticated, async (req, res) => {
+    const username = (req.user as any).username;
+    const user = req.user as any;
+
+    if (!user.isCreator) {
+      return res.status(403).json({ error: "Creator access required" });
+    }
+
+    const { syllabusId } = req.body;
+
+    if (!syllabusId || typeof syllabusId !== 'number') {
+      return res.status(400).json({ error: "Valid syllabusId required" });
+    }
+
+    const syllabus = await storage.getSyllabus(syllabusId);
+    if (!syllabus || syllabus.creatorId !== username) {
+      return res.status(403).json({ error: "Not your syllabus" });
+    }
+
+    if (!syllabus.title || !syllabus.description || !syllabus.audienceLevel || !syllabus.durationWeeks) {
+      return res.status(400).json({ error: "Complete basics fields before generating" });
+    }
+
+    await storage.updateSyllabus(syllabusId, { status: 'generating' });
+
+    res.json({
+      success: true,
+      syllabusId,
+      websocketUrl: `/ws/generate-curriculum/${syllabusId}`
+    });
+  });
+
+  app.get("/api/syllabi/:id/chat-messages", isAuthenticated, async (req, res) => {
+    const syllabusId = parseInt(req.params.id);
+    const username = (req.user as any).username;
+
+    const syllabus = await storage.getSyllabus(syllabusId);
+    if (!syllabus || syllabus.creatorId !== username) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    const messages = await storage.getChatMessages(syllabusId);
+    res.json(messages);
+  });
+
+  app.post("/api/syllabi/:id/chat-messages", isAuthenticated, async (req, res) => {
+    const syllabusId = parseInt(req.params.id);
+    const username = (req.user as any).username;
+    const { role, content } = req.body;
+
+    const syllabus = await storage.getSyllabus(syllabusId);
+    if (!syllabus || syllabus.creatorId !== username) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    const message = await storage.createChatMessage({
+      syllabusId,
+      role,
+      content
+    });
+    res.json(message);
+  });
+
   return httpServer;
 }

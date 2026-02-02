@@ -975,6 +975,52 @@ psql "$DATABASE_URL" -f migrations/manual_username_migration.sql
 
 ## Recent Changes
 
+### Port Cleanup Script Enhancement (2026-02-02)
+
+**Problem:** The `check-port.sh` script failed to clean up port 5000, preventing the dev server from starting. The script relied on `lsof` command which is not available in the Replit environment.
+
+**Solution:** Rewrote `scripts/check-port.sh` with a three-stage progressive cleanup escalation:
+
+1. **Stage 1 (Graceful):** Send SIGTERM, wait 3 seconds for graceful shutdown
+2. **Stage 2 (Force):** Send SIGKILL to server processes, wait 2 seconds
+3. **Stage 3 (Nuclear):** Kill shell wrappers and orphaned processes, wait 2 seconds
+
+**Key Improvements:**
+- Removed dependency on unavailable `lsof` command
+- Uses only available utilities (`ps`, `pkill`, `grep`, `awk`, bash built-ins)
+- Honors server's 5-second graceful shutdown timeout (server/index.ts:135-138)
+- Progressive escalation: graceful first, force as fallback, nuclear as last resort
+- Proper wait times: 3s + 2s + 2s = 7 seconds total
+- Explicitly handles shell wrapper processes that survive child process termination
+
+**Testing Results:**
+- ✅ Clean environment check passes immediately
+- ✅ Running server cleaned up gracefully in ~3 seconds (Stage 1)
+- ✅ No orphaned processes remain after cleanup
+- ✅ Dev server starts successfully after cleanup
+- ✅ All backend tests pass (41/41)
+
+**Files Modified:**
+- `scripts/check-port.sh` - Enhanced with three-stage cleanup (lines 8-37)
+
+**Related Files:**
+- `scripts/force-kill-server.sh` - Reference for proven cleanup patterns
+- `server/index.ts:135-138` - Server graceful shutdown handlers
+- `package.json:8` - Integration point for `npm run dev`
+
+**Port Management Scripts:**
+
+**check-port.sh** - Progressive port cleanup
+- Stage 1: Graceful SIGTERM shutdown (3s wait)
+- Stage 2: Force SIGKILL processes (2s wait)
+- Stage 3: Nuclear cleanup of wrappers (2s wait)
+- Used by: `npm run dev` pre-flight check
+
+**force-kill-server.sh** - Emergency cleanup
+- Nuclear option for stubborn processes
+- Three cleanup methods: pkill, PID iteration, shell wrappers
+- Use when check-port.sh fails
+
 ### Single Active Enrollment (2026-01-28)
 
 Implemented single-active-syllabus behavior for learners:

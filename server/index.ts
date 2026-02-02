@@ -2,6 +2,9 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { WebSocketServer } from 'ws';
+import { handleGenerateCurriculumWS } from './websocket/generateCurriculum';
+import { handleChatCurriculumWS } from './websocket/chatCurriculum';
 
 const app = express();
 const httpServer = createServer(app);
@@ -62,6 +65,31 @@ app.use((req, res, next) => {
 (async () => {
   await registerRoutes(httpServer, app);
 
+  // WebSocket server
+  const wss = new WebSocketServer({ server: httpServer });
+
+  wss.on('connection', (ws, req) => {
+    const url = req.url;
+
+    if (url?.startsWith('/ws/generate-curriculum/')) {
+      const syllabusId = parseInt(url.split('/').pop() || '');
+      if (syllabusId) {
+        handleGenerateCurriculumWS(ws, syllabusId);
+      } else {
+        ws.close();
+      }
+    } else if (url?.startsWith('/ws/chat-curriculum/')) {
+      const syllabusId = parseInt(url.split('/').pop() || '');
+      if (syllabusId) {
+        handleChatCurriculumWS(ws, syllabusId);
+      } else {
+        ws.close();
+      }
+    } else {
+      ws.close();
+    }
+  });
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -112,4 +140,21 @@ app.use((req, res, next) => {
 
   process.on('SIGTERM', shutdown);
   process.on('SIGINT', shutdown);
+
+  // Handle uncaught errors to prevent server crashes from WebSocket frame errors
+  process.on('uncaughtException', (err) => {
+    // Ignore Vite WebSocket errors (invalid frames from bots/scanners)
+    if (err.message?.includes('Invalid WebSocket frame') || 
+        err.message?.includes('invalid status code') ||
+        err.message?.includes('invalid UTF-8 sequence')) {
+      log(`Ignoring WebSocket frame error: ${err.message}`);
+      return;
+    }
+    console.error('Uncaught Exception:', err);
+    shutdown();
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  });
 })();
