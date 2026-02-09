@@ -7,32 +7,27 @@ process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://test:test@l
 process.env.NODE_ENV = 'test';
 process.env.SESSION_SECRET = 'test-session-secret';
 
-// Mock the database module before any imports
+// --- Enhanced chainable DB mock ---
+// Every method returns `this` (the proxy) so any chain resolves to mockDbQuery()
 const mockDbQuery = jest.fn().mockResolvedValue([]);
 
+function createChainProxy() {
+  const handler = {
+    get(_target, prop) {
+      // Allow awaiting at any point in the chain
+      if (prop === 'then') {
+        const result = mockDbQuery();
+        return result.then.bind(result);
+      }
+      // Return a jest.fn that returns the proxy so chaining continues
+      return jest.fn().mockReturnValue(new Proxy({}, handler));
+    }
+  };
+  return new Proxy({}, handler);
+}
+
 jest.mock('./server/db', () => ({
-  db: {
-    select: jest.fn().mockReturnValue({
-      from: jest.fn().mockReturnValue({
-        where: jest.fn().mockImplementation(() => mockDbQuery())
-      })
-    }),
-    insert: jest.fn().mockReturnValue({
-      values: jest.fn().mockReturnValue({
-        returning: jest.fn().mockImplementation(() => mockDbQuery())
-      })
-    }),
-    update: jest.fn().mockReturnValue({
-      set: jest.fn().mockReturnValue({
-        where: jest.fn().mockReturnValue({
-          returning: jest.fn().mockImplementation(() => mockDbQuery())
-        })
-      })
-    }),
-    delete: jest.fn().mockReturnValue({
-      where: jest.fn().mockImplementation(() => mockDbQuery())
-    })
-  },
+  db: createChainProxy(),
   pool: {
     connect: jest.fn(),
     query: jest.fn(),
@@ -42,17 +37,7 @@ jest.mock('./server/db', () => ({
 
 // Mock Drizzle ORM
 jest.mock('drizzle-orm/node-postgres', () => ({
-  drizzle: jest.fn(() => ({
-    select: jest.fn().mockReturnThis(),
-    from: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    insert: jest.fn().mockReturnThis(),
-    values: jest.fn().mockReturnThis(),
-    update: jest.fn().mockReturnThis(),
-    set: jest.fn().mockReturnThis(),
-    delete: jest.fn().mockReturnThis(),
-    returning: jest.fn().mockResolvedValue([]),
-  }))
+  drizzle: jest.fn(() => createChainProxy())
 }));
 
 // Mock pg (PostgreSQL)
@@ -67,27 +52,128 @@ jest.mock('pg', () => ({
 // Mock WebSocket
 jest.mock('ws', () => ({}));
 
-// Mock Storage
+// Mock connect-pg-simple (used by auth/index.ts setupCustomAuth)
+jest.mock('connect-pg-simple', () => {
+  return jest.fn(() => {
+    return jest.fn().mockImplementation(() => ({
+      on: jest.fn(),
+      get: jest.fn(),
+      set: jest.fn(),
+      destroy: jest.fn(),
+      touch: jest.fn(),
+    }));
+  });
+});
+
+// Mock express-session (used by auth/index.ts setupCustomAuth)
+jest.mock('express-session', () => {
+  const sessionMiddleware = (req, res, next) => {
+    if (!req.session) {
+      req.session = { destroy: jest.fn((cb) => cb && cb()) };
+    }
+    next();
+  };
+  sessionMiddleware.Store = jest.fn();
+  return jest.fn(() => sessionMiddleware);
+});
+
+// Mock multer (routes.ts configures multer at module load)
+jest.mock('multer', () => {
+  const multerMock = jest.fn(() => ({
+    single: jest.fn(() => (req, res, next) => {
+      req.file = { filename: 'test-upload.jpg', originalname: 'test.jpg' };
+      next();
+    }),
+    array: jest.fn(() => (req, res, next) => next()),
+  }));
+  multerMock.diskStorage = jest.fn(() => ({}));
+  return multerMock;
+});
+
+// Mock the auth module — setupCustomAuth is a no-op, isAuthenticated checks req.user
+jest.mock('./server/auth', () => ({
+  setupCustomAuth: jest.fn(),
+  isAuthenticated: jest.fn((req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    next();
+  }),
+}));
+
+// Mock individual auth route modules so they don't register real routes
+jest.mock('./server/auth/emailAuth', () => ({
+  registerEmailAuthRoutes: jest.fn(),
+  hashPassword: jest.fn().mockResolvedValue('$2a$10$hashedpassword'),
+  comparePassword: jest.fn().mockResolvedValue(true),
+}));
+
+jest.mock('./server/auth/googleAuth', () => ({
+  registerGoogleAuthRoutes: jest.fn(),
+}));
+
+jest.mock('./server/auth/appleAuth', () => ({
+  registerAppleAuthRoutes: jest.fn(),
+}));
+
+// Mock Storage — the `storage` named export is an object with mock methods
 jest.mock('./server/storage', () => ({
-  getUserByEmail: jest.fn().mockResolvedValue(null),
-  getUserByUsername: jest.fn().mockResolvedValue(null),
-  createUser: jest.fn(),
-  updateUser: jest.fn(),
-  getAllSyllabi: jest.fn().mockResolvedValue([]),
-  getSyllabusById: jest.fn().mockResolvedValue(null),
-  createSyllabus: jest.fn(),
-  updateSyllabus: jest.fn(),
-  deleteSyllabus: jest.fn(),
-  getEnrollmentsByUserId: jest.fn().mockResolvedValue([]),
-  createEnrollment: jest.fn(),
-  updateEnrollment: jest.fn(),
-  getCompletedSteps: jest.fn().mockResolvedValue([]),
-  markStepComplete: jest.fn(),
-  markStepIncomplete: jest.fn(),
-  getSubmissionsByEnrollmentId: jest.fn().mockResolvedValue([]),
-  createSubmission: jest.fn(),
-  updateSubmission: jest.fn(),
-  getLearnersBySyllabusId: jest.fn().mockResolvedValue([])
+  storage: {
+    getUserByEmail: jest.fn().mockResolvedValue(null),
+    getUserByUsername: jest.fn().mockResolvedValue(null),
+    getUserByReplitId: jest.fn().mockResolvedValue(null),
+    getUser: jest.fn().mockResolvedValue(null),
+    createUser: jest.fn(),
+    updateUser: jest.fn(),
+    getAllSyllabi: jest.fn().mockResolvedValue([]),
+    getSyllabusById: jest.fn().mockResolvedValue(null),
+    getSyllabus: jest.fn().mockResolvedValue(null),
+    getSyllabusWithContent: jest.fn().mockResolvedValue(null),
+    getSyllabiByCreator: jest.fn().mockResolvedValue([]),
+    listSyllabi: jest.fn().mockResolvedValue([]),
+    listPublishedSyllabi: jest.fn().mockResolvedValue([]),
+    createSyllabus: jest.fn(),
+    updateSyllabus: jest.fn(),
+    deleteSyllabus: jest.fn(),
+    batchDeleteSyllabi: jest.fn(),
+    getEnrollmentsByUserId: jest.fn().mockResolvedValue([]),
+    getUserEnrollments: jest.fn().mockResolvedValue([]),
+    getEnrollment: jest.fn().mockResolvedValue(null),
+    getEnrollmentById: jest.fn().mockResolvedValue(null),
+    createEnrollment: jest.fn(),
+    updateEnrollment: jest.fn(),
+    dropActiveEnrollments: jest.fn(),
+    updateEnrollmentShareProfile: jest.fn(),
+    getCompletedSteps: jest.fn().mockResolvedValue([]),
+    markStepComplete: jest.fn(),
+    markStepCompleted: jest.fn(),
+    markStepIncomplete: jest.fn(),
+    getSubmissionsByEnrollmentId: jest.fn().mockResolvedValue([]),
+    getSubmission: jest.fn().mockResolvedValue(null),
+    createSubmission: jest.fn(),
+    updateSubmission: jest.fn(),
+    updateSubmissionFeedback: jest.fn(),
+    getLearnersBySyllabusId: jest.fn().mockResolvedValue([]),
+    getClassmatesBySyllabusId: jest.fn().mockResolvedValue({ classmates: [], totalEnrolled: 0 }),
+    getSyllabusAnalytics: jest.fn().mockResolvedValue({}),
+    getStepCompletionRates: jest.fn().mockResolvedValue([]),
+    getAverageCompletionTimes: jest.fn().mockResolvedValue([]),
+    getStep: jest.fn().mockResolvedValue(null),
+    getWeek: jest.fn().mockResolvedValue(null),
+    deleteStep: jest.fn(),
+    getChatMessages: jest.fn().mockResolvedValue([]),
+    createChatMessage: jest.fn(),
+    clearChatMessages: jest.fn(),
+    createWeek: jest.fn(),
+    getWeeksBySyllabusId: jest.fn().mockResolvedValue([]),
+    updateWeek: jest.fn(),
+    createStep: jest.fn(),
+    getStepsByWeekId: jest.fn().mockResolvedValue([]),
+    deleteStepsByWeekId: jest.fn(),
+    deleteWeeksBySyllabusId: jest.fn(),
+    isStepCompleted: jest.fn().mockResolvedValue(false),
+  },
+  DatabaseStorage: jest.fn(),
 }));
 
 // Mock bcrypt for password hashing
@@ -102,7 +188,6 @@ jest.mock('passport-local', () => ({
   Strategy: jest.fn().mockImplementation(function(options, verify) {
     this.name = 'local';
     this.authenticate = function(req, options) {
-      // Mock authentication
       if (req.body.email === 'test@example.com') {
         return this.success({ id: 'test-user-id', email: 'test@example.com' });
       }
@@ -119,7 +204,6 @@ jest.mock('passport', () => ({
   initialize: jest.fn(() => (req, res, next) => next()),
   session: jest.fn(() => (req, res, next) => next()),
   authenticate: jest.fn((strategy, options) => (req, res, next) => {
-    // Mock successful authentication
     req.login = jest.fn((user, cb) => {
       req.user = user;
       cb();
