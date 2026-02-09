@@ -1397,3 +1397,29 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 - `jest.config.cjs` — Added `diagnostics: false` and AST transformer for import.meta
 
 **Results:** 20 test suites, 319 tests, all passing. Coverage: statements 79.8%, branches 66.1%, functions 77.2%, lines 80.7% — all above thresholds (70/60/65/70).
+
+### WebSocket Authentication & Authorization (2026-02-09)
+
+**Problem:** All three WebSocket endpoints (`/ws/generate-syllabind/`, `/ws/regenerate-week/`, `/ws/chat-syllabind/`) bypassed Express middleware entirely, allowing unauthenticated users to connect and perform destructive operations on any syllabus by guessing integer IDs. Additionally, the `update_basics` chat tool handler passed unfiltered AI output to `storage.updateSyllabus`.
+
+**Solution:**
+
+1. **WebSocket Authentication Helper** (`server/auth/index.ts`):
+   - Added `authenticateWebSocket(req: IncomingMessage)` function
+   - Parses `connect.sid` cookie, unsigns with `cookie-signature`, looks up session in PostgreSQL, resolves user
+   - Extracted session secret to module-level variable shared between `setupCustomAuth` and `authenticateWebSocket`
+
+2. **Connection-Level Auth + Ownership** (`server/index.ts`):
+   - All WebSocket connections now authenticate via session cookie (close code 4401 if unauthenticated)
+   - Ownership verified: `syllabus.creatorId === user.username` (close code 4403 if not owner)
+   - Syllabus existence checked (close code 4404 if not found)
+
+3. **Field Allowlisting** (`server/websocket/chatSyllabind.ts`):
+   - `update_basics` handler now destructures only `title`, `description`, `audienceLevel`, `durationWeeks`
+   - Prevents AI from writing unexpected fields like `creatorId` or `status`
+
+**Files Modified:**
+- `server/auth/index.ts` - Added `authenticateWebSocket()`, extracted session secret
+- `server/index.ts` - Added auth + ownership checks in WebSocket connection handler
+- `server/websocket/chatSyllabind.ts` - Allowlisted fields in `update_basics`
+- `jest.setup.js` - Added `authenticateWebSocket` to auth mock

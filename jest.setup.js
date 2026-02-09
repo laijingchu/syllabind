@@ -99,6 +99,7 @@ jest.mock('./server/auth', () => ({
     }
     next();
   }),
+  authenticateWebSocket: jest.fn().mockResolvedValue(null),
 }));
 
 // Mock individual auth route modules so they don't register real routes

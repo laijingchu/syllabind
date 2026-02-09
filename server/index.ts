@@ -3,8 +3,10 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { WebSocketServer } from 'ws';
-import { handleGenerateCurriculumWS } from './websocket/generateCurriculum';
-import { handleChatCurriculumWS } from './websocket/chatCurriculum';
+import { handleGenerateSyllabindWS, handleRegenerateWeekWS } from './websocket/generateSyllabind';
+import { handleChatSyllabindWS } from './websocket/chatSyllabind';
+import { authenticateWebSocket } from './auth';
+import { storage } from './storage';
 
 const app = express();
 const httpServer = createServer(app);
@@ -68,25 +70,65 @@ app.use((req, res, next) => {
   // WebSocket server
   const wss = new WebSocketServer({ server: httpServer });
 
-  wss.on('connection', (ws, req) => {
+  wss.on('connection', async (ws, req) => {
     const url = req.url;
 
-    if (url?.startsWith('/ws/generate-curriculum/')) {
-      const syllabusId = parseInt(url.split('/').pop() || '');
-      if (syllabusId) {
-        handleGenerateCurriculumWS(ws, syllabusId);
-      } else {
-        ws.close();
-      }
-    } else if (url?.startsWith('/ws/chat-curriculum/')) {
-      const syllabusId = parseInt(url.split('/').pop() || '');
-      if (syllabusId) {
-        handleChatCurriculumWS(ws, syllabusId);
-      } else {
-        ws.close();
-      }
-    } else {
+    // Authenticate the WebSocket connection via session cookie
+    const user = await authenticateWebSocket(req);
+    if (!user) {
+      ws.close(4401, 'Unauthorized');
+      return;
+    }
+
+    // Parse syllabusId from URL for ownership check
+    let syllabusId: number | undefined;
+    if (url?.startsWith('/ws/generate-syllabind/')) {
+      const urlObj = new URL(url, 'http://localhost');
+      const pathParts = urlObj.pathname.split('/');
+      syllabusId = parseInt(pathParts[pathParts.length - 1] || '');
+    } else if (url?.startsWith('/ws/regenerate-week/')) {
+      const urlObj = new URL(url, 'http://localhost');
+      const pathParts = urlObj.pathname.split('/');
+      syllabusId = parseInt(pathParts[3] || '');
+    } else if (url?.startsWith('/ws/chat-syllabind/')) {
+      syllabusId = parseInt(url.split('/').pop() || '');
+    }
+
+    if (!syllabusId) {
       ws.close();
+      return;
+    }
+
+    // Verify ownership
+    const syllabus = await storage.getSyllabus(syllabusId);
+    if (!syllabus) {
+      ws.close(4404, 'Syllabus not found');
+      return;
+    }
+    if (syllabus.creatorId !== user.username) {
+      ws.close(4403, 'Forbidden');
+      return;
+    }
+
+    // Route to appropriate handler
+    if (url?.startsWith('/ws/generate-syllabind/')) {
+      const urlObj = new URL(url, 'http://localhost');
+      const model = urlObj.searchParams.get('model') || undefined;
+      const useMock = urlObj.searchParams.get('mock') === 'true';
+      handleGenerateSyllabindWS(ws, syllabusId, model, useMock);
+    } else if (url?.startsWith('/ws/regenerate-week/')) {
+      const urlObj = new URL(url, 'http://localhost');
+      const pathParts = urlObj.pathname.split('/');
+      const weekIndex = parseInt(pathParts[4] || '');
+      const model = urlObj.searchParams.get('model') || undefined;
+      const useMock = urlObj.searchParams.get('mock') === 'true';
+      if (weekIndex) {
+        handleRegenerateWeekWS(ws, syllabusId, weekIndex, model, useMock);
+      } else {
+        ws.close();
+      }
+    } else if (url?.startsWith('/ws/chat-syllabind/')) {
+      handleChatSyllabindWS(ws, syllabusId);
     }
   });
 
