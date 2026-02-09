@@ -1,8 +1,8 @@
-# AI Curriculum Generation Feature
+# AI Syllabind Generation Feature
 
 ## Overview
 
-This feature adds AI-powered curriculum generation to Syllabind using Claude's agentic capabilities with web search. It allows creators to automatically generate complete, high-quality curricula with just a title and description.
+This feature adds AI-powered Syllabind generation to Syllabind using Claude's agentic capabilities with web search. It allows creators to automatically generate complete, high-quality Syllabinds with just a title and description.
 
 ## Implementation Status
 
@@ -10,19 +10,19 @@ This feature adds AI-powered curriculum generation to Syllabind using Claude's a
 - Database schema updated with `chat_messages` table
 - Web search utility with Google Custom Search API integration
 - Claude client with tool definitions for generation and chat
-- Curriculum generator service with agentic loop
+- Syllabind generator service with agentic loop
 - WebSocket handlers for real-time progress streaming
 
 ✅ **Backend - API Routes**
-- POST `/api/generate-curriculum` - Initiate curriculum generation
+- POST `/api/generate-Syllabind` - Initiate Syllabind generation
 - GET `/api/syllabi/:id/chat-messages` - Retrieve chat history
 - POST `/api/syllabi/:id/chat-messages` - Save chat messages
-- WebSocket `/ws/generate-curriculum/:id` - Generation progress stream
-- WebSocket `/ws/chat-curriculum/:id` - Chat interface stream
+- WebSocket `/ws/generate-Syllabind/:id` - Generation progress stream
+- WebSocket `/ws/chat-Syllabind/:id` - Chat interface stream
 
 ✅ **Frontend - User Interface**
-- Autogenerate button in CreatorEditor with real-time progress
-- CurriculumChatPanel component for curriculum refinement
+- Autogenerate button in SyllabindEditor with real-time progress
+- SyllabindChatPanel component for Syllabind refinement
 - WebSocket integration for streaming updates
 - Toast notifications for status updates
 
@@ -32,28 +32,28 @@ This feature adds AI-powered curriculum generation to Syllabind using Claude's a
 ┌─────────────────────────────────────────────────────────────┐
 │                     Frontend (React)                        │
 ├─────────────────────────────────────────────────────────────┤
-│  CreatorEditor                                              │
+│  SyllabindEditor                                              │
 │  ├─ Autogenerate Button                                     │
-│  │  └─ WebSocket → /ws/generate-curriculum/:id            │
-│  └─ CurriculumChatPanel (floating)                         │
-│     └─ WebSocket → /ws/chat-curriculum/:id                 │
+│  │  └─ WebSocket → /ws/generate-Syllabind/:id            │
+│  └─ SyllabindChatPanel (floating)                         │
+│     └─ WebSocket → /ws/chat-Syllabind/:id                 │
 └─────────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                  Backend (Express + WS)                     │
 ├─────────────────────────────────────────────────────────────┤
 │  API Routes                                                 │
-│  └─ POST /api/generate-curriculum                          │
+│  └─ POST /api/generate-Syllabind                          │
 │                                                             │
 │  WebSocket Handlers                                         │
-│  ├─ /ws/generate-curriculum/:id                            │
-│  │  └─ curriculumGenerator.ts                              │
+│  ├─ /ws/generate-Syllabind/:id                            │
+│  │  └─ SyllabindGenerator.ts                              │
 │  │     ├─ Claude API (agentic tool calling)                │
 │  │     ├─ Web Search (Google Custom Search)                │
 │  │     └─ Database writes (weeks, steps)                   │
 │  │                                                          │
-│  └─ /ws/chat-curriculum/:id                                │
-│     └─ chatCurriculum.ts                                   │
+│  └─ /ws/chat-Syllabind/:id                                │
+│     └─ chatSyllabind.ts                                   │
 │        ├─ Claude API (streaming)                            │
 │        ├─ Tool execution (CRUD operations)                  │
 │        └─ Database updates                                  │
@@ -80,16 +80,16 @@ This feature adds AI-powered curriculum generation to Syllabind using Claude's a
    - Tool execution logic
    - Search, finalize, CRUD operations
 
-3. **`server/utils/curriculumGenerator.ts`** (120 lines)
-   - Main agentic loop for curriculum generation
+3. **`server/utils/SyllabindGenerator.ts`** (120 lines)
+   - Main agentic loop for Syllabind generation
    - Week-by-week generation with web search
    - Real-time progress streaming via WebSocket
 
-4. **`server/websocket/generateCurriculum.ts`** (45 lines)
+4. **`server/websocket/generateSyllabind.ts`** (45 lines)
    - WebSocket handler for generation
    - Error handling and status updates
 
-5. **`server/websocket/chatCurriculum.ts`** (180 lines)
+5. **`server/websocket/chatSyllabind.ts`** (180 lines)
    - WebSocket handler for chat
    - Streaming Claude responses
    - Tool call execution and DB updates
@@ -107,12 +107,12 @@ This feature adds AI-powered curriculum generation to Syllabind using Claude's a
 
 ### Frontend
 
-9. **`client/src/pages/CreatorEditor.tsx`** (updated)
+9. **`client/src/pages/SyllabindEditor.tsx`** (updated)
    - Autogenerate button with progress display
    - WebSocket message handling
    - Chat panel integration
 
-10. **`client/src/components/CurriculumChatPanel.tsx`** (new, 180 lines)
+10. **`client/src/components/SyllabindChatPanel.tsx`** (new, 180 lines)
     - Floating chat interface
     - Message streaming
     - Conversation history
@@ -146,15 +146,15 @@ Add these to Replit Secrets:
 
 ### Generation Flow
 
-1. **User clicks "Autogenerate Curriculum with AI"**
+1. **User clicks "Autogenerate Syllabind with AI"**
    - Frontend validates title and description are filled
    - Creates syllabus if new (saves to DB)
-   - Sends POST to `/api/generate-curriculum`
+   - Sends POST to `/api/generate-Syllabind`
 
 2. **Backend initiates generation**
    - Updates syllabus status to `'generating'`
    - Returns WebSocket URL to frontend
-   - Frontend connects to `/ws/generate-curriculum/:id`
+   - Frontend connects to `/ws/generate-Syllabind/:id`
 
 3. **Agentic loop runs (week by week)**
    - Claude receives system prompt with requirements
@@ -176,17 +176,17 @@ Add these to Replit Secrets:
 
 1. **User opens chat panel** (bottom-right floating button)
    - Only appears for saved syllabi (id > 0)
-   - WebSocket connects to `/ws/chat-curriculum/:id`
+   - WebSocket connects to `/ws/chat-Syllabind/:id`
    - Loads conversation history from database
 
 2. **User sends message** (e.g., "Add a video about neural networks to Week 1")
    - Message saved to database
-   - Sent to Claude with system prompt including current curriculum state
+   - Sent to Claude with system prompt including current Syllabind state
 
 3. **Claude responds with streaming**
    - Analyzes request
    - May call tools:
-     - `read_current_curriculum` - Get current state
+     - `read_current_Syllabind` - Get current state
      - `search_web` - Find new resources
      - `add_step` - Insert new step
      - `update_week` - Modify week title/description
@@ -195,7 +195,7 @@ Add these to Replit Secrets:
    - Server executes tool calls and updates database
    - Text response streamed to frontend in real-time
 
-4. **Frontend refreshes curriculum**
+4. **Frontend refreshes Syllabind**
    - After tool execution, fetches updated syllabus
    - Editor updates with new content
    - Chat history persisted for future sessions
@@ -210,13 +210,13 @@ Add these to Replit Secrets:
   - Can filter by recent content (past year)
 
 - **`finalize_week(weekIndex, title, description, steps)`**
-  - Finalizes a week's curriculum
+  - Finalizes a week's Syllabind
   - Steps include readings and exercises
   - Validates structure before saving
 
 ### Chat Mode Tools
 
-- **`read_current_curriculum()`**
+- **`read_current_Syllabind()`**
   - Returns full syllabus with weeks and steps
   - Used for context before making changes
 
@@ -267,13 +267,13 @@ Maximum: 100
    - Description: "Learn ML fundamentals"
    - Audience: Beginner
    - Duration: 4 weeks
-3. Click "Autogenerate Curriculum with AI"
+3. Click "Autogenerate Syllabind with AI"
 4. Watch real-time progress:
    - "Week 1/4: Generating..."
    - "Searching: machine learning beginner tutorial"
    - "Week 1/4: Week completed"
    - (repeats for each week)
-5. After 30-60 seconds, full curriculum appears
+5. After 30-60 seconds, full Syllabind appears
 6. Review and edit as needed
 7. Publish or save as draft
 
@@ -285,7 +285,7 @@ Maximum: 100
    - "Add a video about gradient descent to Week 2"
    - "Change Week 1 title to 'ML Foundations'"
    - "Remove the first reading from Week 3"
-   - "Make this curriculum 6 weeks instead of 4"
+   - "Make this Syllabind 6 weeks instead of 4"
 4. Claude responds conversationally
 5. Changes automatically applied to editor
 6. History persists across sessions
@@ -314,7 +314,7 @@ Maximum: 100
 - [ ] Open chat panel
 - [ ] Send message: "Add a video to Week 1"
 - [ ] Verify Claude searches and adds resource
-- [ ] Check curriculum updates in editor
+- [ ] Check Syllabind updates in editor
 - [ ] Send message: "Change title to 'ML Basics'"
 - [ ] Verify title updates with explanation
 - [ ] Close and reopen chat - verify history persists
@@ -333,12 +333,12 @@ Maximum: 100
 - Model: `claude-sonnet-4-20250514`
 - Input: ~$3 per million tokens
 - Output: ~$15 per million tokens
-- **Estimated cost per 4-week curriculum**: $0.02 - $0.05
+- **Estimated cost per 4-week Syllabind**: $0.02 - $0.05
 
 ### Google Custom Search API
 - Free tier: 100 queries/day
 - Paid: $5 per 1,000 queries
-- **Estimated queries per curriculum**: 8-12 (2-3 per week)
+- **Estimated queries per Syllabind**: 8-12 (2-3 per week)
 - Within free tier for most use cases
 
 ## Future Enhancements
@@ -382,7 +382,7 @@ Maximum: 100
 
 ### Generation takes too long (>2 minutes)
 - Check Claude API rate limits
-- Reduce `max_tokens` in `curriculumGenerator.ts` (currently 4000)
+- Reduce `max_tokens` in `SyllabindGenerator.ts` (currently 4000)
 - Switch to Haiku model for faster generation (lower quality)
 
 ### Poor quality resources generated
@@ -397,7 +397,7 @@ Maximum: 100
 - Ensure `chat_messages` table exists in database
 
 ### Changes from chat not appearing
-- Check that `onCurriculumUpdate` is called after tool execution
+- Check that `onSyllabindUpdate` is called after tool execution
 - Verify database updates are successful
 - Check for race conditions in state updates
 
@@ -422,7 +422,7 @@ Maximum: 100
 
 ## Performance Characteristics
 
-- **Generation time**: 30-90 seconds for 4-week curriculum
+- **Generation time**: 30-90 seconds for 4-week Syllabind
 - **Search latency**: 500-1000ms per query (cached for 15 min)
 - **WebSocket overhead**: <100ms for progress updates
 - **Chat response time**: 2-5 seconds (streaming starts immediately)

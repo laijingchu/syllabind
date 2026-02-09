@@ -22,9 +22,9 @@ All TypeScript compilation errors have been fixed. The database schema is proper
 ### ✅ Code Fixes Applied
 - [x] WeekView.tsx - Fixed ID type mismatches
 - [x] SyllabusOverview.tsx - Fixed URL param parsing
-- [x] CreatorEditor.tsx - Fixed Week/Step structure
-- [x] CreatorLearners.tsx - Added cohort stubs
-- [x] CreatorAnalytics.tsx - Fixed URL param parsing
+- [x] SyllabindEditor.tsx - Fixed Week/Step structure
+- [x] SyllabindLearners.tsx - Added cohort stubs
+- [x] SyllabindAnalytics.tsx - Fixed URL param parsing
 - [x] Completion.tsx - Fixed URL param parsing
 - [x] MockData.ts - Added username field to User objects
 

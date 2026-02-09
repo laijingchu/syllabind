@@ -63,11 +63,11 @@ All store methods now make real API calls:
 - Changed `getLearnersForSyllabus` to async
 - Added null checks for enrollment
 
-**CreatorLearners.tsx:**
+**SyllabindLearners.tsx:**
 - Added `useState` and `useEffect` for learners
 - Changed `getLearnersForSyllabus` to async
 
-**CreatorEditor.tsx:**
+**SyllabindEditor.tsx:**
 - Added `useState` for learners
 - Added `useEffect` to fetch learners when syllabus ID changes
 - Only fetches for real IDs (not temporary negative IDs)
@@ -123,8 +123,8 @@ All store methods now make real API calls:
 ### Core Integration
 - ✅ `client/src/lib/store.tsx` - Complete rewrite with API calls
 - ✅ `client/src/pages/SyllabusOverview.tsx` - Async learners, null checks
-- ✅ `client/src/pages/CreatorLearners.tsx` - Async learners
-- ✅ `client/src/pages/CreatorEditor.tsx` - Async learners
+- ✅ `client/src/pages/SyllabindLearners.tsx` - Async learners
+- ✅ `client/src/pages/SyllabindEditor.tsx` - Async learners
 - ✅ `client/src/pages/Dashboard.tsx` - Null-safe enrollment handling
 
 ### Documentation

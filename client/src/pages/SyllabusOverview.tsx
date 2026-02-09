@@ -289,7 +289,7 @@ export default function SyllabusOverview() {
             ) : null}
           </div>
 
-          <div className="curriculum-section space-y-6">
+          <div className="syllabind-section space-y-6">
             <h2 className="text-2xl font-serif">What you'll learn</h2>
             <Accordion type="single" collapsible className="space-y-4">
               {syllabus.weeks.filter(w => w.steps.length > 0).map((week) => {

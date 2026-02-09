@@ -2,13 +2,13 @@
 
 ## Quick Reference
 
-This guide shows how to customize the curriculum generation agent's behavior without reading the full implementation plan.
+This guide shows how to customize the Syllabind generation agent's behavior without reading the full implementation plan.
 
 ## Common Customizations
 
 ### 1. Change Number of Steps Per Week
 
-**File**: `server/utils/curriculumGenerator.ts`
+**File**: `server/utils/SyllabindGenerator.ts`
 **Line**: ~30
 
 ```typescript
@@ -24,7 +24,7 @@ This guide shows how to customize the curriculum generation agent's behavior wit
 
 ### 2. Prioritize Video Content
 
-**File**: `server/utils/curriculumGenerator.ts`
+**File**: `server/utils/SyllabindGenerator.ts`
 **Line**: ~28
 
 ```typescript
@@ -68,7 +68,7 @@ if (trustworthy.some(domain => result.domain.includes(domain))) {
 
 ### 5. Require Free Resources Only
 
-**File**: `server/utils/curriculumGenerator.ts`
+**File**: `server/utils/SyllabindGenerator.ts`
 **Line**: ~28
 
 ```typescript
@@ -80,7 +80,7 @@ Requirements:
 
 ### 6. Make Generation Faster (Lower Quality)
 
-**File**: `server/utils/curriculumGenerator.ts`
+**File**: `server/utils/SyllabindGenerator.ts`
 **Line**: ~36
 
 ```typescript
@@ -105,7 +105,7 @@ const response = await client.messages.create({
 
 ### 7. Make Generation Higher Quality (Slower)
 
-**File**: `server/utils/curriculumGenerator.ts`
+**File**: `server/utils/SyllabindGenerator.ts`
 **Line**: ~56
 
 ```typescript
@@ -129,11 +129,11 @@ Process for each week:
 
 ### 8. Change Chat Personality
 
-**File**: `server/websocket/chatCurriculum.ts`
+**File**: `server/websocket/chatSyllabind.ts`
 **Line**: ~52
 
 ```typescript
-const systemPrompt = `You are a helpful curriculum assistant for Syllabind.
+const systemPrompt = `You are a helpful Syllabind assistant for Syllabind.
 + You are friendly, encouraging, and enthusiastic about education.
 + Use a conversational tone and explain your suggestions clearly.
 
@@ -143,7 +143,7 @@ Current syllabus:
 
 ### 9. Restrict Chat Capabilities
 
-**File**: `server/websocket/chatCurriculum.ts`
+**File**: `server/websocket/chatSyllabind.ts`
 **Line**: ~64
 
 ```typescript
@@ -158,7 +158,7 @@ You can:
 
 ### 10. Add Subject-Specific Instructions
 
-**File**: `server/utils/curriculumGenerator.ts`
+**File**: `server/utils/SyllabindGenerator.ts`
 **Line**: ~28
 
 ```typescript
@@ -173,7 +173,7 @@ Description: ${basics.description}
 
 ### 11. Enable Recent Content Filter by Default
 
-**File**: `server/utils/curriculumGenerator.ts`
+**File**: `server/utils/SyllabindGenerator.ts`
 **Line**: ~28
 
 ```typescript
@@ -187,13 +187,13 @@ Requirements:
 
 | What to Change | File | Approx Line |
 |---|---|---|
-| Steps per week | `server/utils/curriculumGenerator.ts` | 30 |
-| Search iterations | `server/utils/curriculumGenerator.ts` | 36 |
-| Model & tokens | `server/utils/curriculumGenerator.ts` | 56 |
+| Steps per week | `server/utils/SyllabindGenerator.ts` | 30 |
+| Search iterations | `server/utils/SyllabindGenerator.ts` | 36 |
+| Model & tokens | `server/utils/SyllabindGenerator.ts` | 56 |
 | Trusted domains | `server/utils/webSearch.ts` | 62 |
 | Quality scoring | `server/utils/webSearch.ts` | 68 |
-| Chat personality | `server/websocket/chatCurriculum.ts` | 52 |
-| Chat capabilities | `server/websocket/chatCurriculum.ts` | 64 |
+| Chat personality | `server/websocket/chatSyllabind.ts` | 52 |
+| Chat capabilities | `server/websocket/chatSyllabind.ts` | 64 |
 
 ## Testing Changes
 
@@ -228,7 +228,7 @@ After making changes:
 
 ### Use Haiku for Chat (10x cheaper)
 
-**File**: `server/websocket/chatCurriculum.ts`
+**File**: `server/websocket/chatSyllabind.ts`
 **Line**: ~68
 
 ```typescript
@@ -240,7 +240,7 @@ const stream = await client.messages.stream({
 
 ### Reduce Search Frequency
 
-**File**: `server/utils/curriculumGenerator.ts`
+**File**: `server/utils/SyllabindGenerator.ts`
 **Line**: ~36
 
 ```typescript
@@ -276,13 +276,13 @@ Modify `server/utils/claudeClient.ts` in the `finalize_week` case to validate st
 
 ### Implement Undo/Redo
 
-Add a `changes` array in `server/websocket/chatCurriculum.ts` to track modifications and allow rollback.
+Add a `changes` array in `server/websocket/chatSyllabind.ts` to track modifications and allow rollback.
 
 ## Monitoring
 
 ### Enable Verbose Logging
 
-**File**: `server/utils/curriculumGenerator.ts`
+**File**: `server/utils/SyllabindGenerator.ts`
 **After line**: ~79
 
 ```typescript
@@ -298,14 +298,14 @@ for (const toolUse of toolUseBlocks) {
 
 ### Track API Costs
 
-**File**: `server/utils/curriculumGenerator.ts`
+**File**: `server/utils/SyllabindGenerator.ts`
 **After line**: ~60
 
 ```typescript
 const response = await client.messages.create({
   model: 'claude-sonnet-4-20250514',
   max_tokens: 4000,
-  tools: CURRICULUM_GENERATION_TOOLS,
+  tools: SYLLABIND_GENERATION_TOOLS,
   messages
 });
 
@@ -341,10 +341,10 @@ const response = await client.messages.create({
 - Use stronger language ("MUST", "NEVER", "ALWAYS")
 
 ### Chat makes unwanted changes
-- Restrict available tools in `CURRICULUM_CHAT_TOOLS`
+- Restrict available tools in `SYLLABIND_CHAT_TOOLS`
 - Add confirmation prompts before destructive actions
 - Make system prompt more conservative
 
 ---
 
-For comprehensive details on architecture, flow, and advanced customization, see `AI_CURRICULUM_GENERATION.md`.
+For comprehensive details on architecture, flow, and advanced customization, see `AI_SYLLABIND_GENERATION.md`.

@@ -171,7 +171,7 @@ if (syllabus.creatorId !== username) {
 **Pages:** 14 main pages in `client/src/pages/`
 - Public: Marketing, Login, Catalog, SyllabusOverview
 - Learner: Dashboard, WeekView, Completion, Profile
-- Creator: CreatorDashboard, CreatorEditor, CreatorAnalytics, CreatorLearners, CreatorProfile
+- Creator: CreatorDashboard, SyllabindEditor, SyllabindAnalytics, SyllabindLearners, CreatorProfile
 
 **UI Primitives:** 50+ reusable components in `client/src/components/ui/`
 - Built on Radix UI with TailwindCSS styling
@@ -322,7 +322,7 @@ Page sections include semantic class names alongside Tailwind utilities for easy
 - `syllabus-header` - Title, badge, description
 - `syllabus-metadata` - Duration/steps/date row
   - `metadata-duration`, `metadata-steps`, `metadata-date`
-- `curriculum-section` - Week accordion
+- `syllabind-section` - Week accordion
 - `classmates-section` - Learner avatars
   - `classmates-header`, `classmates-grid`, `classmates-group`, `classmates-avatars`
 - `enrollment-sidebar` - Sticky CTA card

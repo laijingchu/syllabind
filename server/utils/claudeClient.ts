@@ -1,41 +1,34 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { searchWeb, evaluateSourceQuality } from './webSearch';
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-export const CURRICULUM_GENERATION_TOOLS: Anthropic.Tool[] = [
+// Use cheaper model for development/testing, Sonnet for production
+export const CLAUDE_MODEL = process.env.NODE_ENV === 'production'
+  ? 'claude-sonnet-4-20250514'
+  : 'claude-3-5-haiku-20241022';
+
+export const SYLLABIND_GENERATION_TOOLS: Anthropic.Tool[] = [
   {
-    name: 'search_web',
-    description: 'Search the web for educational resources. Returns top 5 results with quality scores.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        query: {
-          type: 'string',
-          description: 'The search query (be specific about topic and resource type)'
-        },
-        includeRecent: {
-          type: 'boolean',
-          description: 'Prioritize recent content (past year)',
-          default: false
-        }
-      },
-      required: ['query']
-    }
-  },
+    type: 'web_search_20250305',
+    name: 'web_search',
+    max_uses: 5 // Reduced for cost efficiency (~1 search per week)
+  } as any,
   {
     name: 'finalize_week',
-    description: 'Finalize a week\'s curriculum after gathering sufficient resources.',
+    description: 'Finalize a week\'s Syllabind. MUST have exactly 4 steps: 3 readings followed by 1 exercise.',
     input_schema: {
       type: 'object',
       properties: {
-        weekIndex: { type: 'number' },
-        title: { type: 'string' },
-        description: { type: 'string' },
+        weekIndex: { type: 'number', description: '1-based week number (1, 2, 3, etc.)' },
+        title: { type: 'string', description: 'Week title (e.g., "Foundations", "Core Concepts")' },
+        description: { type: 'string', description: 'Brief description of the week\'s focus' },
         steps: {
           type: 'array',
+          description: 'Exactly 4 steps: 3 readings then 1 exercise',
+          minItems: 4,
+          maxItems: 4,
           items: {
             type: 'object',
             properties: {
@@ -44,9 +37,12 @@ export const CURRICULUM_GENERATION_TOOLS: Anthropic.Tool[] = [
               url: { type: 'string' },
               note: { type: 'string' },
               author: { type: 'string' },
-              creationDate: { type: 'string' },
-              mediaType: { type: 'string', enum: ['Book', 'Youtube video', 'Blog/Article', 'Podcast'] },
-              promptText: { type: 'string' },
+              creationDate: {
+                type: 'string',
+                description: 'Publication or creation date of the resource in dd/mm/yyyy format (e.g., 15/03/2024). Extract from web search results when available.'
+              },
+              mediaType: { type: 'string', enum: ['Book', 'Book Chapter', 'Journal Article', 'Youtube video', 'Blog/Article', 'Podcast'] },
+              promptText: { type: 'string', description: 'Exercise instructions. Use markdown: "- " for bullet points, "1. " for numbered lists' },
               estimatedMinutes: { type: 'number' }
             },
             required: ['type', 'title']
@@ -58,10 +54,10 @@ export const CURRICULUM_GENERATION_TOOLS: Anthropic.Tool[] = [
   }
 ];
 
-export const CURRICULUM_CHAT_TOOLS: Anthropic.Tool[] = [
+export const SYLLABIND_CHAT_TOOLS: Anthropic.Tool[] = [
   {
-    name: 'read_current_curriculum',
-    description: 'Read the current state of the syllabus curriculum.',
+    name: 'read_current_syllabind',
+    description: 'Read the current state of the Syllabind.',
     input_schema: { type: 'object', properties: {}, required: [] }
   },
   {
@@ -97,8 +93,12 @@ export const CURRICULUM_CHAT_TOOLS: Anthropic.Tool[] = [
             url: { type: 'string' },
             note: { type: 'string' },
             author: { type: 'string' },
+            creationDate: {
+              type: 'string',
+              description: 'Publication or creation date in dd/mm/yyyy format (e.g., 15/03/2024)'
+            },
             mediaType: { type: 'string' },
-            promptText: { type: 'string' },
+            promptText: { type: 'string', description: 'Exercise instructions. Use markdown: "- " for bullet points, "1. " for numbered lists' },
             estimatedMinutes: { type: 'number' }
           },
           required: ['type', 'title']
@@ -133,14 +133,10 @@ export const CURRICULUM_CHAT_TOOLS: Anthropic.Tool[] = [
     }
   },
   {
-    name: 'search_web',
-    description: 'Search for additional resources.',
-    input_schema: {
-      type: 'object',
-      properties: { query: { type: 'string' } },
-      required: ['query']
-    }
-  }
+    type: 'web_search_20250305',
+    name: 'web_search',
+    max_uses: 2 // Conservative limit for chat
+  } as any
 ];
 
 export async function executeToolCall(
@@ -149,16 +145,14 @@ export async function executeToolCall(
   context: any
 ): Promise<any> {
   switch (toolName) {
-    case 'search_web': {
-      const results = await searchWeb(toolInput.query, {
-        maxResults: 5,
-        dateRestrict: toolInput.includeRecent ? 'y1' : undefined
-      });
-      return results.map(r => ({
-        ...r,
-        qualityScore: evaluateSourceQuality(r)
-      }));
-    }
+    case 'web_search':
+      // Claude handles web search natively - no execution needed here
+      // The search is performed server-side by Anthropic's API
+      // Results are automatically included in Claude's response
+      return {
+        message: 'Web search executed by Claude API',
+        handled_by_api: true
+      };
 
     case 'finalize_week':
       return {
@@ -168,7 +162,7 @@ export async function executeToolCall(
         steps: toolInput.steps
       };
 
-    case 'read_current_curriculum':
+    case 'read_current_syllabind':
       return context.currentSyllabus;
 
     case 'update_week':

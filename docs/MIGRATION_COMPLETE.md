@@ -77,9 +77,9 @@ enrollments ──┬── submissions ──┬── (FK: enrollment_id)
 7. **client/src/lib/mockData.ts** - Updated to numeric IDs, added username field
 8. **client/src/pages/WeekView.tsx** - Fixed ID type handling
 9. **client/src/pages/SyllabusOverview.tsx** - Fixed URL param parsing
-10. **client/src/pages/CreatorEditor.tsx** - Fixed Week/Step structure
-11. **client/src/pages/CreatorLearners.tsx** - Added cohort stubs, fixed IDs
-12. **client/src/pages/CreatorAnalytics.tsx** - Fixed URL param parsing
+10. **client/src/pages/SyllabindEditor.tsx** - Fixed Week/Step structure
+11. **client/src/pages/SyllabindLearners.tsx** - Added cohort stubs, fixed IDs
+12. **client/src/pages/SyllabindAnalytics.tsx** - Fixed URL param parsing
 13. **client/src/pages/Completion.tsx** - Fixed URL param parsing
 
 ### Documentation (3 files)
@@ -254,7 +254,7 @@ git revert <commit-hash>
 ## Known Limitations
 
 ### Cohort Features
-- Cohort management is stubbed in `CreatorLearners.tsx`
+- Cohort management is stubbed in `SyllabindLearners.tsx`
 - Functions log to console but don't persist
 - Full implementation requires:
   - Adding cohort methods to store

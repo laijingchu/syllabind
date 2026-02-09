@@ -2,7 +2,7 @@
 
 ## Overview
 
-The AI curriculum generation feature requires Google Custom Search API to find educational resources. This guide will walk you through setting up your search engine and getting the required credentials.
+The AI Syllabind generation feature requires Google Custom Search API to find educational resources. This guide will walk you through setting up your search engine and getting the required credentials.
 
 ## Prerequisites
 
@@ -66,7 +66,7 @@ Once configured, test the search functionality:
    - Description: "Testing AI generation"
    - Audience: Beginner
    - Duration: 2 weeks
-3. Click **"Autogenerate Curriculum with AI"**
+3. Click **"Autogenerate Syllabind with AI"**
 4. Monitor the progress - you should see search queries being executed
 5. After completion, verify that generated steps have valid URLs
 
@@ -118,7 +118,7 @@ Once configured, test the search functionality:
 ### Free Tier
 - **100 queries per day** at no charge
 - Resets at midnight Pacific Time
-- Sufficient for ~8-12 curriculum generations per day
+- Sufficient for ~8-12 Syllabind generations per day
 
 ### Paid Tier
 - $5 per 1,000 queries
@@ -126,9 +126,9 @@ Once configured, test the search functionality:
 - Requires billing enabled on Google Cloud project
 
 ### Estimated Usage
-- **Per 4-week curriculum**: 8-12 search queries
+- **Per 4-week Syllabind**: 8-12 search queries
 - **Per chat interaction**: 1-3 search queries
-- **Daily capacity (free tier)**: ~8-10 curriculum generations
+- **Daily capacity (free tier)**: ~8-10 Syllabind generations
 
 ## Security Best Practices
 
@@ -174,6 +174,6 @@ If you encounter issues:
 
 ---
 
-**Status**: Setup required before AI curriculum generation will work.
+**Status**: Setup required before AI Syllabind generation will work.
 
 **Next step**: Add `GOOGLE_SEARCH_ENGINE_ID` to Replit Secrets following steps 1-4 above.

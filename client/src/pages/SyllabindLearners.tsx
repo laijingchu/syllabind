@@ -36,7 +36,7 @@ import { LearnerProfile, Submission, Syllabus } from '@/lib/types';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { cn } from '@/lib/utils';
 
-export default function CreatorLearners() {
+export default function SyllabindLearners() {
   const [match, params] = useRoute('/creator/syllabus/:id/learners');
   const { getSyllabusById, getLearnersForSyllabus, getSubmissionsForStep } = useStore();
   const [, setLocation] = useLocation();

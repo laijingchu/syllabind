@@ -203,6 +203,30 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+
+  /* Prose list styling - restores bullets and numbers */
+  .prose ul {
+    list-style-type: disc;
+    padding-left: 1.25rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .prose ol {
+    list-style-type: decimal;
+    padding-left: 1.25rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .prose li {
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .prose li > p {
+    margin: 0;
+  }
 }
 
 /**
@@ -325,4 +349,62 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+}
+
+/* Generation streaming animations */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--primary) / 0.15) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    border-color: hsl(var(--primary) / 0.3);
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.1);
+  }
+  50% {
+    border-color: hsl(var(--primary) / 0.6);
+    box-shadow: 0 0 8px 2px hsl(var(--primary) / 0.2);
+  }
+}
+
+.animate-generating {
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+@keyframes stepSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.step-enter {
+  animation: stepSlideIn 0.4s ease-out forwards;
+  opacity: 0;
+}
+
+.step-delay-1 { animation-delay: 0.1s; }
+.step-delay-2 { animation-delay: 0.2s; }
+.step-delay-3 { animation-delay: 0.3s; }
+.step-delay-4 { animation-delay: 0.4s; }
+
+/* Single step appearance animation (for real streaming) */
+.step-appear {
+  animation: stepSlideIn 0.3s ease-out forwards;
 }

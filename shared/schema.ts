@@ -155,7 +155,7 @@ export const cohortMembers = pgTable("cohort_members", {
   pk: primaryKey({ columns: [table.cohortId, table.studentId] })
 }));
 
-// Chat messages for curriculum refinement
+// Chat messages for Syllabind refinement
 export const chatMessages = pgTable("chat_messages", {
   id: serial("id").primaryKey(),
   syllabusId: integer("syllabus_id")

@@ -39,6 +39,7 @@ interface StoreContextType {
   getProgressForWeek: (syllabusId: number, weekIndex: number) => number;
   createSyllabus: (syllabus: any) => Promise<Syllabus>;
   updateSyllabus: (syllabus: Syllabus) => Promise<void>;
+  batchDeleteSyllabi: (ids: number[]) => Promise<void>;
   getSubmissionsForStep: (stepId: number) => Record<string, Submission>;
   refreshSyllabi: () => Promise<void>;
   refreshEnrollments: () => Promise<void>;
@@ -354,6 +355,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const batchDeleteSyllabi = async (ids: number[]) => {
+    try {
+      const res = await fetch('/api/syllabi/batch-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ ids })
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to delete syllabi');
+      }
+
+      // Refresh syllabi list
+      await refreshSyllabi();
+    } catch (err) {
+      console.error('Failed to delete syllabi:', err);
+      throw err;
+    }
+  };
+
   const getLearnersForSyllabus = async (syllabusId: number): Promise<{ classmates: LearnerProfile[]; totalEnrolled: number }> => {
     try {
       const res = await fetch(`/api/syllabi/${syllabusId}/classmates`, {
@@ -481,6 +504,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       getProgressForWeek,
       createSyllabus,
       updateSyllabus,
+      batchDeleteSyllabi,
       getSubmissionsForStep,
       refreshSyllabi,
       refreshEnrollments
