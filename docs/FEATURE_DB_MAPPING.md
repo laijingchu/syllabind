@@ -137,7 +137,7 @@
   - `users` (READ) — learner profiles
 
 ### 16. Create Syllabus
-- **Description**: Build a new syllabus with metadata and curriculum
+- **Description**: Build a new syllabus with metadata and Syllabind
 - **Endpoint**: `POST /api/syllabi`
 - **Tables**:
   - `syllabi` (CREATE) — title, description, audienceLevel, durationWeeks, creatorId, status='draft'
@@ -149,7 +149,7 @@
 - **Endpoint**: `PUT /api/syllabi/:id`
 - **Tables**:
   - `syllabi` (UPDATE) — metadata fields
-  - `weeks` (CREATE/UPDATE/DELETE) — restructure curriculum
+  - `weeks` (CREATE/UPDATE/DELETE) — restructure Syllabind
   - `steps` (CREATE/UPDATE/DELETE) — modify learning activities
 
 ### 18. Publish / Unpublish Syllabus

@@ -2,6 +2,11 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { WebSocketServer } from 'ws';
+import { handleGenerateSyllabindWS, handleRegenerateWeekWS } from './websocket/generateSyllabind';
+import { handleChatSyllabindWS } from './websocket/chatSyllabind';
+import { authenticateWebSocket } from './auth';
+import { storage } from './storage';
 
 const app = express();
 const httpServer = createServer(app);
@@ -62,6 +67,71 @@ app.use((req, res, next) => {
 (async () => {
   await registerRoutes(httpServer, app);
 
+  // WebSocket server
+  const wss = new WebSocketServer({ server: httpServer });
+
+  wss.on('connection', async (ws, req) => {
+    const url = req.url;
+
+    // Authenticate the WebSocket connection via session cookie
+    const user = await authenticateWebSocket(req);
+    if (!user) {
+      ws.close(4401, 'Unauthorized');
+      return;
+    }
+
+    // Parse syllabusId from URL for ownership check
+    let syllabusId: number | undefined;
+    if (url?.startsWith('/ws/generate-syllabind/')) {
+      const urlObj = new URL(url, 'http://localhost');
+      const pathParts = urlObj.pathname.split('/');
+      syllabusId = parseInt(pathParts[pathParts.length - 1] || '');
+    } else if (url?.startsWith('/ws/regenerate-week/')) {
+      const urlObj = new URL(url, 'http://localhost');
+      const pathParts = urlObj.pathname.split('/');
+      syllabusId = parseInt(pathParts[3] || '');
+    } else if (url?.startsWith('/ws/chat-syllabind/')) {
+      syllabusId = parseInt(url.split('/').pop() || '');
+    }
+
+    if (!syllabusId) {
+      ws.close();
+      return;
+    }
+
+    // Verify ownership
+    const syllabus = await storage.getSyllabus(syllabusId);
+    if (!syllabus) {
+      ws.close(4404, 'Syllabus not found');
+      return;
+    }
+    if (syllabus.creatorId !== user.username) {
+      ws.close(4403, 'Forbidden');
+      return;
+    }
+
+    // Route to appropriate handler
+    if (url?.startsWith('/ws/generate-syllabind/')) {
+      const urlObj = new URL(url, 'http://localhost');
+      const model = urlObj.searchParams.get('model') || undefined;
+      const useMock = urlObj.searchParams.get('mock') === 'true';
+      handleGenerateSyllabindWS(ws, syllabusId, model, useMock);
+    } else if (url?.startsWith('/ws/regenerate-week/')) {
+      const urlObj = new URL(url, 'http://localhost');
+      const pathParts = urlObj.pathname.split('/');
+      const weekIndex = parseInt(pathParts[4] || '');
+      const model = urlObj.searchParams.get('model') || undefined;
+      const useMock = urlObj.searchParams.get('mock') === 'true';
+      if (weekIndex) {
+        handleRegenerateWeekWS(ws, syllabusId, weekIndex, model, useMock);
+      } else {
+        ws.close();
+      }
+    } else if (url?.startsWith('/ws/chat-syllabind/')) {
+      handleChatSyllabindWS(ws, syllabusId);
+    }
+  });
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -112,4 +182,21 @@ app.use((req, res, next) => {
 
   process.on('SIGTERM', shutdown);
   process.on('SIGINT', shutdown);
+
+  // Handle uncaught errors to prevent server crashes from WebSocket frame errors
+  process.on('uncaughtException', (err) => {
+    // Ignore Vite WebSocket errors (invalid frames from bots/scanners)
+    if (err.message?.includes('Invalid WebSocket frame') || 
+        err.message?.includes('invalid status code') ||
+        err.message?.includes('invalid UTF-8 sequence')) {
+      log(`Ignoring WebSocket frame error: ${err.message}`);
+      return;
+    }
+    console.error('Uncaught Exception:', err);
+    shutdown();
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  });
 })();

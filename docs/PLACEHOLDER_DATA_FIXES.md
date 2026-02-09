@@ -145,7 +145,7 @@ export interface Syllabus {
 
 ## What Still Has Placeholder Data
 
-### 1. Creator Analytics Page (CreatorAnalytics.tsx)
+### 1. Creator Analytics Page (SyllabindAnalytics.tsx)
 
 **Status:** Has mock analytics data
 

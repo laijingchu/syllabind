@@ -126,6 +126,9 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/logout", (req, res) => {
+    if (!req.logout) {
+      return res.status(500).json({ message: "Logout not available" });
+    }
     req.logout(() => {
       res.redirect(
         client.buildEndSessionUrl(config, {
@@ -140,7 +143,7 @@ export async function setupAuth(app: Express) {
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
+  if (!req.isAuthenticated || !req.isAuthenticated() || !user || !user.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 

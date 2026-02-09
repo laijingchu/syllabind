@@ -15,9 +15,9 @@ import SyllabusOverview from "@/pages/SyllabusOverview";
 import WeekView from "@/pages/WeekView";
 import Completion from "@/pages/Completion";
 import CreatorDashboard from "@/pages/CreatorDashboard";
-import CreatorEditor from "@/pages/CreatorEditor";
-import CreatorAnalytics from "@/pages/CreatorAnalytics";
-import CreatorLearners from "@/pages/CreatorLearners";
+import SyllabindEditor from "@/pages/SyllabindEditor";
+import SyllabindAnalytics from "@/pages/SyllabindAnalytics";
+import SyllabindLearners from "@/pages/SyllabindLearners";
 import CreatorProfile from "@/pages/CreatorProfile";
 import Marketing from "@/pages/Marketing";
 import Login from "@/pages/Login";
@@ -66,10 +66,10 @@ function Router() {
         <Route path="/profile" component={() => <ProtectedRoute component={Profile} />} />
         
         <Route path="/creator" component={() => <ProtectedRoute component={CreatorDashboard} />} />
-        <Route path="/creator/syllabus/new" component={() => <ProtectedRoute component={CreatorEditor} />} />
-        <Route path="/creator/syllabus/:id/edit" component={() => <ProtectedRoute component={CreatorEditor} />} />
-        <Route path="/creator/syllabus/:id/learners" component={() => <ProtectedRoute component={CreatorLearners} />} />
-        <Route path="/creator/syllabus/:id/analytics" component={() => <ProtectedRoute component={CreatorAnalytics} />} />
+        <Route path="/creator/syllabus/new" component={() => <ProtectedRoute component={SyllabindEditor} />} />
+        <Route path="/creator/syllabus/:id/edit" component={() => <ProtectedRoute component={SyllabindEditor} />} />
+        <Route path="/creator/syllabus/:id/learners" component={() => <ProtectedRoute component={SyllabindLearners} />} />
+        <Route path="/creator/syllabus/:id/analytics" component={() => <ProtectedRoute component={SyllabindAnalytics} />} />
         <Route path="/creator/profile" component={() => <ProtectedRoute component={CreatorProfile} />} />
         
         <Route component={NotFound} />

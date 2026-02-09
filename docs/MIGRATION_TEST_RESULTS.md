@@ -202,9 +202,9 @@ CREATE TABLE submissions (
 
 Several client pages need updates for ID type changes (string → number):
 - `client/src/pages/Completion.tsx`
-- `client/src/pages/CreatorAnalytics.tsx`
-- `client/src/pages/CreatorEditor.tsx`
-- `client/src/pages/CreatorLearners.tsx`
+- `client/src/pages/SyllabindAnalytics.tsx`
+- `client/src/pages/SyllabindEditor.tsx`
+- `client/src/pages/SyllabindLearners.tsx`
 - `client/src/pages/SyllabusOverview.tsx`
 - `client/src/pages/WeekView.tsx`
 

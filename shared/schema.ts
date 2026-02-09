@@ -155,6 +155,17 @@ export const cohortMembers = pgTable("cohort_members", {
   pk: primaryKey({ columns: [table.cohortId, table.studentId] })
 }));
 
+// Chat messages for Syllabind refinement
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  syllabusId: integer("syllabus_id")
+    .references(() => syllabi.id, { onDelete: 'cascade' })
+    .notNull(),
+  role: text("role").notNull(), // 'user' | 'assistant'
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertSyllabusSchema = createInsertSchema(syllabi).omit({
   id: true,
@@ -180,6 +191,7 @@ export const insertCohortSchema = createInsertSchema(cohorts).omit({
 export const insertCohortMemberSchema = createInsertSchema(cohortMembers).omit({
   joinedAt: true
 });
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -199,3 +211,5 @@ export type Cohort = typeof cohorts.$inferSelect;
 export type InsertCohort = z.infer<typeof insertCohortSchema>;
 export type CohortMember = typeof cohortMembers.$inferSelect;
 export type InsertCohortMember = z.infer<typeof insertCohortMemberSchema>;
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;

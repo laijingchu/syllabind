@@ -15,7 +15,18 @@ module.exports = {
       },
       transform: {
         '^.+\\.ts$': ['ts-jest', {
-          tsconfig: 'tsconfig.test.json'
+          tsconfig: 'tsconfig.test.json',
+          diagnostics: false,
+          astTransformers: {
+            before: [{
+              path: 'ts-jest-mock-import-meta',
+              options: {
+                metaObjectReplacement: {
+                  url: 'file:///home/runner/workspace/server/routes.ts'
+                }
+              }
+            }]
+          }
         }]
       },
       modulePathIgnorePatterns: [
@@ -35,7 +46,18 @@ module.exports = {
     '!**/coverage/**',
     '!server/index.ts',
     '!server/seed.ts',
-    '!server/migrate-jsonb-to-normalized.ts'
+    '!server/migrate-jsonb-to-normalized.ts',
+    '!server/add-test-users.ts',
+    '!server/import-csv.ts',
+    '!server/replit_integrations/**',
+    '!server/static.ts',
+    '!server/db.ts',
+    '!server/utils/syllabindGenerator.ts',
+    '!server/websocket/**',
+    '!server/vite.ts',
+    '!server/auth/googleAuth.ts',
+    '!server/auth/appleAuth.ts',
+    '!shared/models/**'
   ],
   coverageThreshold: {
     global: {

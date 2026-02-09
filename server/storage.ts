@@ -6,10 +6,11 @@ import {
   type Step, type InsertStep,
   type Submission, type InsertSubmission,
   type CompletedStep, type InsertCompletedStep,
-  users, syllabi, enrollments, weeks, steps, submissions, completedSteps
+  type ChatMessage, type InsertChatMessage,
+  users, syllabi, enrollments, weeks, steps, submissions, completedSteps, chatMessages
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql, asc } from "drizzle-orm";
+import { eq, and, sql, asc, inArray } from "drizzle-orm";
 
 // Extended types for nested data
 export interface WeekWithSteps extends Week {
@@ -37,14 +38,23 @@ export interface IStorage {
   createSyllabus(syllabus: InsertSyllabus): Promise<Syllabus>;
   updateSyllabus(id: number, syllabus: Partial<Syllabus>): Promise<Syllabus>;
   deleteSyllabus(id: number): Promise<void>;
+  batchDeleteSyllabi(ids: number[]): Promise<void>;
 
   // Week operations
   createWeek(week: InsertWeek): Promise<Week>;
   getWeeksBySyllabusId(syllabusId: number): Promise<Week[]>;
+  updateWeek(weekId: number, updates: Partial<Week>): Promise<Week>;
 
   // Step operations
   createStep(step: InsertStep): Promise<Step>;
+  getStep(stepId: number): Promise<Step | undefined>;
   getStepsByWeekId(weekId: number): Promise<Step[]>;
+  deleteStep(stepId: number): Promise<void>;
+  deleteStepsByWeekId(weekId: number): Promise<void>;
+  deleteWeeksBySyllabusId(syllabusId: number): Promise<void>;
+
+  // Week operations (single)
+  getWeek(weekId: number): Promise<Week | undefined>;
 
   // Submission operations
   createSubmission(submission: InsertSubmission): Promise<Submission>;
@@ -73,6 +83,11 @@ export interface IStorage {
   // Analytics
   getStepCompletionRates(syllabusId: number): Promise<Array<{ stepId: number; completionCount: number; completionRate: number }>>;
   getAverageCompletionTimes(syllabusId: number): Promise<Array<{ stepId: number; avgMinutes: number }>>;
+
+  // Chat messages
+  getChatMessages(syllabusId: number): Promise<ChatMessage[]>;
+  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  clearChatMessages(syllabusId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -142,6 +157,11 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSyllabus(id: number): Promise<void> {
     await db.delete(syllabi).where(eq(syllabi.id, id));
+  }
+
+  async batchDeleteSyllabi(ids: number[]): Promise<void> {
+    if (ids.length === 0) return;
+    await db.delete(syllabi).where(inArray(syllabi.id, ids));
   }
 
   async getEnrollment(studentId: string, syllabusId: number): Promise<Enrollment | undefined> {
@@ -281,6 +301,11 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(weeks).where(eq(weeks.syllabusId, syllabusId));
   }
 
+  async getWeek(weekId: number): Promise<Week | undefined> {
+    const [week] = await db.select().from(weeks).where(eq(weeks.id, weekId));
+    return week;
+  }
+
   // Step operations
   async createStep(insertStep: InsertStep): Promise<Step> {
     const [step] = await db.insert(steps).values(insertStep).returning();
@@ -289,6 +314,15 @@ export class DatabaseStorage implements IStorage {
 
   async getStepsByWeekId(weekId: number): Promise<Step[]> {
     return await db.select().from(steps).where(eq(steps.weekId, weekId));
+  }
+
+  async getStep(stepId: number): Promise<Step | undefined> {
+    const [step] = await db.select().from(steps).where(eq(steps.id, stepId));
+    return step;
+  }
+
+  async deleteStepsByWeekId(weekId: number): Promise<void> {
+    await db.delete(steps).where(eq(steps.weekId, weekId));
   }
 
   // Submission operations
@@ -576,6 +610,44 @@ export class DatabaseStorage implements IStorage {
         dropoffRate: topDropoutStep.dropoffRate
       } : null
     };
+  }
+
+  async updateWeek(weekId: number, updates: Partial<Week>): Promise<Week> {
+    const [week] = await db
+      .update(weeks)
+      .set(updates)
+      .where(eq(weeks.id, weekId))
+      .returning();
+    return week;
+  }
+
+  async deleteStep(stepId: number): Promise<void> {
+    await db.delete(steps).where(eq(steps.id, stepId));
+  }
+
+  async deleteWeeksBySyllabusId(syllabusId: number): Promise<void> {
+    // Steps are deleted via CASCADE when weeks are deleted
+    await db.delete(weeks).where(eq(weeks.syllabusId, syllabusId));
+  }
+
+  async getChatMessages(syllabusId: number): Promise<ChatMessage[]> {
+    return await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.syllabusId, syllabusId))
+      .orderBy(asc(chatMessages.createdAt));
+  }
+
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    const [chatMessage] = await db
+      .insert(chatMessages)
+      .values(message)
+      .returning();
+    return chatMessage;
+  }
+
+  async clearChatMessages(syllabusId: number): Promise<void> {
+    await db.delete(chatMessages).where(eq(chatMessages.syllabusId, syllabusId));
   }
 }
 

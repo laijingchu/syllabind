@@ -119,9 +119,9 @@ These areas work but should be tested thoroughly:
 
 1. **Creator Pages**
    - CreatorDashboard
-   - CreatorEditor
-   - CreatorAnalytics
-   - CreatorLearners
+   - SyllabindEditor
+   - SyllabindAnalytics
+   - SyllabindLearners
    - CreatorProfile
 
 2. **Learner Flow**

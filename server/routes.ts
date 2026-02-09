@@ -14,13 +14,13 @@ import * as path from "path";
 import fs from "fs/promises";
 import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const currentFilePath = fileURLToPath(import.meta.url);
+const currentDirPath = path.dirname(currentFilePath);
 
 // Configure multer for file uploads
 const uploadStorage = multer.diskStorage({
   destination: function (_req, _file, cb) {
-    cb(null, path.join(__dirname, "../uploads"));
+    cb(null, path.join(currentDirPath, "../uploads"));
   },
   filename: function (_req, file, cb) {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -54,7 +54,7 @@ export async function registerRoutes(
   setupCustomAuth(app);
 
   // Serve uploaded files statically
-  app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+  app.use("/uploads", express.static(path.join(currentDirPath, "../uploads")));
 
   // ========== USER ROUTES ==========
 
@@ -121,9 +121,9 @@ export async function registerRoutes(
   // Debug route to check uploads path
   app.get("/api/debug/uploads-path", (req, res) => {
     res.json({
-      __dirname,
-      uploadsPath: path.join(__dirname, "../uploads"),
-      resolved: path.resolve(__dirname, "../uploads")
+      currentDirPath,
+      uploadsPath: path.join(currentDirPath, "../uploads"),
+      resolved: path.resolve(currentDirPath, "../uploads")
     });
   });
 
@@ -193,6 +193,33 @@ export async function registerRoutes(
 
     await storage.deleteSyllabus(id);
     res.json({ success: true });
+  });
+
+  // Batch delete syllabi
+  app.post("/api/syllabi/batch-delete", isAuthenticated, async (req, res) => {
+    const username = (req.user as any).username;
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "Invalid request: ids must be a non-empty array" });
+    }
+
+    // Authorization: verify all syllabi belong to the user
+    const syllabi = await Promise.all(
+      ids.map(id => storage.getSyllabus(parseInt(id)))
+    );
+
+    for (const syllabus of syllabi) {
+      if (!syllabus) {
+        return res.status(404).json({ message: "One or more syllabi not found" });
+      }
+      if (syllabus.creatorId !== username) {
+        return res.status(403).json({ error: "Forbidden: You can only delete your own syllabi" });
+      }
+    }
+
+    await storage.batchDeleteSyllabi(ids.map(id => parseInt(id)));
+    res.json({ success: true, count: ids.length });
   });
 
   app.post("/api/syllabi", isAuthenticated, async (req, res) => {
@@ -368,6 +395,26 @@ export async function registerRoutes(
     res.json(updated);
   });
 
+  // Delete a step (creator only)
+  app.delete("/api/steps/:id", isAuthenticated, async (req, res) => {
+    const stepId = parseInt(req.params.id);
+    const username = (req.user as any).username;
+
+    const step = await storage.getStep(stepId);
+    if (!step) return res.status(404).json({ message: "Step not found" });
+
+    const week = await storage.getWeek(step.weekId);
+    if (!week) return res.status(404).json({ message: "Week not found" });
+
+    const syllabus = await storage.getSyllabus(week.syllabusId);
+    if (!syllabus || syllabus.creatorId !== username) {
+      return res.status(403).json({ error: "Not syllabus owner" });
+    }
+
+    await storage.deleteStep(stepId);
+    res.json({ success: true });
+  });
+
   // Completion Tracking API
   app.post("/api/enrollments/:enrollmentId/steps/:stepId/complete", isAuthenticated, async (req, res) => {
     const enrollmentId = parseInt(req.params.enrollmentId);
@@ -452,6 +499,114 @@ export async function registerRoutes(
 
     const times = await storage.getAverageCompletionTimes(syllabusId);
     res.json(times);
+  });
+
+  // ========== AI SYLLABIND GENERATION ==========
+
+  app.post("/api/generate-syllabind", isAuthenticated, async (req, res) => {
+    const username = (req.user as any).username;
+    const user = req.user as any;
+
+    if (!user.isCreator) {
+      return res.status(403).json({ error: "Creator access required" });
+    }
+
+    const { syllabusId, model } = req.body;
+
+    if (!syllabusId || typeof syllabusId !== 'number') {
+      return res.status(400).json({ error: "Valid syllabusId required" });
+    }
+
+    const syllabus = await storage.getSyllabus(syllabusId);
+    if (!syllabus || syllabus.creatorId !== username) {
+      return res.status(403).json({ error: "Not your syllabus" });
+    }
+
+    if (!syllabus.title || !syllabus.description || !syllabus.audienceLevel || !syllabus.durationWeeks) {
+      return res.status(400).json({ error: "Complete basics fields before generating" });
+    }
+
+    // Validate model selection
+    const allowedModels = ['claude-opus-4-20250514', 'claude-sonnet-4-20250514', 'claude-3-5-haiku-20241022'];
+    const selectedModel = allowedModels.includes(model) ? model : 'claude-sonnet-4-20250514';
+
+    await storage.updateSyllabus(syllabusId, { status: 'generating' });
+
+    res.json({
+      success: true,
+      syllabusId,
+      websocketUrl: `/ws/generate-syllabind/${syllabusId}?model=${encodeURIComponent(selectedModel)}`
+    });
+  });
+
+  // Regenerate a single week's content
+  app.post("/api/regenerate-week", isAuthenticated, async (req, res) => {
+    const username = (req.user as any).username;
+    const user = req.user as any;
+
+    if (!user.isCreator) {
+      return res.status(403).json({ error: "Creator access required" });
+    }
+
+    const { syllabusId, weekIndex, model } = req.body;
+
+    if (!syllabusId || typeof syllabusId !== 'number') {
+      return res.status(400).json({ error: "Valid syllabusId required" });
+    }
+
+    if (!weekIndex || typeof weekIndex !== 'number' || weekIndex < 1) {
+      return res.status(400).json({ error: "Valid weekIndex required" });
+    }
+
+    const syllabus = await storage.getSyllabus(syllabusId);
+    if (!syllabus || syllabus.creatorId !== username) {
+      return res.status(403).json({ error: "Not your syllabus" });
+    }
+
+    if (weekIndex > (syllabus.durationWeeks || 0)) {
+      return res.status(400).json({ error: "weekIndex exceeds syllabus duration" });
+    }
+
+    const allowedModels = ['claude-opus-4-20250514', 'claude-sonnet-4-20250514', 'claude-3-5-haiku-20241022'];
+    const selectedModel = allowedModels.includes(model) ? model : 'claude-sonnet-4-20250514';
+
+    res.json({
+      success: true,
+      syllabusId,
+      weekIndex,
+      websocketUrl: `/ws/regenerate-week/${syllabusId}/${weekIndex}?model=${encodeURIComponent(selectedModel)}`
+    });
+  });
+
+  app.get("/api/syllabi/:id/chat-messages", isAuthenticated, async (req, res) => {
+    const syllabusId = parseInt(req.params.id);
+    const username = (req.user as any).username;
+
+    const syllabus = await storage.getSyllabus(syllabusId);
+    if (!syllabus || syllabus.creatorId !== username) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    const messages = await storage.getChatMessages(syllabusId);
+    res.json(messages);
+  });
+
+  app.post("/api/syllabi/:id/chat-messages", isAuthenticated, async (req, res) => {
+    const syllabusId = parseInt(req.params.id);
+    const username = (req.user as any).username;
+    const { role, content } = req.body;
+
+    const syllabus = await storage.getSyllabus(syllabusId);
+    if (!syllabus || syllabus.creatorId !== username) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    const message = await storage.createChatMessage({
+      syllabusId,
+      role,
+      content
+    });
+    res.json(message);
   });
 
   return httpServer;

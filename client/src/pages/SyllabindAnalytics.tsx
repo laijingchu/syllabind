@@ -36,7 +36,7 @@ interface AnalyticsData {
   topDropoutStep: { weekIndex: number; stepTitle: string; dropoffRate: number } | null;
 }
 
-export default function CreatorAnalytics() {
+export default function SyllabindAnalytics() {
   const [match, params] = useRoute('/creator/syllabus/:id/analytics');
   const { getSyllabusById } = useStore();
   const syllabusId = match && params?.id ? parseInt(params.id) : undefined;

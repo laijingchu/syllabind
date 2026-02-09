@@ -3,7 +3,7 @@ import { BubbleMenu } from '@tiptap/react/menus';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
-import { Bold, Italic, Link as LinkIcon, List, ListOrdered, Heading1, Heading2, Quote, CheckCircle2, Sparkles, Loader2 } from 'lucide-react';
+import { Bold, Italic, Link as LinkIcon, List, CheckCircle2, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from './button';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
@@ -50,22 +50,6 @@ const EditorBubbleMenu = ({ editor }: { editor: Editor }) => {
         onClick={() => editor.chain().focus().toggleItalic().run()}
       >
         <Italic className="h-4 w-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        className={cn("h-8 w-8 p-0 rounded-none hover:bg-zinc-800 hover:text-zinc-50", editor.isActive('heading', { level: 1 }) && "bg-zinc-700 text-zinc-50")}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-      >
-        <Heading1 className="h-4 w-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        className={cn("h-8 w-8 p-0 rounded-none hover:bg-zinc-800 hover:text-zinc-50", editor.isActive('heading', { level: 2 }) && "bg-zinc-700 text-zinc-50")}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-      >
-        <Heading2 className="h-4 w-4" />
       </Button>
       <Button
         variant="ghost"
@@ -142,14 +126,14 @@ export function RichTextEditor({ value, onChange, placeholder, className, isSavi
   };
 
   return (
-    <div className="group relative">
+    <div className="group relative mb-9">
       {editor && <EditorBubbleMenu editor={editor} />}
       <div className="relative">
         <EditorContent editor={editor} className="[&_.ProseMirror]:min-h-[120px]" />
       </div>
         
       {/* Save indicator & Improve writing attached to the editor */}
-      <div className="absolute -bottom-7 right-0 flex items-center gap-4 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300">
+      <div className="absolute -bottom-9 right-0 flex items-center gap-4 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300">
         {editor && !editor.isEmpty && (
           <Button
             variant="ghost"

@@ -14,7 +14,7 @@ export interface Step {
   // New Metadata Fields
   author?: string;
   creationDate?: string; // or publish date
-  mediaType?: 'Book' | 'Youtube video' | 'Blog/Article' | 'Podcast';
+  mediaType?: 'Book' | 'Book Chapter' | 'Journal Article' | 'Youtube video' | 'Blog/Article' | 'Podcast';
 
   promptText?: string; // For exercises
   estimatedMinutes?: number;
