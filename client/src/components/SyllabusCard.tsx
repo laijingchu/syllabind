@@ -29,7 +29,7 @@ export function SyllabusCard({ syllabus, className }: SyllabusCardProps) {
             <Clock className="h-3 w-3" /> {pluralize(syllabus.durationWeeks, 'week')}
           </span>
         </div>
-        <h3 className="text-xl font-serif font-medium leading-tight group-hover:text-primary transition-colors">
+        <h3 className="text-xl font-display font-medium leading-tight group-hover:text-primary transition-colors">
           {syllabus.title}
         </h3>
       </CardHeader>

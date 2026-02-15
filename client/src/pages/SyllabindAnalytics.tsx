@@ -96,7 +96,7 @@ export default function SyllabindAnalytics() {
         </Link>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-serif">{syllabus.title}</h1>
+            <h1 className="text-2xl sm:text-3xl font-display">{syllabus.title}</h1>
             <div className="flex items-center gap-2 mt-1">
               <Badge variant={syllabus.status === 'published' ? 'default' : 'secondary'} className="capitalize">
                 {syllabus.status}
@@ -186,7 +186,7 @@ export default function SyllabindAnalytics() {
         {/* Weekly Drop-off Chart */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-lg font-serif">How far learners get</CardTitle>
+            <CardTitle className="text-lg font-display">How far learners get</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -267,7 +267,7 @@ export default function SyllabindAnalytics() {
         {/* Dropout Insight */}
         <Card className="h-full">
           <CardHeader>
-            <CardTitle className="text-lg font-serif">Most common dropout step</CardTitle>
+            <CardTitle className="text-lg font-display">Most common dropout step</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {isLoading ? (

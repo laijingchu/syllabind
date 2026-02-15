@@ -487,6 +487,27 @@ export default function SyllabindEditor() {
         });
       };
 
+      ws.onclose = (event) => {
+        // Only show error if generation wasn't completed normally
+        if (!isGenerating) return;
+        setIsGenerating(false);
+        setGeneratingWeeks(new Set());
+
+        const errorMessages: Record<number, string> = {
+          4401: 'Authentication failed. Please log in again.',
+          4403: 'Not authorized to modify this syllabus.',
+          4404: 'Syllabus not found.',
+          4400: 'Invalid request.',
+        };
+
+        const message = errorMessages[event.code] || 'Connection closed unexpectedly.';
+        toast({
+          title: "Generation Failed",
+          description: message,
+          variant: "destructive"
+        });
+      };
+
     } catch (error) {
       setIsGenerating(false);
       toast({
@@ -623,6 +644,27 @@ export default function SyllabindEditor() {
         });
       };
 
+      ws.onclose = (event) => {
+        // Only show error if regeneration wasn't completed normally
+        if (regeneratingWeekIndex === null) return;
+        setGeneratingWeeks(new Set());
+        setRegeneratingWeekIndex(null);
+
+        const errorMessages: Record<number, string> = {
+          4401: 'Authentication failed. Please log in again.',
+          4403: 'Not authorized to modify this syllabus.',
+          4404: 'Syllabus not found.',
+          4400: 'Invalid request.',
+        };
+
+        const message = errorMessages[event.code] || 'Connection closed unexpectedly.';
+        toast({
+          title: "Regeneration Failed",
+          description: message,
+          variant: "destructive"
+        });
+      };
+
     } catch (error) {
       setGeneratingWeeks(new Set());
       setRegeneratingWeekIndex(null);
@@ -712,7 +754,7 @@ export default function SyllabindEditor() {
             <Button variant="ghost" size="icon" onClick={() => setLocation('/creator')} className="shrink-0">
                <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-xl sm:text-2xl font-serif">{isNew ? 'Create New Syllabind' : 'Edit Syllabind'}</h1>
+            <h1 className="text-xl sm:text-2xl font-display">{isNew ? 'Create New Syllabind' : 'Edit Syllabind'}</h1>
          </div>
          <div className="flex flex-wrap gap-2 items-center">
             {!isNew && (

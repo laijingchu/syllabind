@@ -32,7 +32,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20">
+    <div className="min-h-screen bg-background text-foreground font-text selection:bg-primary/20">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/85 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
@@ -49,7 +49,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <SheetHeader className="text-left">
                     <SheetTitle className="flex items-center gap-2">
                       <BookOpen className="h-5 w-5 text-primary" />
-                      <span className="font-serif">Syllabind</span>
+                      <span className="font-display">Syllabind</span>
                     </SheetTitle>
                   </SheetHeader>
                   <nav className="flex flex-col gap-2 mt-8">
@@ -100,11 +100,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Logo - always visible */}
             <Link href={isAuthenticated ? "/" : "/welcome"}>
-              <span className="font-serif text-2xl font-medium tracking-tight hover:opacity-80 transition-opacity flex items-center gap-2 md:gap-6 cursor-pointer">
+              <span className="font-display text-2xl font-medium tracking-tight hover:opacity-80 transition-opacity flex items-center gap-2 md:gap-6 cursor-pointer">
                 <BookOpen className="h-6 w-6 text-primary hidden md:block" />
                 <span className="flex items-center gap-2">
                   <span>Syllabind</span>
-                  <span className="text-[10px] font-sans font-bold text-primary bg-primary/5 border border-primary/20 px-1.5 py-0.5 rounded-md align-middle">BETA</span>
+                  <span className="text-[10px] font-text font-bold text-primary bg-primary/5 border border-primary/20 px-1.5 py-0.5 rounded-md align-middle">BETA</span>
                 </span>
               </span>
             </Link>

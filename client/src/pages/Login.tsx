@@ -124,7 +124,7 @@ export default function Login() {
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-2">
           <BookOpen className="mx-auto h-10 w-10 text-primary" />
-          <h1 className="text-2xl font-serif font-medium">Welcome to Syllabind</h1>
+          <h1 className="text-2xl font-display font-medium">Welcome to Syllabind</h1>
           <p className="text-muted-foreground">Focus on one learning journey at a time.</p>
         </div>
 

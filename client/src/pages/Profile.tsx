@@ -103,7 +103,7 @@ export default function Profile() {
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
           </Button>
         </Link>
-        <h1 className="text-3xl font-serif font-medium mb-2">Edit Profile</h1>
+        <h1 className="text-3xl font-display font-medium mb-2">Edit Profile</h1>
         <p className="text-muted-foreground">Manage your public profile and preferences.</p>
       </div>
 

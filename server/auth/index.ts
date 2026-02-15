@@ -108,7 +108,7 @@ export async function authenticateWebSocket(req: IncomingMessage): Promise<Omit<
     const result = await db.execute(
       sql`SELECT sess FROM sessions WHERE sid = ${sessionId}`
     );
-    const rows = (result as unknown) as any[];
+    const rows = (result as any).rows as any[];
     if (!rows || rows.length === 0) return null;
 
     const sess = typeof rows[0].sess === 'string' ? JSON.parse(rows[0].sess) : rows[0].sess;

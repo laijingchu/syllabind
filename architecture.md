@@ -64,6 +64,10 @@ Syllabi are the core learning content created by creators. The Syllabind structu
 }
 ```
 
+**Indexes:**
+- `syllabi_creator_id_idx` - Creator dashboard: lookup syllabi by creator
+- `syllabi_status_idx` - Catalog page: filter published syllabi
+
 #### Weeks Table
 
 This table stores the weekly structure of each syllabus. Each syllabus can have multiple weeks, and each week can contain multiple steps (readings and exercises). Weeks are ordered by their index number, allowing creators to structure their Syllabind chronologically.
@@ -82,6 +86,9 @@ This table stores the weekly structure of each syllabus. Each syllabus can have 
 - Cascade delete: When a syllabus is deleted, all its weeks are automatically removed
 - Index-based ordering: Weeks are numbered sequentially for easy navigation
 - Optional metadata: Titles and descriptions provide context for each week
+
+**Indexes:**
+- `weeks_syllabus_id_idx` - Every syllabus view joins weeks by syllabus_id
 
 #### Steps Table
 
@@ -121,6 +128,9 @@ This table stores individual learning activities (readings and exercises) within
 - **Reading:** External content (articles, videos, podcasts, books) with URL and metadata
 - **Exercise:** Practice activities with prompts that learners respond to via submissions
 
+**Indexes:**
+- `steps_week_id_idx` - Every syllabus view joins steps by week_id
+
 #### Enrollments Table
 
 This table tracks which learners (students) are enrolled in which syllabi and their progress through the Syllabind. Each enrollment records the current week index. Step completion is tracked in a separate `completed_steps` junction table for efficient querying and analytics. **Note:** `studentId` references `users.username` (unique) instead of UUID for better logging and readability.
@@ -141,6 +151,11 @@ This table tracks which learners (students) are enrolled in which syllabi and th
 - `in-progress`: User is actively working on this syllabus (only one per user)
 - `completed`: User finished all content in this syllabus
 - `dropped`: User switched to a different syllabus (automatically set when enrolling in new syllabus)
+
+**Indexes:**
+- `enrollments_student_syllabus_idx` (UNIQUE) - Enforces one enrollment per student per syllabus + fast lookup
+- `enrollments_student_id_idx` - Learner dashboard: lookup enrollments by student
+- `enrollments_syllabus_id_idx` - Analytics, classmates, and learner lists by syllabus
 
 #### Completed Steps Table
 
@@ -270,6 +285,9 @@ This table is required by Replit Auth and Express-session to store active user s
   }
 }
 ```
+
+**Indexes:**
+- `sessions_expire_idx` - Session cleanup: `DELETE WHERE expire < now()`
 
 **Note:** Passport.js is configured to serialize the entire user object (not just the user ID), so all user data and OAuth tokens are stored in the session for quick access without database queries.
 
@@ -969,7 +987,19 @@ psql "$DATABASE_URL" -f migrations/manual_username_migration.sql
 
 ---
 
-**Last Updated:** 2026-01-28
+### 4. Performance Indexes (2026-02-09)
+
+**Migration File:** `migrations/0003_add_performance_indexes.sql`
+**Schema Definition:** `shared/schema.ts` (Drizzle index definitions)
+
+**Objective:** Add indexes to all tables based on actual query patterns in `storage.ts` to eliminate sequential scans on foreign key columns and frequently-filtered columns.
+
+**Changes Made:**
+1. **11 new indexes across 7 tables** — sessions, syllabi, enrollments, weeks, steps, submissions, chat_messages
+2. **Unique index on enrollments** — `(student_id, syllabus_id)` enforces one-enrollment-per-student business rule at the database level
+3. **Tables already indexed** (no changes): completed_steps (0001), cohorts/cohort_members (0002), users (unique constraints)
+
+**Last Updated:** 2026-02-09
 
 ---
 
@@ -1423,3 +1453,36 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 - `server/index.ts` - Added auth + ownership checks in WebSocket connection handler
 - `server/websocket/chatSyllabind.ts` - Allowlisted fields in `update_basics`
 - `jest.setup.js` - Added `authenticateWebSocket` to auth mock
+
+### Fix AI Autogenerate Button Not Working (2026-02-15)
+
+**Problem:** The "Autogenerate with AI" button got stuck at "Starting generation..." with a spinner that never stopped. The POST to `/api/generate-syllabind` succeeded, but the WebSocket connection never delivered messages.
+
+**Root cause chain:**
+1. `authenticateWebSocket()` in `server/auth/index.ts` called `db.execute()` which returns a `pg.QueryResult` object (has `.rows` property), but the code cast it as `any[]` and tried to access `result[0].sess` — this threw `TypeError: Cannot read properties of undefined`
+2. The catch block returned `null`, so auth always failed for WebSocket connections
+3. The server closed the WebSocket with code 4401, sending no error message payload
+4. The frontend had no `ws.onclose` handler, so `isGenerating` was never reset — the UI hung
+
+**Fixes:**
+
+1. **Fixed `authenticateWebSocket` result handling** (`server/auth/index.ts`):
+   - Changed `(result as unknown) as any[]` to `(result as any).rows as any[]` to correctly access pg.QueryResult rows
+
+2. **Added `ws.onclose` handlers to frontend** (`client/src/pages/SyllabindEditor.tsx`):
+   - Both `handleAutogenerate` and `handleRegenerateWeek` WebSocket connections now have `onclose` handlers
+   - Resets `isGenerating`/`generatingWeeks`/`regeneratingWeekIndex` state on unexpected close
+   - Shows meaningful error toast based on close code (4401→auth, 4403→forbidden, 4404→not found)
+
+3. **Server sends error messages before closing WebSocket** (`server/index.ts`):
+   - All early-close paths (auth failure, missing syllabusId, not found, forbidden, invalid weekIndex) now send a JSON error message via `ws.send()` before `ws.close()`
+   - Error messages use the standard `{ type: 'error', data: { message: '...' } }` format
+
+4. **Reverted `max_tokens` to 8192** (`server/utils/syllabindGenerator.ts`):
+   - Previous edit increased from 4000 to 16000; normalized to 8192 as a balance between cost and sufficiency
+
+**Files Modified:**
+- `server/auth/index.ts` - Fixed `.rows` access on pg.QueryResult
+- `server/index.ts` - Added error messages before WebSocket close on all early-close paths
+- `client/src/pages/SyllabindEditor.tsx` - Added `ws.onclose` handlers for both generation flows
+- `server/utils/syllabindGenerator.ts` - Set `max_tokens` to 8192

@@ -90,7 +90,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, isSavi
     editorProps: {
       attributes: {
         class: cn(
-          "min-h-[120px] w-full bg-transparent focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 prose dark:prose-invert prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-li:my-0.5 max-w-none border-b border-input focus-visible:border-primary rounded-none px-1 py-2 font-serif text-base md:text-lg [&_p]:font-serif [&_li]:font-serif",
+          "min-h-[120px] w-full bg-transparent focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 prose dark:prose-invert prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-li:my-0.5 max-w-none border-b border-input focus-visible:border-primary rounded-none px-1 py-2 font-display text-base md:text-lg [&_p]:font-display [&_li]:font-display",
           className
         ),
       },

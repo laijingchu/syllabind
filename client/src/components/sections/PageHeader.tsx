@@ -31,7 +31,7 @@ export function PageHeader({
           </Link>
         )}
         <div className="page-header-titles">
-          <h1 className="text-3xl font-serif text-foreground">{title}</h1>
+          <h1 className="text-3xl font-display text-foreground">{title}</h1>
           {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
         </div>
       </div>

@@ -51,7 +51,7 @@ export default function Completion() {
       </div>
       
       <div className="space-y-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 fill-mode-backwards">
-        <h1 className="text-4xl md:text-5xl font-serif text-foreground">Congratulations!</h1>
+        <h1 className="text-4xl md:text-5xl font-display text-foreground">Congratulations!</h1>
         <p className="text-xl text-muted-foreground">
           You've completed the <strong>{syllabus.title}</strong> Syllabind.
         </p>

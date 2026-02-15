@@ -35,10 +35,10 @@ export default function Marketing() {
       {/* A. Hero */}
       <section className="text-center space-y-8 py-12 md:py-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="space-y-4 max-w-3xl mx-auto">
-          <h1 className="text-5xl md:text-7xl font-serif font-medium tracking-tight text-foreground">
+          <h1 className="text-5xl md:text-7xl font-display font-medium tracking-tight text-foreground">
             Syllabind<span className="text-primary">.</span>
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground font-serif italic">Stay on top of chaos with one calm syllabus at a time.</p>
+          <p className="text-xl md:text-2xl text-muted-foreground font-display italic">Stay on top of chaos with one calm syllabus at a time.</p>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Turn expert listicles into four-week learning journeys you can actually finish.
           </p>
@@ -88,7 +88,7 @@ export default function Marketing() {
               <div className="flex-1 p-6 md:p-8 space-y-6 bg-card">
                  <div className="space-y-2">
                     <div className="text-xs font-semibold text-primary uppercase tracking-wider">Week 1</div>
-                    <h3 className="text-2xl font-serif">The Philosophy of Less</h3>
+                    <h3 className="text-2xl font-display">The Philosophy of Less</h3>
                     <div className="h-1 w-full bg-muted overflow-hidden rounded-full">
                        <div className="h-full w-1/3 bg-primary" />
                     </div>
@@ -121,7 +121,7 @@ export default function Marketing() {
       </section>
       {/* B. "Why" Section */}
       <section className="max-w-3xl mx-auto text-center space-y-6">
-        <h2 className="text-3xl md:text-4xl font-serif">The internet made learning infinite.<br/>It also made it unbearable.</h2>
+        <h2 className="text-3xl md:text-4xl font-display">The internet made learning infinite.<br/>It also made it unbearable.</h2>
         <p className="text-lg text-muted-foreground leading-relaxed">
           Feeds full of "ultimate guides" and threads. Saving hundreds of links but finishing none. 
           The constant anxiety of being behind. We replaced the joy of learning with the stress of collecting.
@@ -132,7 +132,7 @@ export default function Marketing() {
         <Card className="bg-secondary/30 border-transparent hover:bg-secondary/50 transition-colors">
           <CardHeader>
             <Clock className="h-8 w-8 text-primary mb-2" />
-            <CardTitle className="font-serif">One at a time</CardTitle>
+            <CardTitle className="font-display">One at a time</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">No juggling five courses. Commit to one path this month and actually finish it.</p>
@@ -141,7 +141,7 @@ export default function Marketing() {
         <Card className="bg-secondary/30 border-transparent hover:bg-secondary/50 transition-colors">
           <CardHeader>
             <BookOpen className="h-8 w-8 text-primary mb-2" />
-            <CardTitle className="font-serif">4-Week Structure</CardTitle>
+            <CardTitle className="font-display">4-Week Structure</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">Finite, finishable journeys. Clear weekly plans that fit into your busy life.</p>
@@ -150,7 +150,7 @@ export default function Marketing() {
         <Card className="bg-secondary/30 border-transparent hover:bg-secondary/50 transition-colors">
           <CardHeader>
             <Zap className="h-8 w-8 text-primary mb-2" />
-            <CardTitle className="font-serif">Active Learning</CardTitle>
+            <CardTitle className="font-display">Active Learning</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">Don't just read. Respond to prompts, complete exercises, and build meaningful, fun projects.</p>
@@ -160,7 +160,7 @@ export default function Marketing() {
       {/* D. Calm Learning Principles */}
       <section className="max-w-4xl mx-auto space-y-12">
         <div className="text-center space-y-4">
-          <h2 className="text-3xl font-serif">Calm Learning Principles</h2>
+          <h2 className="text-3xl font-display">Calm Learning Principles</h2>
           <p className="text-muted-foreground text-lg">We designed Syllabind to be the antidote to information overload.</p>
         </div>
         
@@ -174,7 +174,7 @@ export default function Marketing() {
              { title: "Trackable completion", desc: "A clear finish line. Earn your badge when all steps and submissions are done." }
            ].map((item, i) => (
              <div key={i} className="flex gap-4">
-               <div className="h-8 w-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-serif font-medium shrink-0">
+               <div className="h-8 w-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-display font-medium shrink-0">
                  {i + 1}
                </div>
                <div>
@@ -191,7 +191,7 @@ export default function Marketing() {
           <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80">
             Learners
           </div>
-          <h3 className="text-3xl font-serif">For overwhelmed professionals</h3>
+          <h3 className="text-3xl font-display">For overwhelmed professionals</h3>
           <ul className="space-y-3">
             {[
               "Choose one structured syllabus instead of bookmarking 20 threads.",
@@ -214,7 +214,7 @@ export default function Marketing() {
            <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
             Thought Leaders
           </div>
-          <h3 className="text-3xl font-serif">For those who want to teach</h3>
+          <h3 className="text-3xl font-display">For those who want to teach</h3>
           <ul className="space-y-3">
             {[
               "Dock your existing posts, videos, and resources into a linear syllabus.",
@@ -243,7 +243,7 @@ export default function Marketing() {
       </section>
       {/* F. Testimonials */}
       <section className="space-y-12">
-        <h2 className="text-3xl font-serif text-center">What early learners say</h2>
+        <h2 className="text-3xl font-display text-center">What early learners say</h2>
         <div className="grid md:grid-cols-3 gap-6">
           {[
             { quote: "Finally, I finished a course on AI instead of just bookmarking 50 threads about it.", author: "Sarah J.", role: "Product Manager" },
@@ -252,7 +252,7 @@ export default function Marketing() {
           ].map((t, i) => (
             <Card key={i} className="bg-muted/30 border-none shadow-none">
               <CardContent className="pt-6 space-y-4">
-                <div className="text-primary text-4xl font-serif leading-none opacity-20">"</div>
+                <div className="text-primary text-4xl font-display leading-none opacity-20">"</div>
                 <p className="text-lg italic text-muted-foreground relative z-10 -mt-4 mb-4">
                    {t.quote}
                 </p>
@@ -273,7 +273,7 @@ export default function Marketing() {
       {/* G. Curate Application */}
       <section id="curate" className="max-w-xl mx-auto text-center space-y-8 bg-primary/5 rounded-3xl p-8 md:p-12">
         <div className="space-y-4">
-          <h2 className="text-3xl font-serif">Apply to Curate</h2>
+          <h2 className="text-3xl font-display">Apply to Curate</h2>
           <p className="text-muted-foreground">
             We are looking for thoughtful curators to build high-quality, finishable learning paths. Tell us about the syllabus you want to bind.
           </p>

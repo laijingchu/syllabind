@@ -77,7 +77,7 @@ export default function CreatorProfile() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <h1 className="text-3xl font-serif">Creator Profile</h1>
+        <h1 className="text-3xl font-display">Creator Profile</h1>
       </div>
 
       <div className="grid gap-8">

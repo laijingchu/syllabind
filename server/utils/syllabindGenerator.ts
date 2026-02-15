@@ -93,18 +93,25 @@ Start with Week 1 (weekIndex: 1).`;
   ];
 
   let weekIndex = 1;
+  let retryCount = 0;
+  const MAX_RETRIES_PER_WEEK = 3;
+  let weekStartedSent = new Set<number>();
 
   while (weekIndex <= basics.durationWeeks) {
-    ws.send(JSON.stringify({
-      type: 'week_started',
-      data: { weekIndex }
-    }));
+    // Only send week_started once per week (not on retries)
+    if (!weekStartedSent.has(weekIndex)) {
+      ws.send(JSON.stringify({
+        type: 'week_started',
+        data: { weekIndex }
+      }));
+      weekStartedSent.add(weekIndex);
+    }
 
     let response;
     try {
       response = await client.messages.create({
         model: selectedModel,
-        max_tokens: 4000,
+        max_tokens: 8192,
         tools: SYLLABIND_GENERATION_TOOLS,
         messages
       });
@@ -149,6 +156,14 @@ Start with Week 1 (weekIndex: 1).`;
 
       throw error;
     }
+
+    // Filter out heavy web search blocks from response content for message history
+    const filteredContent = response.content.filter((block: any) => {
+      if (block.type === 'text' || block.type === 'tool_use') return true;
+      if (block.type === 'web_search_tool_result') return false;
+      if (block.type === 'server_tool_use' && block.name === 'web_search') return false;
+      return true;
+    });
 
     if (response.stop_reason === 'tool_use') {
       // Filter for custom tool_use blocks only (not server_tool_use like web_search)
@@ -321,6 +336,7 @@ Start with Week 1 (weekIndex: 1).`;
           }));
 
           weekIndex++;
+          retryCount = 0; // Reset retries for next week
 
           // Provide tool result for finalize_week
           (toolResults.content as any[]).push({
@@ -331,26 +347,7 @@ Start with Week 1 (weekIndex: 1).`;
         }
       }
 
-      // Filter out web_search_tool_result blocks to reduce context size
-      const filteredContent = response.content.filter((block: any) => {
-        // Keep text blocks and tool_use blocks (like finalize_week)
-        if (block.type === 'text' || block.type === 'tool_use') {
-          return true;
-        }
-
-        // Discard web_search_tool_result blocks (they contain heavy encrypted content)
-        if (block.type === 'web_search_tool_result') {
-          return false;
-        }
-
-        // Discard server_tool_use blocks for web_search
-        if (block.type === 'server_tool_use' && block.name === 'web_search') {
-          return false;
-        }
-
-        return true;
-      });
-
+      // Always push assistant message to maintain proper message alternation
       messages.push({ role: 'assistant', content: filteredContent });
 
       // Only push tool results if there are any (there won't be for web_search-only responses)
@@ -358,7 +355,7 @@ Start with Week 1 (weekIndex: 1).`;
         messages.push(toolResults);
       }
 
-      // CRITICAL FIX: Prompt Claude to generate the next week
+      // Prompt Claude to generate the next week
       if (weekIndex <= basics.durationWeeks) {
         messages.push({
           role: 'user',
@@ -369,10 +366,34 @@ Start with Week 1 (weekIndex: 1).`;
       continue;
     }
 
+    // Handle end_turn / max_tokens: Claude didn't call finalize_week
+    // Always push the assistant message to maintain proper message alternation
+    if (filteredContent.length > 0) {
+      messages.push({ role: 'assistant', content: filteredContent });
+    } else {
+      // If filtered content is empty, push a minimal placeholder
+      messages.push({ role: 'assistant', content: [{ type: 'text', text: '(continuing)' }] });
+    }
+
+    retryCount++;
+    console.log(`[Week ${weekIndex}] Claude responded with stop_reason="${response.stop_reason}" without finalize_week (retry ${retryCount}/${MAX_RETRIES_PER_WEEK})`);
+
+    if (retryCount > MAX_RETRIES_PER_WEEK) {
+      console.error(`[Week ${weekIndex}] Max retries exceeded, aborting generation`);
+      ws.send(JSON.stringify({
+        type: 'generation_error',
+        data: {
+          message: `Failed to generate Week ${weekIndex} after ${MAX_RETRIES_PER_WEEK} attempts. Try again or use a different model.`,
+          weekIndex
+        }
+      }));
+      throw new Error(`Max retries exceeded for week ${weekIndex}`);
+    }
+
     if (weekIndex <= basics.durationWeeks) {
       messages.push({
         role: 'user',
-        content: `Great! Now generate Week ${weekIndex}.`
+        content: `Please call the finalize_week tool to complete Week ${weekIndex}. You must use the finalize_week tool with weekIndex: ${weekIndex}, a title, and exactly 4 steps.`
       });
     } else {
       break;
@@ -446,7 +467,7 @@ Generate the week content now. Search for resources, then call finalize_week whe
   try {
     response = await client.messages.create({
       model: selectedModel,
-      max_tokens: 4000,
+      max_tokens: 8192,
       tools: SYLLABIND_GENERATION_TOOLS,
       messages
     });
@@ -485,6 +506,39 @@ Generate the week content now. Search for resources, then call finalize_week whe
     }));
 
     throw error;
+  }
+
+  // Retry loop: if Claude doesn't call finalize_week, prompt it again (up to 3 times)
+  let regenRetries = 0;
+  const MAX_REGEN_RETRIES = 3;
+  while (response.stop_reason !== 'tool_use' || !response.content.some((b: any) => b.type === 'tool_use' && b.name === 'finalize_week')) {
+    regenRetries++;
+    if (regenRetries > MAX_REGEN_RETRIES) {
+      ws.send(JSON.stringify({
+        type: 'generation_error',
+        data: { message: `Failed to regenerate Week ${weekIndex} after ${MAX_REGEN_RETRIES} attempts. Try again or use a different model.`, weekIndex }
+      }));
+      throw new Error(`Max retries exceeded for week ${weekIndex} regeneration`);
+    }
+
+    console.log(`[RegenerateWeek ${weekIndex}] Claude responded with stop_reason="${response.stop_reason}" without finalize_week (retry ${regenRetries}/${MAX_REGEN_RETRIES})`);
+
+    // Push assistant message to maintain alternation
+    const filtered = response.content.filter((block: any) => {
+      if (block.type === 'text' || block.type === 'tool_use') return true;
+      if (block.type === 'web_search_tool_result') return false;
+      if (block.type === 'server_tool_use' && block.name === 'web_search') return false;
+      return true;
+    });
+    messages.push({ role: 'assistant', content: filtered.length > 0 ? filtered : [{ type: 'text', text: '(continuing)' }] });
+    messages.push({ role: 'user', content: `Please call the finalize_week tool to complete Week ${weekIndex}. You must use the finalize_week tool with weekIndex: ${weekIndex}, a title, and exactly 4 steps.` });
+
+    response = await client.messages.create({
+      model: selectedModel,
+      max_tokens: 8192,
+      tools: SYLLABIND_GENERATION_TOOLS,
+      messages
+    });
   }
 
   if (response.stop_reason === 'tool_use') {

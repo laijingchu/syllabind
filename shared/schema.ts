@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, jsonb, timestamp, varchar, serial, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, jsonb, timestamp, varchar, serial, primaryKey, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
@@ -19,7 +19,10 @@ export const sessions = pgTable(
     sid: varchar("sid").primaryKey(),
     sess: jsonb("sess").notNull(),
     expire: timestamp("expire").notNull(),
-  }
+  },
+  (table) => [
+    index("sessions_expire_idx").on(table.expire),
+  ]
 );
 
 export const users = pgTable("users", {
@@ -55,7 +58,10 @@ export const syllabi = pgTable("syllabi", {
   updatedAt: timestamp("updated_at").defaultNow(),
   studentActive: integer("student_active").default(0),
   studentsCompleted: integer("students_completed").default(0),
-});
+}, (table) => [
+  index("syllabi_creator_id_idx").on(table.creatorId),
+  index("syllabi_status_idx").on(table.status),
+]);
 
 export const enrollments = pgTable("enrollments", {
   id: serial("id").primaryKey(),
@@ -65,7 +71,11 @@ export const enrollments = pgTable("enrollments", {
   currentWeekIndex: integer("current_week_index").default(1),
   shareProfile: boolean("share_profile").default(false),
   joinedAt: timestamp("joined_at").defaultNow(),
-});
+}, (table) => [
+  uniqueIndex("enrollments_student_syllabus_idx").on(table.studentId, table.syllabusId),
+  index("enrollments_student_id_idx").on(table.studentId),
+  index("enrollments_syllabus_id_idx").on(table.syllabusId),
+]);
 
 // Normalized tables for syllabus content
 export const weeks = pgTable("weeks", {
@@ -76,7 +86,9 @@ export const weeks = pgTable("weeks", {
   index: integer("index").notNull(), // 1, 2, 3, 4...
   title: text("title"),
   description: text("description"),
-});
+}, (table) => [
+  index("weeks_syllabus_id_idx").on(table.syllabusId),
+]);
 
 export const steps = pgTable("steps", {
   id: serial("id").primaryKey(),
@@ -93,7 +105,9 @@ export const steps = pgTable("steps", {
   mediaType: text("media_type"), // 'Book' | 'Youtube video' | 'Blog/Article' | 'Podcast'
   promptText: text("prompt_text"),
   estimatedMinutes: integer("estimated_minutes"),
-});
+}, (table) => [
+  index("steps_week_id_idx").on(table.weekId),
+]);
 
 export const submissions = pgTable("submissions", {
   id: serial("id").primaryKey(),
@@ -110,7 +124,10 @@ export const submissions = pgTable("submissions", {
   feedback: text("feedback"),
   grade: text("grade"),
   rubricUrl: text("rubric_url"),
-});
+}, (table) => [
+  index("submissions_enrollment_id_idx").on(table.enrollmentId),
+  index("submissions_step_id_idx").on(table.stepId),
+]);
 
 // Normalized completion tracking
 export const completedSteps = pgTable("completed_steps", {
@@ -164,7 +181,9 @@ export const chatMessages = pgTable("chat_messages", {
   role: text("role").notNull(), // 'user' | 'assistant'
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("chat_messages_syllabus_id_idx").on(table.syllabusId),
+]);
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertSyllabusSchema = createInsertSchema(syllabi).omit({

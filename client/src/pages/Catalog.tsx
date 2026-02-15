@@ -11,7 +11,7 @@ export default function Catalog() {
   return (
     <AnimatedPage className="max-w-6xl mx-auto space-y-8">
       <div className="text-center max-w-2xl mx-auto space-y-4">
-        <h1 className="text-4xl font-serif text-foreground">Catalog</h1>
+        <h1 className="text-4xl font-display text-foreground">Catalog</h1>
         <p className="text-lg text-muted-foreground">
           Curated learning paths designed to be completed, not just bookmarked.
         </p>

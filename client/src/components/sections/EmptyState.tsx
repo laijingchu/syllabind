@@ -26,7 +26,7 @@ export function EmptyState({
         </div>
       )}
       <div className="empty-state-content">
-        <h2 className="text-xl font-serif">{title}</h2>
+        <h2 className="text-xl font-display">{title}</h2>
         {description && <p className="text-muted-foreground max-w-md">{description}</p>}
       </div>
       {action}

@@ -108,7 +108,7 @@ export default function WeekView() {
         <div className="bg-muted h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center mx-auto">
           <Lock className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
         </div>
-        <h2 className="text-xl sm:text-2xl font-serif">{pluralize(weekIndex, 'Week')} is Locked</h2>
+        <h2 className="text-xl sm:text-2xl font-display">{pluralize(weekIndex, 'Week')} is Locked</h2>
         <p className="text-sm sm:text-base text-muted-foreground">Complete all steps in {pluralize(weekIndex - 1, 'Week')} to unlock this content.</p>
         <Link href={`/syllabus/${syllabus.id}/week/${weekIndex - 1}`}>
           <Button className="w-full sm:w-auto">Go to {pluralize(weekIndex - 1, 'Week')}</Button>
@@ -140,7 +140,7 @@ export default function WeekView() {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 sm:gap-4 mb-4">
           <div className="min-w-0">
             <h2 className="text-xs sm:text-sm font-medium text-primary uppercase tracking-wider mb-1 truncate">{syllabus.title}</h2>
-            <h1 className="text-2xl sm:text-3xl font-serif">{week.title || pluralize(week.index, 'Week')}</h1>
+            <h1 className="text-2xl sm:text-3xl font-display">{week.title || pluralize(week.index, 'Week')}</h1>
             {week.description && (
               <div
                 className="text-muted-foreground mt-2 prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 max-w-none text-sm sm:text-base"
@@ -192,7 +192,7 @@ export default function WeekView() {
 
                 <div className="flex-1 space-y-2 sm:space-y-3 min-w-0">
                   <div className="space-y-1">
-                    <h3 className={cn("text-base sm:text-lg font-medium leading-tight", isDone && "text-muted-foreground line-through decoration-primary/30")}>
+                    <h3 className={cn("text-base sm:text-lg font-display font-medium leading-tight", isDone && "text-muted-foreground line-through decoration-primary/30")}>
                       {step.title}
                     </h3>
                     <div className="flex flex-wrap items-center gap-2">

@@ -76,6 +76,7 @@ app.use((req, res, next) => {
     // Authenticate the WebSocket connection via session cookie
     const user = await authenticateWebSocket(req);
     if (!user) {
+      ws.send(JSON.stringify({ type: 'error', data: { message: 'Authentication failed. Please log in again.' } }));
       ws.close(4401, 'Unauthorized');
       return;
     }
@@ -95,17 +96,20 @@ app.use((req, res, next) => {
     }
 
     if (!syllabusId) {
-      ws.close();
+      ws.send(JSON.stringify({ type: 'error', data: { message: 'Missing syllabus ID in WebSocket URL.' } }));
+      ws.close(4400, 'Bad Request');
       return;
     }
 
     // Verify ownership
     const syllabus = await storage.getSyllabus(syllabusId);
     if (!syllabus) {
+      ws.send(JSON.stringify({ type: 'error', data: { message: 'Syllabus not found.' } }));
       ws.close(4404, 'Syllabus not found');
       return;
     }
     if (syllabus.creatorId !== user.username) {
+      ws.send(JSON.stringify({ type: 'error', data: { message: 'Not authorized to modify this syllabus.' } }));
       ws.close(4403, 'Forbidden');
       return;
     }
@@ -125,7 +129,8 @@ app.use((req, res, next) => {
       if (weekIndex) {
         handleRegenerateWeekWS(ws, syllabusId, weekIndex, model, useMock);
       } else {
-        ws.close();
+        ws.send(JSON.stringify({ type: 'error', data: { message: 'Invalid week index.' } }));
+        ws.close(4400, 'Bad Request');
       }
     } else if (url?.startsWith('/ws/chat-syllabind/')) {
       handleChatSyllabindWS(ws, syllabusId);

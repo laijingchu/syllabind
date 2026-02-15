@@ -79,7 +79,7 @@ export default function Dashboard() {
     <AnimatedPage className="max-w-4xl mx-auto space-y-12">
       <section className="space-y-6">
         <header>
-          <h1 className="text-3xl font-serif text-foreground mb-2">
+          <h1 className="text-3xl font-display text-foreground mb-2">
             {allCompleted ? "Current Focus" : isCompleted ? "What's Next" : "Current Focus"}
           </h1>
           <p className="text-muted-foreground">
@@ -129,7 +129,7 @@ export default function Dashboard() {
                   <div className="text-sm font-medium text-primary uppercase tracking-wider">
                     {getOverallProgress(activeSyllabus.id) === 100 ? 'Completed' : 'In Progress'}
                   </div>
-                  <h2 className="text-3xl font-serif">{activeSyllabus.title}</h2>
+                  <h2 className="text-3xl font-display">{activeSyllabus.title}</h2>
                   <div
                     className="text-muted-foreground max-w-xl prose dark:prose-invert prose-p:my-0"
                     dangerouslySetInnerHTML={{ __html: activeSyllabus.description }}
@@ -235,7 +235,7 @@ export default function Dashboard() {
         <AnimatedCard delay={0.2}>
           <section className="space-y-6">
             <header>
-              <h2 className="text-2xl font-serif text-foreground mb-2">Completed Journeys</h2>
+              <h2 className="text-2xl font-display text-foreground mb-2">Completed Journeys</h2>
               <p className="text-muted-foreground">You have successfully completed {pluralize(completedSyllabi.length, 'syllabind')}!</p>
             </header>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

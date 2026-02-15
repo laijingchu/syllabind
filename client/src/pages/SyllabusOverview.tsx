@@ -253,7 +253,7 @@ export default function SyllabusOverview() {
         <div className="space-y-8">
           <div className="syllabus-header">
              <Badge variant="outline" className="mb-4">{syllabus.audienceLevel}</Badge>
-             <h1 className="text-4xl md:text-5xl font-serif text-foreground mb-6 leading-tight">
+             <h1 className="text-4xl md:text-5xl font-display text-foreground mb-6 leading-tight">
                {syllabus.title}
              </h1>
              <div
@@ -290,7 +290,7 @@ export default function SyllabusOverview() {
           </div>
 
           <div className="syllabind-section space-y-6">
-            <h2 className="text-2xl font-serif">What you'll learn</h2>
+            <h2 className="text-2xl font-display">What you'll learn</h2>
             <Accordion type="single" collapsible className="space-y-4">
               {syllabus.weeks.filter(w => w.steps.length > 0).map((week) => {
                 const weekDone = isActive && getWeekProgress(week.index) === 100;
@@ -422,7 +422,7 @@ export default function SyllabusOverview() {
           {(inProgressLearners.length > 0 || completedLearners.length > 0) && (
             <div id="classmates-section" className="classmates-section pt-8 space-y-6 scroll-mt-24">
                <div className="classmates-header flex justify-between items-baseline border-b pb-4">
-                 <h2 className="text-2xl font-serif">Classmates</h2>
+                 <h2 className="text-2xl font-display">Classmates</h2>
                  <span className="text-sm text-muted-foreground">{totalEnrolled} enrolled</span>
                </div>
 

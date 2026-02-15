@@ -124,7 +124,7 @@ export default function SyllabindLearners() {
              </Link>
              <div className="hidden sm:block h-6 w-px bg-border" />
              <div>
-               <h1 className="font-serif text-lg sm:text-xl">{syllabus.title}</h1>
+               <h1 className="font-display text-lg sm:text-xl">{syllabus.title}</h1>
                <p className="text-xs text-muted-foreground">Learner Management</p>
              </div>
           </div>

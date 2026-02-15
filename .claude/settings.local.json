@@ -39,7 +39,14 @@
       "Bash(if [ -n \"$DATABASE_URL\" ])",
       "Bash(then)",
       "Bash(else)",
-      "Bash(fi)"
+      "Bash(fi)",
+      "Bash(git mv:*)",
+      "Bash(npm run test:single:*)",
+      "Bash(git checkout:*)",
+      "WebFetch(domain:ai-sdk.dev)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }
