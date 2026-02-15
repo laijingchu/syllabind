@@ -10,12 +10,12 @@ interface StoreContextType {
   isLoading: boolean;
 
   // Data
-  syllabi: Syllabus[];
+  syllabinds: Syllabus[];
   enrollment: Enrollment | null;
   completedStepIds: number[];
 
   // Loading states
-  syllabiLoading: boolean;
+  syllabindsLoading: boolean;
   enrollmentLoading: boolean;
 
   // Actions
@@ -39,9 +39,9 @@ interface StoreContextType {
   getProgressForWeek: (syllabusId: number, weekIndex: number) => number;
   createSyllabus: (syllabus: any) => Promise<Syllabus>;
   updateSyllabus: (syllabus: Syllabus) => Promise<void>;
-  batchDeleteSyllabi: (ids: number[]) => Promise<void>;
+  batchDeleteSyllabinds: (ids: number[]) => Promise<void>;
   getSubmissionsForStep: (stepId: number) => Record<string, Submission>;
-  refreshSyllabi: () => Promise<void>;
+  refreshSyllabinds: () => Promise<void>;
   refreshEnrollments: () => Promise<void>;
 }
 
@@ -50,16 +50,16 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, logout, isLoading } = useAuth();
   const queryClient = useQueryClient();
-  const [syllabi, setSyllabi] = useState<Syllabus[]>([]);
+  const [syllabinds, setSyllabinds] = useState<Syllabus[]>([]);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [completedStepIds, setCompletedStepIds] = useState<number[]>([]);
-  const [syllabiLoading, setSyllabiLoading] = useState(false);
+  const [syllabindsLoading, setSyllabindsLoading] = useState(false);
   const [enrollmentLoading, setEnrollmentLoading] = useState(false);
 
-  // Fetch syllabi on mount
+  // Fetch syllabinds on mount
   useEffect(() => {
-    refreshSyllabi();
+    refreshSyllabinds();
   }, []);
 
   // Fetch enrollments when user logs in
@@ -94,18 +94,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, [enrollment?.id]);
 
-  const refreshSyllabi = async () => {
-    setSyllabiLoading(true);
+  const refreshSyllabinds = async () => {
+    setSyllabindsLoading(true);
     try {
-      const res = await fetch('/api/syllabi');
+      const res = await fetch('/api/syllabinds');
       if (res.ok) {
         const data = await res.json();
-        setSyllabi(data);
+        setSyllabinds(data);
       }
     } catch (err) {
-      console.error('Failed to fetch syllabi:', err);
+      console.error('Failed to fetch syllabinds:', err);
     } finally {
-      setSyllabiLoading(false);
+      setSyllabindsLoading(false);
     }
   };
 
@@ -117,18 +117,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       });
       if (res.ok) {
         const data = await res.json();
-        // Use the first in-progress enrollment as active
-        const activeEnrollment = data.find((e: any) => e.status === 'in-progress') || data[0] || null;
-        if (activeEnrollment) {
-          // Transform backend enrollment to match frontend Enrollment type
-          setEnrollment({
-            id: activeEnrollment.id,
-            activeSyllabusId: activeEnrollment.syllabusId,
-            currentWeekIndex: activeEnrollment.currentWeekIndex || 1,
-            completedStepIds: [], // Will be loaded separately
-            completedSyllabusIds: [] // TODO: track completed syllabi
-          });
-        }
+        // Extract completed syllabus IDs from all completed enrollments
+        const completedSyllabusIds = data
+          .filter((e: any) => e.status === 'completed')
+          .map((e: any) => e.syllabusId);
+
+        // Use only in-progress enrollment as active (don't fall back to completed)
+        const activeEnrollment = data.find((e: any) => e.status === 'in-progress') || null;
+        // Transform backend enrollment to match frontend Enrollment type
+        setEnrollment({
+          id: activeEnrollment?.id,
+          activeSyllabusId: activeEnrollment?.syllabusId || null,
+          currentWeekIndex: activeEnrollment?.currentWeekIndex || 1,
+          completedStepIds: [], // Will be loaded separately
+          completedSyllabusIds
+        });
       }
     } catch (err) {
       console.error('Failed to fetch enrollments:', err);
@@ -239,8 +242,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       if (!res.ok) throw new Error('Failed to complete syllabus');
 
-      const updated = await res.json();
-      setEnrollment(prev => prev ? { ...prev, ...updated } : null);
+      // Add to completed list and clear active enrollment
+      const completedId = enrollment.activeSyllabusId;
+      setEnrollment(prev => prev ? {
+        ...prev,
+        activeSyllabusId: null,
+        completedSyllabusIds: completedId
+          ? [...(prev.completedSyllabusIds || []), completedId]
+          : prev.completedSyllabusIds || []
+      } : null);
     } catch (err) {
       console.error('Failed to complete syllabus:', err);
       throw err;
@@ -312,7 +322,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const createSyllabus = async (syllabusData: any): Promise<Syllabus> => {
     try {
-      const res = await fetch('/api/syllabi', {
+      const res = await fetch('/api/syllabinds', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -326,8 +336,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       const syllabus = await res.json();
 
-      // Refresh syllabi list
-      await refreshSyllabi();
+      // Refresh syllabinds list
+      await refreshSyllabinds();
 
       return syllabus;
     } catch (err) {
@@ -338,7 +348,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const updateSyllabus = async (syllabus: Syllabus) => {
     try {
-      const res = await fetch(`/api/syllabi/${syllabus.id}`, {
+      const res = await fetch(`/api/syllabinds/${syllabus.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -347,17 +357,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       if (!res.ok) throw new Error('Failed to update syllabus');
 
-      // Refresh syllabi list
-      await refreshSyllabi();
+      // Refresh syllabinds list
+      await refreshSyllabinds();
     } catch (err) {
       console.error('Failed to update syllabus:', err);
       throw err;
     }
   };
 
-  const batchDeleteSyllabi = async (ids: number[]) => {
+  const batchDeleteSyllabinds = async (ids: number[]) => {
     try {
-      const res = await fetch('/api/syllabi/batch-delete', {
+      const res = await fetch('/api/syllabinds/batch-delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -366,20 +376,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || 'Failed to delete syllabi');
+        throw new Error(error.message || 'Failed to delete syllabinds');
       }
 
-      // Refresh syllabi list
-      await refreshSyllabi();
+      // Refresh syllabinds list
+      await refreshSyllabinds();
     } catch (err) {
-      console.error('Failed to delete syllabi:', err);
+      console.error('Failed to delete syllabinds:', err);
       throw err;
     }
   };
 
   const getLearnersForSyllabus = async (syllabusId: number): Promise<{ classmates: LearnerProfile[]; totalEnrolled: number }> => {
     try {
-      const res = await fetch(`/api/syllabi/${syllabusId}/classmates`, {
+      const res = await fetch(`/api/syllabinds/${syllabusId}/classmates`, {
         credentials: 'include'
       });
 
@@ -425,11 +435,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const getActiveSyllabus = () => {
     if (!enrollment?.activeSyllabusId) return undefined;
-    return syllabi.find(s => s.id === enrollment.activeSyllabusId);
+    return syllabinds.find(s => s.id === enrollment.activeSyllabusId);
   };
 
   const getSyllabusById = (id: number) => {
-    return syllabi.find(s => s.id === id);
+    return syllabinds.find(s => s.id === id);
   };
 
   const isStepCompleted = (stepId: number) => {
@@ -479,10 +489,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated,
       logout,
       isLoading,
-      syllabi,
+      syllabinds,
       enrollment,
       completedStepIds,
-      syllabiLoading,
+      syllabindsLoading,
       enrollmentLoading,
       toggleCreatorMode,
       completeActiveSyllabus,
@@ -504,9 +514,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       getProgressForWeek,
       createSyllabus,
       updateSyllabus,
-      batchDeleteSyllabi,
+      batchDeleteSyllabinds,
       getSubmissionsForStep,
-      refreshSyllabi,
+      refreshSyllabinds,
       refreshEnrollments
     }}>
       {children}

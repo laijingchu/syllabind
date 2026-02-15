@@ -1,7 +1,7 @@
 import { useStore } from '@/lib/store';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit2, Eye, BarChart2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Eye, BarChart2, Trash2, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -21,21 +21,21 @@ import { formatDistanceToNow } from 'date-fns';
 import { AnimatedPage, AnimatedCard } from '@/components/ui/animated-container';
 
 export default function CreatorDashboard() {
-  const { syllabi, user, getLearnersForSyllabus, batchDeleteSyllabi } = useStore();
+  const { syllabinds, user, getLearnersForSyllabus, batchDeleteSyllabinds } = useStore();
   const [learnerCounts, setLearnerCounts] = useState<Record<number, { total: number, active: number }>>({});
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Filter syllabi by current user's username
-  const mySyllabi = syllabi.filter(s => s.creatorId === user?.username);
+  // Filter syllabinds by current user's username
+  const mySyllabinds = syllabinds.filter(s => s.creatorId === user?.username);
 
   // Fetch learner counts for each syllabus
   useEffect(() => {
     const fetchCounts = async () => {
       const counts: Record<number, { total: number, active: number }> = {};
 
-      for (const syllabus of mySyllabi) {
+      for (const syllabus of mySyllabinds) {
         const { classmates, totalEnrolled } = await getLearnersForSyllabus(syllabus.id);
         const activeLearners = (classmates || []).filter(l => l.status === 'in-progress');
         counts[syllabus.id] = {
@@ -47,15 +47,15 @@ export default function CreatorDashboard() {
       setLearnerCounts(counts);
     };
 
-    if (mySyllabi.length > 0) {
+    if (mySyllabinds.length > 0) {
       fetchCounts();
     }
-  }, [mySyllabi.length]);
+  }, [mySyllabinds.length]);
 
-  // Reset selection when syllabi change
+  // Reset selection when syllabinds change
   useEffect(() => {
     setSelectedIds([]);
-  }, [mySyllabi.length]);
+  }, [mySyllabinds.length]);
 
   const handleToggleSelect = (id: number) => {
     setSelectedIds(prev =>
@@ -64,22 +64,22 @@ export default function CreatorDashboard() {
   };
 
   const handleSelectAll = () => {
-    if (selectedIds.length === mySyllabi.length) {
+    if (selectedIds.length === mySyllabinds.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(mySyllabi.map(s => s.id));
+      setSelectedIds(mySyllabinds.map(s => s.id));
     }
   };
 
   const handleDeleteSelected = async () => {
     setIsDeleting(true);
     try {
-      await batchDeleteSyllabi(selectedIds);
+      await batchDeleteSyllabinds(selectedIds);
       setSelectedIds([]);
       setShowDeleteDialog(false);
     } catch (err) {
-      console.error('Failed to delete syllabi:', err);
-      alert('Failed to delete syllabi. Please try again.');
+      console.error('Failed to delete syllabinds:', err);
+      alert('Failed to delete syllabinds. Please try again.');
     } finally {
       setIsDeleting(false);
     }
@@ -89,8 +89,8 @@ export default function CreatorDashboard() {
     <AnimatedPage className="space-y-4 sm:space-y-8 max-w-5xl mx-auto px-1 sm:px-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-display mb-1">Curator Studio</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Manage your syllabi and track learner progress.</p>
+          <h1 className="text-2xl sm:text-3xl font-display mb-1">Syllabind Builder</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage your syllabinds and track learner progress.</p>
         </div>
         <div className="flex items-center gap-2 sm:gap-4">
           <Link href="/creator/profile">
@@ -107,18 +107,18 @@ export default function CreatorDashboard() {
       </div>
 
       {/* Selection toolbar */}
-      {mySyllabi.length > 0 && (
+      {mySyllabinds.length > 0 && (
         <div className="selection-toolbar flex flex-wrap items-center justify-between gap-2 px-6">
           <div className="flex items-center gap-2 sm:gap-3">
             <Checkbox
               id="select-all"
-              checked={selectedIds.length === mySyllabi.length && mySyllabi.length > 0}
+              checked={selectedIds.length === mySyllabinds.length && mySyllabinds.length > 0}
               onCheckedChange={handleSelectAll}
             />
             <label htmlFor="select-all" className="text-xs sm:text-sm text-muted-foreground cursor-pointer">
               {selectedIds.length === 0
                 ? 'Select all'
-                : selectedIds.length === mySyllabi.length
+                : selectedIds.length === mySyllabinds.length
                   ? 'Deselect all'
                   : `${selectedIds.length} selected`}
             </label>
@@ -137,8 +137,30 @@ export default function CreatorDashboard() {
         </div>
       )}
 
-      <div className="grid gap-4">
-        {mySyllabi.map((syllabus, index) => (
+      {/* Empty state */}
+      {mySyllabinds.length === 0 ? (
+        <AnimatedCard delay={0.1}>
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-4">
+              <div className="bg-primary/10 p-4 rounded-full">
+                <BookOpen className="h-8 w-8 text-primary" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-xl font-display">No syllabinds yet</h3>
+                <p className="text-muted-foreground max-w-md mx-auto">Create your first syllabus to start sharing knowledge with learners. Use AI assistance to build a structured multi-week learning experience.</p>
+              </div>
+              <Link href="/creator/syllabus/new">
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Your First Syllabus
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </AnimatedCard>
+      ) : (
+        <div className="grid gap-4">
+          {mySyllabinds.map((syllabus, index) => (
           <AnimatedCard key={syllabus.id} delay={0.05 * index}>
             <Card className={`hover:shadow-md transition-shadow ${selectedIds.includes(syllabus.id) ? 'ring-2 ring-primary' : ''}`}>
               <CardContent className="p-3 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
@@ -192,15 +214,16 @@ export default function CreatorDashboard() {
             </Card>
           </AnimatedCard>
         ))}
-      </div>
+        </div>
+      )}
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {pluralize(selectedIds.length, 'syllabus', 'syllabi')}?</AlertDialogTitle>
+            <AlertDialogTitle>Delete {pluralize(selectedIds.length, 'syllabind', 'syllabinds')}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the selected {pluralize(selectedIds.length, 'syllabus', 'syllabi')} and all associated enrollments, submissions, and progress data.
+              This action cannot be undone. This will permanently delete the selected {pluralize(selectedIds.length, 'syllabind', 'syllabinds')} and all associated enrollments, submissions, and progress data.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -210,7 +233,7 @@ export default function CreatorDashboard() {
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? 'Deleting...' : `Delete ${pluralize(selectedIds.length, 'syllabus', 'syllabi')}`}
+              {isDeleting ? 'Deleting...' : `Delete ${pluralize(selectedIds.length, 'syllabind', 'syllabinds')}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -11,7 +11,7 @@ import { parse } from 'csv-parse/sync';
 import fs from 'fs';
 import path from 'path';
 import { db } from './db';
-import { users, syllabi, weeks, steps } from '../shared/schema';
+import { users, syllabinds, weeks, steps } from '../shared/schema';
 import { eq } from 'drizzle-orm';
 
 const CREATOR_EMAIL = 'laijing.chu@gmail.com';
@@ -65,7 +65,7 @@ async function importData() {
   // 2. Parse CSV files
   console.log('Parsing CSV files...');
 
-  const syllabiCsv = parse(
+  const syllabindsCsv = parse(
     fs.readFileSync(path.join(CSV_DIR, 'syllabi.csv'), 'utf-8'),
     { columns: true, skip_empty_lines: true }
   ) as CsvSyllabus[];
@@ -80,7 +80,7 @@ async function importData() {
     { columns: true, skip_empty_lines: true }
   ) as CsvStep[];
 
-  console.log(`✓ Parsed ${syllabiCsv.length} syllabi`);
+  console.log(`✓ Parsed ${syllabindsCsv.length} syllabinds`);
   console.log(`✓ Parsed ${weeksCsv.length} weeks`);
   console.log(`✓ Parsed ${stepsCsv.length} steps\n`);
 
@@ -91,14 +91,14 @@ async function importData() {
     weekCountBySyllabus.set(week.syllabusId, current + 1);
   }
 
-  // 4. Insert syllabi and track ID mapping
-  console.log('Inserting syllabi...');
+  // 4. Insert syllabinds and track ID mapping
+  console.log('Inserting syllabinds...');
   const syllabusIdMap = new Map<string, number>(); // CSV ID -> DB ID
 
-  for (const csvSyllabus of syllabiCsv) {
+  for (const csvSyllabus of syllabindsCsv) {
     const durationWeeks = weekCountBySyllabus.get(csvSyllabus.id) || 0;
 
-    const [inserted] = await db.insert(syllabi).values({
+    const [inserted] = await db.insert(syllabinds).values({
       title: csvSyllabus.title,
       description: csvSyllabus.description,
       audienceLevel: csvSyllabus.level || 'Beginner',
@@ -167,7 +167,7 @@ async function importData() {
   console.log('Import Complete!');
   console.log('═══════════════════════════════════');
   console.log(`Creator: ${creator.username} (${CREATOR_EMAIL})`);
-  console.log(`Syllabi: ${syllabusIdMap.size}`);
+  console.log(`Syllabinds: ${syllabusIdMap.size}`);
   console.log(`Weeks:   ${weekIdMap.size}`);
   console.log(`Steps:   ${stepCount}`);
   console.log('═══════════════════════════════════');

@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, syllabi, weeks, steps, enrollments, completedSteps } from "@shared/schema";
+import { users, syllabinds, weeks, steps, enrollments, completedSteps } from "@shared/schema";
 import { hashPassword } from "./auth/emailAuth";
 import { eq } from "drizzle-orm";
 
@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
  *
  * Populates the database with test data including:
  * - Test users (creators and learners)
- * - Published syllabi with weeks and steps
+ * - Published syllabinds with weeks and steps
  * - Enrollments
  * - Completed steps
  *
@@ -123,12 +123,12 @@ async function seed() {
     });
     console.log();
 
-    // 3. Create Syllabi with Weeks and Steps
-    console.log("📚 Creating syllabi...\n");
+    // 3. Create Syllabinds with Weeks and Steps
+    console.log("📚 Creating syllabinds...\n");
 
     // Syllabus 1: Digital Minimalism
     console.log("Creating: Digital Minimalism");
-    const [syllabus1] = await db.insert(syllabi).values({
+    const [syllabus1] = await db.insert(syllabinds).values({
       title: "Digital Minimalism",
       description: "Reclaim your attention and focus in a noisy world. A 4-week structured guide to reducing digital clutter.",
       audienceLevel: "Beginner",
@@ -246,7 +246,7 @@ async function seed() {
 
     // Syllabus 2: Systems Thinking 101
     console.log("Creating: Systems Thinking 101");
-    const [syllabus2] = await db.insert(syllabi).values({
+    const [syllabus2] = await db.insert(syllabinds).values({
       title: "Systems Thinking 101",
       description: "Learn to see the world in loops and connections. Understand feedback loops, stocks, and flows.",
       audienceLevel: "Intermediate",
@@ -342,7 +342,7 @@ async function seed() {
     // 5. Mark Some Steps as Completed
     console.log("✓ Marking completed steps...\n");
 
-    // Get all steps for both syllabi
+    // Get all steps for both syllabinds
     const allWeek1Steps = await db.select().from(steps).where(eq(steps.weekId, week1.id));
     const allWeek2Steps = await db.select().from(steps).where(eq(steps.weekId, week2.id));
     const allWeek3Steps = await db.select().from(steps).where(eq(steps.weekId, week3.id));
@@ -401,7 +401,7 @@ async function seed() {
     console.log(`   • ${1 + learners.length} users created`);
     console.log(`     - 1 creator (janesmith)`);
     console.log(`     - ${learners.length} learners`);
-    console.log(`   • 2 syllabi created`);
+    console.log(`   • 2 syllabinds created`);
     console.log(`     - Digital Minimalism (4 weeks, 8 steps)`);
     console.log(`     - Systems Thinking 101 (2 weeks, 1 step)`);
     console.log(`   • 5 enrollments created`);

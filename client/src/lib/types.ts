@@ -22,7 +22,7 @@ export interface Step {
 
 export interface Week {
   id: number; // Primary key
-  syllabusId: number; // Foreign key to syllabi table
+  syllabusId: number; // Foreign key to syllabinds table
   index: number; // 1-4
   title?: string; // e.g. "Foundations"
   description?: string; // Weekly summary
@@ -73,7 +73,7 @@ export interface CompletedStep {
 export interface Cohort {
   id: number;
   name: string;
-  syllabusId: number;               // FK to syllabi
+  syllabusId: number;               // FK to syllabinds
   creatorId?: string;               // Username of creator
   description?: string;
   isActive: boolean;

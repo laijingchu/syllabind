@@ -2,7 +2,7 @@
 
 ## Overview
 
-Syllabind is a full-stack learning platform that connects creators who build curated multi-week syllabi with learners who want structured educational experiences.
+Syllabind is a full-stack learning platform that connects creators who build curated multi-week syllabinds with learners who want structured educational experiences.
 
 **Tech Stack:**
 - Frontend: React 19 + TypeScript + Vite
@@ -15,11 +15,11 @@ Syllabind is a full-stack learning platform that connects creators who build cur
 
 ## Data Model
 
-The data model consists of four main database tables that store all application data. The design follows a relational structure where users can create syllabi, and other users can enroll in them. Progress tracking is handled through the enrollments table, which stores completed step IDs as a flexible JSON array.
+The data model consists of four main database tables that store all application data. The design follows a relational structure where users can create syllabinds, and other users can enroll in them. Progress tracking is handled through the enrollments table, which stores completed step IDs as a flexible JSON array.
 
 ### Database Schema
 
-The database schema defines the structure of data stored in PostgreSQL. Each table represents a core entity in the system: users who interact with the platform, syllabi that contain the learning content, enrollments that track learner progress, and sessions that manage authentication state.
+The database schema defines the structure of data stored in PostgreSQL. Each table represents a core entity in the system: users who interact with the platform, syllabinds that contain the learning content, enrollments that track learner progress, and sessions that manage authentication state.
 
 #### Users Table
 
@@ -44,9 +44,9 @@ This table stores all user accounts, whether they're learners or creators. A sin
 }
 ```
 
-#### Syllabi Table
+#### Syllabinds Table (DB: `syllabi`)
 
-Syllabi are the core learning content created by creators. The Syllabind structure (weeks and steps) is stored in normalized `weeks` and `steps` tables. Each syllabus can be saved as a draft or published to make it visible in the catalog. The table tracks engagement metrics including active and completed student counts. **Note:** `creatorId` references `users.username` (unique) instead of UUID for better logging and readability.
+Syllabinds are the core learning content created by creators. The Syllabind structure (weeks and steps) is stored in normalized `weeks` and `steps` tables. Each syllabind can be saved as a draft or published to make it visible in the catalog. The table tracks engagement metrics including active and completed student counts. **Note:** `creatorId` references `users.username` (unique) instead of UUID for better logging and readability.
 
 ```typescript
 {
@@ -60,17 +60,17 @@ Syllabi are the core learning content created by creators. The Syllabind structu
   createdAt: timestamp DEFAULT now(),
   updatedAt: timestamp DEFAULT now(), // Last modification timestamp
   studentActive: integer DEFAULT 0,   // Number of students currently enrolled (in-progress)
-  studentsCompleted: integer DEFAULT 0 // Number of students who completed the syllabus
+  studentsCompleted: integer DEFAULT 0 // Number of students who completed the syllabind
 }
 ```
 
 **Indexes:**
-- `syllabi_creator_id_idx` - Creator dashboard: lookup syllabi by creator
-- `syllabi_status_idx` - Catalog page: filter published syllabi
+- `syllabi_creator_id_idx` - Creator dashboard: lookup syllabinds by creator
+- `syllabi_status_idx` - Catalog page: filter published syllabinds
 
 #### Weeks Table
 
-This table stores the weekly structure of each syllabus. Each syllabus can have multiple weeks, and each week can contain multiple steps (readings and exercises). Weeks are ordered by their index number, allowing creators to structure their Syllabind chronologically.
+This table stores the weekly structure of each syllabind. Each syllabind can have multiple weeks, and each week can contain multiple steps (readings and exercises). Weeks are ordered by their index number, allowing creators to structure their Syllabind chronologically.
 
 ```typescript
 {
@@ -83,12 +83,12 @@ This table stores the weekly structure of each syllabus. Each syllabus can have 
 ```
 
 **Key Features:**
-- Cascade delete: When a syllabus is deleted, all its weeks are automatically removed
+- Cascade delete: When a syllabind is deleted, all its weeks are automatically removed
 - Index-based ordering: Weeks are numbered sequentially for easy navigation
 - Optional metadata: Titles and descriptions provide context for each week
 
 **Indexes:**
-- `weeks_syllabus_id_idx` - Every syllabus view joins weeks by syllabus_id
+- `weeks_syllabus_id_idx` - Every syllabind view joins weeks by syllabus_id
 
 #### Steps Table
 
@@ -129,11 +129,11 @@ This table stores individual learning activities (readings and exercises) within
 - **Exercise:** Practice activities with prompts that learners respond to via submissions
 
 **Indexes:**
-- `steps_week_id_idx` - Every syllabus view joins steps by week_id
+- `steps_week_id_idx` - Every syllabind view joins steps by week_id
 
 #### Enrollments Table
 
-This table tracks which learners (students) are enrolled in which syllabi and their progress through the Syllabind. Each enrollment records the current week index. Step completion is tracked in a separate `completed_steps` junction table for efficient querying and analytics. **Note:** `studentId` references `users.username` (unique) instead of UUID for better logging and readability.
+This table tracks which learners (students) are enrolled in which syllabinds and their progress through the Syllabind. Each enrollment records the current week index. Step completion is tracked in a separate `completed_steps` junction table for efficient querying and analytics. **Note:** `studentId` references `users.username` (unique) instead of UUID for better logging and readability.
 
 ```typescript
 {
@@ -148,14 +148,14 @@ This table tracks which learners (students) are enrolled in which syllabi and th
 ```
 
 **Enrollment Status Values:**
-- `in-progress`: User is actively working on this syllabus (only one per user)
-- `completed`: User finished all content in this syllabus
-- `dropped`: User switched to a different syllabus (automatically set when enrolling in new syllabus)
+- `in-progress`: User is actively working on this syllabind (only one per user)
+- `completed`: User finished all content in this syllabind
+- `dropped`: User switched to a different syllabind (automatically set when enrolling in new syllabind)
 
 **Indexes:**
-- `enrollments_student_syllabus_idx` (UNIQUE) - Enforces one enrollment per student per syllabus + fast lookup
+- `enrollments_student_syllabus_idx` (UNIQUE) - Enforces one enrollment per student per syllabind + fast lookup
 - `enrollments_student_id_idx` - Learner dashboard: lookup enrollments by student
-- `enrollments_syllabus_id_idx` - Analytics, classmates, and learner lists by syllabus
+- `enrollments_syllabus_id_idx` - Analytics, classmates, and learner lists by syllabind
 
 #### Completed Steps Table
 
@@ -177,7 +177,7 @@ This junction table tracks which steps each student has completed. It replaces t
 
 #### Cohorts Table
 
-This table enables grouping learners into cohorts for social learning and collaborative study. Multiple cohorts can exist for a single syllabus (e.g., different semesters, study groups). Cohorts are optional - students can study independently without joining a cohort. **Note:** `syllabusId` FK establishes that cohorts belong to syllabi (one syllabus → many cohorts), NOT the other way around.
+This table enables grouping learners into cohorts for social learning and collaborative study. Multiple cohorts can exist for a single syllabind (e.g., different semesters, study groups). Cohorts are optional - students can study independently without joining a cohort. **Note:** `syllabusId` FK establishes that cohorts belong to syllabinds (one syllabind → many cohorts), NOT the other way around.
 
 ```typescript
 {
@@ -192,19 +192,19 @@ This table enables grouping learners into cohorts for social learning and collab
 ```
 
 **Key Features:**
-- `syllabusId`: Foreign key to syllabi - one syllabus can have many cohorts
-- `creatorId`: Optional owner of the cohort (typically the syllabus creator)
+- `syllabusId`: Foreign key to syllabinds table (DB: `syllabi`) - one syllabind can have many cohorts
+- `creatorId`: Optional owner of the cohort (typically the syllabind creator)
 - `isActive`: Allows archiving old cohorts without deletion
 - `description`: Optional context (e.g., "Fall 2024 semester", "Weekend study group")
 
 **Indexes:**
-- `cohorts_syllabus_idx` - Fast lookup of all cohorts for a syllabus
+- `cohorts_syllabus_idx` - Fast lookup of all cohorts for a syllabind
 - `cohorts_creator_idx` - Fast lookup of cohorts created by a user
 - `cohorts_active_idx` - Partial index on active cohorts only
 
 #### Cohort Members Table
 
-This junction table tracks which students belong to which cohorts. The composite primary key ensures each student can only be a member of a cohort once. Students can belong to multiple cohorts for different syllabi, and cohort membership is independent from enrollment (students can be enrolled without being in any cohort).
+This junction table tracks which students belong to which cohorts. The composite primary key ensures each student can only be a member of a cohort once. Students can belong to multiple cohorts for different syllabinds, and cohort membership is independent from enrollment (students can be enrolled without being in any cohort).
 
 ```typescript
 {
@@ -299,7 +299,7 @@ These TypeScript interfaces define the shape of data used throughout the client 
 
 #### Core Learning Types
 
-The core learning types define the Syllabind structure. A syllabus contains multiple weeks, each week contains multiple steps, and each step is either a reading (with a URL to external content) or an exercise (with a prompt for learners to respond to).
+The core learning types define the Syllabind structure. A syllabind contains multiple weeks, each week contains multiple steps, and each step is either a reading (with a URL to external content) or an exercise (with a prompt for learners to respond to).
 
 
 ```typescript
@@ -320,7 +320,7 @@ interface Step {
 
 interface Week {
   id: number;                        // Primary key (serial)
-  syllabusId: number;                // Foreign key to syllabi table
+  syllabusId: number;                // Foreign key to syllabinds
   index: number;                     // 1-based week number
   title?: string;
   description?: string;
@@ -341,7 +341,7 @@ interface Syllabus {
 
 #### User & Progress Types
 
-User and enrollment models represent the people using the platform and their learning progress. The User interface maps to the database users table, while the Enrollment interface represents a learner's current state within a syllabus, tracking which week they're on and which steps they've completed.
+User and enrollment models represent the people using the platform and their learning progress. The User interface maps to the database users table, while the Enrollment interface represents a learner's current state within a syllabind, tracking which week they're on and which steps they've completed.
 
 ```typescript
 interface User {
@@ -373,7 +373,7 @@ interface Enrollment {
 
 #### Creator Feature Types
 
-These types support creator-specific features like reviewing learner submissions, organizing learners into cohorts (groups), and tracking individual learner profiles. Submissions allow creators to see learner work and provide feedback with grades and rubrics.
+These types support creator-specific features like reviewing learner submissions, organizing learners into cohorts (groups), and tracking individual learner profiles. Submissions allow creators to see learner work and provide feedback with grades and rubrics. *(Note: `syllabusId` field names are retained for DB compatibility.)*
 
 ```typescript
 interface Submission {
@@ -415,14 +415,14 @@ The application has 14 main pages organized by access level. Public pages handle
 
 #### Public Pages
 
-These pages are accessible without authentication, allowing visitors to learn about the platform and browse available syllabi before signing up.
+These pages are accessible without authentication, allowing visitors to learn about the platform and browse available syllabinds before signing up.
 
 | Route | Component | Purpose |
 |-------|-----------|---------|
 | `/welcome` | `Marketing.tsx` | Landing page with signup CTA |
 | `/login` | `Login.tsx` | Authentication entry (signup/login modes) |
-| `/catalog` | `Catalog.tsx` | Browse all published syllabi |
-| `/syllabus/:id` | `SyllabusOverview.tsx` | Syllabus detail with week breakdown |
+| `/catalog` | `Catalog.tsx` | Browse all published syllabinds |
+| `/syllabus/:id` | `SyllabusOverview.tsx` | Syllabind detail with week breakdown |
 
 #### Learner Pages (Auth Required)
 
@@ -430,20 +430,20 @@ These pages provide the core learning experience. Learners see their dashboard, 
 
 | Route | Component | Purpose |
 |-------|-----------|---------|
-| `/` | `Dashboard.tsx` | Home - active syllabus progress or catalog |
+| `/` | `Dashboard.tsx` | Home - active syllabind progress or catalog |
 | `/syllabus/:id/week/:index` | `WeekView.tsx` | Main learning interface with readings & exercises |
 | `/syllabus/:id/completed` | `Completion.tsx` | Celebration screen post-completion |
 | `/profile` | `Profile.tsx` | Edit bio, social links, preferences |
 
 #### Creator Pages (Auth + Creator Flag Required)
 
-These pages are only accessible to users who have enabled creator mode. They provide tools for building syllabi, tracking learner progress, managing cohorts, and providing feedback on submissions.
+These pages are only accessible to users who have enabled creator mode. They provide tools for building syllabinds, tracking learner progress, managing cohorts, and providing feedback on submissions.
 
 | Route | Component | Purpose |
 |-------|-----------|---------|
-| `/creator` | `CreatorDashboard.tsx` | List of created syllabi with management |
-| `/creator/syllabus/new` | `SyllabindEditor.tsx` | Build new syllabus (WYSIWYG editor) |
-| `/creator/syllabus/:id/edit` | `SyllabindEditor.tsx` | Edit existing syllabus (auto-save) |
+| `/creator` | `CreatorDashboard.tsx` | List of created syllabinds with management |
+| `/creator/syllabus/new` | `SyllabindEditor.tsx` | Build new syllabind (WYSIWYG editor) |
+| `/creator/syllabus/:id/edit` | `SyllabindEditor.tsx` | Edit existing syllabind (auto-save) |
 | `/creator/syllabus/:id/analytics` | `SyllabindAnalytics.tsx` | Learner progress visualization |
 | `/creator/syllabus/:id/learners` | `SyllabindLearners.tsx` | Learner list, cohorts, submissions |
 | `/creator/profile` | `CreatorProfile.tsx` | Creator bio, expertise, social links |
@@ -460,11 +460,11 @@ These components are specific to Syllabind's functionality and compose the UI pr
 
 
 - **`Layout.tsx`**: Main application header
-  - Navigation links (Dashboard/Catalog/Creator Studio)
+  - Navigation links (Dashboard/Catalog/Syllabind Builder)
   - User avatar dropdown (Profile, Creator Mode toggle, Logout)
   - Conditional rendering based on auth state
 
-- **`SyllabusCard.tsx`**: Reusable syllabus preview card
+- **`SyllabusCard.tsx`**: Reusable syllabind preview card
   - Displays title, description, level, duration
   - Shows enrolled/completed status
   - CTA button (Enroll/Resume/View)
@@ -575,7 +575,7 @@ Small helper components that provide supporting functionality for other componen
 
 ### State Management
 
-The application uses React Context API for global state management, providing a centralized store that all components can access. This store holds user authentication state, the current user's enrollment data, available syllabi, and methods to modify this state. React Query complements this by handling server data fetching and caching.
+The application uses React Context API for global state management, providing a centralized store that all components can access. This store holds user authentication state, the current user's enrollment data, available syllabinds, and methods to modify this state. React Query complements this by handling server data fetching and caching.
 
 #### Context Store (`client/src/lib/store.tsx`)
 
@@ -586,11 +586,11 @@ The Context Store is the central state management solution. It provides a single
 {
   user: User | null;
   isAuthenticated: boolean;
-  syllabi: Syllabus[];                 // Fetched from /api/syllabi
+  syllabinds: Syllabus[];              // Fetched from /api/syllabinds
   enrollment: Enrollment | null;       // Fetched from /api/enrollments
   completedStepIds: number[];          // Fetched from /api/enrollments/:id/completed-steps
   submissions: Submission[];           // Fetched from /api/enrollments/:id/submissions
-  syllabiLoading: boolean;             // Loading state for syllabi
+  syllabindsLoading: boolean;          // Loading state for syllabinds
   enrollmentLoading: boolean;          // Loading state for enrollments
 }
 ```
@@ -600,7 +600,7 @@ The Context Store is the central state management solution. It provides a single
 All methods now make real API calls to the backend. The store provides methods organized by functionality.
 
 **Data Fetching:**
-- `refreshSyllabi()` - Fetch syllabi from `/api/syllabi`
+- `refreshSyllabinds()` - Fetch syllabinds from `/api/syllabinds`
 - `refreshEnrollments()` - Fetch enrollments from `/api/enrollments`
 
 **Authentication:**
@@ -608,29 +608,29 @@ All methods now make real API calls to the backend. The store provides methods o
 - `updateUser(updates)` - PUT to `/api/users/me`
 
 **Learner Actions:**
-- `enrollInSyllabus(syllabusId, shareProfile?)` - POST to `/api/enrollments` (accepts optional shareProfile)
+- `enrollInSyllabind(syllabusId, shareProfile?)` - POST to `/api/enrollments` (accepts optional shareProfile)
 - `markStepComplete(stepId)` - POST to `/api/enrollments/:id/steps/:id/complete`
 - `markStepIncomplete(stepId)` - DELETE to `/api/enrollments/:id/steps/:id/complete`
 - `saveExercise(stepId, answer, isShared)` - POST to `/api/submissions`
-- `completeActiveSyllabus()` - PUT to `/api/enrollments/:id` with status: 'completed'
+- `completeActiveSyllabind()` - PUT to `/api/enrollments/:id` with status: 'completed'
 
 **Creator Actions:**
-- `createSyllabus(syllabus)` - POST to `/api/syllabi`
-- `updateSyllabus(syllabus)` - PUT to `/api/syllabi/:id`
-- `getLearnersForSyllabus(syllabusId)` - GET from `/api/syllabi/:id/classmates` (public, filters by enrollment shareProfile)
+- `createSyllabind(syllabus)` - POST to `/api/syllabinds`
+- `updateSyllabind(syllabus)` - PUT to `/api/syllabinds/:id`
+- `getLearnersForSyllabind(syllabusId)` - GET from `/api/syllabinds/:id/classmates` (public, filters by enrollment shareProfile)
 - `updateEnrollmentShareProfile(enrollmentId, shareProfile)` - PATCH to `/api/enrollments/:id/share-profile`
 
 **Query Methods:**
-- `getActiveSyllabus()` - Get current enrolled syllabus from local state
-- `getSyllabusById(id)` - Get syllabus from local state (basic metadata only, no weeks/steps)
+- `getActiveSyllabind()` - Get current enrolled syllabind from local state
+- `getSyllabindById(id)` - Get syllabind from local state (basic metadata only, no weeks/steps)
 - `isStepCompleted(stepId)` - Check step completion in local state
 - `getProgressForWeek(syllabusId, weekIndex)` - Calculate week progress
 - `getOverallProgress(syllabusId)` - Calculate total progress
 - `getSubmission(stepId)` - Get submission from local state
 
 **Important Data Loading Patterns:**
-- The cached `syllabi` list from `/api/syllabi` contains only basic metadata (no weeks/steps)
-- Pages that need full Syllabind (weeks/steps) must fetch directly from `/api/syllabi/:id`
+- The cached `syllabinds` list from `/api/syllabinds` contains only basic metadata (no weeks/steps)
+- Pages that need full Syllabind (weeks/steps) must fetch directly from `/api/syllabinds/:id`
 - `SyllabusOverview` and `SyllabindEditor` both fetch full content via direct API calls
 - This prevents loading heavy Syllabind data for catalog browsing
 
@@ -667,34 +667,34 @@ PUT    /api/users/me                - Update own profile (auth)
 POST   /api/users/me/toggle-creator - Toggle creator mode (auth)
 ```
 
-### Syllabus Endpoints
+### Syllabind Endpoints
 
 **Public:**
 ```
-GET    /api/syllabi      - List published syllabi
-GET    /api/syllabi/:id  - Get syllabus with content
+GET    /api/syllabinds      - List published syllabinds
+GET    /api/syllabinds/:id  - Get syllabind with content
 ```
 
 **Protected (Auth + Creator + Ownership):**
 ```
-POST   /api/syllabi             - Create syllabus
-PUT    /api/syllabi/:id         - Update syllabus
-DELETE /api/syllabi/:id         - Delete syllabus
-POST   /api/syllabi/:id/publish - Publish/unpublish syllabus
-GET    /api/creator/syllabi     - Get creator's syllabi (including drafts)
-GET    /api/syllabi/:id/learners    - Get all learners for syllabus (creator only)
+POST   /api/syllabinds             - Create syllabind
+PUT    /api/syllabinds/:id         - Update syllabind
+DELETE /api/syllabinds/:id         - Delete syllabind
+POST   /api/syllabinds/:id/publish - Publish/unpublish syllabind
+GET    /api/creator/syllabinds     - Get creator's syllabinds (including drafts)
+GET    /api/syllabinds/:id/learners    - Get all learners for syllabind (creator only)
 ```
 
 **Public (Auth Required):**
 ```
-GET    /api/syllabi/:id/classmates  - Get classmates who opted in (shareProfile=true)
+GET    /api/syllabinds/:id/classmates  - Get classmates who opted in (shareProfile=true)
 ```
 
 ### Enrollment Endpoints (Auth Required)
 
 ```
 GET    /api/enrollments     - Get user's enrollments
-POST   /api/enrollments     - Enroll in syllabus
+POST   /api/enrollments     - Enroll in syllabind
 PUT    /api/enrollments/:id              - Update enrollment progress
 PATCH  /api/enrollments/:id/share-profile - Toggle enrollment shareProfile
 ```
@@ -718,12 +718,12 @@ PUT    /api/submissions/:id/feedback    - Provide feedback (creator only)
 ### Analytics Endpoints (Auth + Creator + Ownership)
 
 ```
-GET    /api/syllabi/:id/analytics                  - Comprehensive analytics dashboard
-GET    /api/syllabi/:id/analytics/completion-rates - Step completion rates
-GET    /api/syllabi/:id/analytics/completion-times - Average completion times
+GET    /api/syllabinds/:id/analytics                  - Comprehensive analytics dashboard
+GET    /api/syllabinds/:id/analytics/completion-rates - Step completion rates
+GET    /api/syllabinds/:id/analytics/completion-times - Average completion times
 ```
 
-**Comprehensive Analytics Response (`/api/syllabi/:id/analytics`):**
+**Comprehensive Analytics Response (`/api/syllabinds/:id/analytics`):**
 ```typescript
 {
   learnersStarted: number;           // Total enrollments
@@ -760,21 +760,21 @@ The application provides distinct experiences for learners and creators. Learner
 
 ### Learner Experience
 
-The learner journey focuses on structured, progressive learning. Learners browse a catalog of syllabi, enroll in ones that interest them, and work through content week by week. The system tracks their progress and celebrates milestones to maintain engagement.
+The learner journey focuses on structured, progressive learning. Learners browse a catalog of syllabinds, enroll in ones that interest them, and work through content week by week. The system tracks their progress and celebrates milestones to maintain engagement.
 
 
-- **Browse & Enroll**: Discover published syllabi in catalog
+- **Browse & Enroll**: Discover published syllabinds in catalog
 - **Week-by-week Progress**: Structured learning path with locked weeks
 - **Step Tracking**: Mark readings/exercises as complete
 - **Exercise Submission**: Submit URLs or text answers
-- **Profile Sharing**: Per-enrollment opt-in to appear in classmates list (independent per syllabus)
+- **Profile Sharing**: Per-enrollment opt-in to appear in classmates list (independent per syllabind)
 - **Completion Celebration**: Confetti animation + completion badge
 
 ### Creator Experience
 
-Creators get a full content management system for building and managing syllabi. The experience emphasizes ease of use (auto-save, drag-and-drop), insight into learner progress (analytics), and tools for providing personalized feedback.
+Creators get a full content management system for building and managing syllabinds. The experience emphasizes ease of use (auto-save, drag-and-drop), insight into learner progress (analytics), and tools for providing personalized feedback.
 
-- **Rich Editor**: TipTap-powered syllabus builder with drag-and-drop
+- **Rich Editor**: TipTap-powered syllabind builder with drag-and-drop
 - **Auto-save**: Drafts save automatically
 - **Publish Control**: Draft vs. Published status
 - **Analytics Dashboard**: Learner progress visualization with charts
@@ -829,7 +829,7 @@ Located in `/server/auth/index.ts`, this middleware:
 
 ### Protected Routes
 
-All routes except public catalog/syllabus viewing require authentication. Creator-only routes additionally check `isCreator` flag. Resource modification routes verify ownership (username matching).
+All routes except public catalog/syllabind viewing require authentication. Creator-only routes additionally check `isCreator` flag. Resource modification routes verify ownership (username matching).
 
 ### Auth Routes
 
@@ -853,7 +853,7 @@ The codebase is organized into three main directories: `client` (React frontend)
 │   ├── pages/                - 14 page components (~3,100 lines)
 │   ├── components/
 │   │   ├── Layout.tsx        - Main header
-│   │   ├── SyllabusCard.tsx  - Syllabus preview
+│   │   ├── SyllabusCard.tsx  - Syllabind preview
 │   │   ├── AvatarUpload.tsx  - Image uploader
 │   │   └── ui/               - 50+ UI primitives (~5,950 lines)
 │   ├── hooks/                - Custom React hooks
@@ -908,7 +908,7 @@ The application uses modern, well-maintained libraries and frameworks. The front
 
 **Changes Made:**
 
-1. **Syllabi Table:**
+1. **Syllabi Table (DB):**
    - Changed `creator_id` column type from `varchar(UUID)` to `text`
    - Updated existing data: converted UUIDs to usernames
    - Replaced foreign key constraint: `syllabi_creator_id_users_id_fk` → `syllabi_creator_id_users_username_fk`
@@ -942,12 +942,12 @@ psql "$DATABASE_URL" -f migrations/manual_username_migration.sql
 
 **Migration:** `server/migrate-jsonb-to-normalized.ts`
 
-**Objective:** Migrate syllabus content from JSONB storage to normalized relational tables for better query performance and data integrity.
+**Objective:** Migrate syllabind content from JSONB storage to normalized relational tables for better query performance and data integrity.
 
 **Changes Made:**
 - Created `weeks` table with foreign key to `syllabi.id`
 - Created `steps` table with foreign key to `weeks.id`
-- Migrated all existing syllabus content from `syllabi.content` JSONB field to normalized tables
+- Migrated all existing syllabind content from `syllabi.content` JSONB field to normalized tables
 - Step IDs changed from string UUIDs to integer serial primary keys
 - Removed `content` JSONB field from `syllabi` table (2026-01-26)
 
@@ -972,8 +972,8 @@ psql "$DATABASE_URL" -f migrations/manual_username_migration.sql
    - `POST /api/enrollments/:id/steps/:stepId/complete` - Mark step complete
    - `DELETE /api/enrollments/:id/steps/:stepId/complete` - Unmark step
    - `GET /api/enrollments/:id/completed-steps` - Get completed steps
-   - `GET /api/syllabi/:id/analytics/completion-rates` - Step completion analytics
-   - `GET /api/syllabi/:id/analytics/completion-times` - Average completion times
+   - `GET /api/syllabinds/:id/analytics/completion-rates` - Step completion analytics
+   - `GET /api/syllabinds/:id/analytics/completion-times` - Average completion times
 
 **Benefits:**
 - **Efficient Queries:** Direct lookups instead of JSONB array scans
@@ -996,7 +996,7 @@ psql "$DATABASE_URL" -f migrations/manual_username_migration.sql
 
 **Changes Made:**
 1. **11 new indexes across 7 tables** — sessions, syllabi, enrollments, weeks, steps, submissions, chat_messages
-2. **Unique index on enrollments** — `(student_id, syllabus_id)` enforces one-enrollment-per-student business rule at the database level
+2. **Unique index on enrollments** — `(student_id, syllabus_id)` enforces one-enrollment-per-student-per-syllabind business rule at the database level
 3. **Tables already indexed** (no changes): completed_steps (0001), cohorts/cohort_members (0002), users (unique constraints)
 
 **Last Updated:** 2026-02-09
@@ -1053,11 +1053,11 @@ psql "$DATABASE_URL" -f migrations/manual_username_migration.sql
 
 ### Single Active Enrollment (2026-01-28)
 
-Implemented single-active-syllabus behavior for learners:
+Implemented single-active-syllabind behavior for learners:
 - Users can only have one `in-progress` enrollment at a time
-- When enrolling in a new syllabus, previous in-progress enrollments are automatically marked as `dropped`
+- When enrolling in a new syllabind, previous in-progress enrollments are automatically marked as `dropped`
 - Dropped enrollments are excluded from analytics, learner lists, and classmate lists
-- Re-enrolling in a previously dropped syllabus reactivates that enrollment
+- Re-enrolling in a previously dropped syllabind reactivates that enrollment
 - Completed enrollments are preserved and not affected by switching
 
 ### Real-Time Analytics Dashboard (2026-01-28)
@@ -1085,7 +1085,7 @@ Reduced token consumption for AI-powered Syllabind generation and chat refinemen
 - Applied to both generation and chat handlers
 
 **Chat Optimizations:**
-- Removed full syllabus JSON serialization from system prompt (saved ~3,000-5,000 tokens/message)
+- Removed full syllabind JSON serialization from system prompt (saved ~3,000-5,000 tokens/message)
 - Replaced with on-demand `read_current_Syllabind` tool
 - Message history truncated to last 10 messages (`MAX_HISTORY_MESSAGES`)
 
@@ -1096,7 +1096,7 @@ Reduced token consumption for AI-powered Syllabind generation and chat refinemen
 **Files Modified:**
 - `server/utils/claudeClient.ts` - Added `CLAUDE_MODEL`, reduced web search limits
 - `server/utils/SyllabindGenerator.ts` - Model switching, prompt caching
-- `server/websocket/chatSyllabind.ts` - Model switching, prompt caching, history truncation, removed syllabus JSON
+- `server/websocket/chatSyllabind.ts` - Model switching, prompt caching, history truncation, removed syllabind JSON
 - `server/utils/rateLimitCheck.ts` - Uses shared model constant
 
 ### Syllabind Generation Structure (2026-02-03)
@@ -1317,7 +1317,7 @@ Refined the generation streaming effect so that step cards appear one-by-one as 
 
 ### AI creationDate Field Population Fix (2026-02-03)
 
-**Problem:** AI-generated syllabi rarely included `creationDate` values for reading steps because:
+**Problem:** AI-generated syllabinds rarely included `creationDate` values for reading steps because:
 1. The `creationDate` field had no description in the tool schema telling Claude what it's for or what format to use
 2. The prompt said "publication dates" but the field was named `creationDate` (terminology mismatch)
 3. The `add_step` tool in `SYLLABIND_CHAT_TOOLS` was missing the `creationDate` field entirely
@@ -1381,13 +1381,13 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 
 ### Backend Test Suite Expansion (2026-02-09)
 
-**Problem:** Test coverage only included ~37% of server features: basic storage operations, auth workflow, a subset of syllabus routes, and markdownToHtml utility. ~25 API routes and 2 utility modules had zero test coverage.
+**Problem:** Test coverage only included ~37% of server features: basic storage operations, auth workflow, a subset of syllabind routes, and markdownToHtml utility. ~25 API routes and 2 utility modules had zero test coverage.
 
 **Solution:** Added 10 new test files covering all untested API routes and utility modules, expanding from 4 to 14 test suites (41 → 151 tests).
 
 **New Test Files:**
 - `server/__tests__/user-routes.test.ts` - GET/PUT user profiles, toggle-creator (9 tests)
-- `server/__tests__/creator-routes.test.ts` - Creator syllabi, delete, batch-delete, publish, classmates, step delete (17 tests)
+- `server/__tests__/creator-routes.test.ts` - Creator syllabinds, delete, batch-delete, publish, classmates, step delete (17 tests)
 - `server/__tests__/enrollment-routes.test.ts` - CRUD enrollments, share-profile toggle (13 tests)
 - `server/__tests__/completion-routes.test.ts` - Step complete/incomplete, completed-steps list (7 tests)
 - `server/__tests__/submission-routes.test.ts` - Create submissions, feedback with ownership chain (8 tests)
@@ -1430,7 +1430,7 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 
 ### WebSocket Authentication & Authorization (2026-02-09)
 
-**Problem:** All three WebSocket endpoints (`/ws/generate-syllabind/`, `/ws/regenerate-week/`, `/ws/chat-syllabind/`) bypassed Express middleware entirely, allowing unauthenticated users to connect and perform destructive operations on any syllabus by guessing integer IDs. Additionally, the `update_basics` chat tool handler passed unfiltered AI output to `storage.updateSyllabus`.
+**Problem:** All three WebSocket endpoints (`/ws/generate-syllabind/`, `/ws/regenerate-week/`, `/ws/chat-syllabind/`) bypassed Express middleware entirely, allowing unauthenticated users to connect and perform destructive operations on any syllabind by guessing integer IDs. Additionally, the `update_basics` chat tool handler passed unfiltered AI output to `storage.updateSyllabind`.
 
 **Solution:**
 
@@ -1441,8 +1441,8 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 
 2. **Connection-Level Auth + Ownership** (`server/index.ts`):
    - All WebSocket connections now authenticate via session cookie (close code 4401 if unauthenticated)
-   - Ownership verified: `syllabus.creatorId === user.username` (close code 4403 if not owner)
-   - Syllabus existence checked (close code 4404 if not found)
+   - Ownership verified: `syllabind.creatorId === user.username` (close code 4403 if not owner)
+   - Syllabind existence checked (close code 4404 if not found)
 
 3. **Field Allowlisting** (`server/websocket/chatSyllabind.ts`):
    - `update_basics` handler now destructures only `title`, `description`, `audienceLevel`, `durationWeeks`
@@ -1497,9 +1497,9 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
    - "Choose from existing courses" card (BookOpen icon) → links to `/catalog`
    - Uses AnimatedPage/AnimatedCard for entrance animations
 
-2. **Layout.tsx — Curator Studio always visible:**
+2. **Layout.tsx — Syllabind Builder always visible:**
    - Removed `user?.isCreator` conditional from both desktop and mobile nav
-   - "Curator Studio" link now shows for all authenticated users
+   - "Syllabind Builder" link now shows for all authenticated users
 
 3. **Layout.tsx — Removed creator/learner toggle:**
    - Removed "Switch to Learner" / "Switch to Creator" dropdown menu item
@@ -1514,3 +1514,37 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 - `client/src/pages/Dashboard.tsx` - Welcome screen with two-card layout
 - `client/src/components/Layout.tsx` - Unconditional nav, removed toggle
 - `client/src/pages/Login.tsx` - Removed role picker
+
+### Fix Completed Syllabinds Not Showing on Dashboard (2026-02-15)
+
+**Problem:** The "Completed Journeys" section on the Dashboard never displayed any syllabinds because `completedSyllabusIds` was always `[]` (hardcoded with a `// TODO` comment). Users who completed syllabinds couldn't see them on their dashboard.
+
+**Root cause:** `refreshEnrollments()` in `store.tsx` only tracked the active in-progress enrollment and never extracted completed enrollment data from the API response.
+
+**Fixes:**
+
+1. **`store.tsx` - `refreshEnrollments()`:** Extract `completedSyllabusIds` from enrollments with `status: 'completed'`. Only use in-progress enrollment for active (removed fallback to completed/dropped enrollments).
+
+2. **`store.tsx` - `completeActiveSyllabind()`:** When a syllabind is completed, add its ID to `completedSyllabusIds` and clear `activeSyllabusId` so the user isn't shown a completed syllabind as "Current Focus".
+
+3. **`Dashboard.tsx` - Welcome screen guard:** Added `completedSyllabinds.length === 0` check so users with completed syllabinds (but no active enrollment) see the dashboard with "Completed Journeys" instead of the first-time welcome screen.
+
+**Files Modified:**
+- `client/src/lib/store.tsx` - Fixed `refreshEnrollments()` and `completeActiveSyllabus()`
+- `client/src/pages/Dashboard.tsx` - Updated welcome screen guard
+
+### Ensure Completed Syllabinds Always Show on Dashboard (2026-02-15)
+
+**Problem:** Completed syllabinds only appeared in the "Completed Journeys" section if the enrollment had been explicitly marked as `completed` via a debug dropdown. There was no proper UX flow to transition a 100%-complete syllabus into the completed state, so the Completed Journeys section was effectively empty for most users.
+
+**Fixes:**
+
+1. **`Completion.tsx` - Auto-complete enrollment:** When the user visits the completion/certificate page, the enrollment is automatically marked as `completed` via `completeActiveSyllabus()`. Uses a ref to prevent duplicate calls.
+
+2. **`Dashboard.tsx` - "Mark Complete" button:** Added an explicit "Mark Complete" button on the active syllabus card when progress is 100%, allowing users to finalize completion directly from the Dashboard.
+
+3. **`Dashboard.tsx` - Loading state:** Added enrollment/syllabinds loading check before rendering to prevent the welcome screen from flashing while data loads.
+
+**Files Modified:**
+- `client/src/pages/Completion.tsx` - Auto-complete enrollment on mount
+- `client/src/pages/Dashboard.tsx` - Loading state, "Mark Complete" button

@@ -8,7 +8,7 @@
  */
 
 import { db } from './db';
-import { syllabi, weeks, steps } from '../shared/schema';
+import { syllabinds, weeks, steps } from '../shared/schema';
 import { eq } from 'drizzle-orm';
 
 interface JSONBStep {
@@ -39,15 +39,15 @@ async function migrateData() {
   console.log('🚀 Starting JSONB to Normalized migration...\n');
 
   try {
-    // Fetch all syllabi with JSONB content
-    const allSyllabi = await db.select().from(syllabi);
-    console.log(`📚 Found ${allSyllabi.length} syllabi to migrate\n`);
+    // Fetch all syllabinds with JSONB content
+    const allSyllabinds = await db.select().from(syllabinds);
+    console.log(`📚 Found ${allSyllabinds.length} syllabinds to migrate\n`);
 
     let totalWeeksMigrated = 0;
     let totalStepsMigrated = 0;
     const stepIdMapping: Record<string, number> = {}; // old string ID -> new integer ID
 
-    for (const syllabus of allSyllabi) {
+    for (const syllabus of allSyllabinds) {
       console.log(`\n📖 Migrating syllabus: "${syllabus.title}" (ID: ${syllabus.id})`);
 
       // NOTE: This migration script has already been run. The 'content' field was removed from the schema.
@@ -108,7 +108,7 @@ async function migrateData() {
     }
 
     console.log(`\n\n✨ Migration Summary:`);
-    console.log(`   📚 Syllabi processed: ${allSyllabi.length}`);
+    console.log(`   📚 Syllabinds processed: ${allSyllabinds.length}`);
     console.log(`   📅 Weeks migrated: ${totalWeeksMigrated}`);
     console.log(`   📝 Steps migrated: ${totalStepsMigrated}`);
     console.log(`\n✅ Migration completed successfully!`);

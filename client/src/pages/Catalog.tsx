@@ -3,10 +3,10 @@ import { SyllabusCard } from '@/components/SyllabusCard';
 import { AnimatedPage, AnimatedCard } from '@/components/ui/animated-container';
 
 export default function Catalog() {
-  const { syllabi } = useStore();
+  const { syllabinds } = useStore();
 
-  // Only show published syllabi in catalog
-  const publishedSyllabi = syllabi.filter(s => s.status === 'published');
+  // Only show published syllabinds in catalog
+  const publishedSyllabinds = syllabinds.filter(s => s.status === 'published');
 
   return (
     <AnimatedPage className="max-w-6xl mx-auto space-y-8">
@@ -18,7 +18,7 @@ export default function Catalog() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {publishedSyllabi.map((syllabus, index) => (
+        {publishedSyllabinds.map((syllabus, index) => (
           <AnimatedCard key={syllabus.id} delay={0.05 * index}>
             <SyllabusCard syllabus={syllabus} />
           </AnimatedCard>

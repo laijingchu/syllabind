@@ -116,21 +116,21 @@ describe('Storage Layer', () => {
       updatedAt: new Date()
     };
 
-    describe('getAllSyllabi', () => {
-      it('should retrieve all syllabi', async () => {
-        mockStorage.getAllSyllabi.mockResolvedValue([mockSyllabus]);
+    describe('listSyllabinds', () => {
+      it('should retrieve all syllabinds', async () => {
+        mockStorage.listSyllabinds.mockResolvedValue([mockSyllabus]);
 
-        const result = await mockStorage.getAllSyllabi();
+        const result = await mockStorage.listSyllabinds();
 
-        expect(mockStorage.getAllSyllabi).toHaveBeenCalled();
+        expect(mockStorage.listSyllabinds).toHaveBeenCalled();
         expect(result).toHaveLength(1);
         expect(result[0]).toEqual(mockSyllabus);
       });
 
-      it('should return empty array when no syllabi exist', async () => {
-        mockStorage.getAllSyllabi.mockResolvedValue([]);
+      it('should return empty array when no syllabinds exist', async () => {
+        mockStorage.listSyllabinds.mockResolvedValue([]);
 
-        const result = await mockStorage.getAllSyllabi();
+        const result = await mockStorage.listSyllabinds();
 
         expect(result).toEqual([]);
       });

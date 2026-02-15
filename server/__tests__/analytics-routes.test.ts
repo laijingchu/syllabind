@@ -11,8 +11,8 @@ describe('Analytics Routes', () => {
       next();
     };
 
-    // GET /api/syllabi/:id/analytics
-    a.get('/api/syllabi/:id/analytics', authMiddleware, async (req, res) => {
+    // GET /api/syllabinds/:id/analytics
+    a.get('/api/syllabinds/:id/analytics', authMiddleware, async (req, res) => {
       const syllabusId = parseInt(req.params.id);
       const username = (req.user as any).username;
       const syllabus = await mockStorage.getSyllabus(syllabusId);
@@ -23,8 +23,8 @@ describe('Analytics Routes', () => {
       res.json(analytics);
     });
 
-    // GET /api/syllabi/:id/analytics/completion-rates
-    a.get('/api/syllabi/:id/analytics/completion-rates', authMiddleware, async (req, res) => {
+    // GET /api/syllabinds/:id/analytics/completion-rates
+    a.get('/api/syllabinds/:id/analytics/completion-rates', authMiddleware, async (req, res) => {
       const syllabusId = parseInt(req.params.id);
       const username = (req.user as any).username;
       const syllabus = await mockStorage.getSyllabus(syllabusId);
@@ -35,8 +35,8 @@ describe('Analytics Routes', () => {
       res.json(rates);
     });
 
-    // GET /api/syllabi/:id/analytics/completion-times
-    a.get('/api/syllabi/:id/analytics/completion-times', authMiddleware, async (req, res) => {
+    // GET /api/syllabinds/:id/analytics/completion-times
+    a.get('/api/syllabinds/:id/analytics/completion-times', authMiddleware, async (req, res) => {
       const syllabusId = parseInt(req.params.id);
       const username = (req.user as any).username;
       const syllabus = await mockStorage.getSyllabus(syllabusId);
@@ -59,7 +59,7 @@ describe('Analytics Routes', () => {
     resetAllMocks();
   });
 
-  describe('GET /api/syllabi/:id/analytics', () => {
+  describe('GET /api/syllabinds/:id/analytics', () => {
     it('should return analytics data for creator', async () => {
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'testcreator' });
       const analyticsData = {
@@ -73,23 +73,23 @@ describe('Analytics Routes', () => {
       };
       mockStorage.getSyllabusAnalytics.mockResolvedValue(analyticsData);
 
-      const res = await request(creatorApp).get('/api/syllabi/1/analytics').expect(200);
+      const res = await request(creatorApp).get('/api/syllabinds/1/analytics').expect(200);
       expect(res.body.learnersStarted).toBe(10);
       expect(res.body.completionRate).toBe(30);
     });
 
     it('should return 403 when not creator', async () => {
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'othercreator' });
-      await request(creatorApp).get('/api/syllabi/1/analytics').expect(403);
+      await request(creatorApp).get('/api/syllabinds/1/analytics').expect(403);
     });
 
     it('should return 403 when syllabus not found', async () => {
       mockStorage.getSyllabus.mockResolvedValue(null);
-      await request(creatorApp).get('/api/syllabi/999/analytics').expect(403);
+      await request(creatorApp).get('/api/syllabinds/999/analytics').expect(403);
     });
   });
 
-  describe('GET /api/syllabi/:id/analytics/completion-rates', () => {
+  describe('GET /api/syllabinds/:id/analytics/completion-rates', () => {
     it('should return step completion rates', async () => {
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'testcreator' });
       const rates = [
@@ -99,7 +99,7 @@ describe('Analytics Routes', () => {
       mockStorage.getStepCompletionRates.mockResolvedValue(rates);
 
       const res = await request(creatorApp)
-        .get('/api/syllabi/1/analytics/completion-rates')
+        .get('/api/syllabinds/1/analytics/completion-rates')
         .expect(200);
 
       expect(res.body).toHaveLength(2);
@@ -109,12 +109,12 @@ describe('Analytics Routes', () => {
     it('should return 403 when not creator', async () => {
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'othercreator' });
       await request(creatorApp)
-        .get('/api/syllabi/1/analytics/completion-rates')
+        .get('/api/syllabinds/1/analytics/completion-rates')
         .expect(403);
     });
   });
 
-  describe('GET /api/syllabi/:id/analytics/completion-times', () => {
+  describe('GET /api/syllabinds/:id/analytics/completion-times', () => {
     it('should return average completion times', async () => {
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'testcreator' });
       const times = [
@@ -124,7 +124,7 @@ describe('Analytics Routes', () => {
       mockStorage.getAverageCompletionTimes.mockResolvedValue(times);
 
       const res = await request(creatorApp)
-        .get('/api/syllabi/1/analytics/completion-times')
+        .get('/api/syllabinds/1/analytics/completion-times')
         .expect(200);
 
       expect(res.body).toHaveLength(2);
@@ -134,7 +134,7 @@ describe('Analytics Routes', () => {
     it('should return 403 when not creator', async () => {
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'othercreator' });
       await request(creatorApp)
-        .get('/api/syllabi/1/analytics/completion-times')
+        .get('/api/syllabinds/1/analytics/completion-times')
         .expect(403);
     });
   });

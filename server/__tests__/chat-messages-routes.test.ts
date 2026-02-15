@@ -11,8 +11,8 @@ describe('Chat Messages Routes', () => {
       next();
     };
 
-    // GET /api/syllabi/:id/chat-messages
-    a.get('/api/syllabi/:id/chat-messages', authMiddleware, async (req, res) => {
+    // GET /api/syllabinds/:id/chat-messages
+    a.get('/api/syllabinds/:id/chat-messages', authMiddleware, async (req, res) => {
       const syllabusId = parseInt(req.params.id);
       const username = (req.user as any).username;
       const syllabus = await mockStorage.getSyllabus(syllabusId);
@@ -23,8 +23,8 @@ describe('Chat Messages Routes', () => {
       res.json(messages);
     });
 
-    // POST /api/syllabi/:id/chat-messages
-    a.post('/api/syllabi/:id/chat-messages', authMiddleware, async (req, res) => {
+    // POST /api/syllabinds/:id/chat-messages
+    a.post('/api/syllabinds/:id/chat-messages', authMiddleware, async (req, res) => {
       const syllabusId = parseInt(req.params.id);
       const username = (req.user as any).username;
       const { role, content } = req.body;
@@ -48,7 +48,7 @@ describe('Chat Messages Routes', () => {
     resetAllMocks();
   });
 
-  describe('GET /api/syllabi/:id/chat-messages', () => {
+  describe('GET /api/syllabinds/:id/chat-messages', () => {
     it('should return chat messages for creator', async () => {
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'testcreator' });
       const messages = [
@@ -57,23 +57,23 @@ describe('Chat Messages Routes', () => {
       ];
       mockStorage.getChatMessages.mockResolvedValue(messages);
 
-      const res = await request(creatorApp).get('/api/syllabi/1/chat-messages').expect(200);
+      const res = await request(creatorApp).get('/api/syllabinds/1/chat-messages').expect(200);
       expect(res.body).toHaveLength(2);
       expect(res.body[0].role).toBe('user');
     });
 
     it('should return 403 when not creator/owner', async () => {
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'othercreator' });
-      await request(creatorApp).get('/api/syllabi/1/chat-messages').expect(403);
+      await request(creatorApp).get('/api/syllabinds/1/chat-messages').expect(403);
     });
 
     it('should return 403 when syllabus not found', async () => {
       mockStorage.getSyllabus.mockResolvedValue(null);
-      await request(creatorApp).get('/api/syllabi/999/chat-messages').expect(403);
+      await request(creatorApp).get('/api/syllabinds/999/chat-messages').expect(403);
     });
   });
 
-  describe('POST /api/syllabi/:id/chat-messages', () => {
+  describe('POST /api/syllabinds/:id/chat-messages', () => {
     it('should save a chat message', async () => {
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'testcreator' });
       mockStorage.createChatMessage.mockResolvedValue({
@@ -81,7 +81,7 @@ describe('Chat Messages Routes', () => {
       });
 
       const res = await request(creatorApp)
-        .post('/api/syllabi/1/chat-messages')
+        .post('/api/syllabinds/1/chat-messages')
         .send({ role: 'user', content: 'Add more readings' })
         .expect(200);
 
@@ -97,7 +97,7 @@ describe('Chat Messages Routes', () => {
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'othercreator' });
 
       await request(creatorApp)
-        .post('/api/syllabi/1/chat-messages')
+        .post('/api/syllabinds/1/chat-messages')
         .send({ role: 'user', content: 'test' })
         .expect(403);
     });

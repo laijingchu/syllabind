@@ -2,17 +2,28 @@ import { Link, useRoute } from 'wouter';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Award, ArrowRight } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 
 export default function Completion() {
   const [match, params] = useRoute('/syllabus/:id/completed');
-  const { getSyllabusById, enrollment } = useStore();
-  
-  // In a real app we'd mark it as completed in store here if not already.
-  // For MVP we assume the button in WeekView took us here.
-  
-  const syllabus = params?.id ? getSyllabusById(parseInt(params.id)) : undefined;
+  const { getSyllabusById, enrollment, completeActiveSyllabus } = useStore();
+  const completedRef = useRef(false);
+
+  const syllabusId = params?.id ? parseInt(params.id) : undefined;
+  const syllabus = syllabusId ? getSyllabusById(syllabusId) : undefined;
+
+  // Mark the enrollment as completed when viewing the completion page
+  useEffect(() => {
+    if (
+      !completedRef.current &&
+      syllabusId &&
+      enrollment?.activeSyllabusId === syllabusId
+    ) {
+      completedRef.current = true;
+      completeActiveSyllabus();
+    }
+  }, [syllabusId, enrollment?.activeSyllabusId]);
 
   useEffect(() => {
     // Fire confetti on mount

@@ -47,7 +47,7 @@ export default function SyllabindAnalytics() {
   const { data: analytics, isLoading, error } = useQuery<AnalyticsData>({
     queryKey: ['syllabus-analytics', syllabusId],
     queryFn: async () => {
-      const res = await fetch(`/api/syllabi/${syllabusId}/analytics`, {
+      const res = await fetch(`/api/syllabinds/${syllabusId}/analytics`, {
         credentials: 'include'
       });
       if (!res.ok) throw new Error('Failed to fetch analytics');
@@ -61,7 +61,7 @@ export default function SyllabindAnalytics() {
   if (!syllabus) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <p className="text-muted-foreground mb-4">Syllabus not found</p>
+        <p className="text-muted-foreground mb-4">Syllabind not found</p>
         <Link href="/creator">
           <Button variant="outline">Back to Dashboard</Button>
         </Link>
@@ -162,7 +162,7 @@ export default function SyllabindAnalytics() {
             ) : (
               <div className="text-2xl font-bold">{analytics?.completionRate ?? 0}%</div>
             )}
-            <p className="text-xs text-muted-foreground mt-1">finished the syllabus</p>
+            <p className="text-xs text-muted-foreground mt-1">finished the syllabind</p>
           </CardContent>
         </Card>
 

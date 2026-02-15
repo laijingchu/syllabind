@@ -85,7 +85,7 @@ export default function SyllabindEditor() {
   useEffect(() => {
     if (!isNew && params?.id) {
       const syllabusId = parseInt(params.id);
-      fetch(`/api/syllabi/${syllabusId}`, { credentials: 'include' })
+      fetch(`/api/syllabinds/${syllabusId}`, { credentials: 'include' })
         .then(res => {
           if (!res.ok) throw new Error('Failed to fetch syllabus');
           return res.json();
@@ -118,7 +118,7 @@ export default function SyllabindEditor() {
 
   // Auto-save effect
   useEffect(() => {
-    // Skip initial load, empty title, or unsaved syllabi (negative IDs)
+    // Skip initial load, empty title, or unsaved syllabinds (negative IDs)
     if (!formData.title || formData.id < 0) return;
 
     const save = async () => {
@@ -126,7 +126,7 @@ export default function SyllabindEditor() {
       // Simulate network delay for realism
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Only auto-save existing syllabi (positive IDs)
+      // Only auto-save existing syllabinds (positive IDs)
       updateSyllabus(debouncedFormData);
 
       setLastSaved(new Date());
@@ -227,7 +227,7 @@ export default function SyllabindEditor() {
         variant: "destructive"
       });
       // Revert by refetching
-      const response = await fetch(`/api/syllabi/${formData.id}`, { credentials: 'include' });
+      const response = await fetch(`/api/syllabinds/${formData.id}`, { credentials: 'include' });
       if (response.ok) {
         const updated = await response.json();
         setFormData(updated);
@@ -418,7 +418,7 @@ export default function SyllabindEditor() {
               title: "Syllabind Generated!",
               description: "Your Syllabind has been generated. Review and make any edits.",
             });
-            fetch(`/api/syllabi/${syllabusId}`, { credentials: 'include' })
+            fetch(`/api/syllabinds/${syllabusId}`, { credentials: 'include' })
               .then(res => res.json())
               .then(updated => {
                 setFormData(updated);
@@ -609,7 +609,7 @@ export default function SyllabindEditor() {
             });
 
             // Refresh full syllabus data
-            fetch(`/api/syllabi/${formData.id}`, { credentials: 'include' })
+            fetch(`/api/syllabinds/${formData.id}`, { credentials: 'include' })
               .then(res => res.json())
               .then(updated => setFormData(updated));
             break;
@@ -678,7 +678,7 @@ export default function SyllabindEditor() {
 
   const handleSyllabindUpdate = async () => {
     if (formData.id > 0) {
-      const response = await fetch(`/api/syllabi/${formData.id}`, {
+      const response = await fetch(`/api/syllabinds/${formData.id}`, {
         credentials: 'include'
       });
       if (response.ok) {
@@ -702,11 +702,11 @@ export default function SyllabindEditor() {
     }
 
     const message = statusOverride === 'published'
-      ? "Syllabus published successfully!"
+      ? "Syllabind published successfully!"
       : "Your changes have been saved successfully.";
 
     toast({
-      title: statusOverride === 'published' ? "Syllabus Published" : "Syllabus saved",
+      title: statusOverride === 'published' ? "Syllabind Published" : "Syllabind saved",
       description: message
     });
     setLocation('/creator');
@@ -717,7 +717,7 @@ export default function SyllabindEditor() {
     navigator.clipboard.writeText(draftUrl);
     toast({ 
       title: "Draft Link Copied!", 
-      description: "Share this link with anyone to preview your syllabus before publishing.",
+      description: "Share this link with anyone to preview your syllabind before publishing.",
       duration: 3000,
     });
   };

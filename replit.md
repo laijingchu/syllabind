@@ -2,13 +2,13 @@
 
 ## Overview
 
-Syllabind is a full-stack learning platform that connects content curators who build multi-week syllabi with learners seeking structured educational experiences. The platform emphasizes a calm, focused approach to learning—one syllabus at a time.
+Syllabind is a full-stack learning platform that connects content curators who build multi-week syllabinds with learners seeking structured educational experiences. The platform emphasizes a calm, focused approach to learning—one syllabind at a time.
 
 **Core Purpose:** Transform scattered online resources (articles, videos, podcasts) into cohesive 4-week learning journeys that learners can actually complete.
 
 **Key User Roles:**
-- **Learners** - Enroll in syllabi, track progress week-by-week, complete readings and exercises
-- **Creators/Curators** - Build and publish syllabi, view analytics, manage learner cohorts
+- **Learners** - Enroll in syllabinds, track progress week-by-week, complete readings and exercises
+- **Creators/Curators** - Build and publish syllabinds, view analytics, manage learner cohorts
 
 ## User Preferences
 
@@ -47,8 +47,8 @@ Preferred communication style: Simple, everyday language.
 
 **Core Tables:**
 - `users` - User profiles with creator flag and social links
-- `syllabi` - Course content with JSONB for weeks/steps structure
-- `enrollments` - Learner progress tracking per syllabus
+- `syllabi` - Syllabinds: course content with weeks/steps structure
+- `enrollments` - Learner progress tracking per syllabind
 - `sessions` - Required for Replit Auth session management
 
 ### Authentication

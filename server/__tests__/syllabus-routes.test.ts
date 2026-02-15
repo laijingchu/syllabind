@@ -13,16 +13,16 @@ describe('Syllabus Routes', () => {
     app.use(express.json());
 
     // Mock syllabus routes
-    app.get('/api/syllabi', async (req, res) => {
+    app.get('/api/syllabinds', async (req, res) => {
       try {
-        const syllabi = await mockStorage.getAllSyllabi();
-        res.json(syllabi);
+        const syllabinds = await mockStorage.listSyllabinds();
+        res.json(syllabinds);
       } catch (error) {
-        res.status(500).json({ message: 'Failed to fetch syllabi' });
+        res.status(500).json({ message: 'Failed to fetch syllabinds' });
       }
     });
 
-    app.get('/api/syllabi/:id', async (req, res) => {
+    app.get('/api/syllabinds/:id', async (req, res) => {
       try {
         const id = parseInt(req.params.id);
         const syllabus = await mockStorage.getSyllabusById(id);
@@ -37,7 +37,7 @@ describe('Syllabus Routes', () => {
       }
     });
 
-    app.post('/api/syllabi', async (req, res) => {
+    app.post('/api/syllabinds', async (req, res) => {
       try {
         // Mock auth check
         if (!req.user) {
@@ -53,7 +53,7 @@ describe('Syllabus Routes', () => {
       }
     });
 
-    app.put('/api/syllabi/:id', async (req, res) => {
+    app.put('/api/syllabinds/:id', async (req, res) => {
       try {
         // Mock auth check
         if (!req.user) {
@@ -80,7 +80,7 @@ describe('Syllabus Routes', () => {
       }
     });
 
-    app.get('/api/syllabi/:id/learners', async (req, res) => {
+    app.get('/api/syllabinds/:id/learners', async (req, res) => {
       try {
         const id = parseInt(req.params.id);
         const learners = await mockStorage.getLearnersBySyllabusId(id);
@@ -96,9 +96,9 @@ describe('Syllabus Routes', () => {
     resetAllMocks();
   });
 
-  describe('GET /api/syllabi', () => {
-    it('should return all syllabi', async () => {
-      const mockSyllabi = [
+  describe('GET /api/syllabinds', () => {
+    it('should return all syllabinds', async () => {
+      const mockSyllabinds = [
         {
           id: 1,
           title: 'Test Syllabus 1',
@@ -119,29 +119,29 @@ describe('Syllabus Routes', () => {
         }
       ];
 
-      mockStorage.getAllSyllabi.mockResolvedValue(mockSyllabi);
+      mockStorage.listSyllabinds.mockResolvedValue(mockSyllabinds);
 
       const response = await request(app)
-        .get('/api/syllabi')
+        .get('/api/syllabinds')
         .expect(200);
 
-      expect(mockStorage.getAllSyllabi).toHaveBeenCalled();
+      expect(mockStorage.listSyllabinds).toHaveBeenCalled();
       expect(response.body).toHaveLength(2);
       expect(response.body[0].title).toEqual('Test Syllabus 1');
     });
 
-    it('should return empty array when no syllabi exist', async () => {
-      mockStorage.getAllSyllabi.mockResolvedValue([]);
+    it('should return empty array when no syllabinds exist', async () => {
+      mockStorage.listSyllabinds.mockResolvedValue([]);
 
       const response = await request(app)
-        .get('/api/syllabi')
+        .get('/api/syllabinds')
         .expect(200);
 
       expect(response.body).toEqual([]);
     });
   });
 
-  describe('GET /api/syllabi/:id', () => {
+  describe('GET /api/syllabinds/:id', () => {
     it('should return syllabus by ID', async () => {
       const mockSyllabus = {
         id: 1,
@@ -165,7 +165,7 @@ describe('Syllabus Routes', () => {
       mockStorage.getSyllabusById.mockResolvedValue(mockSyllabus);
 
       const response = await request(app)
-        .get('/api/syllabi/1')
+        .get('/api/syllabinds/1')
         .expect(200);
 
       expect(mockStorage.getSyllabusById).toHaveBeenCalledWith(1);
@@ -177,14 +177,14 @@ describe('Syllabus Routes', () => {
       mockStorage.getSyllabusById.mockResolvedValue(null);
 
       const response = await request(app)
-        .get('/api/syllabi/999')
+        .get('/api/syllabinds/999')
         .expect(404);
 
       expect(response.body.message).toEqual('Syllabus not found');
     });
   });
 
-  describe('POST /api/syllabi', () => {
+  describe('POST /api/syllabinds', () => {
     it('should create new syllabus when authenticated as creator', async () => {
       const newSyllabus = {
         title: 'New Syllabus',
@@ -203,7 +203,7 @@ describe('Syllabus Routes', () => {
         next();
       });
 
-      authenticatedApp.post('/api/syllabi', async (req, res) => {
+      authenticatedApp.post('/api/syllabinds', async (req, res) => {
         try {
           if (!req.user) {
             return res.status(401).json({ message: 'Unauthorized' });
@@ -221,7 +221,7 @@ describe('Syllabus Routes', () => {
       mockStorage.createSyllabus.mockResolvedValue({ id: 1, ...newSyllabus });
 
       const response = await request(authenticatedApp)
-        .post('/api/syllabi')
+        .post('/api/syllabinds')
         .send(newSyllabus)
         .expect(201);
 
@@ -231,7 +231,7 @@ describe('Syllabus Routes', () => {
 
     it('should return 401 when not authenticated', async () => {
       const response = await request(app)
-        .post('/api/syllabi')
+        .post('/api/syllabinds')
         .send({
           title: 'New Syllabus',
           description: 'Description'
@@ -242,7 +242,7 @@ describe('Syllabus Routes', () => {
     });
   });
 
-  describe('PUT /api/syllabi/:id', () => {
+  describe('PUT /api/syllabinds/:id', () => {
     it('should update syllabus when user is creator', async () => {
       const existingSyllabus = {
         id: 1,
@@ -262,7 +262,7 @@ describe('Syllabus Routes', () => {
         next();
       });
 
-      authenticatedApp.put('/api/syllabi/:id', async (req, res) => {
+      authenticatedApp.put('/api/syllabinds/:id', async (req, res) => {
         try {
           if (!req.user) {
             return res.status(401).json({ message: 'Unauthorized' });
@@ -291,7 +291,7 @@ describe('Syllabus Routes', () => {
       mockStorage.updateSyllabus.mockResolvedValue(undefined);
 
       const response = await request(authenticatedApp)
-        .put('/api/syllabi/1')
+        .put('/api/syllabinds/1')
         .send({
           title: 'Updated Title',
           status: 'published'
@@ -319,7 +319,7 @@ describe('Syllabus Routes', () => {
         next();
       });
 
-      authenticatedApp.put('/api/syllabi/:id', async (req, res) => {
+      authenticatedApp.put('/api/syllabinds/:id', async (req, res) => {
         try {
           if (!req.user) {
             return res.status(401).json({ message: 'Unauthorized' });
@@ -347,7 +347,7 @@ describe('Syllabus Routes', () => {
       mockStorage.getSyllabusById.mockResolvedValue(existingSyllabus);
 
       const response = await request(authenticatedApp)
-        .put('/api/syllabi/1')
+        .put('/api/syllabinds/1')
         .send({ title: 'Hacked Title' })
         .expect(403);
 
@@ -355,7 +355,7 @@ describe('Syllabus Routes', () => {
     });
   });
 
-  describe('GET /api/syllabi/:id/learners', () => {
+  describe('GET /api/syllabinds/:id/learners', () => {
     it('should return learners for a syllabus', async () => {
       const mockLearners = [
         {
@@ -368,7 +368,7 @@ describe('Syllabus Routes', () => {
       mockStorage.getLearnersBySyllabusId.mockResolvedValue(mockLearners);
 
       const response = await request(app)
-        .get('/api/syllabi/1/learners')
+        .get('/api/syllabinds/1/learners')
         .expect(200);
 
       expect(mockStorage.getLearnersBySyllabusId).toHaveBeenCalledWith(1);
@@ -380,7 +380,7 @@ describe('Syllabus Routes', () => {
       mockStorage.getLearnersBySyllabusId.mockResolvedValue([]);
 
       const response = await request(app)
-        .get('/api/syllabi/1/learners')
+        .get('/api/syllabinds/1/learners')
         .expect(200);
 
       expect(response.body).toEqual([]);

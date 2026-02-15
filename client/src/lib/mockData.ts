@@ -72,7 +72,7 @@ export const INITIAL_ENROLLMENT: Enrollment = {
   completedSyllabusIds: [],
 };
 
-export const MOCK_SYLLABI: Syllabus[] = [
+export const MOCK_SYLLABINDS: Syllabus[] = [
   {
     id: 1,
     title: 'Digital Minimalism',

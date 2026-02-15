@@ -40,7 +40,7 @@ export default function WeekView() {
   // Fetch full syllabus with weeks and steps
   useEffect(() => {
     if (syllabusId) {
-      fetch(`/api/syllabi/${syllabusId}`, {
+      fetch(`/api/syllabinds/${syllabusId}`, {
         credentials: 'include'
       })
         .then(res => {

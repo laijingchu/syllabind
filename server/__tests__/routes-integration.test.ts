@@ -117,42 +117,42 @@ describe('Routes Integration (real registerRoutes)', () => {
 
   // ========== SYLLABUS ROUTES ==========
 
-  describe('GET /api/syllabi', () => {
-    it('returns all published syllabi', async () => {
-      const syllabi = [{ id: 1, title: 'Test' }];
-      mockStorage.listSyllabi.mockResolvedValue(syllabi);
-      const res = await request(app).get('/api/syllabi');
+  describe('GET /api/syllabinds', () => {
+    it('returns all published syllabinds', async () => {
+      const syllabinds = [{ id: 1, title: 'Test' }];
+      mockStorage.listSyllabinds.mockResolvedValue(syllabinds);
+      const res = await request(app).get('/api/syllabinds');
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(syllabi);
+      expect(res.body).toEqual(syllabinds);
     });
   });
 
-  describe('GET /api/syllabi/:id', () => {
+  describe('GET /api/syllabinds/:id', () => {
     it('returns syllabus with content', async () => {
       const data = { id: 1, title: 'Test', weeks: [] };
       mockStorage.getSyllabusWithContent.mockResolvedValue(data);
-      const res = await request(app).get('/api/syllabi/1');
+      const res = await request(app).get('/api/syllabinds/1');
       expect(res.status).toBe(200);
       expect(res.body.title).toBe('Test');
     });
 
     it('returns 404 when not found', async () => {
       mockStorage.getSyllabusWithContent.mockResolvedValue(null);
-      const res = await request(app).get('/api/syllabi/999');
+      const res = await request(app).get('/api/syllabinds/999');
       expect(res.status).toBe(404);
     });
   });
 
-  describe('PUT /api/syllabi/:id', () => {
+  describe('PUT /api/syllabinds/:id', () => {
     it('returns 401 when not authenticated', async () => {
-      const res = await request(app).put('/api/syllabi/1').send({ title: 'X' });
+      const res = await request(app).put('/api/syllabinds/1').send({ title: 'X' });
       expect(res.status).toBe(401);
     });
 
     it('returns 403 when non-creator edits', async () => {
       const authed = await createAuthedApp(mockUser);
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'other' });
-      const res = await request(authed).put('/api/syllabi/1').send({ title: 'X' });
+      const res = await request(authed).put('/api/syllabinds/1').send({ title: 'X' });
       expect(res.status).toBe(403);
     });
 
@@ -160,7 +160,7 @@ describe('Routes Integration (real registerRoutes)', () => {
       const authed = await createAuthedApp(mockCreator);
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
       mockStorage.updateSyllabus.mockResolvedValue({ id: 1, title: 'Updated' });
-      const res = await request(authed).put('/api/syllabi/1').send({ title: 'Updated' });
+      const res = await request(authed).put('/api/syllabinds/1').send({ title: 'Updated' });
       expect(res.status).toBe(200);
       expect(res.body.title).toBe('Updated');
     });
@@ -168,14 +168,14 @@ describe('Routes Integration (real registerRoutes)', () => {
     it('returns 404 when syllabus not found', async () => {
       const authed = await createAuthedApp(mockCreator);
       mockStorage.getSyllabus.mockResolvedValue(null);
-      const res = await request(authed).put('/api/syllabi/1').send({ title: 'X' });
+      const res = await request(authed).put('/api/syllabinds/1').send({ title: 'X' });
       expect(res.status).toBe(404);
     });
   });
 
-  describe('DELETE /api/syllabi/:id', () => {
+  describe('DELETE /api/syllabinds/:id', () => {
     it('returns 401 when not authenticated', async () => {
-      const res = await request(app).delete('/api/syllabi/1');
+      const res = await request(app).delete('/api/syllabinds/1');
       expect(res.status).toBe(401);
     });
 
@@ -183,7 +183,7 @@ describe('Routes Integration (real registerRoutes)', () => {
       const authed = await createAuthedApp(mockCreator);
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
       mockStorage.deleteSyllabus.mockResolvedValue(undefined);
-      const res = await request(authed).delete('/api/syllabi/1');
+      const res = await request(authed).delete('/api/syllabinds/1');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
@@ -191,23 +191,23 @@ describe('Routes Integration (real registerRoutes)', () => {
     it('returns 403 when not owner', async () => {
       const authed = await createAuthedApp(mockUser);
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'other' });
-      const res = await request(authed).delete('/api/syllabi/1');
+      const res = await request(authed).delete('/api/syllabinds/1');
       expect(res.status).toBe(403);
     });
   });
 
-  describe('POST /api/syllabi/batch-delete', () => {
+  describe('POST /api/syllabinds/batch-delete', () => {
     it('returns 400 for empty ids', async () => {
       const authed = await createAuthedApp(mockCreator);
-      const res = await request(authed).post('/api/syllabi/batch-delete').send({ ids: [] });
+      const res = await request(authed).post('/api/syllabinds/batch-delete').send({ ids: [] });
       expect(res.status).toBe(400);
     });
 
-    it('deletes owned syllabi', async () => {
+    it('deletes owned syllabinds', async () => {
       const authed = await createAuthedApp(mockCreator);
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
-      mockStorage.batchDeleteSyllabi.mockResolvedValue(undefined);
-      const res = await request(authed).post('/api/syllabi/batch-delete').send({ ids: [1] });
+      mockStorage.batchDeleteSyllabinds.mockResolvedValue(undefined);
+      const res = await request(authed).post('/api/syllabinds/batch-delete').send({ ids: [1] });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
@@ -217,20 +217,20 @@ describe('Routes Integration (real registerRoutes)', () => {
       mockStorage.getSyllabus
         .mockResolvedValueOnce({ id: 1, creatorId: mockCreator.username })
         .mockResolvedValueOnce({ id: 2, creatorId: 'other' });
-      const res = await request(authed).post('/api/syllabi/batch-delete').send({ ids: [1, 2] });
+      const res = await request(authed).post('/api/syllabinds/batch-delete').send({ ids: [1, 2] });
       expect(res.status).toBe(403);
     });
   });
 
-  describe('POST /api/syllabi', () => {
+  describe('POST /api/syllabinds', () => {
     it('returns 401 when not authenticated', async () => {
-      const res = await request(app).post('/api/syllabi').send({});
+      const res = await request(app).post('/api/syllabinds').send({});
       expect(res.status).toBe(401);
     });
 
     it('returns 403 when user is not creator', async () => {
       const authed = await createAuthedApp({ ...mockUser, isCreator: false });
-      const res = await request(authed).post('/api/syllabi').send({
+      const res = await request(authed).post('/api/syllabinds').send({
         title: 'X', description: 'Y', audienceLevel: 'Beginner', durationWeeks: 4
       });
       expect(res.status).toBe(403);
@@ -240,40 +240,40 @@ describe('Routes Integration (real registerRoutes)', () => {
       const authed = await createAuthedApp(mockCreator);
       const syllabusData = { title: 'New', description: 'Desc', audienceLevel: 'Beginner', durationWeeks: 4, status: 'draft' };
       mockStorage.createSyllabus.mockResolvedValue({ id: 1, ...syllabusData });
-      const res = await request(authed).post('/api/syllabi').send(syllabusData);
+      const res = await request(authed).post('/api/syllabinds').send(syllabusData);
       expect(res.status).toBe(200);
       expect(res.body.title).toBe('New');
     });
   });
 
-  describe('GET /api/creator/syllabi', () => {
+  describe('GET /api/creator/syllabinds', () => {
     it('returns 401 when not authenticated', async () => {
-      const res = await request(app).get('/api/creator/syllabi');
+      const res = await request(app).get('/api/creator/syllabinds');
       expect(res.status).toBe(401);
     });
 
     it('returns 403 when not a creator', async () => {
       const authed = await createAuthedApp({ ...mockUser, isCreator: false });
-      const res = await request(authed).get('/api/creator/syllabi');
+      const res = await request(authed).get('/api/creator/syllabinds');
       expect(res.status).toBe(403);
     });
 
-    it('returns syllabi for creator', async () => {
+    it('returns syllabinds for creator', async () => {
       const authed = await createAuthedApp(mockCreator);
-      const syllabi = [{ id: 1, title: 'Mine' }];
-      mockStorage.getSyllabiByCreator.mockResolvedValue(syllabi);
-      const res = await request(authed).get('/api/creator/syllabi');
+      const syllabinds = [{ id: 1, title: 'Mine' }];
+      mockStorage.getSyllabindsByCreator.mockResolvedValue(syllabinds);
+      const res = await request(authed).get('/api/creator/syllabinds');
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(syllabi);
+      expect(res.body).toEqual(syllabinds);
     });
   });
 
-  describe('GET /api/syllabi/:id/learners', () => {
+  describe('GET /api/syllabinds/:id/learners', () => {
     it('returns learners for owned syllabus', async () => {
       const authed = await createAuthedApp(mockCreator);
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
       mockStorage.getLearnersBySyllabusId.mockResolvedValue([{ user: mockUser }]);
-      const res = await request(authed).get('/api/syllabi/1/learners');
+      const res = await request(authed).get('/api/syllabinds/1/learners');
       expect(res.status).toBe(200);
       expect(res.body.length).toBe(1);
     });
@@ -281,26 +281,26 @@ describe('Routes Integration (real registerRoutes)', () => {
     it('returns 403 for non-owner', async () => {
       const authed = await createAuthedApp(mockUser);
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'other' });
-      const res = await request(authed).get('/api/syllabi/1/learners');
+      const res = await request(authed).get('/api/syllabinds/1/learners');
       expect(res.status).toBe(403);
     });
   });
 
-  describe('GET /api/syllabi/:id/classmates', () => {
+  describe('GET /api/syllabinds/:id/classmates', () => {
     it('returns classmates (public route)', async () => {
       mockStorage.getClassmatesBySyllabusId.mockResolvedValue({ classmates: [], totalEnrolled: 5 });
-      const res = await request(app).get('/api/syllabi/1/classmates');
+      const res = await request(app).get('/api/syllabinds/1/classmates');
       expect(res.status).toBe(200);
       expect(res.body.totalEnrolled).toBe(5);
     });
   });
 
-  describe('POST /api/syllabi/:id/publish', () => {
+  describe('POST /api/syllabinds/:id/publish', () => {
     it('toggles publish status', async () => {
       const authed = await createAuthedApp(mockCreator);
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username, status: 'draft' });
       mockStorage.updateSyllabus.mockResolvedValue({ id: 1, status: 'published' });
-      const res = await request(authed).post('/api/syllabi/1/publish');
+      const res = await request(authed).post('/api/syllabinds/1/publish');
       expect(res.status).toBe(200);
       expect(mockStorage.updateSyllabus).toHaveBeenCalledWith(1, { status: 'published' });
     });
@@ -309,7 +309,7 @@ describe('Routes Integration (real registerRoutes)', () => {
       const authed = await createAuthedApp(mockCreator);
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username, status: 'published' });
       mockStorage.updateSyllabus.mockResolvedValue({ id: 1, status: 'draft' });
-      const res = await request(authed).post('/api/syllabi/1/publish');
+      const res = await request(authed).post('/api/syllabinds/1/publish');
       expect(res.status).toBe(200);
       expect(mockStorage.updateSyllabus).toHaveBeenCalledWith(1, { status: 'draft' });
     });
@@ -548,12 +548,12 @@ describe('Routes Integration (real registerRoutes)', () => {
 
   // ========== ANALYTICS ==========
 
-  describe('GET /api/syllabi/:id/analytics', () => {
+  describe('GET /api/syllabinds/:id/analytics', () => {
     it('returns analytics for creator', async () => {
       const authed = await createAuthedApp(mockCreator);
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
       mockStorage.getSyllabusAnalytics.mockResolvedValue({ learnersStarted: 5 });
-      const res = await request(authed).get('/api/syllabi/1/analytics');
+      const res = await request(authed).get('/api/syllabinds/1/analytics');
       expect(res.status).toBe(200);
       expect(res.body.learnersStarted).toBe(5);
     });
@@ -561,27 +561,27 @@ describe('Routes Integration (real registerRoutes)', () => {
     it('returns 403 for non-creator', async () => {
       const authed = await createAuthedApp(mockUser);
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'other' });
-      const res = await request(authed).get('/api/syllabi/1/analytics');
+      const res = await request(authed).get('/api/syllabinds/1/analytics');
       expect(res.status).toBe(403);
     });
   });
 
-  describe('GET /api/syllabi/:id/analytics/completion-rates', () => {
+  describe('GET /api/syllabinds/:id/analytics/completion-rates', () => {
     it('returns completion rates for creator', async () => {
       const authed = await createAuthedApp(mockCreator);
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
       mockStorage.getStepCompletionRates.mockResolvedValue([{ stepId: 1, completionRate: 50 }]);
-      const res = await request(authed).get('/api/syllabi/1/analytics/completion-rates');
+      const res = await request(authed).get('/api/syllabinds/1/analytics/completion-rates');
       expect(res.status).toBe(200);
     });
   });
 
-  describe('GET /api/syllabi/:id/analytics/completion-times', () => {
+  describe('GET /api/syllabinds/:id/analytics/completion-times', () => {
     it('returns completion times for creator', async () => {
       const authed = await createAuthedApp(mockCreator);
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
       mockStorage.getAverageCompletionTimes.mockResolvedValue([{ stepId: 1, avgMinutes: 30 }]);
-      const res = await request(authed).get('/api/syllabi/1/analytics/completion-times');
+      const res = await request(authed).get('/api/syllabinds/1/analytics/completion-times');
       expect(res.status).toBe(200);
     });
   });
@@ -653,12 +653,12 @@ describe('Routes Integration (real registerRoutes)', () => {
 
   // ========== CHAT MESSAGES ==========
 
-  describe('GET /api/syllabi/:id/chat-messages', () => {
+  describe('GET /api/syllabinds/:id/chat-messages', () => {
     it('returns chat messages for creator', async () => {
       const authed = await createAuthedApp(mockCreator);
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
       mockStorage.getChatMessages.mockResolvedValue([{ id: 1, role: 'user', content: 'Hello' }]);
-      const res = await request(authed).get('/api/syllabi/1/chat-messages');
+      const res = await request(authed).get('/api/syllabinds/1/chat-messages');
       expect(res.status).toBe(200);
       expect(res.body.length).toBe(1);
     });
@@ -666,18 +666,18 @@ describe('Routes Integration (real registerRoutes)', () => {
     it('returns 403 for non-creator', async () => {
       const authed = await createAuthedApp(mockUser);
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'other' });
-      const res = await request(authed).get('/api/syllabi/1/chat-messages');
+      const res = await request(authed).get('/api/syllabinds/1/chat-messages');
       expect(res.status).toBe(403);
     });
   });
 
-  describe('POST /api/syllabi/:id/chat-messages', () => {
+  describe('POST /api/syllabinds/:id/chat-messages', () => {
     it('creates chat message for creator', async () => {
       const authed = await createAuthedApp(mockCreator);
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
       mockStorage.createChatMessage.mockResolvedValue({ id: 1, syllabusId: 1, role: 'user', content: 'Hello' });
       const res = await request(authed)
-        .post('/api/syllabi/1/chat-messages')
+        .post('/api/syllabinds/1/chat-messages')
         .send({ role: 'user', content: 'Hello' });
       expect(res.status).toBe(200);
       expect(res.body.content).toBe('Hello');

@@ -46,7 +46,7 @@ export const users = pgTable("users", {
   authProvider: text("auth_provider").default('email'),
 });
 
-export const syllabi = pgTable("syllabi", {
+export const syllabinds = pgTable("syllabi", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
@@ -66,7 +66,7 @@ export const syllabi = pgTable("syllabi", {
 export const enrollments = pgTable("enrollments", {
   id: serial("id").primaryKey(),
   studentId: text("student_id").references(() => users.username, { onDelete: 'cascade', onUpdate: 'cascade' }),
-  syllabusId: integer("syllabus_id").references(() => syllabi.id),
+  syllabusId: integer("syllabus_id").references(() => syllabinds.id),
   status: text("status").notNull().default('in-progress'), // 'in-progress', 'completed', 'dropped'
   currentWeekIndex: integer("current_week_index").default(1),
   shareProfile: boolean("share_profile").default(false),
@@ -81,7 +81,7 @@ export const enrollments = pgTable("enrollments", {
 export const weeks = pgTable("weeks", {
   id: serial("id").primaryKey(),
   syllabusId: integer("syllabus_id")
-    .references(() => syllabi.id, { onDelete: 'cascade' })
+    .references(() => syllabinds.id, { onDelete: 'cascade' })
     .notNull(),
   index: integer("index").notNull(), // 1, 2, 3, 4...
   title: text("title"),
@@ -149,7 +149,7 @@ export const cohorts = pgTable("cohorts", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   syllabusId: integer("syllabus_id")
-    .references(() => syllabi.id, { onDelete: 'cascade' })
+    .references(() => syllabinds.id, { onDelete: 'cascade' })
     .notNull(),
   creatorId: text("creator_id")
     .references(() => users.username, { onDelete: 'set null', onUpdate: 'cascade' }),
@@ -176,7 +176,7 @@ export const cohortMembers = pgTable("cohort_members", {
 export const chatMessages = pgTable("chat_messages", {
   id: serial("id").primaryKey(),
   syllabusId: integer("syllabus_id")
-    .references(() => syllabi.id, { onDelete: 'cascade' })
+    .references(() => syllabinds.id, { onDelete: 'cascade' })
     .notNull(),
   role: text("role").notNull(), // 'user' | 'assistant'
   content: text("content").notNull(),
@@ -186,7 +186,7 @@ export const chatMessages = pgTable("chat_messages", {
 ]);
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
-export const insertSyllabusSchema = createInsertSchema(syllabi).omit({
+export const insertSyllabusSchema = createInsertSchema(syllabinds).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -214,7 +214,7 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ i
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
-export type Syllabus = typeof syllabi.$inferSelect;
+export type Syllabus = typeof syllabinds.$inferSelect;
 export type InsertSyllabus = z.infer<typeof insertSyllabusSchema>;
 export type Enrollment = typeof enrollments.$inferSelect;
 export type InsertEnrollment = z.infer<typeof insertEnrollmentSchema>;

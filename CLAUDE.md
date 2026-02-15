@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Syllabind is a full-stack learning platform connecting creators who build curated multi-week syllabi with learners seeking structured educational experiences.
+Syllabind is a full-stack learning platform connecting creators who build curated multi-week syllabinds with learners seeking structured educational experiences.
 
 **Tech Stack:**
 - Frontend: React 19 + TypeScript + Vite
@@ -119,10 +119,10 @@ The database uses a fully normalized relational schema with **username-based for
 
 **Key Tables:**
 1. **users** - User accounts with creator flag, profile info, social links
-2. **syllabi** - Learning content metadata (title, description, status, creator)
-3. **weeks** - Weekly structure within each syllabus (normalized)
+2. **syllabi** - Syllabinds: learning content metadata (title, description, status, creator)
+3. **weeks** - Weekly structure within each syllabind (normalized)
 4. **steps** - Individual learning activities (readings/exercises) within weeks (normalized)
-5. **enrollments** - Learner participation in syllabi with progress tracking
+5. **enrollments** - Learner participation in syllabinds with progress tracking
 6. **completed_steps** - Junction table tracking step completion (replaces JSONB arrays)
 7. **submissions** - Learner exercise submissions with creator feedback
 8. **cohorts** - Groups of learners for social learning
@@ -135,7 +135,7 @@ The database uses a fully normalized relational schema with **username-based for
 
 **Context Store (`client/src/lib/store.tsx`):**
 - Central state management using React Context API
-- Provides user auth state, enrollment data, syllabi list
+- Provides user auth state, enrollment data, syllabinds list
 - Methods for login/logout, enrollment, progress tracking, and creator actions
 
 **React Query:**
@@ -155,14 +155,14 @@ The database uses a fully normalized relational schema with **username-based for
 ```typescript
 // Creator authorization example
 const username = (req.user as any).username;
-const syllabus = await storage.getSyllabus(id);
-if (syllabus.creatorId !== username) {
+const syllabind = await storage.getSyllabind(id);
+if (syllabind.creatorId !== username) {
   return res.status(403).json({ error: "Forbidden" });
 }
 ```
 
 **ID Types:**
-- Syllabi, enrollments, steps, weeks: `integer` (serial primary keys)
+- Syllabinds, enrollments, steps, weeks: `integer` (serial primary keys)
 - Users: `varchar` (UUID)
 - Foreign keys to users: `text` (username)
 
@@ -189,7 +189,7 @@ The project has undergone significant schema migrations:
    - Migration: `migrations/manual_username_migration.sql`
 
 2. **JSONB to Normalized Tables** (2026-01-26)
-   - Migrated syllabus content from JSONB to `weeks` and `steps` tables
+   - Migrated syllabind content from JSONB to `weeks` and `steps` tables
    - Changed step IDs from string UUIDs to integer serials
    - Migration script: `server/migrate-jsonb-to-normalized.ts`
 
@@ -210,7 +210,7 @@ The project has undergone significant schema migrations:
 - Users toggle between roles via `isCreator` flag
 - Same user can be both creator and learner
 - Creator routes check authorization using `username` matching
-- Learner enrollment tracks progress per user per syllabus
+- Learner enrollment tracks progress per user per syllabind
 
 ## Common Development Workflows
 
@@ -225,7 +225,7 @@ npm run db:seed
 **What gets created:**
 - 1 creator account (janesmith)
 - 5 learner accounts (various enrollment states)
-- 2 published syllabi (Digital Minimalism, Systems Thinking 101)
+- 2 published syllabinds (Digital Minimalism, Systems Thinking 101)
 - 5 enrollments with realistic progress
 - Multiple completed steps for testing
 
@@ -270,7 +270,7 @@ The `sessions` table is **mandatory** for authentication. Do not drop or modify 
 ### Foreign Key Cascading
 
 The schema uses cascading deletes and updates:
-- Deleting a syllabus cascades to weeks, steps, enrollments, submissions, completed_steps
+- Deleting a syllabind cascades to weeks, steps, enrollments, submissions, completed_steps
 - Deleting a user cascades to enrollments, submissions, cohort_members
 - Updating a username cascades to all foreign key references
 
@@ -338,6 +338,13 @@ Located in `client/src/components/sections/`:
 - `SearchBar` - Search input with count display
 
 Use for patterns repeated across multiple pages.
+
+### Naming Conventions
+
+- The branded term for a course is "Syllabind" (singular) / "Syllabinds" (plural)
+- Never use the Latin plural "syllabi" in code or UI text — always use "syllabinds"
+- The database table is still named `syllabi` (PostgreSQL), but the Drizzle ORM export is `syllabinds`
+- The creator dashboard is called "Syllabind Builder" (not "Curator Studio")
 
 ## Instructions
 1. Always update `architecture.md` after any non-trivial change.

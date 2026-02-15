@@ -80,23 +80,23 @@ describe('DatabaseStorage (real class, mocked db)', () => {
     });
   });
 
-  describe('listSyllabi', () => {
+  describe('listSyllabinds', () => {
     it('returns empty array', async () => {
-      const result = await storage.listSyllabi();
+      const result = await storage.listSyllabinds();
       expect(result).toEqual([]);
     });
   });
 
-  describe('listPublishedSyllabi', () => {
+  describe('listPublishedSyllabinds', () => {
     it('returns empty array', async () => {
-      const result = await storage.listPublishedSyllabi();
+      const result = await storage.listPublishedSyllabinds();
       expect(result).toEqual([]);
     });
   });
 
-  describe('getSyllabiByCreator', () => {
+  describe('getSyllabindsByCreator', () => {
     it('returns empty array', async () => {
-      const result = await storage.getSyllabiByCreator('creator');
+      const result = await storage.getSyllabindsByCreator('creator');
       expect(result).toEqual([]);
     });
   });
@@ -124,13 +124,13 @@ describe('DatabaseStorage (real class, mocked db)', () => {
     });
   });
 
-  describe('batchDeleteSyllabi', () => {
+  describe('batchDeleteSyllabinds', () => {
     it('does nothing for empty array', async () => {
-      await storage.batchDeleteSyllabi([]);
+      await storage.batchDeleteSyllabinds([]);
     });
 
     it('calls db.delete for non-empty array', async () => {
-      await storage.batchDeleteSyllabi([1, 2]);
+      await storage.batchDeleteSyllabinds([1, 2]);
     });
   });
 

@@ -152,20 +152,20 @@ export async function registerRoutes(
 
   // ========== SYLLABUS ROUTES ==========
 
-  // List all published syllabi (public)
-  app.get("/api/syllabi", async (_req, res) => {
-    const syllabi = await storage.listSyllabi();
-    res.json(syllabi);
+  // List all published syllabinds (public)
+  app.get("/api/syllabinds", async (_req, res) => {
+    const syllabinds = await storage.listSyllabinds();
+    res.json(syllabinds);
   });
 
-  app.get("/api/syllabi/:id", async (req, res) => {
+  app.get("/api/syllabinds/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     const syllabus = await storage.getSyllabusWithContent(id);
     if (!syllabus) return res.status(404).json({ message: "Syllabus not found" });
     res.json(syllabus);
   });
 
-  app.put("/api/syllabi/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/syllabinds/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     const username = (req.user as any).username;
 
@@ -180,7 +180,7 @@ export async function registerRoutes(
     res.json(updated);
   });
 
-  app.delete("/api/syllabi/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/syllabinds/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     const username = (req.user as any).username;
 
@@ -195,8 +195,8 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
-  // Batch delete syllabi
-  app.post("/api/syllabi/batch-delete", isAuthenticated, async (req, res) => {
+  // Batch delete syllabinds
+  app.post("/api/syllabinds/batch-delete", isAuthenticated, async (req, res) => {
     const username = (req.user as any).username;
     const { ids } = req.body;
 
@@ -204,25 +204,25 @@ export async function registerRoutes(
       return res.status(400).json({ message: "Invalid request: ids must be a non-empty array" });
     }
 
-    // Authorization: verify all syllabi belong to the user
-    const syllabi = await Promise.all(
+    // Authorization: verify all syllabinds belong to the user
+    const syllabinds = await Promise.all(
       ids.map(id => storage.getSyllabus(parseInt(id)))
     );
 
-    for (const syllabus of syllabi) {
+    for (const syllabus of syllabinds) {
       if (!syllabus) {
-        return res.status(404).json({ message: "One or more syllabi not found" });
+        return res.status(404).json({ message: "One or more syllabinds not found" });
       }
       if (syllabus.creatorId !== username) {
-        return res.status(403).json({ error: "Forbidden: You can only delete your own syllabi" });
+        return res.status(403).json({ error: "Forbidden: You can only delete your own syllabinds" });
       }
     }
 
-    await storage.batchDeleteSyllabi(ids.map(id => parseInt(id)));
+    await storage.batchDeleteSyllabinds(ids.map(id => parseInt(id)));
     res.json({ success: true, count: ids.length });
   });
 
-  app.post("/api/syllabi", isAuthenticated, async (req, res) => {
+  app.post("/api/syllabinds", isAuthenticated, async (req, res) => {
     const username = (req.user as any).username;
     const user = req.user as any;
 
@@ -237,8 +237,8 @@ export async function registerRoutes(
     res.json(syllabus);
   });
 
-  // Get creator's syllabi (including drafts)
-  app.get("/api/creator/syllabi", isAuthenticated, async (req, res) => {
+  // Get creator's syllabinds (including drafts)
+  app.get("/api/creator/syllabinds", isAuthenticated, async (req, res) => {
     const username = (req.user as any).username;
     const user = req.user as any;
 
@@ -246,12 +246,12 @@ export async function registerRoutes(
       return res.status(403).json({ error: "Creator access required" });
     }
 
-    const syllabi = await storage.getSyllabiByCreator(username);
-    res.json(syllabi);
+    const syllabinds = await storage.getSyllabindsByCreator(username);
+    res.json(syllabinds);
   });
 
   // Get learners for a syllabus (creator only)
-  app.get("/api/syllabi/:id/learners", isAuthenticated, async (req, res) => {
+  app.get("/api/syllabinds/:id/learners", isAuthenticated, async (req, res) => {
     const syllabusId = parseInt(req.params.id);
     const username = (req.user as any).username;
 
@@ -265,15 +265,15 @@ export async function registerRoutes(
     res.json(learners);
   });
 
-  // Get classmates for a syllabus (public — only shows users who opted in)
-  app.get("/api/syllabi/:id/classmates", async (req, res) => {
+  // Get classmates for a syllabus (public -- only shows users who opted in)
+  app.get("/api/syllabinds/:id/classmates", async (req, res) => {
     const syllabusId = parseInt(req.params.id);
     const classmates = await storage.getClassmatesBySyllabusId(syllabusId);
     res.json(classmates);
   });
 
   // Publish/unpublish syllabus
-  app.post("/api/syllabi/:id/publish", isAuthenticated, async (req, res) => {
+  app.post("/api/syllabinds/:id/publish", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     const username = (req.user as any).username;
 
@@ -459,7 +459,7 @@ export async function registerRoutes(
   });
 
   // Analytics API (creator only)
-  app.get("/api/syllabi/:id/analytics", isAuthenticated, async (req, res) => {
+  app.get("/api/syllabinds/:id/analytics", isAuthenticated, async (req, res) => {
     const syllabusId = parseInt(req.params.id);
     const username = (req.user as any).username;
 
@@ -473,7 +473,7 @@ export async function registerRoutes(
     res.json(analytics);
   });
 
-  app.get("/api/syllabi/:id/analytics/completion-rates", isAuthenticated, async (req, res) => {
+  app.get("/api/syllabinds/:id/analytics/completion-rates", isAuthenticated, async (req, res) => {
     const syllabusId = parseInt(req.params.id);
     const username = (req.user as any).username;
 
@@ -487,7 +487,7 @@ export async function registerRoutes(
     res.json(rates);
   });
 
-  app.get("/api/syllabi/:id/analytics/completion-times", isAuthenticated, async (req, res) => {
+  app.get("/api/syllabinds/:id/analytics/completion-times", isAuthenticated, async (req, res) => {
     const syllabusId = parseInt(req.params.id);
     const username = (req.user as any).username;
 
@@ -578,7 +578,7 @@ export async function registerRoutes(
     });
   });
 
-  app.get("/api/syllabi/:id/chat-messages", isAuthenticated, async (req, res) => {
+  app.get("/api/syllabinds/:id/chat-messages", isAuthenticated, async (req, res) => {
     const syllabusId = parseInt(req.params.id);
     const username = (req.user as any).username;
 
@@ -591,7 +591,7 @@ export async function registerRoutes(
     res.json(messages);
   });
 
-  app.post("/api/syllabi/:id/chat-messages", isAuthenticated, async (req, res) => {
+  app.post("/api/syllabinds/:id/chat-messages", isAuthenticated, async (req, res) => {
     const syllabusId = parseInt(req.params.id);
     const username = (req.user as any).username;
     const { role, content } = req.body;

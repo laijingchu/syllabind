@@ -7,7 +7,7 @@ import {
   type Submission, type InsertSubmission,
   type CompletedStep, type InsertCompletedStep,
   type ChatMessage, type InsertChatMessage,
-  users, syllabi, enrollments, weeks, steps, submissions, completedSteps, chatMessages
+  users, syllabinds, enrollments, weeks, steps, submissions, completedSteps, chatMessages
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, asc, inArray } from "drizzle-orm";
@@ -32,13 +32,13 @@ export interface IStorage {
   // Syllabus operations
   getSyllabus(id: number): Promise<Syllabus | undefined>;
   getSyllabusWithContent(id: number): Promise<SyllabusWithContent | undefined>;
-  listSyllabi(): Promise<Syllabus[]>;
-  listPublishedSyllabi(): Promise<Syllabus[]>;
-  getSyllabiByCreator(username: string): Promise<Syllabus[]>;
+  listSyllabinds(): Promise<Syllabus[]>;
+  listPublishedSyllabinds(): Promise<Syllabus[]>;
+  getSyllabindsByCreator(username: string): Promise<Syllabus[]>;
   createSyllabus(syllabus: InsertSyllabus): Promise<Syllabus>;
   updateSyllabus(id: number, syllabus: Partial<Syllabus>): Promise<Syllabus>;
   deleteSyllabus(id: number): Promise<void>;
-  batchDeleteSyllabi(ids: number[]): Promise<void>;
+  batchDeleteSyllabinds(ids: number[]): Promise<void>;
 
   // Week operations
   createWeek(week: InsertWeek): Promise<Week>;
@@ -122,46 +122,46 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSyllabus(id: number): Promise<Syllabus | undefined> {
-    const [syllabus] = await db.select().from(syllabi).where(eq(syllabi.id, id));
+    const [syllabus] = await db.select().from(syllabinds).where(eq(syllabinds.id, id));
     return syllabus;
   }
 
-  async listSyllabi(): Promise<Syllabus[]> {
-    return await db.select().from(syllabi);
+  async listSyllabinds(): Promise<Syllabus[]> {
+    return await db.select().from(syllabinds);
   }
 
-  async listPublishedSyllabi(): Promise<Syllabus[]> {
-    return await db.select().from(syllabi).where(eq(syllabi.status, 'published'));
+  async listPublishedSyllabinds(): Promise<Syllabus[]> {
+    return await db.select().from(syllabinds).where(eq(syllabinds.status, 'published'));
   }
 
-  async getSyllabiByCreator(username: string): Promise<Syllabus[]> {
-    return await db.select().from(syllabi).where(eq(syllabi.creatorId, username));
+  async getSyllabindsByCreator(username: string): Promise<Syllabus[]> {
+    return await db.select().from(syllabinds).where(eq(syllabinds.creatorId, username));
   }
 
   async createSyllabus(insertSyllabus: InsertSyllabus): Promise<Syllabus> {
-    const [syllabus] = await db.insert(syllabi).values(insertSyllabus).returning();
+    const [syllabus] = await db.insert(syllabinds).values(insertSyllabus).returning();
     return syllabus;
   }
 
   async updateSyllabus(id: number, update: Partial<Syllabus>): Promise<Syllabus> {
-    // Filter out readonly fields and nested objects that aren't part of the syllabi table
+    // Filter out readonly fields and nested objects that aren't part of the syllabinds table
     const { createdAt, updatedAt, weeks, ...updateData } = update as Partial<Syllabus> & { weeks?: unknown };
 
     // Automatically set updatedAt to current time
-    const [syllabus] = await db.update(syllabi).set({
+    const [syllabus] = await db.update(syllabinds).set({
       ...updateData,
       updatedAt: new Date()
-    }).where(eq(syllabi.id, id)).returning();
+    }).where(eq(syllabinds.id, id)).returning();
     return syllabus;
   }
 
   async deleteSyllabus(id: number): Promise<void> {
-    await db.delete(syllabi).where(eq(syllabi.id, id));
+    await db.delete(syllabinds).where(eq(syllabinds.id, id));
   }
 
-  async batchDeleteSyllabi(ids: number[]): Promise<void> {
+  async batchDeleteSyllabinds(ids: number[]): Promise<void> {
     if (ids.length === 0) return;
-    await db.delete(syllabi).where(inArray(syllabi.id, ids));
+    await db.delete(syllabinds).where(inArray(syllabinds.id, ids));
   }
 
   async getEnrollment(studentId: string, syllabusId: number): Promise<Enrollment | undefined> {
@@ -191,7 +191,7 @@ export class DatabaseStorage implements IStorage {
     return enrollment;
   }
 
-  // Mark all in-progress enrollments for a user as dropped (used when switching syllabi)
+  // Mark all in-progress enrollments for a user as dropped (used when switching syllabinds)
   async dropActiveEnrollments(studentId: string, exceptSyllabusId?: number): Promise<void> {
     if (exceptSyllabusId) {
       await db.update(enrollments)

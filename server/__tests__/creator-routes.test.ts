@@ -13,18 +13,18 @@ describe('Creator Routes', () => {
       next();
     };
 
-    // GET /api/creator/syllabi
-    a.get('/api/creator/syllabi', authMiddleware, async (req, res) => {
+    // GET /api/creator/syllabinds
+    a.get('/api/creator/syllabinds', authMiddleware, async (req, res) => {
       const user = req.user as any;
       if (!user.isCreator) {
         return res.status(403).json({ error: 'Creator access required' });
       }
-      const syllabi = await mockStorage.getSyllabiByCreator(user.username);
-      res.json(syllabi);
+      const syllabinds = await mockStorage.getSyllabindsByCreator(user.username);
+      res.json(syllabinds);
     });
 
-    // DELETE /api/syllabi/:id
-    a.delete('/api/syllabi/:id', authMiddleware, async (req, res) => {
+    // DELETE /api/syllabinds/:id
+    a.delete('/api/syllabinds/:id', authMiddleware, async (req, res) => {
       const id = parseInt(req.params.id);
       const username = (req.user as any).username;
       const syllabus = await mockStorage.getSyllabus(id);
@@ -36,26 +36,26 @@ describe('Creator Routes', () => {
       res.json({ success: true });
     });
 
-    // POST /api/syllabi/batch-delete
-    a.post('/api/syllabi/batch-delete', authMiddleware, async (req, res) => {
+    // POST /api/syllabinds/batch-delete
+    a.post('/api/syllabinds/batch-delete', authMiddleware, async (req, res) => {
       const username = (req.user as any).username;
       const { ids } = req.body;
       if (!Array.isArray(ids) || ids.length === 0) {
         return res.status(400).json({ message: 'Invalid request: ids must be a non-empty array' });
       }
-      const syllabi = await Promise.all(ids.map((id: any) => mockStorage.getSyllabus(parseInt(id))));
-      for (const syllabus of syllabi) {
-        if (!syllabus) return res.status(404).json({ message: 'One or more syllabi not found' });
+      const syllabinds = await Promise.all(ids.map((id: any) => mockStorage.getSyllabus(parseInt(id))));
+      for (const syllabus of syllabinds) {
+        if (!syllabus) return res.status(404).json({ message: 'One or more syllabinds not found' });
         if (syllabus.creatorId !== username) {
-          return res.status(403).json({ error: 'Forbidden: You can only delete your own syllabi' });
+          return res.status(403).json({ error: 'Forbidden: You can only delete your own syllabinds' });
         }
       }
-      await mockStorage.batchDeleteSyllabi(ids.map((id: any) => parseInt(id)));
+      await mockStorage.batchDeleteSyllabinds(ids.map((id: any) => parseInt(id)));
       res.json({ success: true, count: ids.length });
     });
 
-    // POST /api/syllabi/:id/publish
-    a.post('/api/syllabi/:id/publish', authMiddleware, async (req, res) => {
+    // POST /api/syllabinds/:id/publish
+    a.post('/api/syllabinds/:id/publish', authMiddleware, async (req, res) => {
       const id = parseInt(req.params.id);
       const username = (req.user as any).username;
       const syllabus = await mockStorage.getSyllabus(id);
@@ -68,8 +68,8 @@ describe('Creator Routes', () => {
       res.json(updated);
     });
 
-    // GET /api/syllabi/:id/classmates (public)
-    a.get('/api/syllabi/:id/classmates', async (req, res) => {
+    // GET /api/syllabinds/:id/classmates (public)
+    a.get('/api/syllabinds/:id/classmates', async (req, res) => {
       const syllabusId = parseInt(req.params.id);
       const classmates = await mockStorage.getClassmatesBySyllabusId(syllabusId);
       res.json(classmates);
@@ -112,97 +112,97 @@ describe('Creator Routes', () => {
     resetAllMocks();
   });
 
-  describe('GET /api/creator/syllabi', () => {
-    it('should return creator syllabi', async () => {
-      const syllabi = [{ id: 1, title: 'My Syllabus', creatorId: 'testcreator' }];
-      mockStorage.getSyllabiByCreator.mockResolvedValue(syllabi);
+  describe('GET /api/creator/syllabinds', () => {
+    it('should return creator syllabinds', async () => {
+      const syllabinds = [{ id: 1, title: 'My Syllabus', creatorId: 'testcreator' }];
+      mockStorage.getSyllabindsByCreator.mockResolvedValue(syllabinds);
 
-      const res = await request(creatorApp).get('/api/creator/syllabi').expect(200);
-      expect(res.body).toEqual(syllabi);
-      expect(mockStorage.getSyllabiByCreator).toHaveBeenCalledWith('testcreator');
+      const res = await request(creatorApp).get('/api/creator/syllabinds').expect(200);
+      expect(res.body).toEqual(syllabinds);
+      expect(mockStorage.getSyllabindsByCreator).toHaveBeenCalledWith('testcreator');
     });
 
     it('should return 403 if not a creator', async () => {
-      await request(learnerApp).get('/api/creator/syllabi').expect(403);
+      await request(learnerApp).get('/api/creator/syllabinds').expect(403);
     });
   });
 
-  describe('DELETE /api/syllabi/:id', () => {
+  describe('DELETE /api/syllabinds/:id', () => {
     it('should delete syllabus when owner', async () => {
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'testcreator' });
 
-      const res = await request(creatorApp).delete('/api/syllabi/1').expect(200);
+      const res = await request(creatorApp).delete('/api/syllabinds/1').expect(200);
       expect(res.body.success).toBe(true);
       expect(mockStorage.deleteSyllabus).toHaveBeenCalledWith(1);
     });
 
     it('should return 404 when syllabus not found', async () => {
       mockStorage.getSyllabus.mockResolvedValue(null);
-      await request(creatorApp).delete('/api/syllabi/999').expect(404);
+      await request(creatorApp).delete('/api/syllabinds/999').expect(404);
     });
 
     it('should return 403 when not owner', async () => {
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'othercreator' });
-      await request(creatorApp).delete('/api/syllabi/1').expect(403);
+      await request(creatorApp).delete('/api/syllabinds/1').expect(403);
     });
   });
 
-  describe('POST /api/syllabi/batch-delete', () => {
-    it('should batch delete owned syllabi', async () => {
+  describe('POST /api/syllabinds/batch-delete', () => {
+    it('should batch delete owned syllabinds', async () => {
       mockStorage.getSyllabus
         .mockResolvedValueOnce({ id: 1, creatorId: 'testcreator' })
         .mockResolvedValueOnce({ id: 2, creatorId: 'testcreator' });
 
       const res = await request(creatorApp)
-        .post('/api/syllabi/batch-delete')
+        .post('/api/syllabinds/batch-delete')
         .send({ ids: [1, 2] })
         .expect(200);
 
       expect(res.body).toEqual({ success: true, count: 2 });
-      expect(mockStorage.batchDeleteSyllabi).toHaveBeenCalledWith([1, 2]);
+      expect(mockStorage.batchDeleteSyllabinds).toHaveBeenCalledWith([1, 2]);
     });
 
     it('should return 400 for invalid ids', async () => {
       await request(creatorApp)
-        .post('/api/syllabi/batch-delete')
+        .post('/api/syllabinds/batch-delete')
         .send({ ids: [] })
         .expect(400);
 
       await request(creatorApp)
-        .post('/api/syllabi/batch-delete')
+        .post('/api/syllabinds/batch-delete')
         .send({ ids: 'not-array' })
         .expect(400);
     });
 
-    it('should return 404 if any syllabus not found', async () => {
+    it('should return 404 if any syllabind not found', async () => {
       mockStorage.getSyllabus
         .mockResolvedValueOnce({ id: 1, creatorId: 'testcreator' })
         .mockResolvedValueOnce(null);
 
       await request(creatorApp)
-        .post('/api/syllabi/batch-delete')
+        .post('/api/syllabinds/batch-delete')
         .send({ ids: [1, 2] })
         .expect(404);
     });
 
-    it('should return 403 if any syllabus not owned', async () => {
+    it('should return 403 if any syllabind not owned', async () => {
       mockStorage.getSyllabus
         .mockResolvedValueOnce({ id: 1, creatorId: 'testcreator' })
         .mockResolvedValueOnce({ id: 2, creatorId: 'othercreator' });
 
       await request(creatorApp)
-        .post('/api/syllabi/batch-delete')
+        .post('/api/syllabinds/batch-delete')
         .send({ ids: [1, 2] })
         .expect(403);
     });
   });
 
-  describe('POST /api/syllabi/:id/publish', () => {
+  describe('POST /api/syllabinds/:id/publish', () => {
     it('should toggle draft to published', async () => {
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, status: 'draft', creatorId: 'testcreator' });
       mockStorage.updateSyllabus.mockResolvedValue({ id: 1, status: 'published' });
 
-      const res = await request(creatorApp).post('/api/syllabi/1/publish').expect(200);
+      const res = await request(creatorApp).post('/api/syllabinds/1/publish').expect(200);
       expect(mockStorage.updateSyllabus).toHaveBeenCalledWith(1, { status: 'published' });
       expect(res.body.status).toBe('published');
     });
@@ -211,27 +211,27 @@ describe('Creator Routes', () => {
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, status: 'published', creatorId: 'testcreator' });
       mockStorage.updateSyllabus.mockResolvedValue({ id: 1, status: 'draft' });
 
-      const res = await request(creatorApp).post('/api/syllabi/1/publish').expect(200);
+      const res = await request(creatorApp).post('/api/syllabinds/1/publish').expect(200);
       expect(mockStorage.updateSyllabus).toHaveBeenCalledWith(1, { status: 'draft' });
     });
 
     it('should return 403 when not owner', async () => {
       mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'othercreator' });
-      await request(creatorApp).post('/api/syllabi/1/publish').expect(403);
+      await request(creatorApp).post('/api/syllabinds/1/publish').expect(403);
     });
 
     it('should return 404 when not found', async () => {
       mockStorage.getSyllabus.mockResolvedValue(null);
-      await request(creatorApp).post('/api/syllabi/999/publish').expect(404);
+      await request(creatorApp).post('/api/syllabinds/999/publish').expect(404);
     });
   });
 
-  describe('GET /api/syllabi/:id/classmates', () => {
+  describe('GET /api/syllabinds/:id/classmates', () => {
     it('should return classmates data', async () => {
       const data = { classmates: [{ user: { username: 'learner1' } }], totalEnrolled: 3 };
       mockStorage.getClassmatesBySyllabusId.mockResolvedValue(data);
 
-      const res = await request(unauthApp).get('/api/syllabi/1/classmates').expect(200);
+      const res = await request(unauthApp).get('/api/syllabinds/1/classmates').expect(200);
       expect(res.body.totalEnrolled).toBe(3);
       expect(res.body.classmates).toHaveLength(1);
     });

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
-import { BookOpen, User, LogOut, Bug, Menu, X } from 'lucide-react';
+import { BookOpen, User, LogOut, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/sheet";
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, logout, completeActiveSyllabus } = useStore();
+  const { user, isAuthenticated, logout } = useStore();
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -78,7 +78,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         location.startsWith("/creator") ? "bg-primary/10 text-primary" : "hover:bg-muted"
                       )}
                     >
-                      <span className="font-medium">Curator Studio</span>
+                      <span className="font-medium">Syllabind Builder</span>
                     </button>
                     <div className="border-t my-4" />
                     <button
@@ -123,7 +123,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   </Link>
                   <Link href="/creator">
                     <a className={cn("text-sm font-medium transition-colors hover:text-primary", location.startsWith("/creator") ? "text-primary" : "text-muted-foreground")}>
-                      Curator Studio
+                      Syllabind Builder
                     </a>
                   </Link>
                 </>
@@ -149,11 +149,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                     </div>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={completeActiveSyllabus}>
-                    <Bug className="mr-2 h-4 w-4" />
-                    <span>Debug: Complete Syllabus</span>
-                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <Link href="/profile">
                     <DropdownMenuItem className="cursor-pointer">

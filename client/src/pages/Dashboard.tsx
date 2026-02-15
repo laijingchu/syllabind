@@ -4,7 +4,6 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { PlayCircle, CheckCircle2, Award, Wand2, BookOpen } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { SyllabusCard } from '@/components/SyllabusCard';
 import { pluralize } from '@/lib/utils';
 import { useState, useEffect } from 'react';
@@ -12,14 +11,14 @@ import { Syllabus } from '@/lib/types';
 import { AnimatedCard, AnimatedPage } from '@/components/ui/animated-container';
 
 export default function Dashboard() {
-  const { enrollment, getActiveSyllabus, syllabi, getSyllabusById, completedStepIds } = useStore();
+  const { enrollment, getActiveSyllabus, syllabinds, getSyllabusById, completedStepIds, enrollmentLoading, syllabindsLoading, completeActiveSyllabus } = useStore();
   const activeSyllabusMetadata = getActiveSyllabus();
   const [activeSyllabus, setActiveSyllabus] = useState<Syllabus | undefined>(undefined);
 
   // Fetch full syllabus data with weeks and steps
   useEffect(() => {
     if (activeSyllabusMetadata?.id) {
-      fetch(`/api/syllabi/${activeSyllabusMetadata.id}`, {
+      fetch(`/api/syllabinds/${activeSyllabusMetadata.id}`, {
         credentials: 'include'
       })
         .then(res => {
@@ -48,17 +47,22 @@ export default function Dashboard() {
     return Math.round((completedCount / allStepIds.length) * 100);
   };
 
-  // Filter completed syllabi
-  const completedSyllabi = (enrollment?.completedSyllabusIds || [])
+  // Filter completed syllabinds
+  const completedSyllabinds = (enrollment?.completedSyllabusIds || [])
     .map(id => getSyllabusById(id))
     .filter((s): s is typeof s & {} => !!s); // Type guard
 
   const isCompleted = activeSyllabus && getOverallProgress(activeSyllabus.id) === 100;
 
-  const allCompleted = syllabi.length > 0 && syllabi.every(s => enrollment?.completedSyllabusIds?.includes(s.id));
+  const allCompleted = syllabinds.length > 0 && syllabinds.every(s => enrollment?.completedSyllabusIds?.includes(s.id));
 
-  // If no active syllabus (and not all completed), show first-time welcome
-  if (!activeSyllabusMetadata && !allCompleted) {
+  // Wait for enrollment data before deciding what to show
+  if (enrollmentLoading || syllabindsLoading) {
+    return <div className="max-w-4xl mx-auto py-20 text-center text-muted-foreground">Loading...</div>;
+  }
+
+  // If no active syllabus and no completed syllabinds, show first-time welcome
+  if (!activeSyllabusMetadata && !allCompleted && completedSyllabinds.length === 0) {
     return (
       <AnimatedPage className="max-w-3xl mx-auto py-12 space-y-10">
         <header className="text-center space-y-3">
@@ -71,10 +75,13 @@ export default function Dashboard() {
             <Link href="/creator/syllabus/new">
               <Card className="welcome-card group cursor-pointer border-2 hover:border-primary/50 hover:shadow-lg transition-all duration-300 h-full">
                 <CardContent className="flex flex-col items-center justify-center py-12 px-6 text-center space-y-4">
-                  <div className="relative inline-flex">
+                  <div className="relative inline-block">
                     <div className="bg-primary/10 p-5 rounded-full group-hover:bg-primary/20 transition-colors">
                       <Wand2 className="h-10 w-10 text-primary" />
                     </div>
+                    <span className="absolute -top-1 -right-1 inline-block bg-primary text-primary-foreground text-xs font-semibold px-2 py-0.5 rounded-md shadow-sm">
+                      AI
+                    </span>
                   </div>
                   <div className="space-y-1">
                     <h3 className="text-xl font-display font-medium">Build your own course</h3>
@@ -94,7 +101,7 @@ export default function Dashboard() {
                   </div>
                   <div className="space-y-1">
                     <h3 className="text-xl font-display font-medium">Choose from existing courses</h3>
-                    <p className="text-sm text-muted-foreground">Browse curated syllabi from our community of creators</p>
+                    <p className="text-sm text-muted-foreground">Browse curated syllabinds from our community of creators</p>
                   </div>
                 </CardContent>
               </Card>
@@ -110,7 +117,7 @@ export default function Dashboard() {
     return <div className="max-w-4xl mx-auto py-20 text-center">Loading...</div>;
   }
 
-  const suggestedSyllabi = syllabi
+  const suggestedSyllabinds = syllabinds
     .filter(s =>
       (!activeSyllabus || s.id !== activeSyllabus.id) &&
       !enrollment?.completedSyllabusIds?.includes(s.id)
@@ -208,7 +215,11 @@ export default function Dashboard() {
                           <p className="text-xs text-muted-foreground">You've earned the completion badge.</p>
                         </div>
                       </div>
-                      <div className="flex gap-2 w-full sm:w-auto sm:ml-auto">
+                      <div className="flex flex-wrap gap-2 w-full sm:w-auto sm:ml-auto">
+                        <Button size="sm" onClick={completeActiveSyllabus} className="w-full sm:w-auto">
+                          <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                          Mark Complete
+                        </Button>
                         <Link href={`/syllabus/${activeSyllabus.id}`} className="w-full sm:w-auto">
                           <Button variant="outline" size="sm" className="w-full sm:w-auto">View Syllabus</Button>
                         </Link>
@@ -238,7 +249,7 @@ export default function Dashboard() {
           </div>
           </AnimatedCard>
 
-          {isCompleted && suggestedSyllabi.length > 0 && (
+          {isCompleted && suggestedSyllabinds.length > 0 && (
             <AnimatedCard delay={0.2}>
               <div className="space-y-4 pt-4">
                 <div className="flex justify-between items-center">
@@ -246,7 +257,7 @@ export default function Dashboard() {
                   <Link href="/catalog" className="text-sm text-primary hover:underline">Browse Catalog &rarr;</Link>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {suggestedSyllabi.map(syllabus => (
+                  {suggestedSyllabinds.map(syllabus => (
                     <SyllabusCard key={syllabus.id} syllabus={syllabus} className="h-full text-left" />
                   ))}
                 </div>
@@ -273,15 +284,15 @@ export default function Dashboard() {
           </AnimatedCard>
         )}
       </section>
-      {completedSyllabi.length > 0 && (
+      {completedSyllabinds.length > 0 && (
         <AnimatedCard delay={0.2}>
           <section className="space-y-6">
             <header>
               <h2 className="text-2xl font-display text-foreground mb-2">Completed Journeys</h2>
-              <p className="text-muted-foreground">You have successfully completed {pluralize(completedSyllabi.length, 'syllabind')}!</p>
+              <p className="text-muted-foreground">You have successfully completed {pluralize(completedSyllabinds.length, 'syllabind')}!</p>
             </header>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {completedSyllabi.map(s => (
+              {completedSyllabinds.map(s => (
                  <Link key={s.id} href={`/syllabus/${s.id}`}>
                    <div className="flex items-center gap-4 p-4 border rounded-lg bg-card/50 hover:bg-muted/50 transition-colors cursor-pointer group">
                       <div className="bg-primary/10 p-3 rounded-full text-primary">
