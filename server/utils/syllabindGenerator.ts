@@ -32,25 +32,30 @@ Description: ${basics.description}
 
 STRICT REQUIREMENTS:
 - You MUST generate exactly ${basics.durationWeeks} weeks, no more, no less
-- Each week MUST have exactly 4 steps: 3 readings + 1 exercise
+- MUST make sure that all links are real.
+- Each week MUST have exactly 4 steps: 3 readings + 1 exercise, and in total no more than 5 hours of work per week.
 - The exercise MUST always be the last step (position 4)
-- Readings: Include title, URL, author, media type, estimated time, and relevance note
+- Readings: Include title, URL, author, published date, media type, estimated time, and relevance note
 - Exercise: Include title, prompt text, and estimated time
 - NEVER use Wikipedia pages - avoid all wikipedia.org links
 - Ensure logical week-to-week progression
 
 ACADEMIC SOURCE REQUIREMENTS:
+- Readings must be tailored to: ${basics.audienceLevel}. Assume beginners are middle school level, intermediates are college level, and advanced are post-graduate level.
 - Each week MUST include at least 1 academic source: book chapter, journal article, or scholarly paper
 - Prioritize: academia.edu, jstor.org, worldcat.org, arxiv.org, scholar.google.com, .edu domains
+- Avoid encyclopedic content, ensure content is focused and themed around a specific topic or insight
 - Use mediaType "Book" for book chapters and "Journal Article" for academic papers
 - ALWAYS extract and include creationDate (publication/creation date) in dd/mm/yyyy format from web search results
 
 EXERCISE REQUIREMENTS:
+- Exercises must be tailored to: ${basics.audienceLevel}. Assume beginners are middle school level, intermediates are college level, and advanced are post-graduate level.
 - Exercises must be CREATIVE and OPEN-ENDED, not simple quizzes or summaries
 - Design exercises that produce REAL outputs for actual consumption or use
 - FORMAT promptText using markdown syntax:
   - Use "- " (dash + space) at the start of each list item for bullet points
   - Use numbered lists ("1. ", "2. ", etc.) for ordered steps
+  - Permit multiple layers of indent
   - Separate paragraphs with blank lines
 - Bias towards:
   * Content creation (write a blog post, create a video essay, design an infographic, record a podcast episode)
