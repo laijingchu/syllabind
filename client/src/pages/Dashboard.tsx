@@ -75,7 +75,6 @@ export default function Dashboard() {
                     <div className="bg-primary/10 p-5 rounded-full group-hover:bg-primary/20 transition-colors">
                       <Wand2 className="h-10 w-10 text-primary" />
                     </div>
-                    <Badge className="absolute -top-2 -right-3 text-xs px-1.5 py-0.5 shadow-sm z-10">AI</Badge>
                   </div>
                   <div className="space-y-1">
                     <h3 className="text-xl font-display font-medium">Build your own course</h3>
