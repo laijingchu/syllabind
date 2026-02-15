@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
-import { BookOpen, User, LogOut, PenTool, Bug, Menu, X } from 'lucide-react';
+import { BookOpen, User, LogOut, Bug, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/sheet";
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, logout, toggleCreatorMode, completeActiveSyllabus } = useStore();
+  const { user, isAuthenticated, logout, completeActiveSyllabus } = useStore();
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -71,17 +71,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     >
                       <span className="font-medium">Catalog</span>
                     </button>
-                    {user?.isCreator && (
-                      <button
-                        onClick={() => handleMobileNavClick("/creator")}
-                        className={cn(
-                          "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
-                          location.startsWith("/creator") ? "bg-primary/10 text-primary" : "hover:bg-muted"
-                        )}
-                      >
-                        <span className="font-medium">Curator Studio</span>
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleMobileNavClick("/creator")}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
+                        location.startsWith("/creator") ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                      )}
+                    >
+                      <span className="font-medium">Curator Studio</span>
+                    </button>
                     <div className="border-t my-4" />
                     <button
                       onClick={() => handleMobileNavClick("/profile")}
@@ -123,13 +121,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       Catalog
                     </a>
                   </Link>
-                  {user?.isCreator && (
-                    <Link href="/creator">
-                      <a className={cn("text-sm font-medium transition-colors hover:text-primary", location.startsWith("/creator") ? "text-primary" : "text-muted-foreground")}>
-                        Curator Studio
-                      </a>
-                    </Link>
-                  )}
+                  <Link href="/creator">
+                    <a className={cn("text-sm font-medium transition-colors hover:text-primary", location.startsWith("/creator") ? "text-primary" : "text-muted-foreground")}>
+                      Curator Studio
+                    </a>
+                  </Link>
                 </>
               )}
             </nav>
@@ -153,20 +149,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                     </div>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={toggleCreatorMode}>
-                    {user.isCreator ? (
-                      <>
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Switch to Learner</span>
-                      </>
-                    ) : (
-                      <>
-                        <PenTool className="mr-2 h-4 w-4" />
-                        <span>Switch to Creator</span>
-                      </>
-                    )}
-                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={completeActiveSyllabus}>
                     <Bug className="mr-2 h-4 w-4" />

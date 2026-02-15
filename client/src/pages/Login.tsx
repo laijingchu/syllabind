@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { BookOpen, Mail, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -32,7 +31,6 @@ export default function Login() {
   const [signupName, setSignupName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPass, setSignupPass] = useState('');
-  const [role, setRole] = useState('learner');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,11 +74,10 @@ export default function Login() {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          email: signupEmail, 
-          password: signupPass, 
-          name: signupName,
-          isCreator: role === 'creator'
+        body: JSON.stringify({
+          email: signupEmail,
+          password: signupPass,
+          name: signupName
         }),
         credentials: 'include',
       });
@@ -254,20 +251,6 @@ export default function Login() {
                       required 
                       data-testid="input-signup-password"
                     />
-                  </div>
-                  
-                  <div className="space-y-3 pt-2">
-                    <Label>I am primarily a...</Label>
-                    <RadioGroup value={role} onValueChange={setRole} className="flex flex-col space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="learner" id="r-learner" data-testid="radio-learner" />
-                        <Label htmlFor="r-learner" className="font-normal">Learner</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="creator" id="r-creator" data-testid="radio-creator" />
-                        <Label htmlFor="r-creator" className="font-normal">Thought Leader / Creator</Label>
-                      </div>
-                    </RadioGroup>
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4">

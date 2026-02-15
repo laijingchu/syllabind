@@ -1486,3 +1486,31 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 - `server/index.ts` - Added error messages before WebSocket close on all early-close paths
 - `client/src/pages/SyllabindEditor.tsx` - Added `ws.onclose` handlers for both generation flows
 - `server/utils/syllabindGenerator.ts` - Set `max_tokens` to 8192
+
+### First-Time Experience Flow Rebuild (2026-02-15)
+
+**Changes:**
+
+1. **Dashboard.tsx — New welcome screen for users with no enrollments:**
+   - Replaced the `<Catalog />` early-return with a two-card welcome screen
+   - "Build your own course" card (Wand2 icon + AI badge) → links to `/creator/syllabus/new`
+   - "Choose from existing courses" card (BookOpen icon) → links to `/catalog`
+   - Uses AnimatedPage/AnimatedCard for entrance animations
+
+2. **Layout.tsx — Curator Studio always visible:**
+   - Removed `user?.isCreator` conditional from both desktop and mobile nav
+   - "Curator Studio" link now shows for all authenticated users
+
+3. **Layout.tsx — Removed creator/learner toggle:**
+   - Removed "Switch to Learner" / "Switch to Creator" dropdown menu item
+   - Removed `toggleCreatorMode` and `PenTool` imports
+
+4. **Login.tsx — Removed role selection from signup:**
+   - Removed "I am primarily a..." radio group from signup form
+   - Removed `role` state and `isCreator: role === 'creator'` from request body
+   - Removed `RadioGroup`/`RadioGroupItem` imports
+
+**Files Modified:**
+- `client/src/pages/Dashboard.tsx` - Welcome screen with two-card layout
+- `client/src/components/Layout.tsx` - Unconditional nav, removed toggle
+- `client/src/pages/Login.tsx` - Removed role picker

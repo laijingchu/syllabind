@@ -3,14 +3,13 @@ import { Link } from 'wouter';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
-import { PlayCircle, CheckCircle2, Award } from 'lucide-react';
+import { PlayCircle, CheckCircle2, Award, Wand2, BookOpen } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { SyllabusCard } from '@/components/SyllabusCard';
 import { pluralize } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { Syllabus } from '@/lib/types';
 import { AnimatedCard, AnimatedPage } from '@/components/ui/animated-container';
-
-import Catalog from './Catalog';
 
 export default function Dashboard() {
   const { enrollment, getActiveSyllabus, syllabi, getSyllabusById, completedStepIds } = useStore();
@@ -58,9 +57,53 @@ export default function Dashboard() {
 
   const allCompleted = syllabi.length > 0 && syllabi.every(s => enrollment?.completedSyllabusIds?.includes(s.id));
 
-  // If no active syllabus (and not all completed), show Catalog
+  // If no active syllabus (and not all completed), show first-time welcome
   if (!activeSyllabusMetadata && !allCompleted) {
-    return <Catalog />;
+    return (
+      <AnimatedPage className="max-w-3xl mx-auto py-12 space-y-10">
+        <header className="text-center space-y-3">
+          <h1 className="text-4xl font-display text-foreground">Welcome to Syllabind</h1>
+          <p className="text-lg text-muted-foreground">How would you like to get started?</p>
+        </header>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <AnimatedCard delay={0.1}>
+            <Link href="/creator/syllabus/new">
+              <Card className="welcome-card group cursor-pointer border-2 hover:border-primary/50 hover:shadow-lg transition-all duration-300 h-full">
+                <CardContent className="flex flex-col items-center justify-center py-12 px-6 text-center space-y-4">
+                  <div className="relative inline-flex">
+                    <div className="bg-primary/10 p-5 rounded-full group-hover:bg-primary/20 transition-colors">
+                      <Wand2 className="h-10 w-10 text-primary" />
+                    </div>
+                    <Badge className="absolute -top-2 -right-3 text-xs px-1.5 py-0.5 shadow-sm z-10">AI</Badge>
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-display font-medium">Build your own course</h3>
+                    <p className="text-sm text-muted-foreground">Learn anything! Create a multi-week syllabus with AI assistance.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          </AnimatedCard>
+
+          <AnimatedCard delay={0.2}>
+            <Link href="/catalog">
+              <Card className="welcome-card group cursor-pointer border-2 hover:border-primary/50 hover:shadow-lg transition-all duration-300 h-full">
+                <CardContent className="flex flex-col items-center justify-center py-12 px-6 text-center space-y-4">
+                  <div className="bg-primary/10 p-5 rounded-full group-hover:bg-primary/20 transition-colors">
+                    <BookOpen className="h-10 w-10 text-primary" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-display font-medium">Choose from existing courses</h3>
+                    <p className="text-sm text-muted-foreground">Browse curated syllabi from our community of creators</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          </AnimatedCard>
+        </div>
+      </AnimatedPage>
+    );
   }
 
   // Wait for full syllabus data to load
