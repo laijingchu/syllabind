@@ -337,6 +337,10 @@ export async function generateSyllabind(context: GenerationContext): Promise<voi
 
   // === Phase 1: Plan curriculum outline ===
   console.log(`[Generate] Phase 1: Planning curriculum outline...`);
+  ws.send(JSON.stringify({
+    type: 'planning_started',
+    data: { durationWeeks: basics.durationWeeks }
+  }));
 
   let curriculum: CurriculumWeek[];
   try {

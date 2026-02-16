@@ -25,7 +25,15 @@ const MOCK_WEEK_TITLES = [
 async function mockGenerateSyllabind(ws: WebSocket, syllabusId: number, durationWeeks: number): Promise<void> {
   console.log('[MockGenerate] Starting mock generation for testing...');
 
-  // Phase 1: Plan curriculum — send all week titles immediately
+  // Phase 1: Plan curriculum
+  ws.send(JSON.stringify({
+    type: 'planning_started',
+    data: { durationWeeks }
+  }));
+
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
+  // Send all week titles immediately
   const curriculum = Array.from({ length: durationWeeks }, (_, i) => ({
     weekIndex: i + 1,
     title: MOCK_WEEK_TITLES[i % MOCK_WEEK_TITLES.length].title,

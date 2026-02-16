@@ -552,8 +552,8 @@ export default function SyllabindEditor() {
 
     setIsGenerating(true);
     isGeneratingRef.current = true;
-    setGenerationProgress({ currentWeek: 1, status: useMock ? 'Mock generation...' : 'Generating Week 1...' });
-    setGeneratingWeeks(new Set([1]));
+    setGenerationProgress({ currentWeek: 0, status: 'Starting generation...' });
+    setGeneratingWeeks(new Set());
     setCompletedWeeks(new Set());
     setErroredWeeks(new Set());
     setJustCompletedWeek(null);
@@ -603,6 +603,14 @@ export default function SyllabindEditor() {
             break;
           }
 
+          case 'planning_started': {
+            setGenerationProgress({
+              currentWeek: 0,
+              status: `Planning ${message.data.durationWeeks}-week course structure...`
+            });
+            break;
+          }
+
           case 'curriculum_planned': {
             // Phase 1 complete: populate all week titles/descriptions immediately
             const plannedWeeks = message.data.weeks as Array<{ weekIndex: number; title: string; description: string }>;
@@ -629,7 +637,7 @@ export default function SyllabindEditor() {
             });
             setGenerationProgress(prev => ({
               ...prev,
-              status: 'Curriculum planned, generating content...'
+              status: 'Course outline ready — generating content...'
             }));
             break;
           }
@@ -1315,7 +1323,7 @@ export default function SyllabindEditor() {
                 </Link>
               </>
             )}
-            <Button variant="outline" size="sm" onClick={() => handleSave()}><span className="hidden sm:inline">Save </span>Draft</Button>
+            <Button variant="outline" size="sm" onClick={() => handleSave()}><span className="hidden sm:inline">Save Draft</span></Button>
             {!isNew && (
               <Button
                 variant="destructive"
@@ -1432,14 +1440,20 @@ export default function SyllabindEditor() {
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium">
-                          Generating Week {generationProgress.currentWeek} of {formData.durationWeeks}
+                          {generationProgress.currentWeek === 0
+                            ? 'Planning course structure...'
+                            : `Generating Week ${generationProgress.currentWeek} of ${formData.durationWeeks}`}
                         </span>
-                        <span className="text-xs text-muted-foreground">
-                          {Math.round((generationProgress.currentWeek / formData.durationWeeks) * 100)}%
-                        </span>
+                        {generationProgress.currentWeek > 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            {Math.round((generationProgress.currentWeek / formData.durationWeeks) * 100)}%
+                          </span>
+                        )}
                       </div>
                       <Progress
-                        value={(generationProgress.currentWeek / formData.durationWeeks) * 100}
+                        value={generationProgress.currentWeek === 0
+                          ? 5
+                          : (generationProgress.currentWeek / formData.durationWeeks) * 100}
                         className="h-2 bg-emerald-100"
                         indicatorClassName="bg-emerald-500"
                       />

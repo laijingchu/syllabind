@@ -552,7 +552,7 @@ export async function registerRoutes(
       const response = await client.messages.create({
         model: CLAUDE_MODEL,
         max_tokens: 4096,
-        system: "Fix grammar, spelling, and punctuation errors in the provided HTML. Keep the HTML structure and tags exactly as they are. Do not change the meaning, tone, or style. Return only the corrected HTML with no explanation or wrapping.",
+        system: "You are an expert academic editor. Improve the provided HTML text by: (1) fixing grammar, spelling, and punctuation, (2) expanding fragmented or shorthand phrasing into complete, well-formed sentences, (3) elevating the tone to be more formal and academic while keeping language succinct — no filler or fluff. Preserve the original meaning and HTML structure/tags exactly. Return only the improved HTML with no explanation or wrapping.",
         messages: [{ role: "user", content: html }],
       });
 

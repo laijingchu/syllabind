@@ -1803,3 +1803,26 @@ Added real AI text improvement to the RichTextEditor's "Improve writing" button 
 **Files Modified:**
 - `server/routes.ts` — Added `POST /api/improve-text` endpoint using `client` and `CLAUDE_MODEL` from `claudeClient.ts`
 - `client/src/components/ui/rich-text-editor.tsx` — Replaced stub `handleImproveWriting` with real `fetch` call
+
+### Accurate Generation Progress Status (2026-02-16)
+
+**Problem:** The progress card immediately showed "Generating Week 1 of X" when generation started, but the first phase is actually planning the overall course structure (not generating any week content). This made the status misleading.
+
+**Solution:** Added a `planning_started` WebSocket event and updated the progress card to distinguish between the planning and content generation phases.
+
+**Progress flow now:**
+1. "Planning X-week course structure..." — during Phase 1 (curriculum planning)
+2. "Course outline ready — generating content..." — when `curriculum_planned` arrives
+3. "Generating Week N of X" — during Phase 2 (per-week content generation)
+
+**Changes:**
+- Server sends `planning_started` event at start of `generateSyllabind()` before calling `planCurriculum()`
+- Client initializes `generatingWeeks` as empty set (no week placeholder shown during planning)
+- Progress card header shows "Planning course structure..." when `currentWeek === 0`
+- Progress bar shows 5% during planning phase instead of 0%
+- Percentage badge hidden during planning phase
+
+**Files Modified:**
+- `server/utils/syllabindGenerator.ts` — Added `planning_started` WebSocket event before Phase 1
+- `server/websocket/generateSyllabind.ts` — Added `planning_started` event to mock generator
+- `client/src/pages/SyllabindEditor.tsx` — Added `planning_started` handler, updated initial state, updated progress card to handle planning phase

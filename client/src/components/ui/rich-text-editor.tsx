@@ -130,7 +130,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, isSavi
       onChange(improved);
       toast({
         title: "Writing improved",
-        description: "Grammar and spelling fixes have been applied.",
+        description: "Grammar, clarity, and tone improvements applied.",
       });
     } catch (error: any) {
       toast({
