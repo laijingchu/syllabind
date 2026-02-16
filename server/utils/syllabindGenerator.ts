@@ -22,10 +22,11 @@ async function createMessageWithRateLimitRetry(
   ws: WebSocket
 ): Promise<Anthropic.Message> {
   let rateLimitRetries = 0;
+  const { signal, ...apiParams } = params;
 
   while (true) {
     try {
-      return await client.messages.create(params);
+      return await client.messages.create(apiParams, { signal });
     } catch (error: any) {
       if (error.status === 429 && rateLimitRetries < MAX_RATE_LIMIT_RETRIES) {
         rateLimitRetries++;
