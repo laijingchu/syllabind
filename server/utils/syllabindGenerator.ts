@@ -287,6 +287,12 @@ Start with Week 1 (weekIndex: 1).`;
             }
           }));
 
+          // Ensure steps is an array
+          if (!Array.isArray(toolInput.steps)) {
+            console.error(`[Week ${actualWeekIndex}] steps is not an array:`, typeof toolInput.steps, toolInput.steps);
+            toolInput.steps = [];
+          }
+
           // Log step count for debugging
           console.log(`[Week ${actualWeekIndex}] Claude sent ${toolInput.steps.length} steps (expected 4)`);
           if (toolInput.steps.length !== 4) {
@@ -675,6 +681,12 @@ Generate the week content now. Search for resources, then call finalize_week whe
             description: toolInput.description
           }
         }));
+
+        // Ensure steps is an array
+        if (!Array.isArray(toolInput.steps)) {
+          console.error(`[Week ${weekIndex}] steps is not an array:`, typeof toolInput.steps, toolInput.steps);
+          toolInput.steps = [];
+        }
 
         // Save and stream steps
         for (let i = 0; i < toolInput.steps.length; i++) {
