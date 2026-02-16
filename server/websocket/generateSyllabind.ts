@@ -121,6 +121,16 @@ async function mockGenerateSyllabind(ws: WebSocket, syllabusId: number, duration
 }
 
 export function handleGenerateSyllabindWS(ws: WebSocket, syllabusId: number, model?: string, useMock?: boolean) {
+  const abortController = new AbortController();
+
+  // When client disconnects (cancel or navigation), abort the generation
+  ws.on('close', () => {
+    if (!abortController.signal.aborted) {
+      console.log(`[Generate] Client disconnected, aborting generation for syllabind ${syllabusId}`);
+      abortController.abort();
+    }
+  });
+
   (async () => {
     try {
       const syllabus = await storage.getSyllabus(syllabusId);
@@ -183,20 +193,32 @@ export function handleGenerateSyllabindWS(ws: WebSocket, syllabusId: number, mod
             durationWeeks: syllabus.durationWeeks
           },
           ws,
-          model
+          model,
+          signal: abortController.signal
         });
       }
 
     } catch (error) {
+      // Don't log abort errors as generation errors
+      if (abortController.signal.aborted) {
+        console.log(`[Generate] Generation cancelled for syllabind ${syllabusId}`);
+        await storage.updateSyllabus(syllabusId, { status: 'draft' });
+        return;
+      }
+
       console.error('Generation error:', error);
-      ws.send(JSON.stringify({
-        type: 'error',
-        data: { message: error instanceof Error ? error.message : 'Unknown error' }
-      }));
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'error',
+          data: { message: error instanceof Error ? error.message : 'Unknown error' }
+        }));
+      }
 
       await storage.updateSyllabus(syllabusId, { status: 'draft' });
     } finally {
-      ws.close();
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
     }
   })();
 }
@@ -303,6 +325,16 @@ export function handleRegenerateWeekWS(
   model?: string,
   useMock?: boolean
 ) {
+  const abortController = new AbortController();
+
+  // When client disconnects (cancel or navigation), abort the regeneration
+  ws.on('close', () => {
+    if (!abortController.signal.aborted) {
+      console.log(`[RegenerateWeek] Client disconnected, aborting regeneration for syllabind ${syllabusId} week ${weekIndex}`);
+      abortController.abort();
+    }
+  });
+
   (async () => {
     try {
       const syllabus = await storage.getSyllabus(syllabusId);
@@ -362,18 +394,29 @@ export function handleRegenerateWeekWS(
             durationWeeks: syllabus.durationWeeks
           },
           ws,
-          model
+          model,
+          signal: abortController.signal
         });
       }
 
     } catch (error) {
+      // Don't log abort errors as generation errors
+      if (abortController.signal.aborted) {
+        console.log(`[RegenerateWeek] Regeneration cancelled for syllabind ${syllabusId} week ${weekIndex}`);
+        return;
+      }
+
       console.error('Week regeneration error:', error);
-      ws.send(JSON.stringify({
-        type: 'error',
-        data: { message: error instanceof Error ? error.message : 'Unknown error' }
-      }));
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'error',
+          data: { message: error instanceof Error ? error.message : 'Unknown error' }
+        }));
+      }
     } finally {
-      ws.close();
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
     }
   })();
 }

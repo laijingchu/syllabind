@@ -6,7 +6,63 @@ import WebSocket from 'ws';
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
+  maxRetries: 0, // Disable SDK silent retry so we handle 429s with user-visible feedback
 });
+
+const MAX_RATE_LIMIT_RETRIES = 3;
+const MAX_RATE_LIMIT_WAIT_SECONDS = 90;
+
+/**
+ * Wraps client.messages.create() with rate-limit retry logic.
+ * On 429: extracts wait time from headers, notifies client via WebSocket, sleeps, retries.
+ * Non-429 errors pass through immediately.
+ */
+async function createMessageWithRateLimitRetry(
+  params: Anthropic.MessageCreateParamsNonStreaming & { signal?: AbortSignal },
+  ws: WebSocket
+): Promise<Anthropic.Message> {
+  let rateLimitRetries = 0;
+
+  while (true) {
+    try {
+      return await client.messages.create(params);
+    } catch (error: any) {
+      if (error.status === 429 && rateLimitRetries < MAX_RATE_LIMIT_RETRIES) {
+        rateLimitRetries++;
+
+        let resetIn = 30; // default wait
+        if (error.headers) {
+          const headers = error.headers as Record<string, string>;
+          const resetTime = headers['anthropic-ratelimit-requests-reset'];
+          if (resetTime) {
+            const resetDate = new Date(resetTime);
+            resetIn = Math.ceil((resetDate.getTime() - Date.now()) / 1000);
+          }
+        }
+
+        // Cap wait time
+        resetIn = Math.max(1, Math.min(resetIn, MAX_RATE_LIMIT_WAIT_SECONDS));
+
+        console.log(`[RateLimit] 429 received, waiting ${resetIn}s (retry ${rateLimitRetries}/${MAX_RATE_LIMIT_RETRIES})`);
+
+        // Notify client
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: 'rate_limit_wait',
+            data: { resetIn, retry: rateLimitRetries, maxRetries: MAX_RATE_LIMIT_RETRIES }
+          }));
+        }
+
+        // Sleep for resetIn seconds
+        await new Promise(resolve => setTimeout(resolve, resetIn * 1000));
+        continue;
+      }
+
+      // Non-429 or retries exhausted — rethrow
+      throw error;
+    }
+  }
+}
 
 interface GenerationContext {
   syllabusId: number;
@@ -18,10 +74,11 @@ interface GenerationContext {
   };
   ws: WebSocket;
   model?: string;
+  signal?: AbortSignal;
 }
 
 export async function generateSyllabind(context: GenerationContext): Promise<void> {
-  const { syllabusId, basics, ws, model } = context;
+  const { syllabusId, basics, ws, model, signal } = context;
   const selectedModel = model || CLAUDE_MODEL;
 
   const systemPrompt = `You are an expert Syllabind designer.
@@ -103,6 +160,13 @@ Start with Week 1 (weekIndex: 1).`;
   let weekStartedSent = new Set<number>();
 
   while (weekIndex <= basics.durationWeeks) {
+    // Check for cancellation before each API call
+    if (signal?.aborted) {
+      console.log(`[Generate] Cancelled before week ${weekIndex}`);
+      await storage.updateSyllabus(syllabusId, { status: 'draft' });
+      return;
+    }
+
     // Only send week_started once per week (not on retries)
     if (!weekStartedSent.has(weekIndex)) {
       ws.send(JSON.stringify({
@@ -114,13 +178,21 @@ Start with Week 1 (weekIndex: 1).`;
 
     let response;
     try {
-      response = await client.messages.create({
+      response = await createMessageWithRateLimitRetry({
         model: selectedModel,
         max_tokens: 8192,
         tools: SYLLABIND_GENERATION_TOOLS,
-        messages
-      });
+        messages,
+        signal: signal as AbortSignal | undefined
+      }, ws);
     } catch (error: any) {
+      // Abort errors are not generation failures
+      if (signal?.aborted || error.name === 'AbortError') {
+        console.log(`[Generate] Cancelled during week ${weekIndex} API call`);
+        await storage.updateSyllabus(syllabusId, { status: 'draft' });
+        return;
+      }
+
       console.error('Syllabind generation error:', error);
 
       let errorData: any = {
@@ -132,7 +204,7 @@ Start with Week 1 (weekIndex: 1).`;
       if (error.status === 400) {
         errorData.details = 'Web search may not be enabled in your organization. Check Console settings.';
       } else if (error.status === 429 && error.headers) {
-        // Extract rate limit info from headers
+        // Extract rate limit info from headers (retries exhausted)
         const headers = error.headers as Record<string, string>;
         const remaining = headers['anthropic-ratelimit-requests-remaining'];
         const resetTime = headers['anthropic-ratelimit-requests-reset'];
@@ -425,11 +497,18 @@ interface WeekRegenerationContext {
   };
   ws: WebSocket;
   model?: string;
+  signal?: AbortSignal;
 }
 
 export async function regenerateWeek(context: WeekRegenerationContext): Promise<void> {
-  const { syllabusId, weekIndex, existingWeekId, basics, ws, model } = context;
+  const { syllabusId, weekIndex, existingWeekId, basics, ws, model, signal } = context;
   const selectedModel = model || CLAUDE_MODEL;
+
+  // Check for cancellation
+  if (signal?.aborted) {
+    console.log(`[RegenerateWeek] Cancelled before starting week ${weekIndex}`);
+    return;
+  }
 
   ws.send(JSON.stringify({
     type: 'week_started',
@@ -470,13 +549,19 @@ Generate the week content now. Search for resources, then call finalize_week whe
 
   let response;
   try {
-    response = await client.messages.create({
+    response = await createMessageWithRateLimitRetry({
       model: selectedModel,
       max_tokens: 8192,
       tools: SYLLABIND_GENERATION_TOOLS,
-      messages
-    });
+      messages,
+      signal: signal as AbortSignal | undefined
+    }, ws);
   } catch (error: any) {
+    if (signal?.aborted || error.name === 'AbortError') {
+      console.log(`[RegenerateWeek] Cancelled during week ${weekIndex} API call`);
+      return;
+    }
+
     console.error('Week regeneration error:', error);
 
     let errorData: any = {
@@ -517,6 +602,12 @@ Generate the week content now. Search for resources, then call finalize_week whe
   let regenRetries = 0;
   const MAX_REGEN_RETRIES = 3;
   while (response.stop_reason !== 'tool_use' || !response.content.some((b: any) => b.type === 'tool_use' && b.name === 'finalize_week')) {
+    // Check for cancellation
+    if (signal?.aborted) {
+      console.log(`[RegenerateWeek] Cancelled during retry for week ${weekIndex}`);
+      return;
+    }
+
     regenRetries++;
     if (regenRetries > MAX_REGEN_RETRIES) {
       ws.send(JSON.stringify({
@@ -538,12 +629,13 @@ Generate the week content now. Search for resources, then call finalize_week whe
     messages.push({ role: 'assistant', content: filtered.length > 0 ? filtered : [{ type: 'text', text: '(continuing)' }] });
     messages.push({ role: 'user', content: `Please call the finalize_week tool to complete Week ${weekIndex}. You must use the finalize_week tool with weekIndex: ${weekIndex}, a title, and exactly 4 steps.` });
 
-    response = await client.messages.create({
+    response = await createMessageWithRateLimitRetry({
       model: selectedModel,
       max_tokens: 8192,
       tools: SYLLABIND_GENERATION_TOOLS,
-      messages
-    });
+      messages,
+      signal: signal as AbortSignal | undefined
+    }, ws);
   }
 
   if (response.stop_reason === 'tool_use') {

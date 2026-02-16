@@ -1,7 +1,7 @@
 import { useRoute, useLocation, Link } from 'wouter';
 import { useStore } from '@/lib/store';
 import { Syllabus, Week, Step, StepType } from '@/lib/types';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, Users, ExternalLink, Wand2, Loader2 } from 'lucide-react';
+import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, Users, ExternalLink, Wand2, Loader2, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -75,6 +75,7 @@ export default function SyllabindEditor() {
   const [originalWeeks, setOriginalWeeks] = useState<Week[]>([]); // Store weeks from database
   const [isLoadingContent, setIsLoadingContent] = useState(!isNew && !!params?.id);
   const [activeWeekTab, setActiveWeekTab] = useState('week-1'); // Controlled tab for auto-switching during generation
+  const generationWsRef = useRef<WebSocket | null>(null); // Persist WS ref for cancel support
 
   // Check if Syllabind already has content
   const hasSyllabindContent = formData.weeks.some(week =>
@@ -260,6 +261,23 @@ export default function SyllabindEditor() {
     handleAutogenerate(useMock);
   };
 
+  const handleCancelGeneration = () => {
+    if (generationWsRef.current) {
+      generationWsRef.current.close();
+      generationWsRef.current = null;
+    }
+    setIsGenerating(false);
+    setGeneratingWeeks(new Set());
+    setCompletedWeeks(new Set());
+    setJustCompletedWeek(null);
+    setRegeneratingWeekIndex(null);
+    setGenerationProgress({ currentWeek: 0, status: '' });
+    toast({
+      title: "Generation Cancelled",
+      description: "Syllabind generation was cancelled. Any completed weeks have been saved.",
+    });
+  };
+
   // useMock: Alt+click to test streaming without API calls
   const handleAutogenerate = async (useMock = false) => {
     setShowRegenerateDialog(false);
@@ -269,13 +287,15 @@ export default function SyllabindEditor() {
     }
 
     let syllabusId = formData.id;
-    if (isNew || syllabusId < 0) {
+    if (syllabusId < 0) {
       const created = await createSyllabus({
         ...formData,
         status: 'generating'
       });
       syllabusId = created.id;
       setFormData({ ...formData, id: syllabusId });
+      // Navigate to edit URL so retries don't create duplicates
+      setLocation(`/creator/syllabus/${syllabusId}/edit`, { replace: true });
     }
 
     setIsGenerating(true);
@@ -300,11 +320,21 @@ export default function SyllabindEditor() {
       // Append mock=true to WebSocket URL if in mock mode
       const wsUrl = useMock ? `${websocketUrl}&mock=true` : websocketUrl;
       const ws = new WebSocket(`${protocol}//${window.location.host}${wsUrl}`);
+      generationWsRef.current = ws;
 
       ws.onmessage = (event) => {
         const message = JSON.parse(event.data);
 
         switch (message.type) {
+          case 'rate_limit_wait': {
+            const { resetIn, retry, maxRetries } = message.data;
+            setGenerationProgress(prev => ({
+              ...prev,
+              status: `Rate limited — resuming in ${resetIn}s... (retry ${retry}/${maxRetries})`
+            }));
+            break;
+          }
+
           case 'week_started': {
             const weekIdx = message.data.weekIndex;
             setGeneratingWeeks(prev => new Set(Array.from(prev).concat(weekIdx)));
@@ -414,6 +444,7 @@ export default function SyllabindEditor() {
             setGeneratingWeeks(new Set());
             setCompletedWeeks(new Set());
             setJustCompletedWeek(null);
+            generationWsRef.current = null;
             toast({
               title: "Syllabind Generated!",
               description: "Your Syllabind has been generated. Review and make any edits.",
@@ -480,6 +511,7 @@ export default function SyllabindEditor() {
 
       ws.onerror = () => {
         setIsGenerating(false);
+        generationWsRef.current = null;
         toast({
           title: "Connection Error",
           description: "Lost connection to generation service.",
@@ -488,10 +520,14 @@ export default function SyllabindEditor() {
       };
 
       ws.onclose = (event) => {
+        generationWsRef.current = null;
         // Only show error if generation wasn't completed normally
         if (!isGenerating) return;
         setIsGenerating(false);
         setGeneratingWeeks(new Set());
+
+        // Don't show error if user cancelled (code 1000 or 1005)
+        if (event.code === 1000 || event.code === 1005) return;
 
         const errorMessages: Record<number, string> = {
           4401: 'Authentication failed. Please log in again.',
@@ -510,6 +546,7 @@ export default function SyllabindEditor() {
 
     } catch (error) {
       setIsGenerating(false);
+      generationWsRef.current = null;
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Unknown error",
@@ -564,11 +601,21 @@ export default function SyllabindEditor() {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = useMock ? `${websocketUrl}&mock=true` : websocketUrl;
       const ws = new WebSocket(`${protocol}//${window.location.host}${wsUrl}`);
+      generationWsRef.current = ws;
 
       ws.onmessage = (event) => {
         const message = JSON.parse(event.data);
 
         switch (message.type) {
+          case 'rate_limit_wait': {
+            const { resetIn, retry, maxRetries } = message.data;
+            setGenerationProgress(prev => ({
+              ...prev,
+              status: `Rate limited — resuming in ${resetIn}s... (retry ${retry}/${maxRetries})`
+            }));
+            break;
+          }
+
           case 'week_info': {
             const { weekIndex: infoWeekIndex, title, description } = message.data;
             setFormData(prev => {
@@ -601,6 +648,7 @@ export default function SyllabindEditor() {
           case 'week_regeneration_complete': {
             setGeneratingWeeks(new Set());
             setRegeneratingWeekIndex(null);
+            generationWsRef.current = null;
             setCompletedWeeks(prev => new Set(Array.from(prev).concat(weekIndex)));
 
             toast({
@@ -622,6 +670,7 @@ export default function SyllabindEditor() {
           case 'error': {
             setGeneratingWeeks(new Set());
             setRegeneratingWeekIndex(null);
+            generationWsRef.current = null;
 
             const errorData = message.data;
             toast({
@@ -637,6 +686,7 @@ export default function SyllabindEditor() {
       ws.onerror = () => {
         setGeneratingWeeks(new Set());
         setRegeneratingWeekIndex(null);
+        generationWsRef.current = null;
         toast({
           title: "Connection Error",
           description: "Lost connection to generation service.",
@@ -645,10 +695,14 @@ export default function SyllabindEditor() {
       };
 
       ws.onclose = (event) => {
+        generationWsRef.current = null;
         // Only show error if regeneration wasn't completed normally
         if (regeneratingWeekIndex === null) return;
         setGeneratingWeeks(new Set());
         setRegeneratingWeekIndex(null);
+
+        // Don't show error if user cancelled
+        if (event.code === 1000 || event.code === 1005) return;
 
         const errorMessages: Record<number, string> = {
           4401: 'Authentication failed. Please log in again.',
@@ -668,6 +722,7 @@ export default function SyllabindEditor() {
     } catch (error) {
       setGeneratingWeeks(new Set());
       setRegeneratingWeekIndex(null);
+      generationWsRef.current = null;
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Unknown error",
@@ -909,6 +964,19 @@ export default function SyllabindEditor() {
                         )}
                       />
                     ))}
+                  </div>
+
+                  {/* Cancel button */}
+                  <div className="mt-3 flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCancelGeneration}
+                      className="text-muted-foreground hover:text-destructive gap-1.5"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Cancel
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

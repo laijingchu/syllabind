@@ -1548,3 +1548,30 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 **Files Modified:**
 - `client/src/pages/Completion.tsx` - Auto-complete enrollment on mount
 - `client/src/pages/Dashboard.tsx` - Loading state, "Mark Complete" button
+
+### Rate Limit Retry and Generation Cancellation (2026-02-16)
+
+**Problem:** During AI syllabind generation, 429 rate limit errors caused silent failures — the Anthropic SDK's built-in retry (`maxRetries: 2`) waited silently, leaving the user seeing generation "stuck" with no feedback. When retries were exhausted mid-generation, partial data was left behind. Additionally, users had no way to cancel a running generation.
+
+**Solution:**
+
+1. **Rate limit retry with user-visible feedback** (`server/utils/syllabindGenerator.ts`):
+   - Set `maxRetries: 0` on the Anthropic client to disable SDK's silent retry
+   - Created `createMessageWithRateLimitRetry()` wrapper that handles 429 errors explicitly
+   - On 429: extracts `resetIn` from response headers, sends `rate_limit_wait` WebSocket message to client, sleeps for the wait period (capped at 90s), then retries (up to 3 times)
+   - Non-429 errors pass through immediately
+   - Applied to all `client.messages.create()` calls in both `generateSyllabind()` and `regenerateWeek()`
+
+2. **Client-side rate limit display** (`client/src/pages/SyllabindEditor.tsx`):
+   - Both WebSocket `onmessage` handlers process `rate_limit_wait` messages
+   - Updates generation progress status to "Rate limited — resuming in Xs... (retry N/3)"
+   - Generation continues (not treated as failure) — `isGenerating` stays true
+
+3. **Cancel generation button** (client + server):
+   - **Client:** WebSocket stored in `useRef` for persistence across renders. Cancel button added to generation progress card. On click: closes WebSocket, resets all generation state, shows confirmation toast.
+   - **Server:** `handleGenerateSyllabindWS` and `handleRegenerateWeekWS` listen for `ws.on('close')` and trigger an `AbortController`. The abort signal is passed to generator functions and Anthropic API calls (`signal` parameter). Before each API call, the signal is checked — if aborted, generation stops cleanly. On cancellation, syllabus status is set back to `'draft'`.
+
+**Files Modified:**
+- `server/utils/syllabindGenerator.ts` - `maxRetries: 0`, `createMessageWithRateLimitRetry()`, abort signal checks in generation loops
+- `server/websocket/generateSyllabind.ts` - AbortController wired to `ws.on('close')`, signal passed to generators, safe ws.close() checks
+- `client/src/pages/SyllabindEditor.tsx` - `generationWsRef`, `handleCancelGeneration()`, `rate_limit_wait` handler, cancel button UI
