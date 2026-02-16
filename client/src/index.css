@@ -206,7 +206,7 @@
     @apply font-text antialiased bg-background text-foreground;
   }
 
-  /* Prose list styling - restores bullets and numbers */
+  /* Prose list styling - restores bullets and numbers, supports up to 3 levels of nesting */
   .prose ul {
     list-style-type: disc;
     padding-left: 1.25rem;
@@ -228,6 +228,22 @@
 
   .prose li > p {
     margin: 0;
+  }
+
+  /* Nested list spacing */
+  .prose li > ol,
+  .prose li > ul {
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  /* Nested bullet styles for visual hierarchy */
+  .prose ul ul {
+    list-style-type: circle;
+  }
+
+  .prose ul ul ul {
+    list-style-type: square;
   }
 }
 

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, Users, ExternalLink, Wand2, Loader2, X } from 'lucide-react';
+import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, AlertTriangle, Users, ExternalLink, Wand2, Loader2, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -279,6 +279,7 @@ export default function SyllabindEditor() {
   }>({ currentWeek: 0, status: '' });
   const [generatingWeeks, setGeneratingWeeks] = useState<Set<number>>(new Set());
   const [completedWeeks, setCompletedWeeks] = useState<Set<number>>(new Set());
+  const [erroredWeeks, setErroredWeeks] = useState<Set<number>>(new Set());
   const [justCompletedWeek, setJustCompletedWeek] = useState<number | null>(null);
   const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -292,6 +293,7 @@ export default function SyllabindEditor() {
   const generationWsRef = useRef<WebSocket | null>(null); // Persist WS ref for cancel support
   const isGeneratingRef = useRef(false); // Ref for ws.onclose (avoids stale closure)
   const regeneratingWeekRef = useRef<number | null>(null); // Ref for ws.onclose (avoids stale closure)
+  const rateLimitRetryRef = useRef<ReturnType<typeof setInterval> | null>(null); // Track rate limit countdown
 
   // Check if Syllabind already has content
   const hasSyllabindContent = formData.weeks.some(week =>
@@ -496,6 +498,11 @@ export default function SyllabindEditor() {
   };
 
   const handleCancelGeneration = () => {
+    // Clear rate limit countdown if active
+    if (rateLimitRetryRef.current) {
+      clearInterval(rateLimitRetryRef.current);
+      rateLimitRetryRef.current = null;
+    }
     // Clear refs BEFORE closing WebSocket so the onclose handler doesn't show error
     isGeneratingRef.current = false;
     regeneratingWeekRef.current = null;
@@ -506,6 +513,7 @@ export default function SyllabindEditor() {
     setIsGenerating(false);
     setGeneratingWeeks(new Set());
     setCompletedWeeks(new Set());
+    setErroredWeeks(new Set());
     setJustCompletedWeek(null);
     setRegeneratingWeekIndex(null);
     setGenerationProgress({ currentWeek: 0, status: '' });
@@ -544,9 +552,10 @@ export default function SyllabindEditor() {
 
     setIsGenerating(true);
     isGeneratingRef.current = true;
-    setGenerationProgress({ currentWeek: 0, status: useMock ? 'Mock generation...' : 'Starting generation...' });
-    setGeneratingWeeks(new Set());
+    setGenerationProgress({ currentWeek: 1, status: useMock ? 'Mock generation...' : 'Generating Week 1...' });
+    setGeneratingWeeks(new Set([1]));
     setCompletedWeeks(new Set());
+    setErroredWeeks(new Set());
     setJustCompletedWeek(null);
 
     // Reset all weeks to empty slots — server deletes existing data before regenerating,
@@ -586,10 +595,41 @@ export default function SyllabindEditor() {
 
         switch (message.type) {
           case 'rate_limit_wait': {
-            const { resetIn, retry, maxRetries } = message.data;
+            const { resetIn } = message.data;
             setGenerationProgress(prev => ({
               ...prev,
-              status: `Rate limited — resuming in ${resetIn}s... (retry ${retry}/${maxRetries})`
+              status: `Lots of creators are building right now — please hold on! Resuming in ${resetIn}s`
+            }));
+            break;
+          }
+
+          case 'curriculum_planned': {
+            // Phase 1 complete: populate all week titles/descriptions immediately
+            const plannedWeeks = message.data.weeks as Array<{ weekIndex: number; title: string; description: string }>;
+            setFormData(prev => {
+              const newWeeks = [...prev.weeks];
+              for (const pw of plannedWeeks) {
+                const idx = pw.weekIndex - 1;
+                if (!newWeeks[idx]) {
+                  newWeeks[idx] = {
+                    id: generateTempId(),
+                    syllabusId: prev.id,
+                    index: pw.weekIndex,
+                    steps: [],
+                    title: ''
+                  };
+                }
+                newWeeks[idx] = {
+                  ...newWeeks[idx],
+                  title: pw.title,
+                  description: pw.description
+                };
+              }
+              return { ...prev, weeks: newWeeks };
+            });
+            setGenerationProgress(prev => ({
+              ...prev,
+              status: 'Curriculum planned, generating content...'
             }));
             break;
           }
@@ -603,7 +643,7 @@ export default function SyllabindEditor() {
             });
             // Auto-switch to the generating week's tab so user sees streaming
             setActiveWeekTab(`week-${weekIdx}`);
-            // Clear existing steps for this week to show the streaming placeholder
+            // Clear only steps for this week — preserve title/description from curriculum plan
             setFormData(prev => {
               const newWeeks = [...prev.weeks];
               const weekIndex = weekIdx - 1;
@@ -618,9 +658,7 @@ export default function SyllabindEditor() {
               }
               newWeeks[weekIndex] = {
                 ...newWeeks[weekIndex],
-                steps: [],
-                title: '',
-                description: ''
+                steps: []
               };
               return { ...prev, weeks: newWeeks };
             });
@@ -728,6 +766,35 @@ export default function SyllabindEditor() {
             break;
           }
 
+          case 'url_repair_started': {
+            const { count } = message.data;
+            setGenerationProgress(prev => ({
+              ...prev,
+              status: `Searching for links for ${count} reading${count > 1 ? 's' : ''}...`
+            }));
+            break;
+          }
+
+          case 'step_url_repaired': {
+            const { stepId, url } = message.data;
+            setFormData(prev => {
+              const newWeeks = [...prev.weeks];
+              for (const week of newWeeks) {
+                const step = week.steps.find(s => s.id === stepId);
+                if (step) {
+                  step.url = url;
+                  break;
+                }
+              }
+              return { ...prev, weeks: newWeeks };
+            });
+            break;
+          }
+
+          case 'url_repair_complete':
+            // No UI change needed — generation continues
+            break;
+
           case 'generation_complete':
             setIsGenerating(false);
             isGeneratingRef.current = false;
@@ -752,6 +819,36 @@ export default function SyllabindEditor() {
 
           case 'generation_error': {
             const errorData = message.data;
+
+            if (errorData.isRateLimit) {
+              // Keep progress card visible — no toast, no state reset
+              const retryIn = Math.max(errorData.resetIn || 60, 30);
+              setGenerationProgress(prev => ({
+                ...prev,
+                status: `Lots of creators building right now — resuming in ${retryIn}s`
+              }));
+              let remaining = retryIn;
+              const countdown = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                  clearInterval(countdown);
+                  rateLimitRetryRef.current = null;
+                  handleAutogenerate();
+                } else {
+                  setGenerationProgress(prev => ({
+                    ...prev,
+                    status: `Lots of creators building right now — resuming in ${remaining}s`
+                  }));
+                }
+              }, 1000);
+              rateLimitRetryRef.current = countdown;
+              break;
+            }
+
+            // Non-rate-limit errors: mark errored week, show toast
+            if (errorData.weekIndex) {
+              setErroredWeeks(prev => new Set(Array.from(prev).concat(errorData.weekIndex)));
+            }
             setIsGenerating(false);
             isGeneratingRef.current = false;
             setGeneratingWeeks(new Set());
@@ -767,26 +864,18 @@ export default function SyllabindEditor() {
               })
               .catch(() => {}); // Silently fail — user will see the error toast
 
-            if (errorData.isRateLimit) {
-              const waitMinutes = errorData.resetIn ? Math.ceil(errorData.resetIn / 60) : 'a few';
-              toast({
-                title: "⏱️ Rate Limit Exceeded",
-                description: `${errorData.message}\n\nRemaining requests: ${errorData.remaining || 'Unknown'}\nPlease wait ${waitMinutes} minute(s) and try again.`,
-                variant: "destructive"
-              });
-            } else {
-              toast({
-                title: "Generation Error",
-                description: errorData.message || 'Generation failed',
-                variant: "destructive"
-              });
-            }
+            toast({
+              title: "Generation Error",
+              description: errorData.message || 'Generation failed',
+              variant: "destructive"
+            });
             break;
           }
 
           case 'error':
             setIsGenerating(false);
             isGeneratingRef.current = false;
+            setGeneratingWeeks(new Set());
             toast({
               title: "Generation Error",
               description: message.data.message,
@@ -857,17 +946,16 @@ export default function SyllabindEditor() {
     regeneratingWeekRef.current = weekIndex;
     setActiveWeekTab(`week-${weekIndex}`);
     setGeneratingWeeks(new Set([weekIndex]));
+    setErroredWeeks(prev => { const next = new Set(prev); next.delete(weekIndex); return next; });
 
-    // Clear existing content for this week locally
+    // Clear only steps for this week — preserve title/description
     setFormData(prev => {
       const newWeeks = [...prev.weeks];
       const weekIdx = weekIndex - 1;
       if (newWeeks[weekIdx]) {
         newWeeks[weekIdx] = {
           ...newWeeks[weekIdx],
-          steps: [],
-          title: '',
-          description: ''
+          steps: []
         };
       }
       return { ...prev, weeks: newWeeks };
@@ -898,13 +986,41 @@ export default function SyllabindEditor() {
 
         switch (message.type) {
           case 'rate_limit_wait': {
-            const { resetIn, retry, maxRetries } = message.data;
+            const { resetIn } = message.data;
             setGenerationProgress(prev => ({
               ...prev,
-              status: `Rate limited — resuming in ${resetIn}s... (retry ${retry}/${maxRetries})`
+              status: `Lots of creators are building right now — please hold on! Resuming in ${resetIn}s`
             }));
             break;
           }
+
+          case 'url_repair_started': {
+            const { count } = message.data;
+            setGenerationProgress(prev => ({
+              ...prev,
+              status: `Searching for links for ${count} reading${count > 1 ? 's' : ''}...`
+            }));
+            break;
+          }
+
+          case 'step_url_repaired': {
+            const { stepId, url } = message.data;
+            setFormData(prev => {
+              const newWeeks = [...prev.weeks];
+              for (const week of newWeeks) {
+                const step = week.steps.find(s => s.id === stepId);
+                if (step) {
+                  step.url = url;
+                  break;
+                }
+              }
+              return { ...prev, weeks: newWeeks };
+            });
+            break;
+          }
+
+          case 'url_repair_complete':
+            break;
 
           case 'week_info': {
             const { weekIndex: infoWeekIndex, title, description } = message.data;
@@ -955,6 +1071,14 @@ export default function SyllabindEditor() {
             regeneratingWeekRef.current = null;
             generationWsRef.current = null;
             setCompletedWeeks(prev => new Set(Array.from(prev).concat(weekIndex)));
+            setErroredWeeks(prev => { const next = new Set(prev); next.delete(weekIndex); return next; });
+
+            // Clear the green check after a brief display
+            setTimeout(() => setCompletedWeeks(prev => {
+              const next = new Set(prev);
+              next.delete(weekIndex);
+              return next;
+            }), 3000);
 
             toast({
               title: "Week Regenerated!",
@@ -971,6 +1095,7 @@ export default function SyllabindEditor() {
           case 'generation_error':
           case 'error': {
             setGeneratingWeeks(new Set());
+            setErroredWeeks(prev => new Set(Array.from(prev).concat(weekIndex)));
             setRegeneratingWeekIndex(null);
             regeneratingWeekRef.current = null;
             generationWsRef.current = null;
@@ -1324,23 +1449,6 @@ export default function SyllabindEditor() {
                     </div>
                   </div>
 
-                  {/* Week status indicators */}
-                  <div className="flex gap-1.5 mt-3">
-                    {formData.weeks.map((w) => (
-                      <div
-                        key={w.index}
-                        className={cn(
-                          "h-2 flex-1 rounded-full transition-all duration-300",
-                          completedWeeks.has(w.index)
-                            ? "bg-green-500"
-                            : generatingWeeks.has(w.index)
-                              ? "bg-primary animate-pulse"
-                              : "bg-muted"
-                        )}
-                      />
-                    ))}
-                  </div>
-
                   {/* Cancel button */}
                   <div className="mt-3 flex justify-end">
                     <Button
@@ -1366,7 +1474,8 @@ export default function SyllabindEditor() {
           <TabsList className="w-auto flex-wrap h-auto p-1 justify-start">
             {uniqueWeeks.map(w => {
               const isWeekGenerating = generatingWeeks.has(w.index);
-              const isWeekComplete = completedWeeks.has(w.index) || (!isGenerating && (w.steps.length > 0 || w.title));
+              const isWeekComplete = completedWeeks.has(w.index);
+              const isWeekErrored = erroredWeeks.has(w.index);
 
               return (
                 <TabsTrigger
@@ -1381,7 +1490,10 @@ export default function SyllabindEditor() {
                     <Loader2 className="h-3 w-3 animate-spin" />
                   )}
                   Week {w.index}
-                  {isWeekComplete && !isWeekGenerating && (
+                  {isWeekErrored && !isWeekGenerating && (
+                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                  )}
+                  {isWeekComplete && !isWeekGenerating && !isWeekErrored && (
                     <CheckCircle2 className="h-3 w-3 text-green-500" />
                   )}
                 </TabsTrigger>
@@ -1622,8 +1734,8 @@ export default function SyllabindEditor() {
           <AlertDialogHeader>
             <AlertDialogTitle>Regenerate Week {weekToRegenerate}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will replace all content in Week {weekToRegenerate} with newly generated material.
-              The steps and weekly summary will be deleted and regenerated. Other weeks will remain unchanged.
+              This will regenerate the readings and exercises for Week {weekToRegenerate}.
+              The week title and summary will be preserved. Other weeks will remain unchanged.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -23,7 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle, AlertTriangle, Share2 } from 'lucide-react';
+import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle, AlertTriangle, Share2, X } from 'lucide-react';
 import { ShareDialog } from '@/components/ShareDialog';
 import { useState, useEffect } from 'react';
 import { cn, pluralize } from '@/lib/utils';
@@ -329,14 +329,17 @@ export default function SyllabusOverview() {
                             </div>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            {pluralize(week.steps.length, 'step')} &bull; {week.steps.reduce((acc, w_step) => acc + (w_step.estimatedMinutes || 0), 0)} mins est.
+                            {(() => {
+                              const visibleSteps = week.steps.filter(s => s.type !== 'reading' || s.url);
+                              return `${pluralize(visibleSteps.length, 'step')} \u2022 ${visibleSteps.reduce((acc, w_step) => acc + (w_step.estimatedMinutes || 0), 0)} mins est.`;
+                            })()}
                           </p>
                         </div>
                       </div>
                     </AccordionTrigger>
                   <AccordionContent>
                     <div className="pl-16 pr-4 py-2 space-y-3">
-                      {week.steps.map(step => {
+                      {week.steps.filter(step => step.type !== 'reading' || step.url).map(step => {
                         const isDone = isStepCompleted(step.id);
                         const exerciseLink = step.type === 'exercise' ? getStepExercise(step.id) : null;
 
@@ -535,6 +538,13 @@ export default function SyllabusOverview() {
 
       <AlertDialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog}>
         <AlertDialogContent>
+          <button
+            onClick={() => setShowPrivacyDialog(false)}
+            className="absolute right-2 top-2 flex h-12 w-12 items-center justify-center rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
           <AlertDialogHeader>
             <AlertDialogTitle>Join and Connect?</AlertDialogTitle>
             <AlertDialogDescription>

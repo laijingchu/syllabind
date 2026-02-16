@@ -49,6 +49,7 @@ export interface IStorage {
   createStep(step: InsertStep): Promise<Step>;
   getStep(stepId: number): Promise<Step | undefined>;
   getStepsByWeekId(weekId: number): Promise<Step[]>;
+  updateStepUrl(stepId: number, url: string): Promise<Step>;
   deleteStep(stepId: number): Promise<void>;
   deleteStepsByWeekId(weekId: number): Promise<void>;
   deleteWeeksBySyllabusId(syllabusId: number): Promise<void>;
@@ -318,6 +319,11 @@ export class DatabaseStorage implements IStorage {
 
   async getStep(stepId: number): Promise<Step | undefined> {
     const [step] = await db.select().from(steps).where(eq(steps.id, stepId));
+    return step;
+  }
+
+  async updateStepUrl(stepId: number, url: string): Promise<Step> {
+    const [step] = await db.update(steps).set({ url }).where(eq(steps.id, stepId)).returning();
     return step;
   }
 

@@ -114,4 +114,5 @@ export const resetAllMocks = () => {
   if (mockStorage.getChatMessages) mockStorage.getChatMessages.mockResolvedValue([]);
   if (mockStorage.createChatMessage) mockStorage.createChatMessage.mockResolvedValue({ id: 1 });
   if (mockStorage.clearChatMessages) mockStorage.clearChatMessages.mockResolvedValue(undefined);
+  if (mockStorage.updateStepUrl) mockStorage.updateStepUrl.mockResolvedValue(undefined);
 };

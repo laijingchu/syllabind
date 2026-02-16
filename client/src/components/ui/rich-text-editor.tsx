@@ -113,16 +113,34 @@ export function RichTextEditor({ value, onChange, placeholder, className, isSavi
     if (!editor || isImproving || editor.isEmpty) return;
 
     setIsImproving(true);
-    // Simulate AI delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // In a real app, this would call an API
-    toast({ 
-      title: "Writing Improved", 
-      description: "Suggestions for clarity and grammar have been applied.",
-    });
-    
-    setIsImproving(false);
+    try {
+      const res = await fetch('/api/improve-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html: editor.getHTML() }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to improve text');
+      }
+
+      const { improved } = await res.json();
+      editor.commands.setContent(improved);
+      onChange(improved);
+      toast({
+        title: "Writing improved",
+        description: "Grammar and spelling fixes have been applied.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Couldn't improve writing",
+        description: error.message || "Something went wrong. Try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImproving(false);
+    }
   };
 
   return (

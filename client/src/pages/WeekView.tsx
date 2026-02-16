@@ -78,7 +78,7 @@ export default function WeekView() {
   // Exception: Week 1 is always unlocked.
   const previousWeekReadingsDone = weekIndex > 1 ? (
     syllabus?.weeks.find(w => w.index === weekIndex - 1)?.steps
-      .filter(s => s.type === 'reading')
+      .filter(s => s.type === 'reading' && s.url)
       .every(s => isStepCompleted(s.id))
   ) : true;
 
@@ -119,7 +119,7 @@ export default function WeekView() {
 
   const isLastWeek = weekIndex === syllabus.durationWeeks;
   const allReadingsDone = week.steps
-    .filter(s => s.type === 'reading')
+    .filter(s => s.type === 'reading' && s.url)
     .every(s => isStepCompleted(s.id));
   
   const allDone = allReadingsDone;
@@ -161,7 +161,9 @@ export default function WeekView() {
            <div className="text-center py-10 text-muted-foreground italic">No steps for this week yet.</div>
         )}
         
-        {week.steps.map((step, idx) => {
+        {week.steps
+          .filter(step => step.type !== 'reading' || step.url)
+          .map((step, idx) => {
           const isDone = isStepCompleted(step.id);
           
           return (
@@ -196,11 +198,22 @@ export default function WeekView() {
                       {step.title}
                     </h3>
                     <div className="flex flex-wrap items-center gap-2">
-                      {step.creationDate && (
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(step.creationDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                        </span>
-                      )}
+                      {step.creationDate && (() => {
+                        // Handle both YYYY-MM-DD (ISO) and dd/mm/yyyy (legacy) formats
+                        let date: Date;
+                        const parts = step.creationDate.split('/');
+                        if (parts.length === 3 && parts[2].length === 4) {
+                          // dd/mm/yyyy legacy format
+                          date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                        } else {
+                          date = new Date(step.creationDate);
+                        }
+                        return !isNaN(date.getTime()) ? (
+                          <span className="text-xs text-muted-foreground">
+                            {date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                          </span>
+                        ) : null;
+                      })()}
                       {step.estimatedMinutes && (
                         <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 sm:py-1 rounded-full">
                           {pluralize(step.estimatedMinutes, 'min')}
@@ -211,7 +224,7 @@ export default function WeekView() {
                   
                   {step.note && (
                     <div 
-                      className="text-muted-foreground text-sm prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 max-w-none"
+                      className="text-muted-foreground text-sm prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 max-w-none"
                       dangerouslySetInnerHTML={{ __html: step.note }}
                     />
                   )}
@@ -231,7 +244,7 @@ export default function WeekView() {
                   {step.type === 'exercise' && (
                     <div className="mt-4 space-y-3">
                       <div 
-                        className="text-sm font-medium mb-2 prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 max-w-none"
+                        className="text-sm font-medium mb-2 prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 max-w-none"
                         dangerouslySetInnerHTML={{ __html: step.promptText || '' }}
                       />
                       {!isDone ? (

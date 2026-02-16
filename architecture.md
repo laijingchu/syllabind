@@ -1073,10 +1073,11 @@ Added comprehensive analytics endpoint that provides real data for the Creator A
 
 Reduced token consumption for AI-powered Syllabind generation and chat refinement:
 
-**Model Selection:**
-- All environments use `claude-3-5-haiku-20241022` (optimized for Tier 1 rate limits at 50 RPM)
-- Shared `CLAUDE_MODEL` constant in `server/utils/claudeClient.ts`
-- No user-facing model selector — Haiku is hardcoded
+**Model Selection (Hybrid):**
+- **Haiku** (`claude-3-5-haiku-20241022` / `CLAUDE_MODEL`): Planning (`planCurriculum`) and chat refinement — simple structured output, cost-efficient
+- **Sonnet** (`claude-sonnet-4-5-20250929` / `CLAUDE_MODEL_GENERATION`): Generation batches, week regeneration, and URL repair — needs accurate metadata extraction (title, author, date) from web search results
+- Both constants exported from `server/utils/claudeClient.ts`
+- No user-facing model selector
 
 **Prompt Caching:**
 - Enabled `cache_control: { type: 'ephemeral' }` on system prompts
@@ -1139,7 +1140,7 @@ Fixed issue where changing durationWeeks would lose existing week content:
 Optimized API usage for Anthropic Tier 1 (50 RPM) to prevent 429 rate limit errors in production:
 
 **Changes:**
-- Forced Haiku model for all API calls (removed env-based switching and user-facing model selector)
+- Hybrid model strategy: Haiku for planning/chat, Sonnet for generation/repair (see AI Token Optimization section)
 - Added in-memory request queue (`server/utils/requestQueue.ts`) capping at 40 RPM (10 RPM headroom)
 - Replaced simple retry with exponential backoff + jitter (5 retries, 1s→16s base delay, +0-1s random jitter)
 - Respects `retry-after` header from API when available (capped at 120s)
@@ -1149,7 +1150,7 @@ Optimized API usage for Anthropic Tier 1 (50 RPM) to prevent 429 rate limit erro
 - All API calls (generation, regeneration, chat) go through shared `apiQueue.acquire()` before calling Anthropic
 
 **Files Modified:**
-- `server/utils/claudeClient.ts` - Hardcoded Haiku, shared client export
+- `server/utils/claudeClient.ts` - `CLAUDE_MODEL` (Haiku) + `CLAUDE_MODEL_GENERATION` (Sonnet), shared client export
 - `server/utils/requestQueue.ts` - **NEW** sliding window rate limiter
 - `server/utils/syllabindGenerator.ts` - Backoff, trimmed prompts, system param caching, reduced max_tokens
 - `server/websocket/generateSyllabind.ts` - Removed pre-flight rate check, removed model param
@@ -1169,10 +1170,11 @@ Enhanced visual feedback during AI Syllabind generation to make progress more ob
 **New State Tracking:**
 - `generatingWeeks: Set<number>` - Tracks which weeks are currently being generated
 - `completedWeeks: Set<number>` - Tracks which weeks have finished generating
+- `erroredWeeks: Set<number>` - Tracks weeks where generation failed (shows warning icon)
 - `justCompletedWeek: number | null` - Tracks most recently completed week for animation
 
 **UI Enhancements:**
-1. **Week Tabs:** Show spinner icon on generating weeks, checkmark on completed weeks
+1. **Week Tabs:** Show spinner icon on generating weeks, checkmark on completed weeks, warning triangle on errored weeks
 2. **Progress Card:** Enhanced progress indicator with percentage, progress bar, and colored segment indicators
 3. **Skeleton Placeholder:** New `GeneratingWeekPlaceholder` component shows shimmer-animated skeleton while week generates
 4. **Step Entrance Animation:** Steps slide in with staggered delay when week completes
@@ -1290,28 +1292,36 @@ Refined the generation streaming effect so that step cards appear one-by-one as 
 - `server/websocket/generateSyllabind.ts` - Added mockGenerateSyllabind function with week_info
 - `server/index.ts` - Added mock query param support
 
-### Markdown to HTML Conversion for Rich Text Fields (2026-02-03)
+### Markdown to HTML Conversion for Rich Text Fields (2026-02-03, updated 2026-02-16)
 
-**Problem:** AI-generated exercise prompts and notes contained markdown-style lists (numbered and bullet) that displayed as run-on text in the RichTextEditor (TipTap).
+**Problem:** AI-generated exercise prompts and notes contained markdown-style lists (numbered and bullet) that displayed as run-on text in the RichTextEditor (TipTap). Additionally, numbered list items separated by blank lines or bullet sub-items created separate `<ol>` elements, causing numbering to restart at "1." instead of flowing sequentially (1, 2, 3).
 
-**Solution:** Created `server/utils/markdownToHtml.ts` utility that converts markdown-style text to proper HTML:
+**Solution:** Created `server/utils/markdownToHtml.ts` utility with token-based parsing and recursive rendering that converts markdown-style text to proper nested HTML:
 - Numbered lists (`1. item`, `2) item`) → `<ol><li><p>...</p></li></ol>`
 - Bullet lists (`- item`, `* item`, `• item`) → `<ul><li><p>...</p></li></ul>`
 - Plain text → `<p>...</p>`
-- Existing HTML (detected by common tags like `<p>`, `<ul>`, `<ol>`) → passed through unchanged
+- Existing HTML → passed through unchanged
 - Placeholder brackets like `<topic>` are NOT treated as HTML
+- Numbered items separated by blank lines stay in a single `<ol>` (sequential numbering)
+- Bullet items between numbered items are nested under the preceding numbered item
+- Indentation-based nesting up to 3 levels (2 spaces per level)
+- Lazy numbering (all `1.`) handled automatically by HTML `<ol>` auto-increment
 
 **Key Implementation Details:**
+- Token-based parser classifies lines as `ol`, `ul`, `text`, or `blank` with indent levels
+- Recursive `renderList`/`renderListItem` functions build nested HTML
+- Nesting rule: `ol` items nest `ul` sub-items at same indent; `ul` items do NOT nest `ol` items (prevents recursive nesting, keeps separate list sections distinct)
 - TipTap requires `<p>` tags inside `<li>` elements for proper list rendering
-- HTML detection only matches actual HTML tags, not angle-bracket placeholders
 
 **Integration Points:**
 - `server/utils/syllabindGenerator.ts` - Converts `promptText` and `note` fields before saving
 - `server/websocket/chatSyllabind.ts` - Converts fields when adding steps via chat
 
-**Files Added:**
-- `server/utils/markdownToHtml.ts` - Conversion utility
-- `server/__tests__/markdownToHtml.test.ts` - Unit tests (12 tests)
+**Files Modified:**
+- `server/utils/markdownToHtml.ts` - Conversion utility with nested list support
+- `server/__tests__/markdownToHtml.test.ts` - Unit tests (23 tests)
+- `client/src/index.css` - Nested list CSS styling (circle/square for deeper bullet levels)
+- `client/src/pages/WeekView.tsx` - Added `prose-ol:list-decimal prose-ol:pl-5` classes
 
 ### AI creationDate Field Population Fix (2026-02-03)
 
@@ -1634,3 +1644,162 @@ The existing while loop (`while weekIndex <= durationWeeks`) provides natural fa
 **Files Modified:**
 - `server/utils/syllabindGenerator.ts` - Use counter-based weekIndex instead of Claude's value
 - `client/src/pages/SyllabindEditor.tsx` - Added `useMemo` import, `uniqueWeeks` dedup, render from deduped list
+
+### Improve Generation Link Quality & Content Completeness (2026-02-16)
+
+**Problems:**
+1. AI-generated readings sometimes had empty content (no url, note) because the tool schema only required `type` and `title`
+2. Haiku hallucinated URLs when it ran out of web searches (5 searches for 12+ readings was insufficient)
+
+**Changes:**
+
+1. **Batched generation** (`server/utils/syllabindGenerator.ts`): `generateSyllabind` now processes weeks in batches of 2. Each batch starts a fresh conversation with its own system prompt and search budget, preventing context bloat from accumulated search results. An 8-week syllabind = 4 batches.
+2. **Simplified search budget** (`server/utils/claudeClient.ts`): Replaced static `SYLLABIND_GENERATION_TOOLS` with `getGenerationTools()` returning 10 searches per batch (~5/week). No dynamic scaling needed since batches are always 1-2 weeks.
+2. **Added field descriptions to tool schema** (`server/utils/claudeClient.ts`): `url`, `note`, and `promptText` properties now have descriptions emphasizing they are required and URLs must come from search results
+3. **Strengthened system prompts** (`server/utils/syllabindGenerator.ts`): Both `generateSyllabind` and `regenerateWeek` prompts now explicitly require every reading to have a URL and note, every exercise to have promptText
+4. **Server-side URL validation** (NEW `server/utils/validateUrl.ts`): Lightweight HEAD-request checker with 5s timeout. Invalid URLs are stripped (set to null) rather than blocking the step — the reading is saved with its metadata and the creator can add a working URL later
+5. **URL validation integrated** (`server/utils/syllabindGenerator.ts`): Both `generateSyllabind` and `regenerateWeek` validate reading URLs before saving to database. Warnings logged for stripped URLs.
+
+**Files:**
+- `server/utils/claudeClient.ts` - Increased `max_uses`, added schema descriptions
+- `server/utils/syllabindGenerator.ts` - Stronger prompts, URL validation before step creation
+- `server/utils/validateUrl.ts` - New URL validation utility (HEAD request, 5s timeout, follows redirects)
+
+### URL Repair Pass + Rate Limit UX Improvements (2026-02-16)
+
+**Problems:**
+1. Haiku often fails to include URLs in readings during complex generation tasks (prompt engineering ceiling reached)
+2. When rate limits exhaust all retries, a red "destructive" toast appears and generation fully stops with no auto-recovery
+
+**Part 1: URL Repair Pass**
+
+After each 2-week batch completes, readings without URLs are collected. If any exist, a focused API call asks Claude to search for and provide URLs for those specific readings. This separates "find URLs" (simple, focused task) from "generate curriculum" (complex, multi-step task).
+
+**Architecture:**
+- `repairMissingUrls()` function in `syllabindGenerator.ts` takes a list of missing-URL readings
+- Uses `provide_urls` tool schema (`claudeClient.ts`) — Claude searches for each reading, calls the tool once with all results
+- Search budget: `min(missingCount * 2, 10)` — 2 searches per reading, capped at 10
+- Each URL validated via `validateUrl()` before saving via `storage.updateStepUrl()`
+- Non-fatal: if repair fails, generation continues with URL-less readings
+- Three new WebSocket messages: `url_repair_started`, `step_url_repaired`, `url_repair_complete`
+
+**Part 2: Rate Limit UX**
+
+- Server: `MAX_RETRIES` increased from 5 to 10; max backoff cap from 16s to 60s
+- Client: `rate_limit_wait` messages show friendly copy ("Lots of creators are building right now — please hold on!")
+- Client: When all retries exhausted (`generation_error` with `isRateLimit: true`), progress card shows countdown and auto-retries after cooldown instead of showing red toast and killing progress
+- Cancel button works during rate limit countdown via `rateLimitRetryRef`
+
+**Files Modified:**
+- `server/storage.ts` - Added `updateStepUrl(stepId, url)` to `IStorage` interface and `DatabaseStorage`
+- `server/utils/claudeClient.ts` - Added `PROVIDE_URLS_TOOL` constant and `getRepairTools(searchBudget)` function
+- `server/utils/syllabindGenerator.ts` - Added `repairMissingUrls()`, integrated into `generateSyllabind()` and `regenerateWeek()`, increased MAX_RETRIES to 10, max backoff to 60s
+- `client/src/pages/SyllabindEditor.tsx` - 3 new WebSocket message handlers in both generation and regen flows, friendly rate limit copy, auto-retry on rate limit exhaustion, `rateLimitRetryRef`
+- `server/__tests__/setup/mocks.ts` - Added `updateStepUrl` mock
+- `jest.setup.js` - Added `updateStepUrl` mock
+
+### URL Repair & Validation Robustness (2026-02-16)
+
+**Problem:** URL repair pass was silently failing for later batches (weeks 4-6 of 8 consistently missing links). Three compounding issues:
+
+1. **Token limit too low** (`max_tokens: 2048`): Web search results from Anthropic API include full page snippets. With 6+ readings and 10+ searches, Claude hit the output limit before calling `provide_urls` — the tool was never invoked.
+2. **No retry when tool not called**: If Claude ended the turn without calling `provide_urls` (due to token exhaustion or text output), all found URLs were silently lost with no second attempt.
+3. **HEAD-only URL validation**: Academic sites (jstor, arxiv, .edu) commonly block HEAD requests or return 403. Valid URLs were being stripped during both generation and repair.
+
+**Fixes:**
+
+1. **URL validation with GET fallback** (`server/utils/validateUrl.ts`):
+   - Phase 1: HEAD request (fast). If 200-299, accept. If 403, accept as "exists" (academic paywalls).
+   - Phase 2: If HEAD returns 405/406/5xx/network error, fall back to GET request.
+   - Quick `new URL()` syntax check before any network calls.
+
+2. **Multi-turn repair with higher limits** (`server/utils/syllabindGenerator.ts`):
+   - `max_tokens`: 2048 → 4096 (room for web search results + tool call)
+   - Search budget: `min(count * 2, 10)` → `min(count * 3, 20)` (3 searches per missing reading)
+   - Multi-turn retry loop (up to 3 turns): if Claude doesn't call `provide_urls`, prompt it again
+   - Web search result blocks filtered from conversation history between turns
+   - Stronger prompt: explicit instruction to ONLY use tools, no text explanations
+
+3. **Higher generation search budget** (`server/utils/claudeClient.ts`):
+   - `max_uses`: 10 → 14 per batch (~7 searches per week instead of ~5)
+
+**Files Modified:**
+- `server/utils/validateUrl.ts` - HEAD+GET two-phase validation, 403 accepted
+- `server/utils/syllabindGenerator.ts` - Multi-turn repair, 4096 tokens, higher search budget
+- `server/utils/claudeClient.ts` - 14 web searches per generation batch
+
+### Two-Phase Generation — Coherent Curriculum (2026-02-16)
+
+**Problem:**
+When generating 8-week syllabinds, weekly topics were random and duplicated (e.g., "Foundations of AI Evaluation" appearing 3 times). Root cause: weeks are generated in batches of 2, each batch starting a fresh conversation with no knowledge of other batches. For 8 weeks = 4 independent batches independently picking similar topics.
+
+Additionally, regenerating a single week was replacing the title and summary, when users expected only the readings/exercises to change.
+
+**Solution: Two-Phase Generation**
+
+**Phase 1 — Plan Curriculum:** A single API call (no web search) generates all week titles and descriptions as a structured outline using the `plan_curriculum` tool. These are saved to DB and streamed to the client immediately via a `curriculum_planned` WebSocket message.
+
+**Phase 2 — Generate Content:** Each batch receives the full curriculum outline in its system prompt. The prompt instructs Claude to generate only readings and exercises — titles and descriptions are pre-set. The `finalize_week` tool no longer requires `title` in its schema.
+
+**Week Regeneration:** When regenerating a single week, the existing title/description are preserved. The system prompt includes the week's topic and the full outline for context. Only steps (readings/exercises) are regenerated.
+
+**Architecture:**
+- `planCurriculum()` in `syllabindGenerator.ts`: Single API call with `plan_curriculum` tool, 2 retries
+- `buildOutlineString()`: Formats curriculum for inclusion in batch system prompts
+- `generateSyllabind()` Phase 1 saves weeks to DB, sends `curriculum_planned`, then Phase 2 batches reference pre-created weeks
+- `regenerateWeek()` accepts `weekTitle`, `weekDescription`, `allWeeksOutline` — preserves title/description, includes outline context
+- `handleRegenerateWeekWS()` fetches all weeks and passes outline + existing title/description
+
+**Client Changes:**
+- `curriculum_planned` handler populates all week titles/descriptions immediately
+- `week_started` clears only `steps`, preserves `title`/`description`
+- Week regeneration dialog clarifies that title/summary are preserved
+
+**New WebSocket Messages:**
+- `curriculum_planned` — sent after Phase 1 with `{ weeks: [{ weekIndex, title, description }] }`
+
+**Files Modified:**
+- `server/utils/claudeClient.ts` — Added `PLAN_CURRICULUM_TOOL`, `getPlanningTools()`, `plan_curriculum` case in `executeToolCall()`, made `title` optional in `FINALIZE_WEEK_TOOL`
+- `server/utils/syllabindGenerator.ts` — Added `planCurriculum()`, `buildOutlineString()`, `CurriculumWeek` type, two-phase `generateSyllabind()`, updated `regenerateWeek()` with title preservation
+- `server/websocket/generateSyllabind.ts` — Updated mock functions for `curriculum_planned`, preserved titles in mock regen, passed outline/title to `regenerateWeek()`
+- `client/src/pages/SyllabindEditor.tsx` — Added `curriculum_planned` handler, preserved titles in `week_started` and regeneration, updated dialog text
+
+### Generation Data Quality — Missing Fields Fix (2026-02-16)
+
+**Problems:**
+1. `estimatedMinutes` absent for some weeks — Claude omits the field and it saves as null
+2. `creationDate` never displayed — tool schema used `dd/mm/yyyy` format but JS `new Date()` can't parse it
+3. URLs missing for later weeks (6/7) — per-batch repair pass doesn't catch all, no cross-batch sweep
+
+**Changes:**
+
+1. **creationDate format fix**: Changed tool schema and prompts from `dd/mm/yyyy` to `YYYY-MM-DD` (ISO format). WeekView now handles both legacy and ISO formats with a parser that detects `dd/mm/yyyy` and converts manually.
+
+2. **estimatedMinutes defaults**: Added `defaultEstimatedMinutes()` helper in `syllabindGenerator.ts` — uses 15 min for readings, 30 min for exercises when Claude omits the value. Applied at all 4 step-save locations.
+
+3. **Stronger prompts**: Both generation and regeneration prompts now explicitly require `estimatedMinutes` on every step and `creationDate` on every reading (with "if unknown, use best estimate").
+
+4. **Final URL sweep**: After all batches complete, `generateSyllabind()` now queries all weeks/steps from the DB and collects any readings still missing URLs across the entire syllabind. Runs one final `repairMissingUrls()` pass for cross-batch coverage.
+
+5. **Learner page filtering**: WeekView and SyllabusOverview hide readings without URLs from learners. Step counts and time estimates only include visible steps. Week locking/progression logic excludes URL-less readings.
+
+**Files Modified:**
+- `server/utils/claudeClient.ts` — creationDate description changed to YYYY-MM-DD
+- `server/utils/syllabindGenerator.ts` — `defaultEstimatedMinutes()`, stronger prompts, final URL sweep
+- `client/src/pages/WeekView.tsx` — Date parsing fix, filter out URL-less readings, adjusted locking logic
+- `client/src/pages/SyllabusOverview.tsx` — Filter out URL-less readings from step list and counts
+
+### AI-Powered "Improve Writing" Button (2026-02-16)
+
+Added real AI text improvement to the RichTextEditor's "Improve writing" button (previously a stub).
+
+**How it works:**
+- `POST /api/improve-text` — Authenticated endpoint that sends HTML to Haiku for grammar, spelling, and punctuation fixes
+- System prompt instructs the model to preserve HTML structure, meaning, and tone
+- Frontend replaces editor content with the improved text on success
+
+**Endpoint:** `POST /api/improve-text` (auth required, 50KB limit)
+
+**Files Modified:**
+- `server/routes.ts` — Added `POST /api/improve-text` endpoint using `client` and `CLAUDE_MODEL` from `claudeClient.ts`
+- `client/src/components/ui/rich-text-editor.tsx` — Replaced stub `handleImproveWriting` with real `fetch` call

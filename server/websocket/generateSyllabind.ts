@@ -10,11 +10,56 @@ const MOCK_STEPS = [
   { type: 'exercise', title: 'Reflection Exercise', promptText: '<p>Based on this week\'s readings:</p><ol><li><p>Identify 3 key concepts</p></li><li><p>Write a 200-word reflection</p></li><li><p>Share with a peer for feedback</p></li></ol>', estimatedMinutes: 30 }
 ];
 
+// Mock week titles for distinct curriculum topics
+const MOCK_WEEK_TITLES = [
+  { title: 'Foundations & First Principles', description: 'Establish core vocabulary and mental models for the topic.' },
+  { title: 'Historical Context & Evolution', description: 'Trace how the field developed and why current approaches exist.' },
+  { title: 'Core Frameworks & Models', description: 'Learn the primary analytical frameworks used by practitioners.' },
+  { title: 'Research Methods & Evidence', description: 'Understand how knowledge is produced and validated in this field.' },
+  { title: 'Applied Techniques', description: 'Put theory into practice with real-world techniques and tools.' },
+  { title: 'Case Studies & Analysis', description: 'Analyze detailed real-world examples and their outcomes.' },
+  { title: 'Contemporary Debates', description: 'Engage with current controversies and open questions in the field.' },
+  { title: 'Synthesis & Future Directions', description: 'Integrate everything learned and explore emerging frontiers.' },
+];
+
 async function mockGenerateSyllabind(ws: WebSocket, syllabusId: number, durationWeeks: number): Promise<void> {
   console.log('[MockGenerate] Starting mock generation for testing...');
 
+  // Phase 1: Plan curriculum — send all week titles immediately
+  const curriculum = Array.from({ length: durationWeeks }, (_, i) => ({
+    weekIndex: i + 1,
+    title: MOCK_WEEK_TITLES[i % MOCK_WEEK_TITLES.length].title,
+    description: MOCK_WEEK_TITLES[i % MOCK_WEEK_TITLES.length].description
+  }));
+
+  // Create all weeks in DB
+  const savedWeeks: Map<number, number> = new Map(); // weekIndex -> weekId
+  for (const cw of curriculum) {
+    const week = await storage.createWeek({
+      syllabusId,
+      index: cw.weekIndex,
+      title: cw.title,
+      description: cw.description
+    });
+    savedWeeks.set(cw.weekIndex, week.id);
+  }
+
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  ws.send(JSON.stringify({
+    type: 'curriculum_planned',
+    data: { weeks: curriculum }
+  }));
+
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  // Phase 2: Generate content per week
   for (let weekIndex = 1; weekIndex <= durationWeeks; weekIndex++) {
-    // Send week_started
+    const weekId = savedWeeks.get(weekIndex)!;
+    const weekTitle = curriculum[weekIndex - 1].title;
+    const weekDescription = curriculum[weekIndex - 1].description;
+
+    // Send week_started (title/description already set by curriculum_planned)
     ws.send(JSON.stringify({
       type: 'week_started',
       data: { weekIndex }
@@ -24,38 +69,22 @@ async function mockGenerateSyllabind(ws: WebSocket, syllabusId: number, duration
     await new Promise(resolve => setTimeout(resolve, 500));
     ws.send(JSON.stringify({
       type: 'searching',
-      data: { query: `best resources for week ${weekIndex} topic` }
+      data: { query: `best resources for ${weekTitle}` }
     }));
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    // Create week in database
-    const weekTitle = `Week ${weekIndex}: Core Concepts`;
-    const weekDescription = `This week covers fundamental aspects of the topic with curated readings and a practical exercise.`;
-
-    const week = await storage.createWeek({
-      syllabusId,
-      index: weekIndex,
-      title: weekTitle,
-      description: weekDescription
-    });
-
-    // Send week title/description FIRST (before steps) so they render immediately
+    // Send week_info to confirm title/description
     ws.send(JSON.stringify({
       type: 'week_info',
-      data: {
-        weekIndex,
-        title: weekTitle,
-        description: weekDescription
-      }
+      data: { weekIndex, title: weekTitle, description: weekDescription }
     }));
 
     // Stream steps one by one with delays
     for (let i = 0; i < MOCK_STEPS.length; i++) {
       const stepData = MOCK_STEPS[i];
 
-      // Create step in database
       const createdStep = await storage.createStep({
-        weekId: week.id,
+        weekId,
         position: i + 1,
         type: stepData.type as 'reading' | 'exercise',
         title: `${stepData.title} (Week ${weekIndex})`,
@@ -67,7 +96,6 @@ async function mockGenerateSyllabind(ws: WebSocket, syllabusId: number, duration
         estimatedMinutes: stepData.estimatedMinutes || null
       });
 
-      // Send step_completed with delay for visible streaming
       await new Promise(resolve => setTimeout(resolve, 400));
       ws.send(JSON.stringify({
         type: 'step_completed',
@@ -76,7 +104,7 @@ async function mockGenerateSyllabind(ws: WebSocket, syllabusId: number, duration
           stepIndex: i + 1,
           step: {
             id: createdStep.id,
-            weekId: week.id,
+            weekId,
             position: i + 1,
             type: stepData.type,
             title: `${stepData.title} (Week ${weekIndex})`,
@@ -91,24 +119,18 @@ async function mockGenerateSyllabind(ws: WebSocket, syllabusId: number, duration
       }));
     }
 
-    // Send week_completed
+    // Send week_completed with preserved title
     ws.send(JSON.stringify({
       type: 'week_completed',
       data: {
         weekIndex,
-        week: {
-          weekIndex,
-          title: `Week ${weekIndex}: Core Concepts`,
-          description: `This week covers fundamental aspects of the topic.`
-        }
+        week: { weekIndex, title: weekTitle, description: weekDescription }
       }
     }));
 
-    // Brief pause before next week
     await new Promise(resolve => setTimeout(resolve, 300));
   }
 
-  // Update syllabus status
   await storage.updateSyllabus(syllabusId, { status: 'draft' });
 
   ws.send(JSON.stringify({
@@ -192,12 +214,14 @@ export function handleGenerateSyllabindWS(ws: WebSocket, syllabusId: number, use
   })();
 }
 
-// Mock regeneration for a single week
+// Mock regeneration for a single week — preserves existing title/description
 async function mockRegenerateWeek(
   ws: WebSocket,
   syllabusId: number,
   weekIndex: number,
-  existingWeekId?: number
+  existingWeekId?: number,
+  existingTitle?: string,
+  existingDescription?: string
 ): Promise<void> {
   console.log(`[MockRegenerateWeek] Starting mock regeneration for week ${weekIndex}...`);
 
@@ -208,8 +232,9 @@ async function mockRegenerateWeek(
 
   await new Promise(resolve => setTimeout(resolve, 500));
 
-  const weekTitle = `Week ${weekIndex}: Regenerated Content`;
-  const weekDescription = `Fresh content generated for week ${weekIndex} with updated readings and exercises.`;
+  // Preserve existing title/description
+  const weekTitle = existingTitle || `Week ${weekIndex}: Regenerated Content`;
+  const weekDescription = existingDescription || `Fresh content generated for week ${weekIndex} with updated readings and exercises.`;
 
   let weekId = existingWeekId;
   if (!weekId) {
@@ -220,12 +245,8 @@ async function mockRegenerateWeek(
       description: weekDescription
     });
     weekId = week.id;
-  } else {
-    await storage.updateWeek(weekId, {
-      title: weekTitle,
-      description: weekDescription
-    });
   }
+  // Don't update week title/description — preserve what's already there
 
   ws.send(JSON.stringify({
     type: 'week_info',
@@ -325,8 +346,15 @@ export function handleRegenerateWeekWS(
         await storage.deleteStepsByWeekId(existingWeek.id);
       }
 
+      // Build full outline from all weeks for context
+      const allWeeksOutline = existingWeeks.map(w => ({
+        weekIndex: w.index,
+        title: w.title || '',
+        description: w.description || ''
+      }));
+
       if (useMock) {
-        await mockRegenerateWeek(ws, syllabusId, weekIndex, existingWeek?.id);
+        await mockRegenerateWeek(ws, syllabusId, weekIndex, existingWeek?.id, existingWeek?.title ?? undefined, existingWeek?.description ?? undefined);
       } else {
         await regenerateWeek({
           syllabusId,
@@ -338,6 +366,9 @@ export function handleRegenerateWeekWS(
             audienceLevel: syllabus.audienceLevel,
             durationWeeks: syllabus.durationWeeks
           },
+          weekTitle: existingWeek?.title ?? undefined,
+          weekDescription: existingWeek?.description ?? undefined,
+          allWeeksOutline,
           ws,
           signal: abortController.signal
         });

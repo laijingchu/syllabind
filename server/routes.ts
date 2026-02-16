@@ -10,6 +10,7 @@ import {
   insertSubmissionSchema
 } from "@shared/schema";
 import multer from "multer";
+import { client, CLAUDE_MODEL } from "./utils/claudeClient";
 import * as path from "path";
 import fs from "fs/promises";
 import { fileURLToPath } from "url";
@@ -533,6 +534,38 @@ export async function registerRoutes(
       syllabusId,
       websocketUrl: `/ws/generate-syllabind/${syllabusId}`
     });
+  });
+
+  // Improve writing with AI (grammar, spelling, punctuation)
+  app.post("/api/improve-text", isAuthenticated, async (req, res) => {
+    const { html } = req.body;
+
+    if (!html || typeof html !== 'string') {
+      return res.status(400).json({ error: "HTML text is required" });
+    }
+
+    if (html.length > 50000) {
+      return res.status(400).json({ error: "Text too long" });
+    }
+
+    try {
+      const response = await client.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 4096,
+        system: "Fix grammar, spelling, and punctuation errors in the provided HTML. Keep the HTML structure and tags exactly as they are. Do not change the meaning, tone, or style. Return only the corrected HTML with no explanation or wrapping.",
+        messages: [{ role: "user", content: html }],
+      });
+
+      const textBlock = response.content.find(b => b.type === 'text');
+      if (!textBlock || textBlock.type !== 'text') {
+        return res.status(500).json({ error: "No response from AI" });
+      }
+
+      res.json({ improved: textBlock.text });
+    } catch (error: any) {
+      console.error("Improve text error:", error?.message || error);
+      res.status(500).json({ error: "Failed to improve text" });
+    }
   });
 
   // Regenerate a single week's content

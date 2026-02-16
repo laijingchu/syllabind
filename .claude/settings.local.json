@@ -47,7 +47,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(NODE_ENV=test npx jest:*)"
+      "Bash(NODE_ENV=test npx jest:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm info:*)"
     ]
   }
 }

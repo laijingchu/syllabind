@@ -26,6 +26,45 @@ describe('claudeClient', () => {
     });
   });
 
+  describe('CLAUDE_MODEL_GENERATION', () => {
+    it('should export Sonnet for generation tasks', () => {
+      jest.resetModules();
+      const { CLAUDE_MODEL_GENERATION } = require('../utils/claudeClient');
+      expect(CLAUDE_MODEL_GENERATION).toBe('claude-sonnet-4-5-20250929');
+    });
+  });
+
+  describe('getPlanningTools', () => {
+    it('should return only the plan_curriculum tool (no web search)', () => {
+      jest.resetModules();
+      const { getPlanningTools } = require('../utils/claudeClient');
+      const tools = getPlanningTools();
+      expect(tools).toHaveLength(1);
+      expect(tools[0].name).toBe('plan_curriculum');
+    });
+  });
+
+  describe('getGenerationTools', () => {
+    it('should include web_search and finalize_week', () => {
+      jest.resetModules();
+      const { getGenerationTools } = require('../utils/claudeClient');
+      const tools = getGenerationTools();
+      expect(tools).toHaveLength(2);
+      expect(tools[0].name).toBe('web_search');
+      expect(tools[1].name).toBe('finalize_week');
+    });
+
+    it('finalize_week should not require title (optional for pre-set curriculum)', () => {
+      jest.resetModules();
+      const { getGenerationTools } = require('../utils/claudeClient');
+      const tools = getGenerationTools();
+      const finalizeTool = tools.find((t: any) => t.name === 'finalize_week');
+      expect(finalizeTool.input_schema.required).toContain('weekIndex');
+      expect(finalizeTool.input_schema.required).toContain('steps');
+      expect(finalizeTool.input_schema.required).not.toContain('title');
+    });
+  });
+
   describe('executeToolCall', () => {
     let executeToolCall: any;
 
@@ -40,11 +79,32 @@ describe('claudeClient', () => {
       expect(result.handled_by_api).toBe(true);
     });
 
+    it('should handle plan_curriculum tool', async () => {
+      const input = {
+        weeks: [
+          { weekIndex: 1, title: 'Foundations', description: 'Core concepts' },
+          { weekIndex: 2, title: 'Advanced', description: 'Deep dive' }
+        ]
+      };
+      const result = await executeToolCall('plan_curriculum', input, {});
+      expect(result.weeks).toHaveLength(2);
+      expect(result.weeks[0].title).toBe('Foundations');
+      expect(result.weeks[1].weekIndex).toBe(2);
+    });
+
     it('should handle finalize_week tool', async () => {
       const input = { weekIndex: 1, title: 'Week 1', steps: [] };
       const result = await executeToolCall('finalize_week', input, {});
       expect(result.weekIndex).toBe(1);
       expect(result.title).toBe('Week 1');
+    });
+
+    it('should handle finalize_week without title (pre-set by curriculum plan)', async () => {
+      const input = { weekIndex: 3, steps: [{ type: 'reading', title: 'Article' }] };
+      const result = await executeToolCall('finalize_week', input, {});
+      expect(result.weekIndex).toBe(3);
+      expect(result.title).toBeUndefined();
+      expect(result.steps).toHaveLength(1);
     });
 
     it('should handle read_current_syllabind tool', async () => {

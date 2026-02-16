@@ -172,6 +172,7 @@ jest.mock('./server/storage', () => ({
     deleteStepsByWeekId: jest.fn(),
     deleteWeeksBySyllabusId: jest.fn(),
     isStepCompleted: jest.fn().mockResolvedValue(false),
+    updateStepUrl: jest.fn(),
   },
   DatabaseStorage: jest.fn(),
 }));
