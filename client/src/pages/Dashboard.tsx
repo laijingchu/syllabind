@@ -273,12 +273,17 @@ export default function Dashboard() {
                   <BookOpenIcon className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-xl font-medium">No active Syllabind</h3>
-                  <p className="text-muted-foreground max-w-sm mx-auto">You are not currently enrolled in any syllabus. Browse the catalog to find your next topic.</p>
+                  <h3 className="text-xl font-medium">You are not currently enrolled in any syllabind</h3>
+                  <p className="text-muted-foreground max-w-sm mx-auto">Browse the catalog to find your next topic, or create your own!</p>
                 </div>
-                <Link href="/catalog">
-                  <Button>Browse Catalog</Button>
-                </Link>
+                <div className="flex gap-3">
+                  <Link href="/catalog">
+                    <Button>Browse Catalog</Button>
+                  </Link>
+                  <Link href="/creator">
+                    <Button variant="outline">Build your own course</Button>
+                  </Link>
+                </div>
               </CardContent>
             </Card>
           </AnimatedCard>
