@@ -117,17 +117,15 @@ app.use((req, res, next) => {
     // Route to appropriate handler
     if (url?.startsWith('/ws/generate-syllabind/')) {
       const urlObj = new URL(url, 'http://localhost');
-      const model = urlObj.searchParams.get('model') || undefined;
       const useMock = urlObj.searchParams.get('mock') === 'true';
-      handleGenerateSyllabindWS(ws, syllabusId, model, useMock);
+      handleGenerateSyllabindWS(ws, syllabusId, useMock);
     } else if (url?.startsWith('/ws/regenerate-week/')) {
       const urlObj = new URL(url, 'http://localhost');
       const pathParts = urlObj.pathname.split('/');
       const weekIndex = parseInt(pathParts[4] || '');
-      const model = urlObj.searchParams.get('model') || undefined;
       const useMock = urlObj.searchParams.get('mock') === 'true';
       if (weekIndex) {
-        handleRegenerateWeekWS(ws, syllabusId, weekIndex, model, useMock);
+        handleRegenerateWeekWS(ws, syllabusId, weekIndex, useMock);
       } else {
         ws.send(JSON.stringify({ type: 'error', data: { message: 'Invalid week index.' } }));
         ws.close(4400, 'Bad Request');

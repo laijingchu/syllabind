@@ -511,7 +511,7 @@ export async function registerRoutes(
       return res.status(403).json({ error: "Creator access required" });
     }
 
-    const { syllabusId, model } = req.body;
+    const { syllabusId } = req.body;
 
     if (!syllabusId || typeof syllabusId !== 'number') {
       return res.status(400).json({ error: "Valid syllabusId required" });
@@ -526,16 +526,12 @@ export async function registerRoutes(
       return res.status(400).json({ error: "Complete basics fields before generating" });
     }
 
-    // Validate model selection
-    const allowedModels = ['claude-opus-4-20250514', 'claude-sonnet-4-20250514', 'claude-3-5-haiku-20241022'];
-    const selectedModel = allowedModels.includes(model) ? model : 'claude-sonnet-4-20250514';
-
     await storage.updateSyllabus(syllabusId, { status: 'generating' });
 
     res.json({
       success: true,
       syllabusId,
-      websocketUrl: `/ws/generate-syllabind/${syllabusId}?model=${encodeURIComponent(selectedModel)}`
+      websocketUrl: `/ws/generate-syllabind/${syllabusId}`
     });
   });
 
@@ -548,7 +544,7 @@ export async function registerRoutes(
       return res.status(403).json({ error: "Creator access required" });
     }
 
-    const { syllabusId, weekIndex, model } = req.body;
+    const { syllabusId, weekIndex } = req.body;
 
     if (!syllabusId || typeof syllabusId !== 'number') {
       return res.status(400).json({ error: "Valid syllabusId required" });
@@ -567,14 +563,11 @@ export async function registerRoutes(
       return res.status(400).json({ error: "weekIndex exceeds syllabus duration" });
     }
 
-    const allowedModels = ['claude-opus-4-20250514', 'claude-sonnet-4-20250514', 'claude-3-5-haiku-20241022'];
-    const selectedModel = allowedModels.includes(model) ? model : 'claude-sonnet-4-20250514';
-
     res.json({
       success: true,
       syllabusId,
       weekIndex,
-      websocketUrl: `/ws/regenerate-week/${syllabusId}/${weekIndex}?model=${encodeURIComponent(selectedModel)}`
+      websocketUrl: `/ws/regenerate-week/${syllabusId}/${weekIndex}`
     });
   });
 

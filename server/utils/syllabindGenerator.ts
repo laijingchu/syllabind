@@ -1,68 +1,88 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { storage } from '../storage';
-import { SYLLABIND_GENERATION_TOOLS, executeToolCall, CLAUDE_MODEL } from './claudeClient';
+import { SYLLABIND_GENERATION_TOOLS, CLAUDE_MODEL, client } from './claudeClient';
 import { markdownToHtml } from './markdownToHtml';
+import { apiQueue } from './requestQueue';
 import WebSocket from 'ws';
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  maxRetries: 0, // Disable SDK silent retry so we handle 429s with user-visible feedback
-});
+const MAX_RETRIES = 5;
 
-const MAX_RATE_LIMIT_RETRIES = 3;
-const MAX_RATE_LIMIT_WAIT_SECONDS = 90;
+/** Tracks API call count per generation session for logging */
+let sessionApiCalls = 0;
+let sessionStartTime = 0;
+
+function resetApiCallCounter() {
+  sessionApiCalls = 0;
+  sessionStartTime = Date.now();
+}
+
+function logApiCall(context: string) {
+  sessionApiCalls++;
+  const elapsed = ((Date.now() - sessionStartTime) / 1000).toFixed(1);
+  console.log(`[API Call #${sessionApiCalls}] ${context} (${elapsed}s elapsed)`);
+}
 
 /**
- * Wraps client.messages.create() with rate-limit retry logic.
- * On 429: extracts wait time from headers, notifies client via WebSocket, sleeps, retries.
+ * Parse retry-after from error headers (rate limit reset time).
+ * Returns milliseconds to wait, or null if not available.
+ */
+function parseRetryAfter(headers: Record<string, string> | undefined): number | null {
+  if (!headers) return null;
+  const resetTime = headers['anthropic-ratelimit-requests-reset'];
+  if (resetTime) {
+    const resetDate = new Date(resetTime);
+    const ms = resetDate.getTime() - Date.now();
+    // Cap at 120s
+    return Math.max(1000, Math.min(ms, 120_000));
+  }
+  return null;
+}
+
+/**
+ * Wraps client.messages.create() with queue + exponential backoff.
+ * On 429: calculates backoff with jitter, notifies client via WebSocket, sleeps, retries.
  * Non-429 errors pass through immediately.
  */
-async function createMessageWithRateLimitRetry(
+async function createMessageWithRetry(
   params: Anthropic.MessageCreateParamsNonStreaming & { signal?: AbortSignal },
-  ws: WebSocket
+  ws: WebSocket,
+  label?: string
 ): Promise<Anthropic.Message> {
-  let rateLimitRetries = 0;
   const { signal, ...apiParams } = params;
 
-  while (true) {
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    await apiQueue.acquire();
+    logApiCall(label || 'unknown');
+
     try {
       return await client.messages.create(apiParams, { signal });
     } catch (error: any) {
-      if (error.status === 429 && rateLimitRetries < MAX_RATE_LIMIT_RETRIES) {
-        rateLimitRetries++;
+      if (error.status === 429 && attempt < MAX_RETRIES - 1) {
+        const retryAfter = parseRetryAfter(error.headers);
+        const backoff = retryAfter ?? Math.min(2 ** attempt * 1000, 16_000);
+        const jitter = Math.random() * 1000;
+        const waitMs = Math.round(backoff + jitter);
+        const waitSec = Math.ceil(waitMs / 1000);
 
-        let resetIn = 30; // default wait
-        if (error.headers) {
-          const headers = error.headers as Record<string, string>;
-          const resetTime = headers['anthropic-ratelimit-requests-reset'];
-          if (resetTime) {
-            const resetDate = new Date(resetTime);
-            resetIn = Math.ceil((resetDate.getTime() - Date.now()) / 1000);
-          }
-        }
+        console.log(`[RateLimit] 429 received, waiting ${waitSec}s (attempt ${attempt + 1}/${MAX_RETRIES})`);
 
-        // Cap wait time
-        resetIn = Math.max(1, Math.min(resetIn, MAX_RATE_LIMIT_WAIT_SECONDS));
-
-        console.log(`[RateLimit] 429 received, waiting ${resetIn}s (retry ${rateLimitRetries}/${MAX_RATE_LIMIT_RETRIES})`);
-
-        // Notify client
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({
             type: 'rate_limit_wait',
-            data: { resetIn, retry: rateLimitRetries, maxRetries: MAX_RATE_LIMIT_RETRIES }
+            data: { resetIn: waitSec, retry: attempt + 1, maxRetries: MAX_RETRIES }
           }));
         }
 
-        // Sleep for resetIn seconds
-        await new Promise(resolve => setTimeout(resolve, resetIn * 1000));
+        await new Promise(resolve => setTimeout(resolve, waitMs));
         continue;
       }
 
-      // Non-429 or retries exhausted — rethrow
       throw error;
     }
   }
+
+  // Should never reach here, but TypeScript needs it
+  throw new Error('Max retries exceeded');
 }
 
 interface GenerationContext {
@@ -74,85 +94,33 @@ interface GenerationContext {
     durationWeeks: number;
   };
   ws: WebSocket;
-  model?: string;
   signal?: AbortSignal;
 }
 
 export async function generateSyllabind(context: GenerationContext): Promise<void> {
-  const { syllabusId, basics, ws, model, signal } = context;
-  const selectedModel = model || CLAUDE_MODEL;
+  const { syllabusId, basics, ws, signal } = context;
+  resetApiCallCounter();
+  console.log(`[Generate] Starting generation for syllabind ${syllabusId} (${basics.durationWeeks} weeks, ${basics.audienceLevel})`);
 
-  const systemPrompt = `You are an expert Syllabind designer.
-
-Generate EXACTLY ${basics.durationWeeks} weeks for "${basics.title}" (${basics.audienceLevel} level).
+  const systemPrompt = `You are a Syllabind designer. Generate ${basics.durationWeeks} weeks for "${basics.title}" (${basics.audienceLevel}).
 
 Description: ${basics.description}
 
-STRICT REQUIREMENTS:
-- You MUST generate exactly ${basics.durationWeeks} weeks, no more, no less
-- MUST make sure that all links are real.
-- Each week MUST have exactly 4 steps: 3 readings + 1 exercise, and in total no more than 5 hours of work per week.
-- The exercise MUST always be the last step (position 4)
-- Readings: Include title, URL, author, published date, media type, estimated time, and relevance note
-- Exercise: Include title, prompt text, and estimated time
-- NEVER use Wikipedia pages - avoid all wikipedia.org links
-- Ensure logical week-to-week progression
+Rules:
+- Each week: 3 readings + 1 exercise (exercise last). Max 5 hours/week.
+- Real links only. No Wikipedia.
+- Include 1+ academic source per week (jstor, arxiv, scholar.google, .edu, worldcat, academia.edu)
+- Use mediaType "Book" for book chapters, "Journal Article" for papers
+- Extract creationDate (dd/mm/yyyy) from search results when available
+- Exercises: creative, open-ended, producing real outputs. Use markdown formatting.
+- Tailor difficulty to ${basics.audienceLevel} (Beginner=middle school, Intermediate=college, Advanced=post-grad)
+- ~5 web searches total. Use them wisely.
 
-ACADEMIC SOURCE REQUIREMENTS:
-- Readings must be tailored to: ${basics.audienceLevel}. Assume beginners are middle school level, intermediates are college level, and advanced are post-graduate level.
-- Each week MUST include at least 1 academic source: book chapter, journal article, or scholarly paper
-- Prioritize: academia.edu, jstor.org, worldcat.org, arxiv.org, scholar.google.com, .edu domains
-- Avoid encyclopedic content, ensure content is focused and themed around a specific topic or insight
-- Use mediaType "Book" for book chapters and "Journal Article" for academic papers
-- ALWAYS extract and include creationDate (publication/creation date) in dd/mm/yyyy format from web search results
-
-EXERCISE REQUIREMENTS:
-- Exercises must be tailored to: ${basics.audienceLevel}. Assume beginners are middle school level, intermediates are college level, and advanced are post-graduate level.
-- Exercises must be CREATIVE and OPEN-ENDED, not simple quizzes or summaries
-- Design exercises that produce REAL outputs for actual consumption or use
-- FORMAT promptText using markdown syntax:
-  - Use "- " (dash + space) at the start of each list item for bullet points
-  - Use numbered lists ("1. ", "2. ", etc.) for ordered steps
-  - Permit multiple layers of indent
-  - Separate paragraphs with blank lines
-- Bias towards:
-  * Content creation (write a blog post, create a video essay, design an infographic, record a podcast episode)
-  * Community building (start a discussion group, organize a meetup, create a Discord/forum, interview practitioners)
-  * Product/project building (build a prototype, create a tool, design a system, launch something small)
-  * Experience design (plan a workshop, create a curriculum for others, design an event)
-- Exercises can involve MULTIPLE STEPS and MEDIA formats
-- Encourage learners to share their work publicly or with a specific audience
-- Each exercise should feel like meaningful work, not busywork
-- Later weeks should build on earlier exercises when possible (cumulative projects)
-
-Process:
-1. Generate ONE week at a time
-2. For each week, search for educational resources (use specific, targeted queries)
-3. Prioritize academic sources: academia.edu, jstor, worldcat, arxiv, google scholar, .edu - but NOT Wikipedia
-4. Create exactly 4 steps: 3 readings followed by 1 exercise
-5. Call finalize_week with the complete week data
-6. Continue until all ${basics.durationWeeks} weeks are generated
-
-CRITICAL weekIndex values:
-- Week 1: weekIndex = 1
-- Week 2: weekIndex = 2
-- ...and so on until Week ${basics.durationWeeks}
-
-Note: You have a total limit of 5 web searches. Use them wisely - about 1 search per 2 weeks.
-
-Start with Week 1 (weekIndex: 1).`;
+Process: Generate ALL ${basics.durationWeeks} weeks. Search for resources (~5 searches total), then call finalize_week for each week sequentially (Week 1 first, then Week 2, etc.).
+weekIndex values: Week 1 = 1, Week 2 = 2, etc.`;
 
   const messages: Anthropic.MessageParam[] = [
-    {
-      role: 'user',
-      content: [
-        {
-          type: 'text',
-          text: systemPrompt,
-          cache_control: { type: 'ephemeral' }
-        }
-      ]
-    }
+    { role: 'user', content: `Generate all ${basics.durationWeeks} weeks.` }
   ];
 
   let weekIndex = 1;
@@ -168,28 +136,20 @@ Start with Week 1 (weekIndex: 1).`;
       return;
     }
 
-    // Only send week_started once per week (not on retries)
-    if (!weekStartedSent.has(weekIndex)) {
-      ws.send(JSON.stringify({
-        type: 'week_started',
-        data: { weekIndex }
-      }));
-      weekStartedSent.add(weekIndex);
-    }
-
     let response;
     try {
-      response = await createMessageWithRateLimitRetry({
-        model: selectedModel,
+      response = await createMessageWithRetry({
+        model: CLAUDE_MODEL,
         max_tokens: 8192,
+        system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
         tools: SYLLABIND_GENERATION_TOOLS,
         messages,
         signal: signal as AbortSignal | undefined
-      }, ws);
+      }, ws, `generate weeks ${weekIndex}-${basics.durationWeeks}`);
     } catch (error: any) {
       // Abort errors are not generation failures
       if (signal?.aborted || error.name === 'AbortError') {
-        console.log(`[Generate] Cancelled during week ${weekIndex} API call`);
+        console.log(`[Generate] Cancelled during week ${weekIndex} API call (${sessionApiCalls} API calls made)`);
         await storage.updateSyllabus(syllabusId, { status: 'draft' });
         return;
       }
@@ -201,11 +161,9 @@ Start with Week 1 (weekIndex: 1).`;
         weekIndex
       };
 
-      // Check for specific error types
       if (error.status === 400) {
         errorData.details = 'Web search may not be enabled in your organization. Check Console settings.';
       } else if (error.status === 429 && error.headers) {
-        // Extract rate limit info from headers (retries exhausted)
         const headers = error.headers as Record<string, string>;
         const remaining = headers['anthropic-ratelimit-requests-remaining'];
         const resetTime = headers['anthropic-ratelimit-requests-reset'];
@@ -226,7 +184,6 @@ Start with Week 1 (weekIndex: 1).`;
         };
       }
 
-      // Send error to client
       ws.send(JSON.stringify({
         type: 'generation_error',
         data: errorData
@@ -266,8 +223,17 @@ Start with Week 1 (weekIndex: 1).`;
         }
 
         if (toolName === 'finalize_week') {
-          // Use the weekIndex provided by Claude, fallback to our counter
-          const actualWeekIndex = toolInput.weekIndex || weekIndex;
+          // Always use sequential counter — Claude may send duplicate or out-of-order weekIndex values
+          const actualWeekIndex = weekIndex;
+
+          // Send week_started once per week (handles multiple weeks in one response)
+          if (!weekStartedSent.has(actualWeekIndex)) {
+            ws.send(JSON.stringify({
+              type: 'week_started',
+              data: { weekIndex: actualWeekIndex }
+            }));
+            weekStartedSent.add(actualWeekIndex);
+          }
 
           // Save week to database
           const week = await storage.createWeek({
@@ -293,14 +259,12 @@ Start with Week 1 (weekIndex: 1).`;
             toolInput.steps = [];
           }
 
-          // Log step count for debugging
           console.log(`[Week ${actualWeekIndex}] Claude sent ${toolInput.steps.length} steps (expected 4)`);
           if (toolInput.steps.length !== 4) {
             console.warn(`[Week ${actualWeekIndex}] Step count mismatch! Steps:`, toolInput.steps.map((s: any) => `${s.type}: ${s.title}`));
           }
 
           // Save steps with error handling and validation
-          // Use delays between step_completed messages to create visible streaming effect
           for (let i = 0; i < toolInput.steps.length; i++) {
             const stepData = toolInput.steps[i];
 
@@ -310,7 +274,6 @@ Start with Week 1 (weekIndex: 1).`;
             }
 
             try {
-              // Validate required fields
               if (!stepData.type || !stepData.title) {
                 console.error(`[Week ${actualWeekIndex}] Step ${i + 1} missing required fields:`, {
                   hasType: !!stepData.type,
@@ -331,7 +294,6 @@ Start with Week 1 (weekIndex: 1).`;
                 continue;
               }
 
-              // Validate type enum
               if (stepData.type !== 'reading' && stepData.type !== 'exercise') {
                 console.error(`[Week ${actualWeekIndex}] Step ${i + 1} has invalid type: "${stepData.type}"`);
                 ws.send(JSON.stringify({
@@ -346,7 +308,6 @@ Start with Week 1 (weekIndex: 1).`;
                 continue;
               }
 
-              // Insert step
               console.log(`[Week ${actualWeekIndex}] Saving step ${i + 1}: ${stepData.type} - ${stepData.title}`);
 
               const createdStep = await storage.createStep({
@@ -365,7 +326,6 @@ Start with Week 1 (weekIndex: 1).`;
 
               console.log(`[Week ${actualWeekIndex}] Step ${i + 1} saved successfully`);
 
-              // Send step_completed message immediately after saving
               ws.send(JSON.stringify({
                 type: 'step_completed',
                 data: {
@@ -406,7 +366,6 @@ Start with Week 1 (weekIndex: 1).`;
 
           console.log(`[Week ${actualWeekIndex}] Week saved with ${toolInput.steps.length} step(s)`)
 
-          // Send week_completed with just title/description (steps already streamed via step_completed)
           ws.send(JSON.stringify({
             type: 'week_completed',
             data: {
@@ -420,9 +379,8 @@ Start with Week 1 (weekIndex: 1).`;
           }));
 
           weekIndex++;
-          retryCount = 0; // Reset retries for next week
+          retryCount = 0;
 
-          // Provide tool result for finalize_week
           (toolResults.content as any[]).push({
             type: 'tool_result',
             tool_use_id: toolUse.id,
@@ -439,11 +397,11 @@ Start with Week 1 (weekIndex: 1).`;
         messages.push(toolResults);
       }
 
-      // Prompt Claude to generate the next week
+      // Prompt Claude to generate remaining weeks (hybrid fallback)
       if (weekIndex <= basics.durationWeeks) {
         messages.push({
           role: 'user',
-          content: `Excellent! Week ${weekIndex - 1} is complete. Now generate Week ${weekIndex}.`
+          content: `Generated through Week ${weekIndex - 1}. Now generate the remaining weeks (${weekIndex} through ${basics.durationWeeks}). Call finalize_week for each.`
         });
       }
 
@@ -451,11 +409,9 @@ Start with Week 1 (weekIndex: 1).`;
     }
 
     // Handle end_turn / max_tokens: Claude didn't call finalize_week
-    // Always push the assistant message to maintain proper message alternation
     if (filteredContent.length > 0) {
       messages.push({ role: 'assistant', content: filteredContent });
     } else {
-      // If filtered content is empty, push a minimal placeholder
       messages.push({ role: 'assistant', content: [{ type: 'text', text: '(continuing)' }] });
     }
 
@@ -467,7 +423,7 @@ Start with Week 1 (weekIndex: 1).`;
       ws.send(JSON.stringify({
         type: 'generation_error',
         data: {
-          message: `Failed to generate Week ${weekIndex} after ${MAX_RETRIES_PER_WEEK} attempts. Try again or use a different model.`,
+          message: `Failed to generate Week ${weekIndex} after ${MAX_RETRIES_PER_WEEK} attempts. Try again.`,
           weekIndex
         }
       }));
@@ -483,6 +439,9 @@ Start with Week 1 (weekIndex: 1).`;
       break;
     }
   }
+
+  const totalTime = ((Date.now() - sessionStartTime) / 1000).toFixed(1);
+  console.log(`[Generate] Complete for syllabind ${syllabusId}: ${sessionApiCalls} API calls, ${totalTime}s total`);
 
   await storage.updateSyllabus(syllabusId, { status: 'draft' });
 
@@ -503,15 +462,14 @@ interface WeekRegenerationContext {
     durationWeeks: number;
   };
   ws: WebSocket;
-  model?: string;
   signal?: AbortSignal;
 }
 
 export async function regenerateWeek(context: WeekRegenerationContext): Promise<void> {
-  const { syllabusId, weekIndex, existingWeekId, basics, ws, model, signal } = context;
-  const selectedModel = model || CLAUDE_MODEL;
+  const { syllabusId, weekIndex, existingWeekId, basics, ws, signal } = context;
+  resetApiCallCounter();
+  console.log(`[RegenerateWeek] Starting regeneration for syllabind ${syllabusId}, week ${weekIndex}`);
 
-  // Check for cancellation
   if (signal?.aborted) {
     console.log(`[RegenerateWeek] Cancelled before starting week ${weekIndex}`);
     return;
@@ -522,50 +480,37 @@ export async function regenerateWeek(context: WeekRegenerationContext): Promise<
     data: { weekIndex }
   }));
 
-  const systemPrompt = `You are an expert Syllabind designer regenerating Week ${weekIndex} for "${basics.title}" (${basics.audienceLevel} level).
+  const systemPrompt = `You are a Syllabind designer regenerating Week ${weekIndex} for "${basics.title}" (${basics.audienceLevel}).
 
 Description: ${basics.description}
+Week ${weekIndex} of ${basics.durationWeeks} total.
 
-This is week ${weekIndex} of ${basics.durationWeeks} total weeks.
+Rules:
+- Generate Week ${weekIndex} ONLY. 3 readings + 1 exercise (exercise last).
+- Real links only. No Wikipedia.
+- 1+ academic source (jstor, arxiv, scholar.google, .edu)
+- Exercises: creative, open-ended, producing real outputs. Use markdown.
+- Extract creationDate (dd/mm/yyyy) when available.
 
-STRICT REQUIREMENTS:
-- Generate content for Week ${weekIndex} ONLY
-- Create exactly 4 steps: 3 readings + 1 exercise
-- The exercise MUST be the last step (position 4)
-- Readings: Include title, URL, author, media type, estimated time, and relevance note
-- Exercise: Include title, prompt text, and estimated time
-- NEVER use Wikipedia pages - avoid all wikipedia.org links
-
-ACADEMIC SOURCE REQUIREMENTS:
-- Include at least 1 academic source: book chapter, journal article, or scholarly paper
-- Prioritize: academia.edu, jstor.org, worldcat.org, arxiv.org, scholar.google.com, .edu domains
-
-EXERCISE REQUIREMENTS:
-- Exercises must be CREATIVE and OPEN-ENDED
-- Design exercises that produce REAL outputs for actual consumption or use
-- FORMAT promptText using markdown syntax
-
-Generate the week content now. Search for resources, then call finalize_week when complete.`;
+Search for resources, then call finalize_week.`;
 
   const messages: Anthropic.MessageParam[] = [
-    {
-      role: 'user',
-      content: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }]
-    }
+    { role: 'user', content: `Generate Week ${weekIndex}.` }
   ];
 
   let response;
   try {
-    response = await createMessageWithRateLimitRetry({
-      model: selectedModel,
-      max_tokens: 8192,
+    response = await createMessageWithRetry({
+      model: CLAUDE_MODEL,
+      max_tokens: 4096,
+      system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
       tools: SYLLABIND_GENERATION_TOOLS,
       messages,
       signal: signal as AbortSignal | undefined
-    }, ws);
+    }, ws, `regen week ${weekIndex}`);
   } catch (error: any) {
     if (signal?.aborted || error.name === 'AbortError') {
-      console.log(`[RegenerateWeek] Cancelled during week ${weekIndex} API call`);
+      console.log(`[RegenerateWeek] Cancelled during week ${weekIndex} API call (${sessionApiCalls} API calls made)`);
       return;
     }
 
@@ -609,7 +554,6 @@ Generate the week content now. Search for resources, then call finalize_week whe
   let regenRetries = 0;
   const MAX_REGEN_RETRIES = 3;
   while (response.stop_reason !== 'tool_use' || !response.content.some((b: any) => b.type === 'tool_use' && b.name === 'finalize_week')) {
-    // Check for cancellation
     if (signal?.aborted) {
       console.log(`[RegenerateWeek] Cancelled during retry for week ${weekIndex}`);
       return;
@@ -619,14 +563,13 @@ Generate the week content now. Search for resources, then call finalize_week whe
     if (regenRetries > MAX_REGEN_RETRIES) {
       ws.send(JSON.stringify({
         type: 'generation_error',
-        data: { message: `Failed to regenerate Week ${weekIndex} after ${MAX_REGEN_RETRIES} attempts. Try again or use a different model.`, weekIndex }
+        data: { message: `Failed to regenerate Week ${weekIndex} after ${MAX_REGEN_RETRIES} attempts. Try again.`, weekIndex }
       }));
       throw new Error(`Max retries exceeded for week ${weekIndex} regeneration`);
     }
 
     console.log(`[RegenerateWeek ${weekIndex}] Claude responded with stop_reason="${response.stop_reason}" without finalize_week (retry ${regenRetries}/${MAX_REGEN_RETRIES})`);
 
-    // Push assistant message to maintain alternation
     const filtered = response.content.filter((block: any) => {
       if (block.type === 'text' || block.type === 'tool_use') return true;
       if (block.type === 'web_search_tool_result') return false;
@@ -636,13 +579,14 @@ Generate the week content now. Search for resources, then call finalize_week whe
     messages.push({ role: 'assistant', content: filtered.length > 0 ? filtered : [{ type: 'text', text: '(continuing)' }] });
     messages.push({ role: 'user', content: `Please call the finalize_week tool to complete Week ${weekIndex}. You must use the finalize_week tool with weekIndex: ${weekIndex}, a title, and exactly 4 steps.` });
 
-    response = await createMessageWithRateLimitRetry({
-      model: selectedModel,
-      max_tokens: 8192,
+    response = await createMessageWithRetry({
+      model: CLAUDE_MODEL,
+      max_tokens: 4096,
+      system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
       tools: SYLLABIND_GENERATION_TOOLS,
       messages,
       signal: signal as AbortSignal | undefined
-    }, ws);
+    }, ws, `regen week ${weekIndex} retry ${regenRetries}`);
   }
 
   if (response.stop_reason === 'tool_use') {
@@ -655,7 +599,6 @@ Generate the week content now. Search for resources, then call finalize_week whe
       if (toolUse.name === 'finalize_week') {
         const toolInput = toolUse.input as any;
 
-        // Create or update week
         let weekId = existingWeekId;
         if (!weekId) {
           const week = await storage.createWeek({
@@ -672,7 +615,6 @@ Generate the week content now. Search for resources, then call finalize_week whe
           });
         }
 
-        // Send week_info
         ws.send(JSON.stringify({
           type: 'week_info',
           data: {
@@ -682,13 +624,11 @@ Generate the week content now. Search for resources, then call finalize_week whe
           }
         }));
 
-        // Ensure steps is an array
         if (!Array.isArray(toolInput.steps)) {
           console.error(`[Week ${weekIndex}] steps is not an array:`, typeof toolInput.steps, toolInput.steps);
           toolInput.steps = [];
         }
 
-        // Save and stream steps
         for (let i = 0; i < toolInput.steps.length; i++) {
           const stepData = toolInput.steps[i];
           if (i > 0) await new Promise(resolve => setTimeout(resolve, 350));
@@ -740,7 +680,6 @@ Generate the week content now. Search for resources, then call finalize_week whe
           }));
         }
 
-        // Send week_completed
         ws.send(JSON.stringify({
           type: 'week_completed',
           data: {
@@ -756,7 +695,9 @@ Generate the week content now. Search for resources, then call finalize_week whe
     }
   }
 
-  // Signal completion
+  const totalTime = ((Date.now() - sessionStartTime) / 1000).toFixed(1);
+  console.log(`[RegenerateWeek] Complete for syllabind ${syllabusId}, week ${weekIndex}: ${sessionApiCalls} API calls, ${totalTime}s total`);
+
   ws.send(JSON.stringify({
     type: 'week_regeneration_complete',
     data: { syllabusId, weekIndex }

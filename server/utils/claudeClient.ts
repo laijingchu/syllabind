@@ -2,12 +2,13 @@ import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
+  maxRetries: 0, // We handle retries ourselves with user-visible feedback
 });
 
-// Use cheaper model for development/testing, Sonnet for production
-export const CLAUDE_MODEL = process.env.NODE_ENV === 'production'
-  ? 'claude-sonnet-4-20250514'
-  : 'claude-3-5-haiku-20241022';
+// Haiku only — optimized for Tier 1 rate limits (50 RPM)
+export const CLAUDE_MODEL = 'claude-3-5-haiku-20241022';
+
+export { client };
 
 export const SYLLABIND_GENERATION_TOOLS: Anthropic.Tool[] = [
   {

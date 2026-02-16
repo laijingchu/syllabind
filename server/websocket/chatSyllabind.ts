@@ -1,12 +1,9 @@
 import { WebSocket } from 'ws';
 import Anthropic from '@anthropic-ai/sdk';
 import { storage } from '../storage';
-import { SYLLABIND_CHAT_TOOLS, executeToolCall, CLAUDE_MODEL } from '../utils/claudeClient';
+import { SYLLABIND_CHAT_TOOLS, executeToolCall, CLAUDE_MODEL, client } from '../utils/claudeClient';
 import { markdownToHtml } from '../utils/markdownToHtml';
-
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+import { apiQueue } from '../utils/requestQueue';
 
 const MAX_HISTORY_MESSAGES = 10;
 const MAX_TOOL_ITERATIONS = 5; // Prevent infinite loops
@@ -90,34 +87,25 @@ You can:
 When searching, prioritize: .edu domains, Coursera, YouTube, Khan Academy.
 Be conversational and helpful. Always cite your sources.`;
 
-        // Build messages with system prompt
-        const buildMessages = (): Anthropic.MessageParam[] => [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: systemPrompt,
-                cache_control: { type: 'ephemeral' }
-              } as any
-            ]
-          },
-          ...conversationHistory
-        ];
-
         // Agentic loop - continue until no more tool calls
         let continueLoop = true;
         let iterations = 0;
         let fullAssistantResponse = '';
+        let chatApiCalls = 0;
+        const chatStartTime = Date.now();
 
         while (continueLoop && iterations < MAX_TOOL_ITERATIONS) {
           iterations++;
+          chatApiCalls++;
 
+          await apiQueue.acquire();
+          console.log(`[Chat] API call #${chatApiCalls} for syllabind ${syllabusId} (iteration ${iterations})`);
           const stream = await client.messages.stream({
             model: CLAUDE_MODEL,
             max_tokens: 2000,
+            system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
             tools: SYLLABIND_CHAT_TOOLS,
-            messages: buildMessages()
+            messages: conversationHistory
           });
 
           let iterationText = '';
@@ -324,6 +312,9 @@ Be conversational and helpful. Always cite your sources.`;
             content: fullAssistantResponse
           });
         }
+
+        const chatElapsed = ((Date.now() - chatStartTime) / 1000).toFixed(1);
+        console.log(`[Chat] Complete for syllabind ${syllabusId}: ${chatApiCalls} API calls, ${chatElapsed}s total`);
 
         ws.send(JSON.stringify({
           type: 'assistant_complete',

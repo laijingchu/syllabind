@@ -12,18 +12,17 @@ describe('claudeClient', () => {
   });
 
   describe('CLAUDE_MODEL', () => {
-    it('should use haiku in non-production', () => {
-      process.env.NODE_ENV = 'test';
+    it('should always use haiku (Tier 1 optimized)', () => {
       jest.resetModules();
       const { CLAUDE_MODEL } = require('../utils/claudeClient');
       expect(CLAUDE_MODEL).toBe('claude-3-5-haiku-20241022');
     });
 
-    it('should use sonnet in production', () => {
+    it('should use haiku regardless of NODE_ENV', () => {
       process.env.NODE_ENV = 'production';
       jest.resetModules();
       const { CLAUDE_MODEL } = require('../utils/claudeClient');
-      expect(CLAUDE_MODEL).toBe('claude-sonnet-4-20250514');
+      expect(CLAUDE_MODEL).toBe('claude-3-5-haiku-20241022');
     });
   });
 

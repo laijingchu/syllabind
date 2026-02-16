@@ -1,7 +1,6 @@
 import { WebSocket } from 'ws';
 import { storage } from '../storage';
 import { generateSyllabind, regenerateWeek } from '../utils/syllabindGenerator';
-import { checkRateLimitStatus, isRateLimitSufficient } from '../utils/rateLimitCheck';
 
 // Mock data for testing streaming without API calls
 const MOCK_STEPS = [
@@ -120,7 +119,7 @@ async function mockGenerateSyllabind(ws: WebSocket, syllabusId: number, duration
   console.log('[MockGenerate] Mock generation complete!');
 }
 
-export function handleGenerateSyllabindWS(ws: WebSocket, syllabusId: number, model?: string, useMock?: boolean) {
+export function handleGenerateSyllabindWS(ws: WebSocket, syllabusId: number, useMock?: boolean) {
   const abortController = new AbortController();
 
   // When client disconnects (cancel or navigation), abort the generation
@@ -141,35 +140,6 @@ export function handleGenerateSyllabindWS(ws: WebSocket, syllabusId: number, mod
         }));
         ws.close();
         return;
-      }
-
-      // CHECK RATE LIMITS BEFORE STARTING
-      console.log('[Generate] Checking rate limit status...');
-      const rateLimitStatus = await checkRateLimitStatus();
-
-      console.log('[Generate] Rate limit status:', rateLimitStatus);
-
-      // Send status to client
-      ws.send(JSON.stringify({
-        type: 'rate_limit_status',
-        data: rateLimitStatus
-      }));
-
-      // If insufficient limits, abort generation
-      if (!isRateLimitSufficient(rateLimitStatus)) {
-        ws.send(JSON.stringify({
-          type: 'generation_error',
-          data: {
-            message: rateLimitStatus.message,
-            isRateLimit: true,
-            resetIn: rateLimitStatus.resetIn,
-            remaining: rateLimitStatus.remaining,
-            limit: rateLimitStatus.limit
-          }
-        }));
-
-        await storage.updateSyllabus(syllabusId, { status: 'draft' });
-        return; // Don't start generation
       }
 
       if (syllabus.status !== 'generating') {
@@ -193,7 +163,6 @@ export function handleGenerateSyllabindWS(ws: WebSocket, syllabusId: number, mod
             durationWeeks: syllabus.durationWeeks
           },
           ws,
-          model,
           signal: abortController.signal
         });
       }
@@ -322,7 +291,6 @@ export function handleRegenerateWeekWS(
   ws: WebSocket,
   syllabusId: number,
   weekIndex: number,
-  model?: string,
   useMock?: boolean
 ) {
   const abortController = new AbortController();
@@ -344,29 +312,6 @@ export function handleRegenerateWeekWS(
           data: { message: 'Syllabus not found' }
         }));
         ws.close();
-        return;
-      }
-
-      // Check rate limits
-      console.log('[RegenerateWeek] Checking rate limit status...');
-      const rateLimitStatus = await checkRateLimitStatus();
-
-      ws.send(JSON.stringify({
-        type: 'rate_limit_status',
-        data: rateLimitStatus
-      }));
-
-      if (!isRateLimitSufficient(rateLimitStatus)) {
-        ws.send(JSON.stringify({
-          type: 'generation_error',
-          data: {
-            message: rateLimitStatus.message,
-            isRateLimit: true,
-            resetIn: rateLimitStatus.resetIn,
-            remaining: rateLimitStatus.remaining,
-            limit: rateLimitStatus.limit
-          }
-        }));
         return;
       }
 
@@ -394,7 +339,6 @@ export function handleRegenerateWeekWS(
             durationWeeks: syllabus.durationWeeks
           },
           ws,
-          model,
           signal: abortController.signal
         });
       }

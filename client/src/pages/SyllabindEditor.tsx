@@ -1,7 +1,7 @@
 import { useRoute, useLocation, Link } from 'wouter';
 import { useStore } from '@/lib/store';
 import { Syllabus, Week, Step, StepType } from '@/lib/types';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
@@ -283,7 +283,6 @@ export default function SyllabindEditor() {
   const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string>('claude-sonnet-4-20250514');
   const [regeneratingWeekIndex, setRegeneratingWeekIndex] = useState<number | null>(null);
   const [showRegenerateWeekDialog, setShowRegenerateWeekDialog] = useState(false);
   const [weekToRegenerate, setWeekToRegenerate] = useState<number | null>(null);
@@ -550,20 +549,17 @@ export default function SyllabindEditor() {
     setCompletedWeeks(new Set());
     setJustCompletedWeek(null);
 
-    // Ensure weeks array matches durationWeeks so streaming handlers have slots for all weeks
+    // Reset all weeks to empty slots — server deletes existing data before regenerating,
+    // so client must also start clean to prevent stale/duplicate content from prior attempts
     setFormData(prev => {
       const targetCount = prev.durationWeeks;
-      if (prev.weeks.length >= targetCount) return prev;
-      const newWeeks = [...prev.weeks];
-      for (let i = newWeeks.length; i < targetCount; i++) {
-        newWeeks.push({
-          id: generateTempId(),
-          syllabusId: syllabusId,
-          index: i + 1,
-          steps: [],
-          title: ''
-        });
-      }
+      const newWeeks = Array.from({ length: targetCount }, (_, i) => ({
+        id: generateTempId(),
+        syllabusId: syllabusId,
+        index: i + 1,
+        steps: [] as Step[],
+        title: ''
+      }));
       return { ...prev, weeks: newWeeks };
     });
 
@@ -572,7 +568,7 @@ export default function SyllabindEditor() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ syllabusId, model: selectedModel })
+        body: JSON.stringify({ syllabusId })
       });
 
       if (!response.ok) throw new Error('Failed to start generation');
@@ -677,9 +673,11 @@ export default function SyllabindEditor() {
                   title: ''
                 };
               }
-              // Add step to the week's steps array
+              // Add step to the week's steps array, deduplicating by step ID
               const existingSteps = [...newWeeks[weekIdx].steps];
-              existingSteps.push(step);
+              if (!existingSteps.some(s => s.id === step.id)) {
+                existingSteps.push(step);
+              }
               newWeeks[weekIdx] = {
                 ...newWeeks[weekIdx],
                 steps: existingSteps
@@ -752,28 +750,22 @@ export default function SyllabindEditor() {
               });
             break;
 
-          case 'rate_limit_status': {
-            const status = message.data;
-
-            if (status.status === 'exceeded' || status.status === 'low') {
-              const waitMinutes = status.resetIn ? Math.ceil(status.resetIn / 60) : 'a few';
-              setIsGenerating(false);
-              isGeneratingRef.current = false;
-              toast({
-                title: "⏱️ Rate Limit Exceeded",
-                description: `${status.message}\n\nPlease wait ${waitMinutes} minute(s) and try again.`,
-                variant: "destructive"
-              });
-            } else {
-              console.log('[Rate Limit] Status OK:', status);
-            }
-            break;
-          }
-
           case 'generation_error': {
             const errorData = message.data;
             setIsGenerating(false);
             isGeneratingRef.current = false;
+            setGeneratingWeeks(new Set());
+
+            // Re-fetch clean state from server to avoid stale/duplicate data
+            fetch(`/api/syllabinds/${syllabusId}`, { credentials: 'include' })
+              .then(res => res.json())
+              .then(updated => {
+                setFormData(updated);
+                if (updated.weeks?.length > 0) {
+                  setOriginalWeeks(updated.weeks);
+                }
+              })
+              .catch(() => {}); // Silently fail — user will see the error toast
 
             if (errorData.isRateLimit) {
               const waitMinutes = errorData.resetIn ? Math.ceil(errorData.resetIn / 60) : 'a few';
@@ -888,8 +880,7 @@ export default function SyllabindEditor() {
         credentials: 'include',
         body: JSON.stringify({
           syllabusId: formData.id,
-          weekIndex,
-          model: selectedModel
+          weekIndex
         })
       });
 
@@ -976,9 +967,6 @@ export default function SyllabindEditor() {
               .then(updated => setFormData(updated));
             break;
           }
-
-          case 'rate_limit_status':
-            break;
 
           case 'generation_error':
           case 'error': {
@@ -1152,6 +1140,16 @@ export default function SyllabindEditor() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
+  // Deduplicate weeks by index — prevents ghost tabs if duplicate indexes exist
+  const uniqueWeeks = useMemo(() => {
+    const seen = new Set<number>();
+    return (formData.weeks || []).filter(w => {
+      if (seen.has(w.index)) return false;
+      seen.add(w.index);
+      return true;
+    });
+  }, [formData.weeks]);
+
   const handleDragEnd = useCallback((weekIndex: number) => (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -1283,16 +1281,6 @@ export default function SyllabindEditor() {
           </div>
           <div className="pt-4 space-y-3">
             <div className="flex gap-2">
-              <Select value={selectedModel} onValueChange={setSelectedModel} disabled={isGenerating}>
-                <SelectTrigger className="w-[130px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="claude-opus-4-20250514">Opus</SelectItem>
-                  <SelectItem value="claude-sonnet-4-20250514">Sonnet</SelectItem>
-                  <SelectItem value="claude-3-5-haiku-20241022">Haiku</SelectItem>
-                </SelectContent>
-              </Select>
               <Button
                 variant={isLoadingContent || hasSyllabindContent ? "secondary" : "default"}
                 onClick={handleAutogenerateClick}
@@ -1327,7 +1315,8 @@ export default function SyllabindEditor() {
                       </div>
                       <Progress
                         value={(generationProgress.currentWeek / formData.durationWeeks) * 100}
-                        className="h-2"
+                        className="h-2 bg-emerald-100"
+                        indicatorClassName="bg-emerald-500"
                       />
                       <p className="text-xs text-muted-foreground mt-1.5 truncate">
                         {generationProgress.status}
@@ -1375,7 +1364,7 @@ export default function SyllabindEditor() {
         <h2 className="text-lg sm:text-xl font-medium">Syllabind</h2>
         <Tabs value={activeWeekTab} onValueChange={setActiveWeekTab} className="w-full">
           <TabsList className="w-auto flex-wrap h-auto p-1 justify-start">
-            {formData.weeks?.map(w => {
+            {uniqueWeeks.map(w => {
               const isWeekGenerating = generatingWeeks.has(w.index);
               const isWeekComplete = completedWeeks.has(w.index) || (!isGenerating && (w.steps.length > 0 || w.title));
 
@@ -1400,7 +1389,7 @@ export default function SyllabindEditor() {
             })}
           </TabsList>
 
-          {formData.weeks?.map(week => {
+          {uniqueWeeks.map(week => {
             const isWeekGenerating = generatingWeeks.has(week.index);
             const isJustCompleted = justCompletedWeek === week.index;
             const hasContent = week.steps.length > 0 || week.title;

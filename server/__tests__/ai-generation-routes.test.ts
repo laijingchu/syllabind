@@ -21,7 +21,7 @@ describe('AI Generation Routes', () => {
         return res.status(403).json({ error: 'Creator access required' });
       }
 
-      const { syllabusId, model } = req.body;
+      const { syllabusId } = req.body;
 
       if (!syllabusId || typeof syllabusId !== 'number') {
         return res.status(400).json({ error: 'Valid syllabusId required' });
@@ -36,15 +36,12 @@ describe('AI Generation Routes', () => {
         return res.status(400).json({ error: 'Complete basics fields before generating' });
       }
 
-      const allowedModels = ['claude-opus-4-20250514', 'claude-sonnet-4-20250514', 'claude-3-5-haiku-20241022'];
-      const selectedModel = allowedModels.includes(model) ? model : 'claude-sonnet-4-20250514';
-
       await mockStorage.updateSyllabus(syllabusId, { status: 'generating' });
 
       res.json({
         success: true,
         syllabusId,
-        websocketUrl: `/ws/generate-syllabind/${syllabusId}?model=${encodeURIComponent(selectedModel)}`
+        websocketUrl: `/ws/generate-syllabind/${syllabusId}`
       });
     });
 
@@ -57,7 +54,7 @@ describe('AI Generation Routes', () => {
         return res.status(403).json({ error: 'Creator access required' });
       }
 
-      const { syllabusId, weekIndex, model } = req.body;
+      const { syllabusId, weekIndex } = req.body;
 
       if (!syllabusId || typeof syllabusId !== 'number') {
         return res.status(400).json({ error: 'Valid syllabusId required' });
@@ -76,14 +73,11 @@ describe('AI Generation Routes', () => {
         return res.status(400).json({ error: 'weekIndex exceeds syllabus duration' });
       }
 
-      const allowedModels = ['claude-opus-4-20250514', 'claude-sonnet-4-20250514', 'claude-3-5-haiku-20241022'];
-      const selectedModel = allowedModels.includes(model) ? model : 'claude-sonnet-4-20250514';
-
       res.json({
         success: true,
         syllabusId,
         weekIndex,
-        websocketUrl: `/ws/regenerate-week/${syllabusId}/${weekIndex}?model=${encodeURIComponent(selectedModel)}`
+        websocketUrl: `/ws/regenerate-week/${syllabusId}/${weekIndex}`
       });
     });
   }
@@ -120,23 +114,12 @@ describe('AI Generation Routes', () => {
 
       const res = await request(creatorApp)
         .post('/api/generate-syllabind')
-        .send({ syllabusId: 1, model: 'claude-sonnet-4-20250514' })
+        .send({ syllabusId: 1 })
         .expect(200);
 
       expect(res.body.success).toBe(true);
-      expect(res.body.websocketUrl).toContain('/ws/generate-syllabind/1');
+      expect(res.body.websocketUrl).toBe('/ws/generate-syllabind/1');
       expect(mockStorage.updateSyllabus).toHaveBeenCalledWith(1, { status: 'generating' });
-    });
-
-    it('should use default model when invalid model provided', async () => {
-      mockStorage.getSyllabus.mockResolvedValue(completeSyllabus);
-
-      const res = await request(creatorApp)
-        .post('/api/generate-syllabind')
-        .send({ syllabusId: 1, model: 'invalid-model' })
-        .expect(200);
-
-      expect(res.body.websocketUrl).toContain('claude-sonnet-4-20250514');
     });
 
     it('should return 403 for non-creator', async () => {
@@ -197,12 +180,12 @@ describe('AI Generation Routes', () => {
 
       const res = await request(creatorApp)
         .post('/api/regenerate-week')
-        .send({ syllabusId: 1, weekIndex: 2, model: 'claude-3-5-haiku-20241022' })
+        .send({ syllabusId: 1, weekIndex: 2 })
         .expect(200);
 
       expect(res.body.success).toBe(true);
       expect(res.body.weekIndex).toBe(2);
-      expect(res.body.websocketUrl).toContain('/ws/regenerate-week/1/2');
+      expect(res.body.websocketUrl).toBe('/ws/regenerate-week/1/2');
     });
 
     it('should return 403 for non-creator', async () => {

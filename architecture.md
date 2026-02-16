@@ -1074,10 +1074,9 @@ Added comprehensive analytics endpoint that provides real data for the Creator A
 Reduced token consumption for AI-powered Syllabind generation and chat refinement:
 
 **Model Selection:**
-- Development: Uses `claude-haiku-3-5-20241022` (~10x cheaper) for testing
-- Production: Uses `claude-sonnet-4-20250514` for quality
-- Automatic switch via `NODE_ENV` environment variable
+- All environments use `claude-3-5-haiku-20241022` (optimized for Tier 1 rate limits at 50 RPM)
 - Shared `CLAUDE_MODEL` constant in `server/utils/claudeClient.ts`
+- No user-facing model selector — Haiku is hardcoded
 
 **Prompt Caching:**
 - Enabled `cache_control: { type: 'ephemeral' }` on system prompts
@@ -1094,10 +1093,10 @@ Reduced token consumption for AI-powered Syllabind generation and chat refinemen
 - System prompt updated to reflect new limit
 
 **Files Modified:**
-- `server/utils/claudeClient.ts` - Added `CLAUDE_MODEL`, reduced web search limits
-- `server/utils/SyllabindGenerator.ts` - Model switching, prompt caching
-- `server/websocket/chatSyllabind.ts` - Model switching, prompt caching, history truncation, removed syllabind JSON
-- `server/utils/rateLimitCheck.ts` - Uses shared model constant
+- `server/utils/claudeClient.ts` - `CLAUDE_MODEL` constant (Haiku), shared client with `maxRetries: 0`
+- `server/utils/syllabindGenerator.ts` - Prompt caching via `system` parameter, trimmed prompts, exponential backoff with jitter
+- `server/utils/requestQueue.ts` - In-memory sliding window rate limiter (40 RPM)
+- `server/websocket/chatSyllabind.ts` - Uses shared client and request queue, prompt caching via `system` parameter
 
 ### Syllabind Generation Structure (2026-02-03)
 
@@ -1135,34 +1134,33 @@ Fixed issue where changing durationWeeks would lose existing week content:
 **Files Modified:**
 - `client/src/pages/SyllabindEditor.tsx` - Added originalWeeks state, updated handleDurationChange logic, secondary button variant
 
-### Model Picker for AI Generation (2026-02-03)
+### Anthropic API Tier 1 Optimization (2026-02-16)
 
-Added user-facing model selection for AI Syllabind generation:
+Optimized API usage for Anthropic Tier 1 (50 RPM) to prevent 429 rate limit errors in production:
 
-**UI Changes:**
-- Model dropdown added next to "Regenerate with AI" button in SyllabindEditor
-- Three options: Opus (Best), Sonnet (Balanced), Haiku (Fast)
-- Default: Sonnet (claude-sonnet-4-20250514)
-- Dropdown disabled during generation
-
-**Backend Flow:**
-1. Frontend passes `model` in POST `/api/generate-syllabind` body
-2. Server validates against allowed models list
-3. Model passed via WebSocket URL query param: `/ws/generate-syllabind/:id?model=...`
-4. WebSocket handler extracts model and passes to generator
-5. Generator uses passed model or falls back to `CLAUDE_MODEL`
-
-**Allowed Models:**
-- `claude-opus-4-20250514` - Highest quality, slower
-- `claude-sonnet-4-20250514` - Balanced (default)
-- `claude-3-5-haiku-20241022` - Fastest, most economical
+**Changes:**
+- Forced Haiku model for all API calls (removed env-based switching and user-facing model selector)
+- Added in-memory request queue (`server/utils/requestQueue.ts`) capping at 40 RPM (10 RPM headroom)
+- Replaced simple retry with exponential backoff + jitter (5 retries, 1s→16s base delay, +0-1s random jitter)
+- Respects `retry-after` header from API when available (capped at 120s)
+- Removed pre-flight rate limit check (`rateLimitCheck.ts` deleted) — wasted an API call, redundant with retry logic
+- Trimmed system prompts (~50% reduction) and reduced `max_tokens` from 8192 to 4096
+- Moved system prompts to `system` parameter with `cache_control: { type: 'ephemeral' }` for better cache hits
+- All API calls (generation, regeneration, chat) go through shared `apiQueue.acquire()` before calling Anthropic
 
 **Files Modified:**
-- `client/src/pages/SyllabindEditor.tsx` - Added `selectedModel` state and Select UI
-- `server/routes.ts` - Accept and validate model parameter
-- `server/index.ts` - Parse model from WebSocket URL query string
-- `server/websocket/generateSyllabind.ts` - Accept model parameter
-- `server/utils/syllabindGenerator.ts` - Use passed model in API call
+- `server/utils/claudeClient.ts` - Hardcoded Haiku, shared client export
+- `server/utils/requestQueue.ts` - **NEW** sliding window rate limiter
+- `server/utils/syllabindGenerator.ts` - Backoff, trimmed prompts, system param caching, reduced max_tokens
+- `server/websocket/generateSyllabind.ts` - Removed pre-flight rate check, removed model param
+- `server/websocket/chatSyllabind.ts` - Uses shared client and queue, system param caching
+- `server/routes.ts` - Removed model validation, simplified WebSocket URLs
+- `server/index.ts` - Removed model parsing from WebSocket URL
+- `client/src/pages/SyllabindEditor.tsx` - Removed model selector dropdown and state
+
+**Files Deleted:**
+- `server/utils/rateLimitCheck.ts` - Pre-flight check removed
+- `server/__tests__/rateLimitCheck.test.ts` - Corresponding test removed
 
 ### Generation Streaming Visual Effect (2026-02-03)
 
@@ -1594,3 +1592,45 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 - `server/utils/syllabindGenerator.ts` - `maxRetries: 0`, `createMessageWithRateLimitRetry()`, abort signal checks in generation loops
 - `server/websocket/generateSyllabind.ts` - AbortController wired to `ws.on('close')`, signal passed to generators, safe ws.close() checks
 - `client/src/pages/SyllabindEditor.tsx` - `generationWsRef`, `handleCancelGeneration()`, `rate_limit_wait` handler, cancel button UI
+
+### Hybrid Single-Call Syllabind Generation (2026-02-16)
+
+**Problem:** Generating a 4-week syllabind required 4+ API calls (one per week), increasing latency and rate limit exposure.
+
+**Solution:** Hybrid approach that asks Claude to generate all weeks in one call, with automatic fallback to per-week if the response is truncated.
+
+**Changes:**
+1. **System prompt:** Changed from "generate one week at a time" to "generate ALL N weeks, call finalize_week for each sequentially"
+2. **User message:** Changed from "Generate Week 1" to "Generate all N weeks"
+3. **max_tokens:** Increased from 4096 to 8192 to accommodate all weeks in one response
+4. **Fallback prompt:** Updated to ask for all remaining weeks instead of just the next one
+5. **week_started event:** Moved inside finalize_week processing so it fires for each week even when multiple arrive in one response
+
+**How the Hybrid Works:**
+- **Best case (1 call):** Claude generates all weeks → loop processes them all, exits
+- **Partial case (2 calls):** Claude generates some weeks, hits output limit → loop saves partial progress, prompts for remaining weeks
+- **Worst case (N calls):** Falls back to current behavior — one week per call
+
+The existing while loop (`while weekIndex <= durationWeeks`) provides natural fallback — it continues until all weeks are done regardless of how many arrive per response. Partial progress is always saved to the database before the next API call.
+
+**Files Modified:**
+- `server/utils/syllabindGenerator.ts` - System prompt, user message, max_tokens, fallback prompt, week_started placement
+
+### Fix Ghost Duplicate Week Tabs (2026-02-16)
+
+**Problem:** The SyllabindEditor week picker could show duplicate "Week N" tabs where one was a non-selectable ghost. This happened because Claude could send duplicate `weekIndex` values in `finalize_week` tool calls, and the server trusted Claude's value (`toolInput.weekIndex || weekIndex`). Duplicate DB rows with the same index caused ghost tabs in the Radix Tabs component (two TabsTriggers with the same `value`).
+
+**Fixes:**
+
+1. **Server: use sequential counter for week index** (`server/utils/syllabindGenerator.ts`):
+   - Changed `actualWeekIndex = toolInput.weekIndex || weekIndex` to `actualWeekIndex = weekIndex`
+   - The sequential counter guarantees unique, ordered week indexes regardless of what Claude sends
+
+2. **Frontend: deduplicate weeks by index** (`client/src/pages/SyllabindEditor.tsx`):
+   - Added `uniqueWeeks` memo that filters `formData.weeks` to keep only the first occurrence of each index
+   - Tab triggers and tab content now render from `uniqueWeeks` instead of `formData.weeks`
+   - Prevents ghost tabs even if duplicate-index weeks somehow make it into state
+
+**Files Modified:**
+- `server/utils/syllabindGenerator.ts` - Use counter-based weekIndex instead of Claude's value
+- `client/src/pages/SyllabindEditor.tsx` - Added `useMemo` import, `uniqueWeeks` dedup, render from deduped list
