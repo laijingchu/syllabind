@@ -46,7 +46,8 @@
       "WebFetch(domain:ai-sdk.dev)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(NODE_ENV=test npx jest:*)"
     ]
   }
 }

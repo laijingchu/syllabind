@@ -1,7 +1,7 @@
 import { useRoute, useLocation, Link } from 'wouter';
 import { useStore } from '@/lib/store';
 import { Syllabus, Week, Step, StepType } from '@/lib/types';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
@@ -29,8 +29,221 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const generateTempId = () => -Math.floor(Math.random() * 1000000); // Temporary negative IDs for unsaved items
+
+interface SortableStepProps {
+  step: Step;
+  idx: number;
+  weekIndex: number;
+  isJustCompleted: boolean;
+  updateStep: (weekIndex: number, stepId: number, field: keyof Step, value: any) => void;
+  removeStep: (weekIndex: number, stepId: number) => void;
+  handleAutoFill: (weekIndex: number, stepId: number) => void;
+  isSaving: boolean;
+  lastSaved: Date | null;
+}
+
+function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, removeStep, handleAutoFill, isSaving, lastSaved }: SortableStepProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: step.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "border rounded-lg p-4 sm:p-6 bg-muted/20 relative group",
+        isJustCompleted && `step-enter step-delay-${Math.min(idx + 1, 4)}`,
+        isDragging && "opacity-50 shadow-lg z-50"
+      )}
+    >
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+         <div className="flex items-center gap-2 sm:gap-3">
+           <button
+             {...attributes}
+             {...listeners}
+             className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground transition-colors touch-none"
+             aria-label="Drag to reorder"
+           >
+             <GripVertical className="h-5 w-5" />
+           </button>
+           <Badge variant="outline" className="text-[10px] sm:text-xs uppercase px-1.5 sm:px-2 py-0.5 tracking-wider font-semibold">{step.type}</Badge>
+           <span className="text-xs text-muted-foreground font-medium">Step {idx + 1}</span>
+         </div>
+         <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
+            onClick={() => removeStep(weekIndex, step.id)}
+         >
+           <Trash2 className="h-4 w-4" />
+         </Button>
+      </div>
+
+      <div className="grid gap-5 sm:gap-8">
+         {step.type === 'reading' && (
+           <div className="grid gap-2">
+             <Label className="text-sm">URL</Label>
+             <div className="flex gap-2">
+               <Input
+                 value={step.url || ''}
+                 onChange={e => updateStep(weekIndex, step.id, 'url', e.target.value)}
+                 placeholder="https://..."
+                 className="text-base md:text-lg"
+               />
+               <Button
+                 variant="ghost"
+                 size="icon"
+                 onClick={() => window.open(step.url, '_blank', 'noopener,noreferrer')}
+                 disabled={!step.url}
+                 title="Open link in new tab"
+                 className="shrink-0"
+               >
+                 <ExternalLink className="h-4 w-4" />
+               </Button>
+               <TooltipProvider>
+                 <Tooltip>
+                   <TooltipTrigger asChild>
+                     <Button
+                       variant="secondary"
+                       size="icon"
+                       onClick={() => handleAutoFill(weekIndex, step.id)}
+                       disabled={!step.url}
+                       className="shrink-0"
+                     >
+                       <Wand2 className="h-4 w-4" />
+                     </Button>
+                   </TooltipTrigger>
+                   <TooltipContent>
+                     <p>Auto-fill title, author, and other fields from URL</p>
+                   </TooltipContent>
+                 </Tooltip>
+               </TooltipProvider>
+             </div>
+           </div>
+         )}
+
+         {step.type === 'reading' && (
+           <>
+             <div className="grid grid-cols-1 sm:grid-cols-[1fr_160px] gap-4 sm:gap-6">
+                <div className="grid gap-2">
+                  <Label className="text-sm">Title</Label>
+                  <Input value={step.title} onChange={e => updateStep(weekIndex, step.id, 'title', e.target.value)} className="text-base md:text-lg" />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm">Media Type</Label>
+                  <Select
+                    value={step.mediaType || 'Blog/Article'}
+                    onValueChange={(v: any) => updateStep(weekIndex, step.id, 'mediaType', v)}
+                  >
+                    <SelectTrigger className="text-base md:text-lg"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Book">Book</SelectItem>
+                      <SelectItem value="Book Chapter">Book Chapter</SelectItem>
+                      <SelectItem value="Journal Article">Journal Article</SelectItem>
+                      <SelectItem value="Youtube video">Youtube video</SelectItem>
+                      <SelectItem value="Blog/Article">Blog/Article</SelectItem>
+                      <SelectItem value="Podcast">Podcast</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+             </div>
+
+             <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_90px] gap-4 sm:gap-6">
+                <div className="grid gap-2">
+                  <Label className="text-sm">Author</Label>
+                  <Input
+                    value={step.author || ''}
+                    onChange={e => updateStep(weekIndex, step.id, 'author', e.target.value)}
+                    placeholder="e.g. Plato"
+                    className="text-base md:text-lg"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm">Creation/Publish Date</Label>
+                  <Input
+                    type="date"
+                    value={step.creationDate || ''}
+                    onChange={e => updateStep(weekIndex, step.id, 'creationDate', e.target.value)}
+                    className="text-base md:text-lg"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm">Est. Min</Label>
+                  <Input type="number" value={step.estimatedMinutes || 0} onChange={e => updateStep(weekIndex, step.id, 'estimatedMinutes', parseInt(e.target.value))} className="text-base md:text-lg" />
+                </div>
+             </div>
+
+             <div className="grid gap-2">
+               <Label className="text-sm">Description</Label>
+               <RichTextEditor
+                  value={step.note || ''}
+                  onChange={(value: string) => updateStep(weekIndex, step.id, 'note', value)}
+                  placeholder="Why should they read this?"
+                  isSaving={isSaving}
+                  lastSaved={lastSaved}
+               />
+             </div>
+           </>
+         )}
+
+         {step.type === 'exercise' && (
+           <>
+             <div className="grid grid-cols-1 sm:grid-cols-[1fr_90px] gap-4 sm:gap-6">
+                <div className="grid gap-2">
+                  <Label className="text-sm">Title</Label>
+                  <Input value={step.title} onChange={e => updateStep(weekIndex, step.id, 'title', e.target.value)} className="text-base md:text-lg" />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm">Est. Min</Label>
+                  <Input type="number" value={step.estimatedMinutes || 0} onChange={e => updateStep(weekIndex, step.id, 'estimatedMinutes', parseInt(e.target.value))} className="text-base md:text-lg" />
+                </div>
+             </div>
+             <div className="grid gap-2">
+               <Label className="text-sm">Prompt</Label>
+               <RichTextEditor
+                  value={step.promptText || ''}
+                  onChange={(value: string) => updateStep(weekIndex, step.id, 'promptText', value)}
+                  placeholder="What should they do?"
+                  isSaving={isSaving}
+                  lastSaved={lastSaved}
+               />
+             </div>
+           </>
+         )}
+      </div>
+    </div>
+  );
+}
 
 export default function SyllabindEditor() {
   const [match, params] = useRoute('/creator/syllabus/:id/edit');
@@ -68,6 +281,8 @@ export default function SyllabindEditor() {
   const [completedWeeks, setCompletedWeeks] = useState<Set<number>>(new Set());
   const [justCompletedWeek, setJustCompletedWeek] = useState<number | null>(null);
   const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>('claude-sonnet-4-20250514');
   const [regeneratingWeekIndex, setRegeneratingWeekIndex] = useState<number | null>(null);
   const [showRegenerateWeekDialog, setShowRegenerateWeekDialog] = useState(false);
@@ -76,6 +291,8 @@ export default function SyllabindEditor() {
   const [isLoadingContent, setIsLoadingContent] = useState(!isNew && !!params?.id);
   const [activeWeekTab, setActiveWeekTab] = useState('week-1'); // Controlled tab for auto-switching during generation
   const generationWsRef = useRef<WebSocket | null>(null); // Persist WS ref for cancel support
+  const isGeneratingRef = useRef(false); // Ref for ws.onclose (avoids stale closure)
+  const regeneratingWeekRef = useRef<number | null>(null); // Ref for ws.onclose (avoids stale closure)
 
   // Check if Syllabind already has content
   const hasSyllabindContent = formData.weeks.some(week =>
@@ -84,6 +301,9 @@ export default function SyllabindEditor() {
 
   // Fetch full syllabus with weeks and steps when editing
   useEffect(() => {
+    // Skip fetch if generation is in progress — the generation handlers manage formData
+    if (isGeneratingRef.current) return;
+
     if (!isNew && params?.id) {
       const syllabusId = parseInt(params.id);
       fetch(`/api/syllabinds/${syllabusId}`, { credentials: 'include' })
@@ -92,12 +312,27 @@ export default function SyllabindEditor() {
           return res.json();
         })
         .then((existing: Syllabus) => {
+          // Skip update if generation started while fetch was in-flight
+          if (isGeneratingRef.current) return;
+
           // Ensure weeks array exists
           const weeksArray = existing.weeks || [];
           // Store original weeks from database for restoration when duration changes
           if (weeksArray.length > 0) {
             setOriginalWeeks(weeksArray);
           }
+
+          // Reset stale "generating" status if no generation is active on this client
+          if (existing.status === 'generating') {
+            fetch(`/api/syllabinds/${syllabusId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ status: 'draft' })
+            }).catch(() => {});
+            existing.status = 'draft';
+          }
+
           setFormData({
             ...existing,
             weeks: weeksArray.length > 0 ? weeksArray : Array.from({ length: existing.durationWeeks || 4 }, (_, i) => ({
@@ -262,6 +497,9 @@ export default function SyllabindEditor() {
   };
 
   const handleCancelGeneration = () => {
+    // Clear refs BEFORE closing WebSocket so the onclose handler doesn't show error
+    isGeneratingRef.current = false;
+    regeneratingWeekRef.current = null;
     if (generationWsRef.current) {
       generationWsRef.current.close();
       generationWsRef.current = null;
@@ -276,6 +514,13 @@ export default function SyllabindEditor() {
       title: "Generation Cancelled",
       description: "Syllabind generation was cancelled. Any completed weeks have been saved.",
     });
+    // Refresh to get current state from server
+    if (formData.id > 0) {
+      fetch(`/api/syllabinds/${formData.id}`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(updated => setFormData(updated))
+        .catch(() => {});
+    }
   };
 
   // useMock: Alt+click to test streaming without API calls
@@ -299,10 +544,28 @@ export default function SyllabindEditor() {
     }
 
     setIsGenerating(true);
+    isGeneratingRef.current = true;
     setGenerationProgress({ currentWeek: 0, status: useMock ? 'Mock generation...' : 'Starting generation...' });
     setGeneratingWeeks(new Set());
     setCompletedWeeks(new Set());
     setJustCompletedWeek(null);
+
+    // Ensure weeks array matches durationWeeks so streaming handlers have slots for all weeks
+    setFormData(prev => {
+      const targetCount = prev.durationWeeks;
+      if (prev.weeks.length >= targetCount) return prev;
+      const newWeeks = [...prev.weeks];
+      for (let i = newWeeks.length; i < targetCount; i++) {
+        newWeeks.push({
+          id: generateTempId(),
+          syllabusId: syllabusId,
+          index: i + 1,
+          steps: [],
+          title: ''
+        });
+      }
+      return { ...prev, weeks: newWeeks };
+    });
 
     try {
       const response = await fetch('/api/generate-syllabind', {
@@ -348,14 +611,21 @@ export default function SyllabindEditor() {
             setFormData(prev => {
               const newWeeks = [...prev.weeks];
               const weekIndex = weekIdx - 1;
-              if (newWeeks[weekIndex]) {
+              if (!newWeeks[weekIndex]) {
                 newWeeks[weekIndex] = {
-                  ...newWeeks[weekIndex],
+                  id: generateTempId(),
+                  syllabusId: prev.id,
+                  index: weekIdx,
                   steps: [],
-                  title: '',
-                  description: ''
+                  title: ''
                 };
               }
+              newWeeks[weekIndex] = {
+                ...newWeeks[weekIndex],
+                steps: [],
+                title: '',
+                description: ''
+              };
               return { ...prev, weeks: newWeeks };
             });
             break;
@@ -374,13 +644,20 @@ export default function SyllabindEditor() {
             setFormData(prev => {
               const newWeeks = [...prev.weeks];
               const weekIdx = infoWeekIndex - 1;
-              if (newWeeks[weekIdx]) {
+              if (!newWeeks[weekIdx]) {
                 newWeeks[weekIdx] = {
-                  ...newWeeks[weekIdx],
-                  title,
-                  description
+                  id: generateTempId(),
+                  syllabusId: prev.id,
+                  index: infoWeekIndex,
+                  steps: [],
+                  title: ''
                 };
               }
+              newWeeks[weekIdx] = {
+                ...newWeeks[weekIdx],
+                title,
+                description
+              };
               return { ...prev, weeks: newWeeks };
             });
             break;
@@ -391,15 +668,22 @@ export default function SyllabindEditor() {
             setFormData(prev => {
               const newWeeks = [...prev.weeks];
               const weekIdx = stepWeekIndex - 1;
-              if (newWeeks[weekIdx]) {
-                // Add step to the week's steps array
-                const existingSteps = [...newWeeks[weekIdx].steps];
-                existingSteps.push(step);
+              if (!newWeeks[weekIdx]) {
                 newWeeks[weekIdx] = {
-                  ...newWeeks[weekIdx],
-                  steps: existingSteps
+                  id: generateTempId(),
+                  syllabusId: prev.id,
+                  index: stepWeekIndex,
+                  steps: [],
+                  title: ''
                 };
               }
+              // Add step to the week's steps array
+              const existingSteps = [...newWeeks[weekIdx].steps];
+              existingSteps.push(step);
+              newWeeks[weekIdx] = {
+                ...newWeeks[weekIdx],
+                steps: existingSteps
+              };
               return { ...prev, weeks: newWeeks };
             });
             break;
@@ -414,14 +698,21 @@ export default function SyllabindEditor() {
             setFormData(prev => {
               const newWeeks = [...prev.weeks];
               const weekIndex = week.weekIndex - 1;
-              if (newWeeks[weekIndex]) {
+              if (!newWeeks[weekIndex]) {
                 newWeeks[weekIndex] = {
-                  ...newWeeks[weekIndex],
-                  title: week.title,
-                  description: week.description
-                  // Don't overwrite steps - they were added incrementally via step_completed
+                  id: generateTempId(),
+                  syllabusId: prev.id,
+                  index: week.weekIndex,
+                  steps: [],
+                  title: ''
                 };
               }
+              newWeeks[weekIndex] = {
+                ...newWeeks[weekIndex],
+                title: week.title,
+                description: week.description
+                // Don't overwrite steps - they were added incrementally via step_completed
+              };
               return { ...prev, weeks: newWeeks };
             });
 
@@ -441,6 +732,7 @@ export default function SyllabindEditor() {
 
           case 'generation_complete':
             setIsGenerating(false);
+            isGeneratingRef.current = false;
             setGeneratingWeeks(new Set());
             setCompletedWeeks(new Set());
             setJustCompletedWeek(null);
@@ -466,6 +758,7 @@ export default function SyllabindEditor() {
             if (status.status === 'exceeded' || status.status === 'low') {
               const waitMinutes = status.resetIn ? Math.ceil(status.resetIn / 60) : 'a few';
               setIsGenerating(false);
+              isGeneratingRef.current = false;
               toast({
                 title: "⏱️ Rate Limit Exceeded",
                 description: `${status.message}\n\nPlease wait ${waitMinutes} minute(s) and try again.`,
@@ -480,6 +773,7 @@ export default function SyllabindEditor() {
           case 'generation_error': {
             const errorData = message.data;
             setIsGenerating(false);
+            isGeneratingRef.current = false;
 
             if (errorData.isRateLimit) {
               const waitMinutes = errorData.resetIn ? Math.ceil(errorData.resetIn / 60) : 'a few';
@@ -500,6 +794,7 @@ export default function SyllabindEditor() {
 
           case 'error':
             setIsGenerating(false);
+            isGeneratingRef.current = false;
             toast({
               title: "Generation Error",
               description: message.data.message,
@@ -511,6 +806,7 @@ export default function SyllabindEditor() {
 
       ws.onerror = () => {
         setIsGenerating(false);
+        isGeneratingRef.current = false;
         generationWsRef.current = null;
         toast({
           title: "Connection Error",
@@ -521,9 +817,10 @@ export default function SyllabindEditor() {
 
       ws.onclose = (event) => {
         generationWsRef.current = null;
-        // Only show error if generation wasn't completed normally
-        if (!isGenerating) return;
+        // Only show error if generation wasn't completed normally (use ref to avoid stale closure)
+        if (!isGeneratingRef.current) return;
         setIsGenerating(false);
+        isGeneratingRef.current = false;
         setGeneratingWeeks(new Set());
 
         // Don't show error if user cancelled (code 1000 or 1005)
@@ -536,16 +833,17 @@ export default function SyllabindEditor() {
           4400: 'Invalid request.',
         };
 
-        const message = errorMessages[event.code] || 'Connection closed unexpectedly.';
+        const errorMessage = errorMessages[event.code] || 'Connection closed unexpectedly.';
         toast({
           title: "Generation Failed",
-          description: message,
+          description: errorMessage,
           variant: "destructive"
         });
       };
 
     } catch (error) {
       setIsGenerating(false);
+      isGeneratingRef.current = false;
       generationWsRef.current = null;
       toast({
         title: "Error",
@@ -564,6 +862,7 @@ export default function SyllabindEditor() {
     setShowRegenerateWeekDialog(false);
     setWeekToRegenerate(null);
     setRegeneratingWeekIndex(weekIndex);
+    regeneratingWeekRef.current = weekIndex;
     setActiveWeekTab(`week-${weekIndex}`);
     setGeneratingWeeks(new Set([weekIndex]));
 
@@ -621,9 +920,16 @@ export default function SyllabindEditor() {
             setFormData(prev => {
               const newWeeks = [...prev.weeks];
               const weekIdx = infoWeekIndex - 1;
-              if (newWeeks[weekIdx]) {
-                newWeeks[weekIdx] = { ...newWeeks[weekIdx], title, description };
+              if (!newWeeks[weekIdx]) {
+                newWeeks[weekIdx] = {
+                  id: generateTempId(),
+                  syllabusId: prev.id,
+                  index: infoWeekIndex,
+                  steps: [],
+                  title: ''
+                };
               }
+              newWeeks[weekIdx] = { ...newWeeks[weekIdx], title, description };
               return { ...prev, weeks: newWeeks };
             });
             break;
@@ -634,11 +940,18 @@ export default function SyllabindEditor() {
             setFormData(prev => {
               const newWeeks = [...prev.weeks];
               const weekIdx = stepWeekIndex - 1;
-              if (newWeeks[weekIdx]) {
-                const existingSteps = [...newWeeks[weekIdx].steps];
-                existingSteps.push(step);
-                newWeeks[weekIdx] = { ...newWeeks[weekIdx], steps: existingSteps };
+              if (!newWeeks[weekIdx]) {
+                newWeeks[weekIdx] = {
+                  id: generateTempId(),
+                  syllabusId: prev.id,
+                  index: stepWeekIndex,
+                  steps: [],
+                  title: ''
+                };
               }
+              const existingSteps = [...newWeeks[weekIdx].steps];
+              existingSteps.push(step);
+              newWeeks[weekIdx] = { ...newWeeks[weekIdx], steps: existingSteps };
               return { ...prev, weeks: newWeeks };
             });
             break;
@@ -648,6 +961,7 @@ export default function SyllabindEditor() {
           case 'week_regeneration_complete': {
             setGeneratingWeeks(new Set());
             setRegeneratingWeekIndex(null);
+            regeneratingWeekRef.current = null;
             generationWsRef.current = null;
             setCompletedWeeks(prev => new Set(Array.from(prev).concat(weekIndex)));
 
@@ -670,6 +984,7 @@ export default function SyllabindEditor() {
           case 'error': {
             setGeneratingWeeks(new Set());
             setRegeneratingWeekIndex(null);
+            regeneratingWeekRef.current = null;
             generationWsRef.current = null;
 
             const errorData = message.data;
@@ -686,6 +1001,7 @@ export default function SyllabindEditor() {
       ws.onerror = () => {
         setGeneratingWeeks(new Set());
         setRegeneratingWeekIndex(null);
+        regeneratingWeekRef.current = null;
         generationWsRef.current = null;
         toast({
           title: "Connection Error",
@@ -696,10 +1012,11 @@ export default function SyllabindEditor() {
 
       ws.onclose = (event) => {
         generationWsRef.current = null;
-        // Only show error if regeneration wasn't completed normally
-        if (regeneratingWeekIndex === null) return;
+        // Only show error if regeneration wasn't completed normally (use ref to avoid stale closure)
+        if (regeneratingWeekRef.current === null) return;
         setGeneratingWeeks(new Set());
         setRegeneratingWeekIndex(null);
+        regeneratingWeekRef.current = null;
 
         // Don't show error if user cancelled
         if (event.code === 1000 || event.code === 1005) return;
@@ -711,10 +1028,10 @@ export default function SyllabindEditor() {
           4400: 'Invalid request.',
         };
 
-        const message = errorMessages[event.code] || 'Connection closed unexpectedly.';
+        const errorMessage = errorMessages[event.code] || 'Connection closed unexpectedly.';
         toast({
           title: "Regeneration Failed",
-          description: message,
+          description: errorMessage,
           variant: "destructive"
         });
       };
@@ -722,6 +1039,7 @@ export default function SyllabindEditor() {
     } catch (error) {
       setGeneratingWeeks(new Set());
       setRegeneratingWeekIndex(null);
+      regeneratingWeekRef.current = null;
       generationWsRef.current = null;
       toast({
         title: "Error",
@@ -802,6 +1120,56 @@ export default function SyllabindEditor() {
     toast({ title: "Metadata Extracted", description: "Fields have been auto-filled." });
   };
 
+  const handleDelete = async () => {
+    if (formData.id < 0) return;
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/syllabinds/${formData.id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to delete syllabind');
+      toast({
+        title: "Syllabind Deleted",
+        description: "Your syllabind has been permanently deleted.",
+      });
+      setLocation('/creator');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete syllabind. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
+  // DnD sensors with activation constraint to avoid interfering with clicks
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = useCallback((weekIndex: number) => (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const newWeeks = [...formData.weeks];
+    const week = newWeeks.find(w => w.index === weekIndex);
+    if (!week) return;
+
+    const oldIndex = week.steps.findIndex(s => s.id === active.id);
+    const newIndex = week.steps.findIndex(s => s.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    week.steps = arrayMove(week.steps, oldIndex, newIndex);
+    // Update position values to reflect new order
+    week.steps.forEach((step, i) => { step.position = i + 1; });
+    setFormData({ ...formData, weeks: newWeeks });
+  }, [formData]);
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -825,6 +1193,17 @@ export default function SyllabindEditor() {
               </>
             )}
             <Button variant="outline" size="sm" onClick={() => handleSave()}><span className="hidden sm:inline">Save </span>Draft</Button>
+            {!isNew && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={isDeleting}
+                className="gap-1.5"
+              >
+                {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} <span className="hidden sm:inline">{isDeleting ? 'Deleting...' : 'Delete'}</span>
+              </Button>
+            )}
             <Button size="sm" onClick={() => handleSave('published')}>Publish</Button>
             {!isNew && (
               <Link href={`/creator/syllabus/${params?.id}/learners`}>
@@ -836,6 +1215,13 @@ export default function SyllabindEditor() {
          </div>
       </div>
 
+      {isLoadingContent ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Loading syllabind...</p>
+        </div>
+      ) : (
+      <>
       <Card>
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className="text-lg sm:text-xl">Basics</CardTitle>
@@ -1090,168 +1476,26 @@ export default function SyllabindEditor() {
                        )}
                     </div>
 
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(week.index)}>
+                    <SortableContext items={week.steps.map(s => s.id)} strategy={verticalListSortingStrategy}>
                     <div className="space-y-6 sm:space-y-8 mt-6 sm:mt-10">
                       {week.steps.map((step, idx) => (
-                        <div
+                        <SortableStep
                           key={step.id}
-                          className={cn(
-                            "border rounded-lg p-4 sm:p-6 bg-muted/20 relative group",
-                            isJustCompleted && `step-enter step-delay-${Math.min(idx + 1, 4)}`
-                          )}
-                        >
-                          <div className="flex items-center justify-between mb-4 sm:mb-6">
-                             <div className="flex items-center gap-2 sm:gap-3">
-                               <Badge variant="outline" className="text-[10px] sm:text-xs uppercase px-1.5 sm:px-2 py-0.5 tracking-wider font-semibold">{step.type}</Badge>
-                               <span className="text-xs text-muted-foreground font-medium">Step {idx + 1}</span>
-                             </div>
-                             <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
-                                onClick={() => removeStep(week.index, step.id)}
-                             >
-                               <Trash2 className="h-4 w-4" />
-                             </Button>
-                          </div>
-
-                          <div className="grid gap-5 sm:gap-8">
-                             {step.type === 'reading' && (
-                               <div className="grid gap-2">
-                                 <Label className="text-sm">URL</Label>
-                                 <div className="flex gap-2">
-                                   <Input
-                                     value={step.url || ''}
-                                     onChange={e => updateStep(week.index, step.id, 'url', e.target.value)}
-                                     placeholder="https://..."
-                                     className="text-base md:text-lg"
-                                   />
-                                   <Button
-                                     variant="ghost"
-                                     size="icon"
-                                     onClick={() => window.open(step.url, '_blank', 'noopener,noreferrer')}
-                                     disabled={!step.url}
-                                     title="Open link in new tab"
-                                     className="shrink-0"
-                                   >
-                                     <ExternalLink className="h-4 w-4" />
-                                   </Button>
-                                   <TooltipProvider>
-                                     <Tooltip>
-                                       <TooltipTrigger asChild>
-                                         <Button
-                                           variant="secondary"
-                                           size="icon"
-                                           onClick={() => handleAutoFill(week.index, step.id)}
-                                           disabled={!step.url}
-                                           className="shrink-0"
-                                         >
-                                           <Wand2 className="h-4 w-4" />
-                                         </Button>
-                                       </TooltipTrigger>
-                                       <TooltipContent>
-                                         <p>Auto-fill title, author, and other fields from URL</p>
-                                       </TooltipContent>
-                                     </Tooltip>
-                                   </TooltipProvider>
-                                 </div>
-                               </div>
-                             )}
-
-                             {step.type === 'reading' && (
-                               <>
-                                 {/* Title and Media Type on same row */}
-                                 <div className="grid grid-cols-1 sm:grid-cols-[1fr_160px] gap-4 sm:gap-6">
-                                    <div className="grid gap-2">
-                                      <Label className="text-sm">Title</Label>
-                                      <Input value={step.title} onChange={e => updateStep(week.index, step.id, 'title', e.target.value)} className="text-base md:text-lg" />
-                                    </div>
-                                    <div className="grid gap-2">
-                                      <Label className="text-sm">Media Type</Label>
-                                      <Select
-                                        value={step.mediaType || 'Blog/Article'}
-                                        onValueChange={(v: any) => updateStep(week.index, step.id, 'mediaType', v)}
-                                      >
-                                        <SelectTrigger className="text-base md:text-lg"><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="Book">Book</SelectItem>
-                                          <SelectItem value="Book Chapter">Book Chapter</SelectItem>
-                                          <SelectItem value="Journal Article">Journal Article</SelectItem>
-                                          <SelectItem value="Youtube video">Youtube video</SelectItem>
-                                          <SelectItem value="Blog/Article">Blog/Article</SelectItem>
-                                          <SelectItem value="Podcast">Podcast</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                 </div>
-
-                                 {/* Author, Creation Date, and Est. Min on same row */}
-                                 <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_90px] gap-4 sm:gap-6">
-                                    <div className="grid gap-2">
-                                      <Label className="text-sm">Author</Label>
-                                      <Input
-                                        value={step.author || ''}
-                                        onChange={e => updateStep(week.index, step.id, 'author', e.target.value)}
-                                        placeholder="e.g. Plato"
-                                        className="text-base md:text-lg"
-                                      />
-                                    </div>
-                                    <div className="grid gap-2">
-                                      <Label className="text-sm">Creation/Publish Date</Label>
-                                      <Input
-                                        type="date"
-                                        value={step.creationDate || ''}
-                                        onChange={e => updateStep(week.index, step.id, 'creationDate', e.target.value)}
-                                        className="text-base md:text-lg"
-                                      />
-                                    </div>
-                                    <div className="grid gap-2">
-                                      <Label className="text-sm">Est. Min</Label>
-                                      <Input type="number" value={step.estimatedMinutes || 0} onChange={e => updateStep(week.index, step.id, 'estimatedMinutes', parseInt(e.target.value))} className="text-base md:text-lg" />
-                                    </div>
-                                 </div>
-
-                                 <div className="grid gap-2">
-                                   <Label className="text-sm">Description</Label>
-                                   <RichTextEditor
-                                      value={step.note || ''}
-                                      onChange={(value: string) => updateStep(week.index, step.id, 'note', value)}
-                                      placeholder="Why should they read this?"
-                                      isSaving={isSaving}
-                                      lastSaved={lastSaved}
-                                   />
-                                 </div>
-                               </>
-                             )}
-
-                             {step.type === 'exercise' && (
-                               <>
-                                 {/* Title and Est. Minutes on same row for exercises */}
-                                 <div className="grid grid-cols-1 sm:grid-cols-[1fr_90px] gap-4 sm:gap-6">
-                                    <div className="grid gap-2">
-                                      <Label className="text-sm">Title</Label>
-                                      <Input value={step.title} onChange={e => updateStep(week.index, step.id, 'title', e.target.value)} className="text-base md:text-lg" />
-                                    </div>
-                                    <div className="grid gap-2">
-                                      <Label className="text-sm">Est. Min</Label>
-                                      <Input type="number" value={step.estimatedMinutes || 0} onChange={e => updateStep(week.index, step.id, 'estimatedMinutes', parseInt(e.target.value))} className="text-base md:text-lg" />
-                                    </div>
-                                 </div>
-                                 <div className="grid gap-2">
-                                   <Label className="text-sm">Prompt</Label>
-                                   <RichTextEditor
-                                      value={step.promptText || ''}
-                                      onChange={(value: string) => updateStep(week.index, step.id, 'promptText', value)}
-                                      placeholder="What should they do?"
-                                      isSaving={isSaving}
-                                      lastSaved={lastSaved}
-                                   />
-                                 </div>
-                               </>
-                             )}
-                          </div>
-                        </div>
+                          step={step}
+                          idx={idx}
+                          weekIndex={week.index}
+                          isJustCompleted={isJustCompleted}
+                          updateStep={updateStep}
+                          removeStep={removeStep}
+                          handleAutoFill={handleAutoFill}
+                          isSaving={isSaving}
+                          lastSaved={lastSaved}
+                        />
                       ))}
                     </div>
+                    </SortableContext>
+                    </DndContext>
 
                     <div className="flex flex-wrap gap-2 pt-4">
                       <Button variant="secondary" size="sm" onClick={() => addStep(week.index, 'reading')} className="text-sm">
@@ -1337,6 +1581,9 @@ export default function SyllabindEditor() {
         />
       )}
 
+      </>
+      )}
+
       <AlertDialog open={showRegenerateDialog} onOpenChange={setShowRegenerateDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1355,6 +1602,28 @@ export default function SyllabindEditor() {
             }}>
               Regenerate
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={(open) => { if (!isDeleting) setShowDeleteDialog(open); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Syllabind?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete "{formData.title || 'this syllabind'}" and all its weeks, steps, enrollments, and submissions.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <Button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              variant="destructive"
+            >
+              {isDeleting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Deleting...</> : 'Delete Permanently'}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,6 +1,6 @@
 export type AudienceLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 export type StepType = 'reading' | 'exercise';
-export type SyllabusStatus = 'draft' | 'published';
+export type SyllabusStatus = 'draft' | 'published' | 'generating';
 
 export interface Step {
   id: number; // Changed from string to number for normalized DB

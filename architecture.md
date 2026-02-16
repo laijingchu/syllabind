@@ -1549,6 +1549,25 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 - `client/src/pages/Completion.tsx` - Auto-complete enrollment on mount
 - `client/src/pages/Dashboard.tsx` - Loading state, "Mark Complete" button
 
+### Fix Weeks Array Not Expanding During Regeneration (2026-02-16)
+
+**Problem:** When regenerating a syllabind with more weeks than previously existed (e.g., going from 1 week to 3), the `formData.weeks` array only had slots for the original weeks. All WebSocket handlers used `if (newWeeks[weekIdx])` guards that silently skipped data for weeks beyond the array length. This caused new week tabs to not appear during generation and steps/metadata for new weeks to be silently dropped.
+
+**Root Cause:** `handleAutogenerate()` never resized `formData.weeks` to match `formData.durationWeeks` before starting generation.
+
+**Solution:**
+1. **Pre-resize weeks array:** Added `setFormData` call before WebSocket connection in `handleAutogenerate` that expands `formData.weeks` to match `durationWeeks`, creating empty week entries for any missing slots.
+2. **Resilient WebSocket handlers:** Changed all 6 handlers (4 in `handleAutogenerate`, 2 in `handleRegenerateWeek`) from silently skipping missing week slots to creating the week entry on-the-fly. Each handler now checks `if (!newWeeks[weekIdx])` and creates a placeholder week before proceeding.
+
+**Handlers Updated:**
+- `week_started` — creates week slot before clearing steps
+- `week_info` — creates week slot before setting title/description
+- `step_completed` — creates week slot before pushing step (both full generation and single-week regeneration)
+- `week_completed` — creates week slot before setting final title/description
+
+**Files Modified:**
+- `client/src/pages/SyllabindEditor.tsx` — Pre-resize logic + 6 handler resilience fixes
+
 ### Rate Limit Retry and Generation Cancellation (2026-02-16)
 
 **Problem:** During AI syllabind generation, 429 rate limit errors caused silent failures — the Anthropic SDK's built-in retry (`maxRetries: 2`) waited silently, leaving the user seeing generation "stuck" with no feedback. When retries were exhausted mid-generation, partial data was left behind. Additionally, users had no way to cancel a running generation.
