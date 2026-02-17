@@ -1,4 +1,5 @@
 import { useRoute, useLocation, Link } from 'wouter';
+import { usePostHog } from '@posthog/react';
 import { useStore } from '@/lib/store';
 import { Syllabus, Week, Step, StepType } from '@/lib/types';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -250,6 +251,7 @@ export default function SyllabindEditor() {
   const [match, params] = useRoute('/creator/syllabus/:id/edit');
   const isNew = useLocation()[0] === '/creator/syllabus/new';
   const { createSyllabus, updateSyllabus, refreshSyllabinds, getSubmissionsForStep, getLearnersForSyllabus } = useStore();
+  const posthog = usePostHog();
   const [location, setLocation] = useLocation();
   const [learners, setLearners] = useState<any[]>([]);
 
@@ -1233,6 +1235,10 @@ export default function SyllabindEditor() {
       updateSyllabus(dataToSave);
     }
 
+    if (statusOverride === 'published') {
+      posthog?.capture('syllabind_published', { syllabind_id: dataToSave.id, title: dataToSave.title });
+    }
+
     const message = statusOverride === 'published'
       ? "Syllabind published successfully!"
       : "Your changes have been saved successfully.";
@@ -1247,7 +1253,8 @@ export default function SyllabindEditor() {
   const handleShareDraft = () => {
     const draftUrl = `${window.location.origin}/syllabus/${formData.id}?preview=true`;
     navigator.clipboard.writeText(draftUrl);
-    toast({ 
+    posthog?.capture('link_shared', { url: draftUrl, type: 'draft_preview' });
+    toast({
       title: "Draft Link Copied!", 
       description: "Share this link with anyone to preview your syllabind before publishing.",
       duration: 3000,

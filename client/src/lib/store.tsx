@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { usePostHog } from '@posthog/react';
 import { useAuth } from '@/hooks/use-auth';
 import { Syllabus, Enrollment, LearnerProfile, Submission } from './types';
 
@@ -50,6 +51,7 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, logout, isLoading } = useAuth();
   const queryClient = useQueryClient();
+  const posthog = usePostHog();
   const [syllabinds, setSyllabinds] = useState<Syllabus[]>([]);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -61,6 +63,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     refreshSyllabinds();
   }, []);
+
+  // Identify user in PostHog on login, reset on logout
+  useEffect(() => {
+    if (isAuthenticated && user && posthog) {
+      posthog.identify(user.username, {
+        email: user.email,
+        name: user.name,
+        is_creator: user.isCreator,
+      });
+    } else if (!isAuthenticated && posthog) {
+      posthog.reset();
+    }
+  }, [isAuthenticated, user, posthog]);
 
   // Fetch enrollments when user logs in
   useEffect(() => {
@@ -180,6 +195,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         completedStepIds: [],
         completedSyllabusIds: []
       });
+      posthog?.capture('enrolled_in_syllabind', { syllabind_id: syllabusId });
     } catch (err) {
       console.error('Failed to enroll:', err);
       throw err;
@@ -202,6 +218,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (prev.includes(stepId)) return prev;
         return [...prev, stepId];
       });
+      posthog?.capture('step_completed', { step_id: stepId, syllabind_id: enrollment.activeSyllabusId });
     } catch (err) {
       console.error('Failed to mark step complete:', err);
       throw err;
@@ -243,6 +260,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok) throw new Error('Failed to complete syllabus');
 
       // Add to completed list and clear active enrollment
+      posthog?.capture('syllabind_completed', { syllabind_id: enrollment.activeSyllabusId });
       const completedId = enrollment.activeSyllabusId;
       setEnrollment(prev => prev ? {
         ...prev,
@@ -281,6 +299,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
 
       const submission = await response.json();
+      posthog?.capture('exercise_submitted', { step_id: stepId, syllabind_id: enrollment.activeSyllabusId });
 
       // Update local state
       setSubmissions(prev => {

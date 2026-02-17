@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePostHog } from '@posthog/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,12 +14,14 @@ interface ShareDialogProps {
 
 export function ShareDialog({ open, onOpenChange, title = "Share this page" }: ShareDialogProps) {
   const { toast } = useToast();
+  const posthog = usePostHog();
   const [copied, setCopied] = useState(false);
   const currentUrl = window.location.href;
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(currentUrl);
+      posthog?.capture('link_shared', { url: currentUrl });
       setCopied(true);
       toast({
         title: "Link Copied!",
