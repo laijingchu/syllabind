@@ -88,6 +88,7 @@ export const weeks = pgTable("weeks", {
   description: text("description"),
 }, (table) => [
   index("weeks_syllabus_id_idx").on(table.syllabusId),
+  uniqueIndex("weeks_syllabus_id_index_idx").on(table.syllabusId, table.index),
 ]);
 
 export const steps = pgTable("steps", {

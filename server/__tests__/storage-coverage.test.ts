@@ -98,6 +98,41 @@ describe('DatabaseStorage coverage tests', () => {
       expect(result!.weeks[0].steps).toHaveLength(1);
       expect(result!.weeks[0].steps[0].title).toBe('Read Article');
     });
+
+    it('deduplicates weeks with same index, keeping highest ID', async () => {
+      const mockSyllabus = {
+        id: 1, title: 'Test', description: 'Desc',
+        audienceLevel: 'Beginner', durationWeeks: 2,
+        status: 'published', creatorId: 'creator',
+        createdAt: new Date(), updatedAt: new Date(),
+        studentActive: 0, studentsCompleted: 0,
+      };
+      // Two weeks with the same index (race condition duplicate)
+      const oldWeek = { id: 10, syllabusId: 1, index: 1, title: 'Old Week 1', description: null };
+      const newWeek = { id: 20, syllabusId: 1, index: 1, title: 'New Week 1', description: null };
+      const week2 = { id: 30, syllabusId: 1, index: 2, title: 'Week 2', description: null };
+
+      // getSyllabus → syllabus found
+      mockDbResult.mockResolvedValueOnce([mockSyllabus]);
+      // weeks query → returns duplicates
+      mockDbResult.mockResolvedValueOnce([oldWeek, newWeek, week2]);
+      // steps for newWeek (id=20, kept) → 1 step
+      mockDbResult.mockResolvedValueOnce([{
+        id: 100, weekId: 20, position: 1, type: 'reading',
+        title: 'New Step', url: null, note: null,
+        author: null, creationDate: null, mediaType: null,
+        promptText: null, estimatedMinutes: null,
+      }]);
+      // steps for week2 (id=30)
+      mockDbResult.mockResolvedValueOnce([]);
+
+      const result = await storage.getSyllabusWithContent(1);
+      expect(result).toBeDefined();
+      expect(result!.weeks).toHaveLength(2);
+      expect(result!.weeks[0].id).toBe(20); // Higher ID kept
+      expect(result!.weeks[0].title).toBe('New Week 1');
+      expect(result!.weeks[1].id).toBe(30);
+    });
   });
 
   describe('getLearnersBySyllabusId', () => {

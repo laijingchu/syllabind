@@ -622,6 +622,18 @@ describe('Routes Integration (real registerRoutes)', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.websocketUrl).toContain('/ws/generate-syllabind');
     });
+
+    it('returns 409 when generation already in progress', async () => {
+      const authed = await createAuthedApp(mockCreator);
+      mockStorage.getSyllabus.mockResolvedValue({
+        id: 1, creatorId: mockCreator.username,
+        title: 'T', description: 'D', audienceLevel: 'Beginner', durationWeeks: 4,
+        status: 'generating'
+      });
+      const res = await request(authed).post('/api/generate-syllabind').send({ syllabusId: 1 });
+      expect(res.status).toBe(409);
+      expect(res.body.error).toBe('Generation already in progress');
+    });
   });
 
   describe('POST /api/regenerate-week', () => {

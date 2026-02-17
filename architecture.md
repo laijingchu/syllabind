@@ -1826,3 +1826,22 @@ Added real AI text improvement to the RichTextEditor's "Improve writing" button 
 - `server/utils/syllabindGenerator.ts` — Added `planning_started` WebSocket event before Phase 1
 - `server/websocket/generateSyllabind.ts` — Added `planning_started` event to mock generator
 - `client/src/pages/SyllabindEditor.tsx` — Added `planning_started` handler, updated initial state, updated progress card to handle planning phase
+
+### Duplicate Weeks Prevention (2026-02-17)
+
+**Problem:** Concurrent generation requests on the same syllabind (e.g., double-clicking "Generate") created duplicate week rows (same `syllabusId` + `index`). The `getSyllabusWithContent` query returned all duplicates, causing the SyllabusOverview accordion to show 12 weeks instead of 6.
+
+**Root cause:** No unique constraint on `weeks(syllabus_id, index)` and no guard against triggering generation while one is already in progress.
+
+**Fixes:**
+1. **Concurrent generation guard** — `POST /api/generate-syllabind` now returns 409 if syllabind status is already `'generating'`
+2. **Week deduplication** — `getSyllabusWithContent` deduplicates weeks by index, keeping only the highest-ID week per index (most recent generation)
+3. **Unique constraint** — Added `uniqueIndex("weeks_syllabus_id_index_idx")` on `(syllabusId, index)` in schema + migration to clean up existing duplicates
+
+**Migration:** `migrations/0004_deduplicate_weeks_unique_constraint.sql` — deletes duplicate weeks (keeping latest), then adds unique index.
+
+**Files Modified:**
+- `server/routes.ts` — Added 409 guard for concurrent generation
+- `server/storage.ts` — Deduplicate weeks by index in `getSyllabusWithContent`
+- `shared/schema.ts` — Added unique index on `weeks(syllabus_id, index)`
+- `migrations/0004_deduplicate_weeks_unique_constraint.sql` — New migration

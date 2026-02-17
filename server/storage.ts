@@ -371,9 +371,21 @@ export class DatabaseStorage implements IStorage {
       .where(eq(weeks.syllabusId, id))
       .orderBy(asc(weeks.index));
 
+    // Deduplicate weeks by index — keep only the latest (highest ID) per index.
+    // This handles corrupted data from concurrent generation race conditions.
+    const weeksByIndex = new Map<number, typeof weeksData[number]>();
+    for (const week of weeksData) {
+      const existing = weeksByIndex.get(week.index);
+      if (!existing || week.id > existing.id) {
+        weeksByIndex.set(week.index, week);
+      }
+    }
+    const dedupedWeeks = Array.from(weeksByIndex.values())
+      .sort((a, b) => a.index - b.index);
+
     // Get steps for each week
     const weeksWithSteps: WeekWithSteps[] = await Promise.all(
-      weeksData.map(async (week) => {
+      dedupedWeeks.map(async (week) => {
         const stepsData = await db.select()
           .from(steps)
           .where(eq(steps.weekId, week.id))

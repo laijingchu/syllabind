@@ -527,6 +527,10 @@ export async function registerRoutes(
       return res.status(400).json({ error: "Complete basics fields before generating" });
     }
 
+    if (syllabus.status === 'generating') {
+      return res.status(409).json({ error: "Generation already in progress" });
+    }
+
     await storage.updateSyllabus(syllabusId, { status: 'generating' });
 
     res.json({

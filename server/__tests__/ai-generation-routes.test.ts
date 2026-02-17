@@ -36,6 +36,10 @@ describe('AI Generation Routes', () => {
         return res.status(400).json({ error: 'Complete basics fields before generating' });
       }
 
+      if (syllabus.status === 'generating') {
+        return res.status(409).json({ error: 'Generation already in progress' });
+      }
+
       await mockStorage.updateSyllabus(syllabusId, { status: 'generating' });
 
       res.json({
@@ -162,6 +166,20 @@ describe('AI Generation Routes', () => {
         .post('/api/generate-syllabind')
         .send({ syllabusId: 1 })
         .expect(400);
+    });
+
+    it('should return 409 when generation already in progress', async () => {
+      mockStorage.getSyllabus.mockResolvedValue({
+        ...completeSyllabus,
+        status: 'generating'
+      });
+
+      const res = await request(creatorApp)
+        .post('/api/generate-syllabind')
+        .send({ syllabusId: 1 })
+        .expect(409);
+
+      expect(res.body.error).toBe('Generation already in progress');
     });
   });
 
