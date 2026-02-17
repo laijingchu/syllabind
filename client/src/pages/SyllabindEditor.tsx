@@ -542,7 +542,7 @@ export default function SyllabindEditor() {
     if (syllabusId < 0) {
       const created = await createSyllabus({
         ...formData,
-        status: 'generating'
+        status: 'draft'
       });
       syllabusId = created.id;
       setFormData({ ...formData, id: syllabusId });
@@ -934,6 +934,15 @@ export default function SyllabindEditor() {
       setIsGenerating(false);
       isGeneratingRef.current = false;
       generationWsRef.current = null;
+      // Reset status back to draft so user can retry
+      if (syllabusId > 0) {
+        fetch(`/api/syllabinds/${syllabusId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ status: 'draft' })
+        }).catch(() => {});
+      }
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Unknown error",
