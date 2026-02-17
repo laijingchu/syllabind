@@ -9,13 +9,14 @@ Syllabind is a full-stack learning platform that connects creators who build cur
 - UI: Radix UI + TailwindCSS 4
 - Backend: Express.js + Node.js
 - Database: PostgreSQL + Drizzle ORM
-- Auth: Replit Auth (OpenID Connect)
+- Auth: Custom authentication with Passport.js (Replit Auth, email/password, Google OAuth, Apple OAuth)
+- Analytics: PostHog (autocapture + custom events)
 
 ---
 
 ## Data Model
 
-The data model consists of four main database tables that store all application data. The design follows a relational structure where users can create syllabinds, and other users can enroll in them. Progress tracking is handled through the enrollments table, which stores completed step IDs as a flexible JSON array.
+The data model uses a fully normalized relational schema. Users can create syllabinds, and other users can enroll in them. Progress tracking is handled through the `completed_steps` junction table (normalized from a previous JSONB design).
 
 ### Database Schema
 
@@ -893,8 +894,32 @@ The application uses modern, well-maintained libraries and frameworks. The front
 **Backend:**
 - Express 4, Node.js, TypeScript
 - Drizzle ORM, PostgreSQL
-- Passport.js, Replit Auth
+- Passport.js (email/password, Google OAuth, Apple OAuth, Replit Auth)
 - Express-session, Connect-pg-simple
+
+**Analytics:**
+- PostHog (`posthog-js`, `@posthog/react`)
+
+---
+
+## Analytics (PostHog)
+
+PostHog is integrated as the product analytics platform. See `docs/POSTHOG_ANALYTICS.md` for full documentation.
+
+**Setup:** `PostHogProvider` wraps the app in `client/src/main.tsx`, configured via `VITE_POSTHOG_KEY` and `VITE_POSTHOG_HOST` environment variables.
+
+**User Identification:** Users are identified on login (`posthog.identify`) and reset on logout (`posthog.reset`) in `client/src/lib/store.tsx`. Properties sent: `email`, `name`, `is_creator`.
+
+**Custom Events:**
+
+| Event | Trigger | Properties |
+|-------|---------|------------|
+| `enrolled_in_syllabind` | Learner enrolls | `syllabind_id` |
+| `step_completed` | Learner completes a step | `step_id`, `syllabind_id` |
+| `syllabind_completed` | Learner finishes all steps | `syllabind_id` |
+| `exercise_submitted` | Learner submits an exercise | `step_id`, `syllabind_id` |
+| `syllabind_published` | Creator publishes | `syllabind_id`, `title` |
+| `link_shared` | User copies share link | `url`, `type` (optional) |
 
 ---
 
@@ -1845,3 +1870,19 @@ Added real AI text improvement to the RichTextEditor's "Improve writing" button 
 - `server/storage.ts` — Deduplicate weeks by index in `getSyllabusWithContent`
 - `shared/schema.ts` — Added unique index on `weeks(syllabus_id, index)`
 - `migrations/0004_deduplicate_weeks_unique_constraint.sql` — New migration
+
+### PostHog Analytics Integration (2026-02-17)
+
+**Objective:** Add product analytics to track user behavior, engagement funnels, and feature adoption.
+
+**Setup:**
+- Installed `posthog-js` and `@posthog/react`
+- `PostHogProvider` wraps the app in `client/src/main.tsx`
+- User identification on login/logout in `client/src/lib/store.tsx`
+- 6 custom events instrumented across 3 files
+
+**Files Modified:**
+- `client/src/main.tsx` — PostHogProvider setup
+- `client/src/lib/store.tsx` — User identification + 4 custom events (enroll, step complete, syllabind complete, exercise submit)
+- `client/src/pages/SyllabindEditor.tsx` — `syllabind_published` and draft `link_shared` events
+- `client/src/components/ShareDialog.tsx` — `link_shared` event
