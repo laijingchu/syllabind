@@ -66,7 +66,7 @@ export const syllabinds = pgTable("syllabi", {
 export const enrollments = pgTable("enrollments", {
   id: serial("id").primaryKey(),
   studentId: text("student_id").references(() => users.username, { onDelete: 'cascade', onUpdate: 'cascade' }),
-  syllabusId: integer("syllabus_id").references(() => syllabinds.id),
+  syllabusId: integer("syllabus_id").references(() => syllabinds.id, { onDelete: 'cascade' }),
   status: text("status").notNull().default('in-progress'), // 'in-progress', 'completed', 'dropped'
   currentWeekIndex: integer("current_week_index").default(1),
   shareProfile: boolean("share_profile").default(false),

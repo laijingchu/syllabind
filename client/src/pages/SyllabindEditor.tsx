@@ -49,6 +49,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 const generateTempId = () => -Math.floor(Math.random() * 1000000); // Temporary negative IDs for unsaved items
 
+
 interface SortableStepProps {
   step: Step;
   idx: number;
@@ -248,7 +249,7 @@ function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, remov
 export default function SyllabindEditor() {
   const [match, params] = useRoute('/creator/syllabus/:id/edit');
   const isNew = useLocation()[0] === '/creator/syllabus/new';
-  const { createSyllabus, updateSyllabus, getSubmissionsForStep, getLearnersForSyllabus } = useStore();
+  const { createSyllabus, updateSyllabus, refreshSyllabinds, getSubmissionsForStep, getLearnersForSyllabus } = useStore();
   const [location, setLocation] = useLocation();
   const [learners, setLearners] = useState<any[]>([]);
 
@@ -538,18 +539,7 @@ export default function SyllabindEditor() {
       console.log('[Mock Mode] Testing streaming effect without API calls');
     }
 
-    let syllabusId = formData.id;
-    if (syllabusId < 0) {
-      const created = await createSyllabus({
-        ...formData,
-        status: 'draft'
-      });
-      syllabusId = created.id;
-      setFormData({ ...formData, id: syllabusId });
-      // Navigate to edit URL so retries don't create duplicates
-      setLocation(`/creator/syllabus/${syllabusId}/edit`, { replace: true });
-    }
-
+    // Show progress immediately — don't wait for create/start API calls
     setIsGenerating(true);
     isGeneratingRef.current = true;
     setGenerationProgress({ currentWeek: 0, status: 'Starting generation...' });
@@ -558,21 +548,36 @@ export default function SyllabindEditor() {
     setErroredWeeks(new Set());
     setJustCompletedWeek(null);
 
-    // Reset all weeks to empty slots — server deletes existing data before regenerating,
-    // so client must also start clean to prevent stale/duplicate content from prior attempts
-    setFormData(prev => {
-      const targetCount = prev.durationWeeks;
-      const newWeeks = Array.from({ length: targetCount }, (_, i) => ({
-        id: generateTempId(),
-        syllabusId: syllabusId,
-        index: i + 1,
-        steps: [] as Step[],
-        title: ''
-      }));
-      return { ...prev, weeks: newWeeks };
-    });
-
+    let syllabusId = formData.id;
     try {
+      // For new syllabinds, create via API directly (skip store's refreshSyllabinds)
+      // and stay on /new — no navigation, no remount, all state preserved
+      if (syllabusId < 0) {
+        const res = await fetch('/api/syllabinds', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ ...formData, creatorId: undefined, status: 'draft' })
+        });
+        if (!res.ok) throw new Error('Failed to create syllabind');
+        const created = await res.json();
+        syllabusId = created.id;
+        setFormData(prev => ({ ...prev, id: syllabusId }));
+      }
+
+      // Reset all weeks to empty slots — server deletes existing data before regenerating,
+      // so client must also start clean to prevent stale/duplicate content from prior attempts
+      setFormData(prev => {
+        const targetCount = prev.durationWeeks;
+        const newWeeks = Array.from({ length: targetCount }, (_, i) => ({
+          id: generateTempId(),
+          syllabusId: syllabusId,
+          index: i + 1,
+          steps: [] as Step[],
+          title: ''
+        }));
+        return { ...prev, weeks: newWeeks };
+      });
       const response = await fetch('/api/generate-syllabind', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -769,6 +774,15 @@ export default function SyllabindEditor() {
             setCompletedWeeks(prev => new Set(Array.from(prev).concat(weekIdx)));
             setJustCompletedWeek(weekIdx);
 
+            // Update progress bar immediately — don't wait for next week_started
+            setGenerationProgress(prev => {
+              const totalWeeks = formData.durationWeeks;
+              if (weekIdx >= totalWeeks) {
+                return { currentWeek: totalWeeks, status: 'Finalizing...' };
+              }
+              return { currentWeek: weekIdx, status: `Generating Week ${weekIdx + 1}...` };
+            });
+
             // Clear "just completed" after animation duration
             setTimeout(() => setJustCompletedWeek(null), 600);
             break;
@@ -814,14 +828,17 @@ export default function SyllabindEditor() {
               title: "Syllabind Generated!",
               description: "Your Syllabind has been generated. Review and make any edits.",
             });
+            // Sync store so creator dashboard shows the new syllabind
+            refreshSyllabinds();
             fetch(`/api/syllabinds/${syllabusId}`, { credentials: 'include' })
               .then(res => res.json())
               .then(updated => {
                 setFormData(updated);
-                // Store generated weeks as new baseline for duration changes
                 if (updated.weeks?.length > 0) {
                   setOriginalWeeks(updated.weeks);
                 }
+                // Update URL to edit route (replace avoids browser back to /new)
+                window.history.replaceState(null, '', `/creator/syllabus/${syllabusId}/edit`);
               });
             break;
 
@@ -862,6 +879,7 @@ export default function SyllabindEditor() {
             setGeneratingWeeks(new Set());
 
             // Re-fetch clean state from server to avoid stale/duplicate data
+            refreshSyllabinds();
             fetch(`/api/syllabinds/${syllabusId}`, { credentials: 'include' })
               .then(res => res.json())
               .then(updated => {
@@ -869,6 +887,7 @@ export default function SyllabindEditor() {
                 if (updated.weeks?.length > 0) {
                   setOriginalWeeks(updated.weeks);
                 }
+                window.history.replaceState(null, '', `/creator/syllabus/${syllabusId}/edit`);
               })
               .catch(() => {}); // Silently fail — user will see the error toast
 
@@ -897,9 +916,24 @@ export default function SyllabindEditor() {
         setIsGenerating(false);
         isGeneratingRef.current = false;
         generationWsRef.current = null;
+        setGeneratingWeeks(new Set());
+        // Re-fetch to show whatever was saved before the connection dropped
+        if (syllabusId > 0) {
+          refreshSyllabinds();
+          fetch(`/api/syllabinds/${syllabusId}`, { credentials: 'include' })
+            .then(res => res.json())
+            .then(updated => {
+              setFormData(updated);
+              if (updated.weeks?.length > 0) {
+                setOriginalWeeks(updated.weeks);
+              }
+              window.history.replaceState(null, '', `/creator/syllabus/${syllabusId}/edit`);
+            })
+            .catch(() => {});
+        }
         toast({
           title: "Connection Error",
-          description: "Lost connection to generation service.",
+          description: "Lost connection to generation service. Any completed weeks have been saved.",
           variant: "destructive"
         });
       };
@@ -936,12 +970,14 @@ export default function SyllabindEditor() {
       generationWsRef.current = null;
       // Reset status back to draft so user can retry
       if (syllabusId > 0) {
+        refreshSyllabinds();
         fetch(`/api/syllabinds/${syllabusId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ status: 'draft' })
         }).catch(() => {});
+        window.history.replaceState(null, '', `/creator/syllabus/${syllabusId}/edit`);
       }
       toast({
         title: "Error",
@@ -1090,13 +1126,6 @@ export default function SyllabindEditor() {
             setCompletedWeeks(prev => new Set(Array.from(prev).concat(weekIndex)));
             setErroredWeeks(prev => { const next = new Set(prev); next.delete(weekIndex); return next; });
 
-            // Clear the green check after a brief display
-            setTimeout(() => setCompletedWeeks(prev => {
-              const next = new Set(prev);
-              next.delete(weekIndex);
-              return next;
-            }), 3000);
-
             toast({
               title: "Week Regenerated!",
               description: `Week ${weekIndex} has been regenerated successfully.`,
@@ -1198,7 +1227,7 @@ export default function SyllabindEditor() {
   const handleSave = (statusOverride?: 'draft' | 'published') => {
     const dataToSave = statusOverride ? { ...formData, status: statusOverride } : formData;
 
-    if (isNew) {
+    if (formData.id < 0) {
       createSyllabus(dataToSave);
     } else {
       updateSyllabus(dataToSave);
@@ -1449,26 +1478,21 @@ export default function SyllabindEditor() {
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium">
-                          {generationProgress.currentWeek === 0
-                            ? 'Planning course structure...'
-                            : `Generating Week ${generationProgress.currentWeek} of ${formData.durationWeeks}`}
+                          {generationProgress.status || 'Starting generation...'}
                         </span>
                         {generationProgress.currentWeek > 0 && (
                           <span className="text-xs text-muted-foreground">
-                            {Math.round((generationProgress.currentWeek / formData.durationWeeks) * 100)}%
+                            {Math.round((completedWeeks.size / formData.durationWeeks) * 100)}%
                           </span>
                         )}
                       </div>
                       <Progress
                         value={generationProgress.currentWeek === 0
                           ? 5
-                          : (generationProgress.currentWeek / formData.durationWeeks) * 100}
+                          : (completedWeeks.size / formData.durationWeeks) * 100}
                         className="h-2 bg-emerald-100"
                         indicatorClassName="bg-emerald-500"
                       />
-                      <p className="text-xs text-muted-foreground mt-1.5 truncate">
-                        {generationProgress.status}
-                      </p>
                     </div>
                   </div>
 
@@ -1526,17 +1550,21 @@ export default function SyllabindEditor() {
 
           {uniqueWeeks.map(week => {
             const isWeekGenerating = generatingWeeks.has(week.index);
+            const isWeekCompleted = completedWeeks.has(week.index);
             const isJustCompleted = justCompletedWeek === week.index;
             const hasContent = week.steps.length > 0 || week.title;
+            // Show skeleton placeholder for any week not yet completed during full generation,
+            // or for the actively generating week during single-week regeneration
+            const showPlaceholder = isWeekGenerating || (isGenerating && !isWeekCompleted);
 
             return (
             <TabsContent key={week.index} value={`week-${week.index}`} className="space-y-6 sm:space-y-10 mt-4 sm:mt-8">
-              {isWeekGenerating && week.steps.length < 4 ? (
+              {showPlaceholder ? (
                 <Card>
                   <CardContent className="p-4 sm:p-6 pt-4 sm:pt-6">
                     <GeneratingWeekPlaceholder
                       weekIndex={week.index}
-                      status={generationProgress.status}
+                      status={isWeekGenerating ? generationProgress.status : `Waiting to generate Week ${week.index}...`}
                       title={week.title}
                       description={week.description}
                       currentSteps={week.steps}

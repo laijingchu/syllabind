@@ -21,10 +21,10 @@ export default function WeekView() {
     enrollment,
     markStepComplete,
     markStepIncomplete,
-    isStepCompleted,
     saveExercise,
     getSubmission,
-    completedStepIds
+    completedStepIds: storeCompletedStepIds,
+    user: currentUser
   } = useStore();
   const [location, setLocation] = useLocation();
 
@@ -33,6 +33,8 @@ export default function WeekView() {
   const [exerciseText, setExerciseText] = useState<Record<number, string>>({});
   const [isShared, setIsShared] = useState<Record<number, boolean>>({});
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [localCompletedStepIds, setLocalCompletedStepIds] = useState<number[]>([]);
+  const [localEnrollmentId, setLocalEnrollmentId] = useState<number | null>(null);
 
   const syllabusId = params?.id ? parseInt(params.id) : undefined;
   const weekIndex = parseInt(params?.index || '1');
@@ -55,6 +57,29 @@ export default function WeekView() {
     }
   }, [syllabusId]);
 
+  // Fetch enrollment for this specific syllabus
+  useEffect(() => {
+    if (syllabusId && currentUser) {
+      fetch('/api/enrollments', { credentials: 'include' })
+        .then(res => res.ok ? res.json() : [])
+        .then((data: any[]) => {
+          const match = data.find((e: any) => e.syllabusId === syllabusId);
+          if (match) setLocalEnrollmentId(match.id);
+        })
+        .catch(() => {});
+    }
+  }, [syllabusId, currentUser]);
+
+  // Fetch completed steps for this specific enrollment
+  useEffect(() => {
+    if (localEnrollmentId) {
+      fetch(`/api/enrollments/${localEnrollmentId}/completed-steps`, { credentials: 'include' })
+        .then(res => res.ok ? res.json() : [])
+        .then(data => setLocalCompletedStepIds(data))
+        .catch(() => setLocalCompletedStepIds([]));
+    }
+  }, [localEnrollmentId]);
+
   // Completion Check
   useEffect(() => {
     // If all steps in this week are done, and this is the last week, we might want to prompt completion.
@@ -62,6 +87,21 @@ export default function WeekView() {
   }, [syllabus, weekIndex]);
 
   const week = syllabus?.weeks.find(w => w.index === weekIndex);
+
+  // Use locally-fetched completed steps (works for both active and completed enrollments)
+  const completedStepIds = localCompletedStepIds.length > 0 ? localCompletedStepIds : storeCompletedStepIds;
+  const isStepCompleted = (stepId: number) => completedStepIds.includes(stepId);
+
+  // Wrap step actions to keep local state in sync
+  const handleMarkComplete = async (stepId: number) => {
+    await markStepComplete(stepId);
+    setLocalCompletedStepIds(prev => prev.includes(stepId) ? prev : [...prev, stepId]);
+  };
+
+  const handleMarkIncomplete = async (stepId: number) => {
+    await markStepIncomplete(stepId);
+    setLocalCompletedStepIds(prev => prev.filter(id => id !== stepId));
+  };
 
   // Local helper to compute week progress using local syllabus state
   const getWeekProgress = (weekIdx: number) => {
@@ -182,7 +222,7 @@ export default function WeekView() {
                    {step.type === 'reading' ? (
                      <Checkbox
                        checked={isDone}
-                       onCheckedChange={(c) => c ? markStepComplete(step.id) : markStepIncomplete(step.id)}
+                       onCheckedChange={(c) => c ? handleMarkComplete(step.id) : handleMarkIncomplete(step.id)}
                        className="h-5 w-5 sm:h-6 sm:w-6 border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                      />
                    ) : (
@@ -235,7 +275,7 @@ export default function WeekView() {
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="inline-flex items-center text-sm font-medium text-primary hover:underline mt-2"
-                      onClick={() => !isDone && markStepComplete(step.id)} // Optional: auto-complete on click
+                      onClick={() => !isDone && handleMarkComplete(step.id)} // Optional: auto-complete on click
                     >
                       Read Article <ExternalLink className="h-3 w-3 ml-1" />
                     </a>
@@ -290,7 +330,7 @@ export default function WeekView() {
                                     {exerciseText[step.id] || getSubmission(step.id)?.answer}
                                   </a>
                                 </div>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onClick={() => markStepIncomplete(step.id)}>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onClick={() => handleMarkIncomplete(step.id)}>
                                    <LinkIcon className="h-4 w-4 text-muted-foreground" />
                                    <span className="sr-only">Edit</span>
                                 </Button>

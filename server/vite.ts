@@ -5,6 +5,8 @@ import viteConfig from "../vite.config";
 import fs from "fs";
 import path from "path";
 import { nanoid } from "nanoid";
+import { storage } from "./storage";
+import { parseSyllabindIdFromUrl, injectOgTags } from "./utils/ogTags";
 
 const viteLogger = createLogger();
 
@@ -48,6 +50,20 @@ export async function setupVite(server: Server, app: Express) {
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`,
       );
+
+      // Inject dynamic OG tags for syllabind pages
+      const syllabindId = parseSyllabindIdFromUrl(url);
+      if (syllabindId) {
+        try {
+          const syllabus = await storage.getSyllabus(syllabindId);
+          if (syllabus && syllabus.status === "published") {
+            template = injectOgTags(template, syllabus);
+          }
+        } catch {
+          // Fall through with default meta tags
+        }
+      }
+
       const page = await vite.transformIndexHtml(url, template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {

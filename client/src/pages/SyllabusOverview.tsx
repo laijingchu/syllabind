@@ -31,7 +31,7 @@ import { LearnerProfile, Syllabus } from '@/lib/types';
 
 export default function SyllabusOverview() {
   const [match, params] = useRoute('/syllabus/:id');
-  const { getSyllabusById, enrollInSyllabus, enrollment, isStepCompleted, getExerciseText, getLearnersForSyllabus, updateEnrollmentShareProfile } = useStore();
+  const { getSyllabusById, enrollInSyllabus, enrollment, getExerciseText, getLearnersForSyllabus, updateEnrollmentShareProfile } = useStore();
   const [location, setLocation] = useLocation();
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
@@ -40,10 +40,11 @@ export default function SyllabusOverview() {
   const [syllabus, setSyllabus] = useState<Syllabus | undefined>(undefined);
   const [creator, setCreator] = useState<any>(undefined);
   const [enrollmentShareProfile, setEnrollmentShareProfile] = useState(false);
-  const [existingEnrollment, setExistingEnrollment] = useState<{ id: number; currentWeekIndex: number } | null>(null);
+  const [existingEnrollment, setExistingEnrollment] = useState<{ id: number; currentWeekIndex: number; status: string } | null>(null);
+  const [localCompletedStepIds, setLocalCompletedStepIds] = useState<number[]>([]);
 
   const syllabusId = match && params?.id ? parseInt(params.id) : undefined;
-  const { user: currentUser, completedStepIds } = useStore();
+  const { user: currentUser, completedStepIds: storeCompletedStepIds } = useStore();
   const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
 
   // Fetch full syllabus with weeks and steps
@@ -83,7 +84,7 @@ export default function SyllabusOverview() {
           const match = data.find((e: any) => e.syllabusId === syllabusId);
           if (match) {
             setEnrollmentShareProfile(match.shareProfile || false);
-            setExistingEnrollment({ id: match.id, currentWeekIndex: match.currentWeekIndex || 1 });
+            setExistingEnrollment({ id: match.id, currentWeekIndex: match.currentWeekIndex || 1, status: match.status });
           } else {
             setExistingEnrollment(null);
           }
@@ -91,6 +92,18 @@ export default function SyllabusOverview() {
         .catch(() => {});
     }
   }, [syllabusId, currentUser]);
+
+  // Fetch completed steps for this specific enrollment
+  useEffect(() => {
+    if (existingEnrollment?.id) {
+      fetch(`/api/enrollments/${existingEnrollment.id}/completed-steps`, { credentials: 'include' })
+        .then(res => res.ok ? res.json() : [])
+        .then(data => setLocalCompletedStepIds(data))
+        .catch(() => setLocalCompletedStepIds([]));
+    } else {
+      setLocalCompletedStepIds([]);
+    }
+  }, [existingEnrollment?.id]);
 
   // Fetch creator profile
   useEffect(() => {
@@ -105,6 +118,9 @@ export default function SyllabusOverview() {
   }, [syllabus?.creatorId]);
 
   if (!syllabus) return <div className="text-center py-20">Loading...</div>;
+
+  // Use locally-fetched completed steps for this enrollment (works for both active and completed)
+  const completedStepIds = localCompletedStepIds.length > 0 ? localCompletedStepIds : storeCompletedStepIds;
 
   const getStepExercise = (stepId: number) => getExerciseText(stepId);
 
@@ -180,11 +196,12 @@ export default function SyllabusOverview() {
   const LearnerAvatar = ({ learner }: { learner: LearnerProfile }) => {
     const avatarSrc = learner.user.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${learner.user.name || learner.user.username}`;
     const initial = (learner.user.name || learner.user.username || '?').charAt(0);
+    const [open, setOpen] = useState(false);
     return (
     <TooltipProvider delayDuration={0}>
-      <Tooltip>
+      <Tooltip open={open} onOpenChange={setOpen}>
         <TooltipTrigger asChild>
-          <div className="group relative cursor-pointer">
+          <button type="button" className="group relative cursor-pointer" onClick={() => setOpen(prev => !prev)}>
             <Avatar className="h-10 w-10 border-2 border-background ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
               <AvatarImage src={avatarSrc} alt={learner.user.name || learner.user.username} />
               <AvatarFallback className="bg-muted text-muted-foreground text-xs">
@@ -196,7 +213,7 @@ export default function SyllabusOverview() {
                 <Check className="h-2 w-2" />
               </div>
             )}
-          </div>
+          </button>
         </TooltipTrigger>
         <TooltipContent side="top" align="center" className="p-3 w-60 bg-popover text-popover-foreground border shadow-xl">
           <div className="flex items-start gap-3">
@@ -340,7 +357,7 @@ export default function SyllabusOverview() {
                   <AccordionContent>
                     <div className="pl-16 pr-4 py-2 space-y-3">
                       {week.steps.filter(step => step.type !== 'reading' || step.url).map(step => {
-                        const isDone = isStepCompleted(step.id);
+                        const isDone = completedStepIds.includes(step.id);
                         const exerciseLink = step.type === 'exercise' ? getStepExercise(step.id) : null;
 
                         return (

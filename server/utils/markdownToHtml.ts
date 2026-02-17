@@ -25,6 +25,17 @@ function getIndentLevel(line: string): number {
   return Math.min(Math.floor(spaces / 2), 3);
 }
 
+/** Convert inline markdown (bold, italic) to HTML tags */
+function convertInlineFormatting(text: string): string {
+  // Bold: **text** or __text__ (must be processed before italic)
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/__(.+?)__/g, '<strong>$1</strong>');
+  // Italic: *text* or _text_ (not inside words for underscore)
+  text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+  text = text.replace(/(?<!\w)_(.+?)_(?!\w)/g, '<em>$1</em>');
+  return text;
+}
+
 function tokenize(lines: string[]): LineToken[] {
   return lines.map(line => {
     const trimmed = line.trim();
@@ -33,12 +44,12 @@ function tokenize(lines: string[]): LineToken[] {
     const indent = getIndentLevel(line);
 
     const numMatch = trimmed.match(/^(\d+)[.)]\s+(.+)$/);
-    if (numMatch) return { type: 'ol' as const, content: numMatch[2], indent };
+    if (numMatch) return { type: 'ol' as const, content: convertInlineFormatting(numMatch[2]), indent };
 
     const bulletMatch = trimmed.match(/^[-*•]\s+(.+)$/);
-    if (bulletMatch) return { type: 'ul' as const, content: bulletMatch[1], indent };
+    if (bulletMatch) return { type: 'ul' as const, content: convertInlineFormatting(bulletMatch[1]), indent };
 
-    return { type: 'text' as const, content: trimmed, indent };
+    return { type: 'text' as const, content: convertInlineFormatting(trimmed), indent };
   });
 }
 

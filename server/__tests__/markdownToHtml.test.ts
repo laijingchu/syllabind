@@ -28,6 +28,52 @@ describe('markdownToHtml', () => {
     expect(markdownToHtml(input)).toBe(expected);
   });
 
+  // --- Inline formatting ---
+
+  it('converts **bold** to <strong>', () => {
+    expect(markdownToHtml('**Life Assessment**: Rate yourself')).toBe(
+      '<p><strong>Life Assessment</strong>: Rate yourself</p>'
+    );
+  });
+
+  it('converts *italic* to <em>', () => {
+    expect(markdownToHtml('This is *important* text')).toBe(
+      '<p>This is <em>important</em> text</p>'
+    );
+  });
+
+  it('converts __bold__ to <strong>', () => {
+    expect(markdownToHtml('__bold text__ here')).toBe(
+      '<p><strong>bold text</strong> here</p>'
+    );
+  });
+
+  it('handles bold and italic together', () => {
+    expect(markdownToHtml('**bold** and *italic* text')).toBe(
+      '<p><strong>bold</strong> and <em>italic</em> text</p>'
+    );
+  });
+
+  it('converts inline formatting inside list items', () => {
+    const input = '- **Step 1**: Do something\n- **Step 2**: Do more';
+    const expected =
+      '<ul>' +
+        '<li><p><strong>Step 1</strong>: Do something</p></li>' +
+        '<li><p><strong>Step 2</strong>: Do more</p></li>' +
+      '</ul>';
+    expect(markdownToHtml(input)).toBe(expected);
+  });
+
+  it('converts inline formatting inside numbered list items', () => {
+    const input = '1. **Phase 1**: Planning\n2. **Phase 2**: Execution';
+    const expected =
+      '<ol>' +
+        '<li><p><strong>Phase 1</strong>: Planning</p></li>' +
+        '<li><p><strong>Phase 2</strong>: Execution</p></li>' +
+      '</ol>';
+    expect(markdownToHtml(input)).toBe(expected);
+  });
+
   // --- Basic conversions ---
 
   it('converts plain text to paragraph', () => {

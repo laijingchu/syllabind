@@ -70,7 +70,19 @@ app.use((req, res, next) => {
   // WebSocket server
   const wss = new WebSocketServer({ server: httpServer });
 
+  // Keepalive: ping every 25s to prevent proxy idle-timeout disconnects
+  const pingInterval = setInterval(() => {
+    wss.clients.forEach(ws => {
+      if ((ws as any).isAlive === false) return ws.terminate();
+      (ws as any).isAlive = false;
+      ws.ping();
+    });
+  }, 25_000);
+  wss.on('close', () => clearInterval(pingInterval));
+
   wss.on('connection', async (ws, req) => {
+    (ws as any).isAlive = true;
+    ws.on('pong', () => { (ws as any).isAlive = true; });
     const url = req.url;
 
     // Authenticate the WebSocket connection via session cookie
