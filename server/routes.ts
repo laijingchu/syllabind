@@ -163,6 +163,14 @@ export async function registerRoutes(
     const id = parseInt(req.params.id);
     const syllabus = await storage.getSyllabusWithContent(id);
     if (!syllabus) return res.status(404).json({ message: "Syllabus not found" });
+
+    // Normalize week indices to 1-based (some syllabinds have 0-based indices)
+    if (syllabus.weeks?.length > 0) {
+      const sorted = [...syllabus.weeks].sort((a, b) => a.index - b.index);
+      sorted.forEach((week, i) => { week.index = i + 1; });
+      syllabus.weeks = sorted;
+    }
+
     res.json(syllabus);
   });
 

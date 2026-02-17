@@ -312,15 +312,17 @@ export default function SyllabusOverview() {
               {syllabus.weeks.filter(w => w.steps.length > 0).map((week) => {
                 const weekDone = isActive && getWeekProgress(week.index) === 100;
                 const isCurrentWeek = isActive && effectiveCurrentWeek === week.index;
-                
+                const isLockedWeek = isActive && week.index > effectiveCurrentWeek;
+                const isAccessible = isActive && week.index < effectiveCurrentWeek && !weekDone;
+
                 return (
-                  <AccordionItem 
-                    key={week.index} 
+                  <AccordionItem
+                    key={week.index}
                     value={`week-${week.index}`}
                     className="border-none"
                   >
                     <AccordionTrigger className="hover:no-underline py-4 px-4 rounded-lg hover:bg-muted/50 transition-colors [&[data-state=open]>div]:bg-transparent">
-                      <div 
+                      <div
                         className={cn(
                           "flex gap-4 items-start w-full text-left transition-colors",
                         )}
@@ -328,9 +330,10 @@ export default function SyllabusOverview() {
                         <div className={cn(
                           "bg-background h-8 w-8 rounded-full flex items-center justify-center font-mono text-sm font-medium shrink-0 border transition-colors",
                           weekDone && "bg-primary text-primary-foreground border-primary",
-                          isCurrentWeek && !weekDone && "border-primary text-primary ring-2 ring-primary/20"
+                          isCurrentWeek && !weekDone && "border-primary text-primary ring-2 ring-primary/20",
+                          isAccessible && "border-muted-foreground/40 text-muted-foreground"
                         )}>
-                          {weekDone ? <Check className="h-4 w-4" /> : isCurrentWeek ? <ChevronRight className="h-4 w-4" /> : <Lock className="h-3.5 w-3.5 text-muted-foreground/70" />}
+                          {weekDone ? <Check className="h-4 w-4" /> : isCurrentWeek ? <ChevronRight className="h-4 w-4" /> : isLockedWeek ? <Lock className="h-3.5 w-3.5 text-muted-foreground/70" /> : week.index}
                         </div>
                         <div className="flex-1">
                           <div className="flex justify-between items-start">
@@ -414,6 +417,20 @@ export default function SyllabusOverview() {
                             onClick={() => setLocation(`/syllabus/${syllabus.id}/week/${week.index}`)}
                           >
                             Continue Learning
+                          </Button>
+                        </div>
+                      )}
+
+                      {/* Button for past accessible but incomplete weeks */}
+                      {isAccessible && !isCompleted && (
+                        <div className="pt-4 md:hidden">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => setLocation(`/syllabus/${syllabus.id}/week/${week.index}`)}
+                          >
+                            Go to Week {week.index}
                           </Button>
                         </div>
                       )}

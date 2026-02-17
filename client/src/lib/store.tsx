@@ -24,9 +24,9 @@ interface StoreContextType {
   completeActiveSyllabus: () => Promise<void>;
   updateEnrollment: (updates: Partial<Enrollment>) => void;
   completeStep: (stepId: number) => Promise<void>;
-  markStepComplete: (stepId: number) => Promise<void>;
-  markStepIncomplete: (stepId: number) => Promise<void>;
-  saveExercise: (stepId: number, answer: string, isShared: boolean) => Promise<void>;
+  markStepComplete: (stepId: number, enrollmentId?: number) => Promise<void>;
+  markStepIncomplete: (stepId: number, enrollmentId?: number) => Promise<void>;
+  saveExercise: (stepId: number, answer: string, isShared: boolean, enrollmentId?: number) => Promise<void>;
   getSubmission: (stepId: number) => Submission | undefined;
   getActiveSyllabus: () => Syllabus | undefined;
   getSyllabusById: (id: number) => Syllabus | undefined;
@@ -202,11 +202,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const markStepComplete = async (stepId: number) => {
-    if (!enrollment?.id) return;
+  const markStepComplete = async (stepId: number, enrollmentId?: number) => {
+    const effectiveId = enrollmentId || enrollment?.id;
+    if (!effectiveId) return;
 
     try {
-      const res = await fetch(`/api/enrollments/${enrollment.id}/steps/${stepId}/complete`, {
+      const res = await fetch(`/api/enrollments/${effectiveId}/steps/${stepId}/complete`, {
         method: 'POST',
         credentials: 'include'
       });
@@ -218,18 +219,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (prev.includes(stepId)) return prev;
         return [...prev, stepId];
       });
-      posthog?.capture('step_completed', { step_id: stepId, syllabind_id: enrollment.activeSyllabusId });
+      posthog?.capture('step_completed', { step_id: stepId, syllabind_id: enrollment?.activeSyllabusId });
     } catch (err) {
       console.error('Failed to mark step complete:', err);
       throw err;
     }
   };
 
-  const markStepIncomplete = async (stepId: number) => {
-    if (!enrollment?.id) return;
+  const markStepIncomplete = async (stepId: number, enrollmentId?: number) => {
+    const effectiveId = enrollmentId || enrollment?.id;
+    if (!effectiveId) return;
 
     try {
-      const res = await fetch(`/api/enrollments/${enrollment.id}/steps/${stepId}/complete`, {
+      const res = await fetch(`/api/enrollments/${effectiveId}/steps/${stepId}/complete`, {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -275,8 +277,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const saveExercise = async (stepId: number, answer: string, isShared: boolean) => {
-    if (!enrollment?.id) {
+  const saveExercise = async (stepId: number, answer: string, isShared: boolean, enrollmentId?: number) => {
+    const effectiveId = enrollmentId || enrollment?.id;
+    if (!effectiveId) {
       console.error('No enrollment ID - cannot save submission');
       return;
     }
@@ -287,7 +290,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          enrollmentId: enrollment.id,
+          enrollmentId: effectiveId,
           stepId,
           answer,
           isShared,
@@ -299,7 +302,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
 
       const submission = await response.json();
-      posthog?.capture('exercise_submitted', { step_id: stepId, syllabind_id: enrollment.activeSyllabusId });
+      posthog?.capture('exercise_submitted', { step_id: stepId, syllabind_id: enrollment?.activeSyllabusId });
 
       // Update local state
       setSubmissions(prev => {
@@ -313,7 +316,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       });
 
       // Mark the step as complete
-      await markStepComplete(stepId);
+      await markStepComplete(stepId, effectiveId);
     } catch (error) {
       console.error('Failed to save exercise submission:', error);
       throw error;

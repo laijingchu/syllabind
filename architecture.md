@@ -1886,3 +1886,58 @@ Added real AI text improvement to the RichTextEditor's "Improve writing" button 
 - `client/src/lib/store.tsx` — User identification + 4 custom events (enroll, step complete, syllabind complete, exercise submit)
 - `client/src/pages/SyllabindEditor.tsx` — `syllabind_published` and draft `link_shared` events
 - `client/src/components/ShareDialog.tsx` — `link_shared` event
+
+### Bug Fixes: WeekView Loading Flash, Exercise Submit, Button Copy (2026-02-17)
+
+**Issues Fixed:**
+1. **"Not Found" flash on page load** — WeekView showed "Not found" briefly before syllabus data loaded. Added a `loading` state that shows a spinner during fetch, only showing "Not found" after loading completes with no data.
+2. **Exercise submit didn't update UI** — `handleExerciseSubmit` called `saveExercise` (which updates store state) but never updated `localCompletedStepIds`. Since local state takes priority when non-empty, the step appeared incomplete after submission. Fixed by syncing local state after successful save.
+3. **Button copy** — Changed exercise submit button from "Save & Complete" to "Submit".
+
+**Defensive improvement:** `markStepComplete`, `markStepIncomplete`, and `saveExercise` in the store now accept an optional `enrollmentId` parameter, falling back to `enrollment?.id`. WeekView passes its locally-fetched `localEnrollmentId` so operations work correctly even when the global store enrollment doesn't match the viewed syllabind.
+
+**Files Modified:**
+- `client/src/pages/WeekView.tsx` — Loading state, local state sync fix, error toast, enrollmentId pass-through, button copy, exercise checkbox edit, submit loading spinner
+- `client/src/lib/store.tsx` — Optional `enrollmentId` param on 3 functions + interface update
+
+### Completion Page: Incomplete Assignments Guard (2026-02-17)
+
+**Issue:** Navigating to `/syllabus/:id/completed` with missing steps showed "not found" (store's catalog list lacks full week/step data) and auto-completed the enrollment regardless.
+
+**Fix:** Rewrote `Completion.tsx` to fetch full syllabus data and completed steps independently (same pattern as WeekView). The page now computes overall progress and conditionally renders:
+
+- **Incomplete state (progress < 100%):** Amber warning icon, "Almost There!" heading, remaining assignment count, progress bar with step count, and CTAs for "Back to Last Week" and "Return to Syllabind Overview"
+- **Complete state (100%):** Original celebration with confetti, award icon, congratulations message. Enrollment is only marked as completed in this state.
+
+**Also fixed in WeekView:** `isLastWeek` previously compared `weekIndex` to `syllabus.durationWeeks` (a metadata field), which could be stale or mismatched with actual week data. Changed to compute `maxWeekIndex` from the actual weeks array. Additionally, if the user navigates to a non-existent week (past the last one), WeekView now redirects to the completion page instead of showing "Not found."
+
+**Files Modified:**
+- `client/src/pages/Completion.tsx` — Full rewrite with data fetching, progress computation, and incomplete/complete conditional rendering
+- `client/src/pages/WeekView.tsx` — `isLastWeek` uses actual week data; redirect to completion page for non-existent weeks
+
+### Fix: Week Locking Indicators on SyllabusOverview (2026-02-17)
+
+**Issue:** SyllabusOverview showed a lock icon for ANY week that wasn't the current week or 100% complete. This meant past accessible weeks (e.g. Week 1 when user is on Week 3) appeared locked even though they were fully accessible.
+
+**Fix:** Changed the week indicator logic to distinguish four states:
+- **Completed** (checkmark): week is 100% done
+- **Current** (chevron): the effective current week
+- **Accessible** (week number): past weeks that aren't 100% done — shown with the week number instead of a lock
+- **Locked** (lock icon): future weeks beyond the effective current week
+
+Also added a "Go to Week N" mobile button for past accessible but incomplete weeks.
+
+**Files Modified:**
+- `client/src/pages/SyllabusOverview.tsx` — Week indicator logic + accessible week navigation button
+
+### Fix: 0-Based Week Index Normalization (2026-02-17)
+
+**Issue:** Some syllabinds (e.g. AI-generated ones) stored week indices starting at 0 instead of 1. This caused cascading issues: Week 1 appeared locked, Dashboard's "Continue" button navigated to the wrong week, WeekView's prev/next navigation broke, and "Not found" appeared for non-existent weeks.
+
+**Fix (API normalization):** The `GET /api/syllabinds/:id` endpoint now normalizes week indices to 1-based after fetching from the database. Weeks are sorted by their original index and re-indexed as 1, 2, 3, etc. This fixes all frontend consumers at once.
+
+**Fix (data-driven navigation in WeekView):** Replaced all hardcoded `weekIndex - 1` / `weekIndex + 1` arithmetic with actual prev/next week lookups from the sorted weeks array. `isLastWeek` is now `nextWeek === null`. Locking checks use `prevWeek` data. Navigation links use `prevWeek.index` / `nextWeek.index`.
+
+**Files Modified:**
+- `server/routes.ts` — Week index normalization in GET `/api/syllabinds/:id`
+- `client/src/pages/WeekView.tsx` — Data-driven prev/next week navigation
