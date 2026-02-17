@@ -1361,7 +1361,7 @@ export default function SyllabindEditor() {
                 </Link>
               </>
             )}
-            <Button variant="outline" size="sm" onClick={() => handleSave()}><span className="hidden sm:inline">Save Draft</span></Button>
+            <Button variant="outline" size="sm" onClick={() => handleSave()}>Save<span className="hidden sm:inline">Draft</span> </Button>
             {!isNew && (
               <Button
                 variant="destructive"
