@@ -100,7 +100,7 @@ export default function CreatorDashboard() {
           </Link>
           <Link href="/creator/syllabus/new">
             <Button size="sm">
-              <Plus className="mr-2 h-4 w-4" /> Create New
+              <Plus className="mr-2 h-4 w-4" />Create New
             </Button>
           </Link>
         </div>

@@ -54,6 +54,11 @@
 
   --color-sidebar-accent-border: var(--sidebar-accent-border);
 
+  /* Override tw-animate-css accordion defaults: use fill-mode forwards
+     so closed items stay at height 0 after animation ends */
+  --animate-accordion-down: accordion-down 0.2s ease-out forwards;
+  --animate-accordion-up: accordion-up 0.2s ease-out forwards;
+
   --color-primary-border: var(--primary-border);
 
   --color-secondary-border: var(--secondary-border);
