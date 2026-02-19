@@ -131,7 +131,36 @@ export class DatabaseStorage implements IStorage {
   }
 
   async listSyllabinds(): Promise<Syllabus[]> {
-    return await db.select().from(syllabinds);
+    const rows = await db
+      .select({
+        syllabus: syllabinds,
+        creatorName: users.name,
+        creatorUsername: users.username,
+        creatorAvatarUrl: users.avatarUrl,
+        creatorBio: users.bio,
+        creatorExpertise: users.expertise,
+        creatorLinkedin: users.linkedin,
+        creatorTwitter: users.twitter,
+        creatorThreads: users.threads,
+        creatorWebsite: users.website,
+      })
+      .from(syllabinds)
+      .leftJoin(users, eq(syllabinds.creatorId, users.username));
+
+    return rows.map(row => ({
+      ...row.syllabus,
+      creator: row.creatorUsername ? {
+        name: row.creatorName,
+        username: row.creatorUsername,
+        avatarUrl: row.creatorAvatarUrl,
+        bio: row.creatorBio,
+        expertise: row.creatorExpertise,
+        linkedin: row.creatorLinkedin,
+        twitter: row.creatorTwitter,
+        threads: row.creatorThreads,
+        website: row.creatorWebsite,
+      } : undefined,
+    }));
   }
 
   async listPublishedSyllabinds(): Promise<Syllabus[]> {

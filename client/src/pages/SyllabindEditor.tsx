@@ -286,6 +286,7 @@ export default function SyllabindEditor() {
   const [justCompletedWeek, setJustCompletedWeek] = useState<number | null>(null);
   const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showUnpublishDialog, setShowUnpublishDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [regeneratingWeekIndex, setRegeneratingWeekIndex] = useState<number | null>(null);
   const [showRegenerateWeekDialog, setShowRegenerateWeekDialog] = useState(false);
@@ -953,8 +954,8 @@ export default function SyllabindEditor() {
 
         const errorMessages: Record<number, string> = {
           4401: 'Authentication failed. Please log in again.',
-          4403: 'Not authorized to modify this syllabus.',
-          4404: 'Syllabus not found.',
+          4403: 'Not authorized to modify this Syllabind.',
+          4404: 'Syllabind not found.',
           4400: 'Invalid request.',
         };
 
@@ -1184,8 +1185,8 @@ export default function SyllabindEditor() {
 
         const errorMessages: Record<number, string> = {
           4401: 'Authentication failed. Please log in again.',
-          4403: 'Not authorized to modify this syllabus.',
-          4404: 'Syllabus not found.',
+          4403: 'Not authorized to modify this Syllabind.',
+          4404: 'Syllabind not found.',
           4400: 'Invalid request.',
         };
 
@@ -1247,17 +1248,21 @@ export default function SyllabindEditor() {
 
       const message = statusOverride === 'published'
         ? "Syllabind published successfully!"
-        : "Your changes have been saved successfully.";
+        : statusOverride === 'draft' && formData.status === 'published'
+          ? "Syllabind has been unpublished."
+          : "Your changes have been saved successfully.";
 
       toast({
-        title: statusOverride === 'published' ? "Syllabind Published" : "Syllabind saved",
+        title: statusOverride === 'published' ? "Syllabind Published" : statusOverride === 'draft' && formData.status === 'published' ? "Syllabind Unpublished" : "Syllabind saved",
         description: message
       });
-      setLocation('/creator');
+      if (!statusOverride) {
+        setLocation('/creator');
+      }
     } catch (err) {
       // Revert status on failure
       if (statusOverride) {
-        setFormData(prev => ({ ...prev, status: 'draft' }));
+        setFormData(prev => ({ ...prev, status: statusOverride === 'published' ? 'draft' : 'published' }));
       }
       toast({
         title: "Save failed",
@@ -1388,16 +1393,20 @@ export default function SyllabindEditor() {
             <Button variant="outline" size="sm" onClick={() => handleSave()}>Save<span className="hidden sm:inline">Draft</span> </Button>
             {!isNew && (
               <Button
-                variant="destructive"
+                variant="outline"
                 size="sm"
                 onClick={() => setShowDeleteDialog(true)}
                 disabled={isDeleting}
-                className="gap-1.5"
+                className="gap-1.5 border-destructive text-destructive hover:bg-destructive/10"
               >
                 {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} <span className="hidden sm:inline">{isDeleting ? 'Deleting...' : 'Delete'}</span>
               </Button>
             )}
-            <Button size="sm" onClick={() => handleSave('published')}>Publish</Button>
+            {formData.status === 'published' ? (
+              <Button variant="secondary" size="sm" onClick={() => setShowUnpublishDialog(true)}>Unpublish</Button>
+            ) : (
+              <Button size="sm" onClick={() => handleSave('published')}>Publish</Button>
+            )}
             {!isNew && (
               <Link href={`/creator/syllabus/${params?.id}/learners`}>
                 <Button variant="outline" size="sm" className="gap-2">
@@ -1778,6 +1787,28 @@ export default function SyllabindEditor() {
             }}>
               Regenerate
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showUnpublishDialog} onOpenChange={setShowUnpublishDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unpublish Syllabind?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove "{formData.title || 'this syllabind'}" from the Catalog. It will no longer be visible to new learners. Current students' progress will be kept and restored if you republish.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <Button
+              onClick={() => {
+                setShowUnpublishDialog(false);
+                handleSave('draft');
+              }}
+            >
+              Unpublish
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

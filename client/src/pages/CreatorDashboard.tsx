@@ -147,12 +147,12 @@ export default function CreatorDashboard() {
               </div>
               <div className="space-y-1">
                 <h3 className="text-xl font-display">No syllabinds yet</h3>
-                <p className="text-muted-foreground max-w-md mx-auto">Create your first syllabus to start sharing knowledge with learners. Use AI assistance to build a structured multi-week learning experience.</p>
+                <p className="text-muted-foreground max-w-md mx-auto">Create your first Syllabind to start sharing knowledge with learners. Use AI assistance to build a structured multi-week learning experience.</p>
               </div>
               <Link href="/creator/syllabus/new">
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Your First Syllabus
+                  Create Your First Syllabind
                 </Button>
               </Link>
             </CardContent>

@@ -205,7 +205,7 @@ export default function WeekView() {
         <div className="flex justify-between items-center mb-4">
           <Link href={`/syllabus/${syllabus.id}`}>
             <a className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors">
-              <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Back to Syllabus Overview</span><span className="sm:hidden">Back</span>
+              <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Back to Syllabind Overview</span><span className="sm:hidden">Back</span>
             </a>
           </Link>
           <Button variant="ghost" size="sm" onClick={() => setShowShareDialog(true)}>

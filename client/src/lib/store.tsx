@@ -336,6 +336,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       const updatedUser = await res.json();
       queryClient.setQueryData(["/api/auth/me"], updatedUser);
+      // Refresh syllabinds so creator profile data on cards stays current
+      refreshSyllabinds();
     } catch (err) {
       console.error('Failed to update user:', err);
       throw err;

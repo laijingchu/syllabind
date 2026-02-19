@@ -162,7 +162,7 @@ export async function registerRoutes(
   app.get("/api/syllabinds/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     const syllabus = await storage.getSyllabusWithContent(id);
-    if (!syllabus) return res.status(404).json({ message: "Syllabus not found" });
+    if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
 
     // Normalize week indices to 1-based (some syllabinds have 0-based indices)
     if (syllabus.weeks?.length > 0) {
@@ -180,7 +180,7 @@ export async function registerRoutes(
 
     // Authorization: only creator can edit
     const syllabus = await storage.getSyllabus(id);
-    if (!syllabus) return res.status(404).json({ message: "Syllabus not found" });
+    if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
     if (syllabus.creatorId !== username) {
       return res.status(403).json({ error: "Forbidden: Only creator can edit this syllabus" });
     }
@@ -203,7 +203,7 @@ export async function registerRoutes(
 
     // Authorization: only creator can delete
     const syllabus = await storage.getSyllabus(id);
-    if (!syllabus) return res.status(404).json({ message: "Syllabus not found" });
+    if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
     if (syllabus.creatorId !== username) {
       return res.status(403).json({ error: "Forbidden: Only creator can delete this syllabus" });
     }
@@ -281,7 +281,7 @@ export async function registerRoutes(
     const username = (req.user as any).username;
 
     const syllabus = await storage.getSyllabus(syllabusId);
-    if (!syllabus) return res.status(404).json({ message: "Syllabus not found" });
+    if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
     if (syllabus.creatorId !== username) {
       return res.status(403).json({ error: "Not syllabus owner" });
     }
@@ -303,7 +303,7 @@ export async function registerRoutes(
     const username = (req.user as any).username;
 
     const syllabus = await storage.getSyllabus(id);
-    if (!syllabus) return res.status(404).json({ message: "Syllabus not found" });
+    if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
     if (syllabus.creatorId !== username) {
       return res.status(403).json({ error: "Not syllabus owner" });
     }
@@ -411,7 +411,7 @@ export async function registerRoutes(
     if (!enrollment) return res.status(404).json({ message: "Enrollment not found" });
 
     const syllabus = await storage.getSyllabus(enrollment.syllabusId!);
-    if (!syllabus) return res.status(404).json({ message: "Syllabus not found" });
+    if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
     if (syllabus.creatorId !== username) {
       return res.status(403).json({ error: "Not syllabus owner" });
     }

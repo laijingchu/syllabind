@@ -221,7 +221,7 @@ export default function Dashboard() {
                           Mark Complete
                         </Button>
                         <Link href={`/syllabus/${activeSyllabus.id}`} className="w-full sm:w-auto">
-                          <Button variant="outline" size="sm" className="w-full sm:w-auto">View Syllabus</Button>
+                          <Button variant="outline" size="sm" className="w-full sm:w-auto">View Syllabind</Button>
                         </Link>
                         <Link href={`/syllabus/${activeSyllabus.id}/completed`} className="w-full sm:w-auto">
                           <Button variant="outline" size="sm" className="w-full sm:w-auto">View Certificate</Button>
@@ -239,7 +239,7 @@ export default function Dashboard() {
                     </Link>
                     <Link href={`/syllabus/${activeSyllabus.id}`}>
                       <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                        View Syllabus
+                        View Syllabind
                       </Button>
                     </Link>
                   </div>

@@ -467,7 +467,7 @@ These components are specific to Syllabind's functionality and compose the UI pr
 
 - **`SyllabusCard.tsx`**: Reusable syllabind preview card
   - Displays title, description, level, duration
-  - Shows enrolled/completed status
+  - Creator avatar with name; hover tooltip shows bio, expertise, and social links (same pattern as classmates)
   - CTA button (Enroll/Resume/View)
 
 - **`AvatarUpload.tsx`**: Profile picture upload component

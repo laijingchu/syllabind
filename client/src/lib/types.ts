@@ -29,6 +29,18 @@ export interface Week {
   steps: Step[];
 }
 
+export interface CreatorProfile {
+  name: string | null;
+  username: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  expertise: string | null;
+  linkedin: string | null;
+  twitter: string | null;
+  threads: string | null;
+  website: string | null;
+}
+
 export interface Syllabus {
   id: number; // Changed from string to number for normalized DB
   title: string;
@@ -38,6 +50,7 @@ export interface Syllabus {
   status: SyllabusStatus;
   weeks: Week[];
   creatorId: string; // Username (unique) instead of UUID
+  creator?: CreatorProfile; // Populated when listing syllabinds
   createdAt?: string | Date | null;
   updatedAt?: string | Date | null;
 }

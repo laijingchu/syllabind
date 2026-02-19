@@ -106,7 +106,7 @@ export default function SyllabindAnalytics() {
           </div>
           <div className="flex gap-2">
             <Link href={`/creator/syllabus/${syllabus.id}/edit`}>
-              <Button variant="outline" size="sm">Edit Syllabus</Button>
+              <Button variant="outline" size="sm">Edit Syllabind</Button>
             </Link>
             <Link href={`/syllabus/${syllabus.id}`}>
               <Button variant="outline" size="sm">Preview</Button>

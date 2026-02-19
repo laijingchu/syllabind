@@ -308,7 +308,7 @@ export default function SyllabusOverview() {
 
           <div className="syllabind-section space-y-6">
             <h2 className="text-2xl font-display">What you'll learn</h2>
-            <Accordion type="single" collapsible className="space-y-4">
+            <Accordion type="single" collapsible className="space-y-4" defaultValue={`week-${effectiveCurrentWeek}`}>
               {syllabus.weeks.filter(w => w.steps.length > 0).map((week) => {
                 const weekDone = isActive && getWeekProgress(week.index) === 100;
                 const isCurrentWeek = isActive && effectiveCurrentWeek === week.index;
@@ -515,7 +515,7 @@ export default function SyllabusOverview() {
             </div>
 
             <Button size="lg" className="w-full" onClick={handleStartClick}>
-              {isActive ? 'Continue Learning' : isCompleted ? 'Review Syllabus' : 'Start this Syllabind'}
+              {isActive ? 'Continue Learning' : isCompleted ? 'Review Syllabind' : 'Start this Syllabind'}
             </Button>
 
             {(isActive || isCompleted) && (
