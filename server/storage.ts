@@ -40,6 +40,9 @@ export interface IStorage {
   deleteSyllabus(id: number): Promise<void>;
   batchDeleteSyllabinds(ids: number[]): Promise<void>;
 
+  // Bulk content operations
+  saveWeeksAndSteps(syllabusId: number, weeksData: Array<{ index: number; title?: string; description?: string; steps: Array<Omit<InsertStep, 'weekId'>> }>): Promise<WeekWithSteps[]>;
+
   // Week operations
   createWeek(week: InsertWeek): Promise<Week>;
   getWeeksBySyllabusId(syllabusId: number): Promise<Week[]>;
@@ -145,8 +148,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateSyllabus(id: number, update: Partial<Syllabus>): Promise<Syllabus> {
-    // Filter out readonly fields and nested objects that aren't part of the syllabinds table
-    const { createdAt, updatedAt, weeks, ...updateData } = update as Partial<Syllabus> & { weeks?: unknown };
+    // Filter out immutable fields (id, creatorId), readonly fields, and nested objects
+    const { id: _id, creatorId: _creatorId, createdAt, updatedAt, weeks, ...updateData } = update as Partial<Syllabus> & { weeks?: unknown };
 
     // Automatically set updatedAt to current time
     const [syllabus] = await db.update(syllabinds).set({
@@ -646,6 +649,47 @@ export class DatabaseStorage implements IStorage {
   async deleteWeeksBySyllabusId(syllabusId: number): Promise<void> {
     // Steps are deleted via CASCADE when weeks are deleted
     await db.delete(weeks).where(eq(weeks.syllabusId, syllabusId));
+  }
+
+  async saveWeeksAndSteps(
+    syllabusId: number,
+    weeksData: Array<{ index: number; title?: string; description?: string; steps: Array<Omit<InsertStep, 'weekId'>> }>
+  ): Promise<WeekWithSteps[]> {
+    // Delete existing weeks (steps cascade)
+    await this.deleteWeeksBySyllabusId(syllabusId);
+
+    const result: WeekWithSteps[] = [];
+
+    for (const weekData of weeksData) {
+      const [week] = await db.insert(weeks).values({
+        syllabusId,
+        index: weekData.index,
+        title: weekData.title || null,
+        description: weekData.description || null,
+      }).returning();
+
+      const weekSteps: Step[] = [];
+      for (const stepData of weekData.steps) {
+        const [step] = await db.insert(steps).values({
+          weekId: week.id,
+          position: stepData.position,
+          type: stepData.type,
+          title: stepData.title,
+          url: stepData.url || null,
+          note: stepData.note || null,
+          author: stepData.author || null,
+          creationDate: stepData.creationDate || null,
+          mediaType: stepData.mediaType || null,
+          promptText: stepData.promptText || null,
+          estimatedMinutes: stepData.estimatedMinutes || null,
+        }).returning();
+        weekSteps.push(step);
+      }
+
+      result.push({ ...week, steps: weekSteps });
+    }
+
+    return result;
   }
 
   async getChatMessages(syllabusId: number): Promise<ChatMessage[]> {

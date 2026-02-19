@@ -186,6 +186,14 @@ export async function registerRoutes(
     }
 
     const updated = await storage.updateSyllabus(id, req.body);
+
+    // Sync weeks and steps if provided
+    const weeksData = req.body.weeks;
+    if (Array.isArray(weeksData)) {
+      const savedWeeks = await storage.saveWeeksAndSteps(id, weeksData);
+      return res.json({ ...updated, weeks: savedWeeks });
+    }
+
     res.json(updated);
   });
 
@@ -243,6 +251,14 @@ export async function registerRoutes(
     const parsed = insertSyllabusSchema.safeParse({ ...req.body, creatorId: username });
     if (!parsed.success) return res.status(400).json(parsed.error);
     const syllabus = await storage.createSyllabus(parsed.data);
+
+    // Save weeks and steps if provided
+    const weeksData = req.body.weeks;
+    if (Array.isArray(weeksData) && weeksData.length > 0) {
+      const savedWeeks = await storage.saveWeeksAndSteps(syllabus.id, weeksData);
+      return res.json({ ...syllabus, weeks: savedWeeks });
+    }
+
     res.json(syllabus);
   });
 

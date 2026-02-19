@@ -678,8 +678,8 @@ GET    /api/syllabinds/:id  - Get syllabind with content
 
 **Protected (Auth + Creator + Ownership):**
 ```
-POST   /api/syllabinds             - Create syllabind
-PUT    /api/syllabinds/:id         - Update syllabind
+POST   /api/syllabinds             - Create syllabind (with weeks/steps)
+PUT    /api/syllabinds/:id         - Update syllabind (syncs weeks/steps)
 DELETE /api/syllabinds/:id         - Delete syllabind
 POST   /api/syllabinds/:id/publish - Publish/unpublish syllabind
 GET    /api/creator/syllabinds     - Get creator's syllabinds (including drafts)
@@ -1941,3 +1941,18 @@ Also added a "Go to Week N" mobile button for past accessible but incomplete wee
 **Files Modified:**
 - `server/routes.ts` — Week index normalization in GET `/api/syllabinds/:id`
 - `client/src/pages/WeekView.tsx` — Data-driven prev/next week navigation
+
+---
+
+### Weeks/Steps Persistence Fix (2026-02-19)
+
+**Problem:** The create and update syllabind routes discarded nested weeks/steps data. `POST /api/syllabinds` only created the base syllabind row via `insertSyllabusSchema` (which strips unknown fields). `PUT /api/syllabinds/:id` explicitly filtered out the `weeks` property in `storage.updateSyllabus()`. This meant the editor could save metadata (title, description, status) but all content (weeks and steps) was never persisted. Preview and overview pages showed empty syllabinds.
+
+**Solution:**
+1. Added `saveWeeksAndSteps(syllabusId, weeksData)` method to storage — deletes existing weeks (steps cascade), then bulk-inserts new weeks and steps
+2. Updated `POST /api/syllabinds` to call `saveWeeksAndSteps` after creating the syllabind when `weeks` data is present
+3. Updated `PUT /api/syllabinds/:id` to call `saveWeeksAndSteps` after updating metadata when `weeks` data is present
+
+**Files Modified:**
+- `server/storage.ts` — Added `saveWeeksAndSteps` to IStorage interface and DatabaseStorage implementation
+- `server/routes.ts` — Updated POST and PUT syllabind routes to persist weeks/steps

@@ -250,7 +250,7 @@ function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, remov
 export default function SyllabindEditor() {
   const [match, params] = useRoute('/creator/syllabus/:id/edit');
   const isNew = useLocation()[0] === '/creator/syllabus/new';
-  const { createSyllabus, updateSyllabus, refreshSyllabinds, getSubmissionsForStep, getLearnersForSyllabus } = useStore();
+  const { createSyllabus, updateSyllabus, refreshSyllabinds, getSubmissionsForStep, getLearnersForSyllabus, user } = useStore();
   const posthog = usePostHog();
   const [location, setLocation] = useLocation();
   const [learners, setLearners] = useState<any[]>([]);
@@ -262,7 +262,7 @@ export default function SyllabindEditor() {
     audienceLevel: 'Beginner',
     durationWeeks: 4,
     status: 'draft',
-    creatorId: 'user-1',
+    creatorId: user?.username || '',
     weeks: Array.from({ length: 4 }, (_, i) => ({
       id: generateTempId(),
       syllabusId: generateTempId(),
@@ -1226,28 +1226,45 @@ export default function SyllabindEditor() {
     }
   };
 
-  const handleSave = (statusOverride?: 'draft' | 'published') => {
+  const handleSave = async (statusOverride?: 'draft' | 'published') => {
+    // Update formData status immediately so autosave doesn't race with stale status
+    if (statusOverride) {
+      setFormData(prev => ({ ...prev, status: statusOverride }));
+    }
+
     const dataToSave = statusOverride ? { ...formData, status: statusOverride } : formData;
 
-    if (formData.id < 0) {
-      createSyllabus(dataToSave);
-    } else {
-      updateSyllabus(dataToSave);
+    try {
+      if (formData.id < 0) {
+        await createSyllabus(dataToSave);
+      } else {
+        await updateSyllabus(dataToSave);
+      }
+
+      if (statusOverride === 'published') {
+        posthog?.capture('syllabind_published', { syllabind_id: dataToSave.id, title: dataToSave.title });
+      }
+
+      const message = statusOverride === 'published'
+        ? "Syllabind published successfully!"
+        : "Your changes have been saved successfully.";
+
+      toast({
+        title: statusOverride === 'published' ? "Syllabind Published" : "Syllabind saved",
+        description: message
+      });
+      setLocation('/creator');
+    } catch (err) {
+      // Revert status on failure
+      if (statusOverride) {
+        setFormData(prev => ({ ...prev, status: 'draft' }));
+      }
+      toast({
+        title: "Save failed",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
     }
-
-    if (statusOverride === 'published') {
-      posthog?.capture('syllabind_published', { syllabind_id: dataToSave.id, title: dataToSave.title });
-    }
-
-    const message = statusOverride === 'published'
-      ? "Syllabind published successfully!"
-      : "Your changes have been saved successfully.";
-
-    toast({
-      title: statusOverride === 'published' ? "Syllabind Published" : "Syllabind saved",
-      description: message
-    });
-    setLocation('/creator');
   };
 
   const handleShareDraft = () => {
