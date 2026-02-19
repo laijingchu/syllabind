@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Syllabus } from '@/lib/types';
 
 export default function WeekView() {
-  const [match, params] = useRoute('/syllabus/:id/week/:index');
+  const [match, params] = useRoute('/syllabind/:id/week/:index');
   const {
     getSyllabusById,
     enrollment,
@@ -147,7 +147,7 @@ export default function WeekView() {
 
   // If week doesn't exist (navigated past the last week), redirect to completion page
   if (!week) {
-    setLocation(`/syllabus/${syllabus.id}/completed`);
+    setLocation(`/syllabind/${syllabus.id}/completed`);
     return null;
   }
 
@@ -184,7 +184,7 @@ export default function WeekView() {
         <h2 className="text-xl sm:text-2xl font-display">{week?.title || pluralize(weekIndex, 'Week')} is Locked</h2>
         <p className="text-sm sm:text-base text-muted-foreground">Complete all steps in {prevWeek?.title || `the previous week`} to unlock this content.</p>
         {prevWeek && (
-          <Link href={`/syllabus/${syllabus.id}/week/${prevWeek.index}`}>
+          <Link href={`/syllabind/${syllabus.id}/week/${prevWeek.index}`}>
             <Button className="w-full sm:w-auto">Go to {prevWeek.title || `Week ${prevWeek.index}`}</Button>
           </Link>
         )}
@@ -203,7 +203,7 @@ export default function WeekView() {
     <div className="max-w-3xl mx-auto pb-20 px-4 sm:px-0">
       <header className="mb-6 sm:mb-10">
         <div className="flex justify-between items-center mb-4">
-          <Link href={`/syllabus/${syllabus.id}`}>
+          <Link href={`/syllabind/${syllabus.id}`}>
             <a className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors">
               <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Back to Syllabind Overview</span><span className="sm:hidden">Back</span>
             </a>
@@ -415,7 +415,7 @@ export default function WeekView() {
 
       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t">
          {prevWeek ? (
-           <Link href={`/syllabus/${syllabus.id}/week/${prevWeek.index}`}>
+           <Link href={`/syllabind/${syllabus.id}/week/${prevWeek.index}`}>
              <Button variant="ghost" className="w-full sm:w-auto justify-center">
                <ChevronLeft className="mr-2 h-4 w-4" /> Previous Week
              </Button>
@@ -426,13 +426,13 @@ export default function WeekView() {
 
          {allDone && (
            isLastWeek ? (
-             <Link href={`/syllabus/${syllabus.id}/completed`}>
+             <Link href={`/syllabind/${syllabus.id}/completed`}>
                <Button size="lg" className="animate-pulse w-full sm:w-auto justify-center">
                  Finish Syllabind <CheckCircle className="ml-2 h-4 w-4" />
                </Button>
              </Link>
            ) : nextWeek ? (
-             <Link href={`/syllabus/${syllabus.id}/week/${nextWeek.index}`}>
+             <Link href={`/syllabind/${syllabus.id}/week/${nextWeek.index}`}>
                <Button className="w-full sm:w-auto justify-center">
                  Next Week <ChevronRight className="ml-2 h-4 w-4" />
                </Button>

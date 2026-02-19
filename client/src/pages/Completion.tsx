@@ -8,7 +8,7 @@ import confetti from 'canvas-confetti';
 import { Syllabus } from '@/lib/types';
 
 export default function Completion() {
-  const [match, params] = useRoute('/syllabus/:id/completed');
+  const [match, params] = useRoute('/syllabind/:id/completed');
   const { enrollment, completeActiveSyllabus, user: currentUser } = useStore();
   const completedRef = useRef(false);
 
@@ -142,12 +142,12 @@ export default function Completion() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <Link href={`/syllabus/${syllabus.id}/week/${syllabus.durationWeeks}`}>
+          <Link href={`/syllabind/${syllabus.id}/week/${syllabus.durationWeeks}`}>
             <Button variant="outline" className="w-full sm:w-auto">
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Last Week
             </Button>
           </Link>
-          <Link href={`/syllabus/${syllabus.id}`}>
+          <Link href={`/syllabind/${syllabus.id}`}>
             <Button className="w-full sm:w-auto">
               Return to Syllabind Overview
             </Button>

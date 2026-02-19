@@ -4,7 +4,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { PlayCircle, CheckCircle2, Award, Wand2, BookOpen } from 'lucide-react';
-import { SyllabusCard } from '@/components/SyllabusCard';
+import { SyllabindCard } from '@/components/SyllabindCard';
 import { pluralize } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { Syllabus } from '@/lib/types';
@@ -72,7 +72,7 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <AnimatedCard delay={0.1}>
-            <Link href="/creator/syllabus/new">
+            <Link href="/creator/syllabind/new">
               <Card className="welcome-card group cursor-pointer border-2 hover:border-primary/50 hover:shadow-lg transition-all duration-300 h-full">
                 <CardContent className="flex flex-col items-center justify-center py-12 px-6 text-center space-y-4">
                   <div className="relative inline-block">
@@ -220,10 +220,10 @@ export default function Dashboard() {
                           <CheckCircle2 className="mr-1.5 h-4 w-4" />
                           Mark Complete
                         </Button>
-                        <Link href={`/syllabus/${activeSyllabus.id}`} className="w-full sm:w-auto">
+                        <Link href={`/syllabind/${activeSyllabus.id}`} className="w-full sm:w-auto">
                           <Button variant="outline" size="sm" className="w-full sm:w-auto">View Syllabind</Button>
                         </Link>
-                        <Link href={`/syllabus/${activeSyllabus.id}/completed`} className="w-full sm:w-auto">
+                        <Link href={`/syllabind/${activeSyllabus.id}/completed`} className="w-full sm:w-auto">
                           <Button variant="outline" size="sm" className="w-full sm:w-auto">View Certificate</Button>
                         </Link>
                       </div>
@@ -231,13 +231,13 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <Link href={`/syllabus/${activeSyllabus.id}/week/${enrollment?.currentWeekIndex || 1}`}>
+                    <Link href={`/syllabind/${activeSyllabus.id}/week/${enrollment?.currentWeekIndex || 1}`}>
                       <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/20">
                         <PlayCircle className="mr-2 h-5 w-5" />
                         Continue to Week {enrollment?.currentWeekIndex || 1}
                       </Button>
                     </Link>
-                    <Link href={`/syllabus/${activeSyllabus.id}`}>
+                    <Link href={`/syllabind/${activeSyllabus.id}`}>
                       <Button variant="outline" size="lg" className="w-full sm:w-auto">
                         View Syllabind
                       </Button>
@@ -258,7 +258,7 @@ export default function Dashboard() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {suggestedSyllabinds.map(syllabus => (
-                    <SyllabusCard key={syllabus.id} syllabus={syllabus} className="h-full text-left" />
+                    <SyllabindCard key={syllabus.id} syllabus={syllabus} className="h-full text-left" />
                   ))}
                 </div>
               </div>
@@ -298,7 +298,7 @@ export default function Dashboard() {
             </header>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {completedSyllabinds.map(s => (
-                 <Link key={s.id} href={`/syllabus/${s.id}`}>
+                 <Link key={s.id} href={`/syllabind/${s.id}`}>
                    <div className="flex items-center gap-4 p-4 border rounded-lg bg-card/50 hover:bg-muted/50 transition-colors cursor-pointer group">
                       <div className="bg-primary/10 p-3 rounded-full text-primary">
                         <Award className="h-6 w-6" />

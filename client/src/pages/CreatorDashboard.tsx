@@ -98,7 +98,7 @@ export default function CreatorDashboard() {
               Edit Profile
             </Button>
           </Link>
-          <Link href="/creator/syllabus/new">
+          <Link href="/creator/syllabind/new">
             <Button size="sm">
               <Plus className="mr-2 h-4 w-4" />Create New
             </Button>
@@ -149,7 +149,7 @@ export default function CreatorDashboard() {
                 <h3 className="text-xl font-display">No syllabinds yet</h3>
                 <p className="text-muted-foreground max-w-md mx-auto">Create your first Syllabind to start sharing knowledge with learners. Use AI assistance to build a structured multi-week learning experience.</p>
               </div>
-              <Link href="/creator/syllabus/new">
+              <Link href="/creator/syllabind/new">
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
                   Create Your First Syllabind
@@ -191,19 +191,19 @@ export default function CreatorDashboard() {
                     <div className="text-sm font-medium">{pluralize(learnerCounts[syllabus.id]?.total || 0, 'Learner')}</div>
                     <div className="text-xs text-muted-foreground">{pluralize(learnerCounts[syllabus.id]?.active || 0, 'Active')}</div>
                   </div>
-                  <Link href={`/creator/syllabus/${syllabus.id}/analytics`}>
+                  <Link href={`/creator/syllabind/${syllabus.id}/analytics`}>
                     <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3">
                       <BarChart2 className="h-4 w-4 sm:mr-2" />
                       <span className="hidden sm:inline">Analytics</span>
                     </Button>
                   </Link>
-                  <Link href={`/creator/syllabus/${syllabus.id}/edit`}>
+                  <Link href={`/creator/syllabind/${syllabus.id}/edit`}>
                     <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3">
                       <Edit2 className="h-4 w-4 sm:mr-2" />
                       <span className="hidden sm:inline">Edit</span>
                     </Button>
                   </Link>
-                  <Link href={`/syllabus/${syllabus.id}`}>
+                  <Link href={`/syllabind/${syllabus.id}`}>
                     <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3">
                       <Eye className="h-4 w-4 sm:mr-2" />
                       <span className="hidden sm:inline">Preview</span>

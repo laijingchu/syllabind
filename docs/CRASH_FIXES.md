@@ -13,13 +13,13 @@
 - Pages that need full syllabus data now fetch it separately and compute progress locally
 - Dashboard.tsx: Added local `getOverallProgress` function
 - WeekView.tsx: Added local `getWeekProgress` function
-- SyllabusOverview.tsx: Added local `getWeekProgress` function
+- SyllabindOverview.tsx: Added local `getWeekProgress` function
 
 **Files Modified**:
 - `client/src/lib/store.tsx` (lines 395-416)
 - `client/src/pages/Dashboard.tsx` (lines 14-62)
 - `client/src/pages/WeekView.tsx` (lines 58-71)
-- `client/src/pages/SyllabusOverview.tsx` (line 81)
+- `client/src/pages/SyllabindOverview.tsx` (line 81)
 
 ### 2. ✅ Added Error Boundary
 
@@ -42,8 +42,8 @@ Current state: Some components make fetch requests but don't handle errors grace
 **Locations to watch**:
 - `Dashboard.tsx` line 22-27: Fetching full syllabus
 - `WeekView.tsx` line 39-46: Fetching full syllabus
-- `SyllabusOverview.tsx` line 42-58: Fetching full syllabus
-- `SyllabusOverview.tsx` line 113-122: Fetching creator profile
+- `SyllabindOverview.tsx` line 42-58: Fetching full syllabus
+- `SyllabindOverview.tsx` line 113-122: Fetching creator profile
 
 **Recommended Fix** (not yet applied):
 ```typescript
@@ -60,7 +60,7 @@ Current state: Most pages have defensive checks, but some edge cases may exist
 **Locations checked**:
 - ✅ Dashboard: Has loading state for activeSyllabus
 - ✅ WeekView: Checks if syllabus/week exist
-- ✅ SyllabusOverview: Has loading states
+- ✅ SyllabindOverview: Has loading states
 
 **c) Type Safety**
 

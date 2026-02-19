@@ -169,7 +169,7 @@ if (syllabind.creatorId !== username) {
 ### Component Organization
 
 **Pages:** 14 main pages in `client/src/pages/`
-- Public: Marketing, Login, Catalog, SyllabusOverview
+- Public: Marketing, Login, Catalog, SyllabindOverview
 - Learner: Dashboard, WeekView, Completion, Profile
 - Creator: CreatorDashboard, SyllabindEditor, SyllabindAnalytics, SyllabindLearners, CreatorProfile
 
@@ -317,7 +317,7 @@ Page sections include semantic class names alongside Tailwind utilities for easy
 </div>
 ```
 
-**SyllabusOverview semantic classes:**
+**SyllabindOverview semantic classes:**
 - `preview-banner` - Draft preview warning
 - `syllabus-header` - Title, badge, description
 - `syllabus-metadata` - Duration/steps/date row

@@ -63,7 +63,7 @@ Time:        3.936 s
    - User logout
    - Current user endpoint (authenticated/unauthenticated)
 
-9. **`server/__tests__/syllabus-routes.test.ts`** - Syllabus API tests (16 tests)
+9. **`server/__tests__/syllabind-routes.test.ts`** - Syllabus API tests (16 tests)
    - GET /api/syllabi (all syllabi, empty list)
    - GET /api/syllabi/:id (by ID, not found)
    - POST /api/syllabi (create as creator, unauthorized)

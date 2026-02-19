@@ -44,8 +44,8 @@ function escapeHtml(str: string): string {
     .replace(/>/g, "&gt;");
 }
 
-/** Extract syllabind ID from a URL path like /syllabus/42 */
+/** Extract syllabind ID from a URL path like /syllabind/42 */
 export function parseSyllabindIdFromUrl(url: string): number | null {
-  const match = url.match(/^\/syllabus\/(\d+)/);
+  const match = url.match(/^\/syllabind\/(\d+)/);
   return match ? parseInt(match[1], 10) : null;
 }

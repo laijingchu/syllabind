@@ -72,8 +72,8 @@ app.use((req, res, next) => {
 (async () => {
   await registerRoutes(httpServer, app);
 
-  // WebSocket server
-  const wss = new WebSocketServer({ server: httpServer });
+  // WebSocket server (noServer mode — upgrades are routed manually below)
+  const wss = new WebSocketServer({ noServer: true });
 
   // Keepalive: ping every 25s to prevent proxy idle-timeout disconnects
   const pingInterval = setInterval(() => {
@@ -169,6 +169,16 @@ app.use((req, res, next) => {
     const { setupVite } = await import("./vite");
     await setupVite(httpServer, app);
   }
+
+  // Route WebSocket upgrades: /ws/* goes to our custom server, everything else to Vite HMR
+  httpServer.on('upgrade', (req, socket, head) => {
+    if (req.url?.startsWith('/ws/')) {
+      wss.handleUpgrade(req, socket, head, (ws) => {
+        wss.emit('connection', ws, req);
+      });
+    }
+    // Non-/ws/ upgrades (e.g. Vite HMR) are handled by Vite's own upgrade listener
+  });
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Other ports are firewalled. Default to 5000 if not specified.

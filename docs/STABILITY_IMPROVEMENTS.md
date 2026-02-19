@@ -15,7 +15,7 @@
 - ✅ Added null checks to store methods (`client/src/lib/store.tsx` lines 395-416)
 - ✅ Modified Dashboard to fetch full syllabus data and compute progress locally
 - ✅ Modified WeekView to fetch full syllabus data and compute progress locally
-- ✅ Modified SyllabusOverview to compute progress locally using fetched data
+- ✅ Modified SyllabindOverview to compute progress locally using fetched data
 
 **Status**: FIXED - Tested and working
 
@@ -33,7 +33,7 @@
 **Improved Network Error Handling**:
 - ✅ Dashboard: Better error handling for syllabus fetch
 - ✅ WeekView: Better error handling for syllabus fetch
-- ✅ SyllabusOverview: Better error handling for syllabus fetch
+- ✅ SyllabindOverview: Better error handling for syllabus fetch
 - All fetch calls now check response status and handle failures gracefully
 
 **Status**: IMPLEMENTED - Ready for production
@@ -252,7 +252,7 @@ Page → computes progress locally ✅ Works!
 This pattern is now used in:
 - Dashboard
 - WeekView
-- SyllabusOverview
+- SyllabindOverview
 
 ---
 
@@ -272,7 +272,7 @@ This pattern is now used in:
    - Local `getWeekProgress()` function
    - Better error handling
 
-4. **`client/src/pages/SyllabusOverview.tsx`**
+4. **`client/src/pages/SyllabindOverview.tsx`**
    - Fetches full syllabus data
    - Local `getWeekProgress()` function
    - Better error handling

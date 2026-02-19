@@ -1,5 +1,5 @@
 import { useStore } from '@/lib/store';
-import { SyllabusCard } from '@/components/SyllabusCard';
+import { SyllabindCard } from '@/components/SyllabindCard';
 import { AnimatedPage, AnimatedCard } from '@/components/ui/animated-container';
 
 export default function Catalog() {
@@ -20,7 +20,7 @@ export default function Catalog() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {publishedSyllabinds.map((syllabus, index) => (
           <AnimatedCard key={syllabus.id} delay={0.05 * index} className="h-full">
-            <SyllabusCard syllabus={syllabus} />
+            <SyllabindCard syllabus={syllabus} />
           </AnimatedCard>
         ))}
       </div>

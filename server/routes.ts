@@ -151,7 +151,7 @@ export async function registerRoutes(
     });
   });
 
-  // ========== SYLLABUS ROUTES ==========
+  // ========== SYLLABIND ROUTES ==========
 
   // List all published syllabinds (public)
   app.get("/api/syllabinds", async (_req, res) => {
@@ -182,7 +182,7 @@ export async function registerRoutes(
     const syllabus = await storage.getSyllabus(id);
     if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
     if (syllabus.creatorId !== username) {
-      return res.status(403).json({ error: "Forbidden: Only creator can edit this syllabus" });
+      return res.status(403).json({ error: "Forbidden: Only creator can edit this syllabind" });
     }
 
     const updated = await storage.updateSyllabus(id, req.body);
@@ -205,7 +205,7 @@ export async function registerRoutes(
     const syllabus = await storage.getSyllabus(id);
     if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
     if (syllabus.creatorId !== username) {
-      return res.status(403).json({ error: "Forbidden: Only creator can delete this syllabus" });
+      return res.status(403).json({ error: "Forbidden: Only creator can delete this syllabind" });
     }
 
     await storage.deleteSyllabus(id);
@@ -275,7 +275,7 @@ export async function registerRoutes(
     res.json(syllabinds);
   });
 
-  // Get learners for a syllabus (creator only)
+  // Get learners for a syllabind (creator only)
   app.get("/api/syllabinds/:id/learners", isAuthenticated, async (req, res) => {
     const syllabusId = parseInt(req.params.id);
     const username = (req.user as any).username;
@@ -283,21 +283,21 @@ export async function registerRoutes(
     const syllabus = await storage.getSyllabus(syllabusId);
     if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
     if (syllabus.creatorId !== username) {
-      return res.status(403).json({ error: "Not syllabus owner" });
+      return res.status(403).json({ error: "Not syllabind owner" });
     }
 
     const learners = await storage.getLearnersBySyllabusId(syllabusId);
     res.json(learners);
   });
 
-  // Get classmates for a syllabus (public -- only shows users who opted in)
+  // Get classmates for a syllabind (public -- only shows users who opted in)
   app.get("/api/syllabinds/:id/classmates", async (req, res) => {
     const syllabusId = parseInt(req.params.id);
     const classmates = await storage.getClassmatesBySyllabusId(syllabusId);
     res.json(classmates);
   });
 
-  // Publish/unpublish syllabus
+  // Publish/unpublish syllabind
   app.post("/api/syllabinds/:id/publish", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     const username = (req.user as any).username;
@@ -305,7 +305,7 @@ export async function registerRoutes(
     const syllabus = await storage.getSyllabus(id);
     if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
     if (syllabus.creatorId !== username) {
-      return res.status(403).json({ error: "Not syllabus owner" });
+      return res.status(403).json({ error: "Not syllabind owner" });
     }
 
     const newStatus = syllabus.status === 'published' ? 'draft' : 'published';
@@ -339,7 +339,7 @@ export async function registerRoutes(
         const reactivated = await storage.updateEnrollment(existing.id, { status: 'in-progress' });
         return res.json(reactivated);
       }
-      return res.status(409).json({ message: "Already enrolled in this syllabus" });
+      return res.status(409).json({ message: "Already enrolled in this syllabind" });
     }
 
     // Drop any other in-progress enrollments (user can only have one active syllabus)
@@ -403,7 +403,7 @@ export async function registerRoutes(
     const { feedback, grade, rubricUrl } = req.body;
     const username = (req.user as any).username;
 
-    // Get submission and verify creator owns the syllabus
+    // Get submission and verify creator owns the syllabind
     const submission = await storage.getSubmission(id);
     if (!submission) return res.status(404).json({ message: "Submission not found" });
 
@@ -413,7 +413,7 @@ export async function registerRoutes(
     const syllabus = await storage.getSyllabus(enrollment.syllabusId!);
     if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
     if (syllabus.creatorId !== username) {
-      return res.status(403).json({ error: "Not syllabus owner" });
+      return res.status(403).json({ error: "Not syllabind owner" });
     }
 
     const updated = await storage.updateSubmissionFeedback(id, feedback, grade, rubricUrl);
@@ -433,7 +433,7 @@ export async function registerRoutes(
 
     const syllabus = await storage.getSyllabus(week.syllabusId);
     if (!syllabus || syllabus.creatorId !== username) {
-      return res.status(403).json({ error: "Not syllabus owner" });
+      return res.status(403).json({ error: "Not syllabind owner" });
     }
 
     await storage.deleteStep(stepId);
@@ -544,7 +544,7 @@ export async function registerRoutes(
 
     const syllabus = await storage.getSyllabus(syllabusId);
     if (!syllabus || syllabus.creatorId !== username) {
-      return res.status(403).json({ error: "Not your syllabus" });
+      return res.status(403).json({ error: "Not your syllabind" });
     }
 
     if (!syllabus.title || !syllabus.description || !syllabus.audienceLevel || !syllabus.durationWeeks) {
@@ -617,7 +617,7 @@ export async function registerRoutes(
 
     const syllabus = await storage.getSyllabus(syllabusId);
     if (!syllabus || syllabus.creatorId !== username) {
-      return res.status(403).json({ error: "Not your syllabus" });
+      return res.status(403).json({ error: "Not your syllabind" });
     }
 
     if (weekIndex > (syllabus.durationWeeks || 0)) {

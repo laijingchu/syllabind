@@ -29,8 +29,8 @@ import { useState, useEffect } from 'react';
 import { cn, pluralize } from '@/lib/utils';
 import { LearnerProfile, Syllabus } from '@/lib/types';
 
-export default function SyllabusOverview() {
-  const [match, params] = useRoute('/syllabus/:id');
+export default function SyllabindOverview() {
+  const [match, params] = useRoute('/syllabind/:id');
   const { getSyllabusById, enrollInSyllabus, enrollment, getExerciseText, getLearnersForSyllabus, updateEnrollmentShareProfile } = useStore();
   const [location, setLocation] = useLocation();
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
@@ -172,13 +172,13 @@ export default function SyllabusOverview() {
   const handleStartClick = () => {
     // Already enrolled in this syllabus - just navigate to effective current week
     if (existingEnrollment) {
-      setLocation(`/syllabus/${syllabus.id}/week/${effectiveCurrentWeek}`);
+      setLocation(`/syllabind/${syllabus.id}/week/${effectiveCurrentWeek}`);
       return;
     }
 
     // Not authenticated - redirect to login with returnTo
     if (!currentUser) {
-      setLocation(`/login?returnTo=${encodeURIComponent(`/syllabus/${syllabus.id}`)}`);
+      setLocation(`/login?returnTo=${encodeURIComponent(`/syllabind/${syllabus.id}`)}`);
       return;
     }
 
@@ -190,7 +190,7 @@ export default function SyllabusOverview() {
     await enrollInSyllabus(syllabus.id, shareProfile);
     setEnrollmentShareProfile(shareProfile);
     setShowPrivacyDialog(false);
-    setLocation(`/syllabus/${syllabus.id}/week/1`);
+    setLocation(`/syllabind/${syllabus.id}/week/1`);
   };
 
   const LearnerAvatar = ({ learner }: { learner: LearnerProfile }) => {
@@ -414,7 +414,7 @@ export default function SyllabusOverview() {
                           <Button
                             size="sm"
                             className="w-full"
-                            onClick={() => setLocation(`/syllabus/${syllabus.id}/week/${week.index}`)}
+                            onClick={() => setLocation(`/syllabind/${syllabus.id}/week/${week.index}`)}
                           >
                             Continue Learning
                           </Button>
@@ -428,7 +428,7 @@ export default function SyllabusOverview() {
                             variant="secondary"
                             size="sm"
                             className="w-full"
-                            onClick={() => setLocation(`/syllabus/${syllabus.id}/week/${week.index}`)}
+                            onClick={() => setLocation(`/syllabind/${syllabus.id}/week/${week.index}`)}
                           >
                             Go to Week {week.index}
                           </Button>
@@ -441,7 +441,7 @@ export default function SyllabusOverview() {
                             variant="secondary"
                             size="sm"
                             className="w-full"
-                            onClick={() => setLocation(`/syllabus/${syllabus.id}/week/${week.index}`)}
+                            onClick={() => setLocation(`/syllabind/${syllabus.id}/week/${week.index}`)}
                           >
                             Review Week {week.index}
                           </Button>

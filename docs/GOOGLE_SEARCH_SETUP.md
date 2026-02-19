@@ -60,7 +60,7 @@ You should see your search engine ID printed.
 
 Once configured, test the search functionality:
 
-1. Navigate to `/creator/syllabus/new`
+1. Navigate to `/creator/syllabind/new`
 2. Fill in:
    - Title: "Test Curriculum"
    - Description: "Testing AI generation"

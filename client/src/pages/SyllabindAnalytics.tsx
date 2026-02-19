@@ -37,7 +37,7 @@ interface AnalyticsData {
 }
 
 export default function SyllabindAnalytics() {
-  const [match, params] = useRoute('/creator/syllabus/:id/analytics');
+  const [match, params] = useRoute('/creator/syllabind/:id/analytics');
   const { getSyllabusById } = useStore();
   const syllabusId = match && params?.id ? parseInt(params.id) : undefined;
 
@@ -105,10 +105,10 @@ export default function SyllabindAnalytics() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Link href={`/creator/syllabus/${syllabus.id}/edit`}>
+            <Link href={`/creator/syllabind/${syllabus.id}/edit`}>
               <Button variant="outline" size="sm">Edit Syllabind</Button>
             </Link>
-            <Link href={`/syllabus/${syllabus.id}`}>
+            <Link href={`/syllabind/${syllabus.id}`}>
               <Button variant="outline" size="sm">Preview</Button>
             </Link>
           </div>

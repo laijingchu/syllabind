@@ -10,12 +10,12 @@ import { Button } from '@/components/ui/button';
 import { cn, pluralize } from '@/lib/utils';
 import { format } from 'date-fns';
 
-interface SyllabusCardProps {
+interface SyllabindCardProps {
   syllabus: Syllabus;
   className?: string;
 }
 
-export function SyllabusCard({ syllabus, className }: SyllabusCardProps) {
+export function SyllabindCard({ syllabus, className }: SyllabindCardProps) {
   const dateToShow = syllabus.updatedAt || syllabus.createdAt;
   const isUpdated = syllabus.updatedAt && syllabus.createdAt &&
     new Date(syllabus.updatedAt).getTime() !== new Date(syllabus.createdAt).getTime();
@@ -31,11 +31,6 @@ export function SyllabusCard({ syllabus, className }: SyllabusCardProps) {
   return (
     <Card className={cn("group flex flex-col h-full overflow-hidden transition-all border-border/60", className)}>
       <CardHeader className="pb-4">
-        <div className="flex justify-between items-start mb-2">
-          <Badge variant="outline" className="font-normal">
-            {syllabus.audienceLevel}
-          </Badge>
-        </div>
         <div className="flex items-center justify-between py-1">
           {creator && (
             <TooltipProvider delayDuration={0}>
@@ -46,7 +41,7 @@ export function SyllabusCard({ syllabus, className }: SyllabusCardProps) {
                     className="creator-avatar flex items-center gap-2 cursor-pointer rounded-full pr-2 hover:bg-muted/50 transition-colors"
                     onClick={() => setTooltipOpen(prev => !prev)}
                   >
-                    <Avatar className="h-6 w-6 border border-border/50">
+                    <Avatar className="h-8 w-8 border border-border/50">
                       <AvatarImage src={avatarSrc} alt={creatorName} />
                       <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
                         {initial}
@@ -106,6 +101,11 @@ export function SyllabusCard({ syllabus, className }: SyllabusCardProps) {
             </div>
           )}
         </div>
+        <div className="flex justify-between items-start mt-3 mb-2">
+          <Badge variant="outline" className="font-normal">
+            {syllabus.audienceLevel}
+          </Badge>
+        </div>
         <h3 className="text-xl font-display font-medium leading-tight group-hover:text-primary transition-colors">
           {syllabus.title}
         </h3>
@@ -117,8 +117,8 @@ export function SyllabusCard({ syllabus, className }: SyllabusCardProps) {
         />
       </CardContent>
       <CardFooter className="flex items-center gap-3">
-        <Link href={`/syllabus/${syllabus.id}`}>
-           <Button variant="outline" className="gap-2 group-hover:border-primary/50 group-hover:text-primary transition-colors">
+        <Link href={`/syllabind/${syllabus.id}`}>
+           <Button variant="outline" className="gap-2 group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-colors">
              View Syllabind
              <ArrowRight className="h-4 w-4 opacity-50 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
            </Button>

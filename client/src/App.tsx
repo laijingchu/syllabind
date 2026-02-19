@@ -11,7 +11,7 @@ import NotFound from "@/pages/not-found";
 
 import Dashboard from "@/pages/Dashboard";
 import Catalog from "@/pages/Catalog";
-import SyllabusOverview from "@/pages/SyllabusOverview";
+import SyllabindOverview from "@/pages/SyllabindOverview";
 import WeekView from "@/pages/WeekView";
 import Completion from "@/pages/Completion";
 import CreatorDashboard from "@/pages/CreatorDashboard";
@@ -60,16 +60,16 @@ function Router() {
         
         <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
         <Route path="/catalog" component={Catalog} />
-        <Route path="/syllabus/:id" component={SyllabusOverview} />
-        <Route path="/syllabus/:id/week/:index" component={WeekView} />
-        <Route path="/syllabus/:id/completed" component={() => <ProtectedRoute component={Completion} />} />
+        <Route path="/syllabind/:id" component={SyllabindOverview} />
+        <Route path="/syllabind/:id/week/:index" component={WeekView} />
+        <Route path="/syllabind/:id/completed" component={() => <ProtectedRoute component={Completion} />} />
         <Route path="/profile" component={() => <ProtectedRoute component={Profile} />} />
         
         <Route path="/creator" component={() => <ProtectedRoute component={CreatorDashboard} />} />
-        <Route path="/creator/syllabus/new" component={() => <ProtectedRoute component={SyllabindEditor} />} />
-        <Route path="/creator/syllabus/:id/edit" component={() => <ProtectedRoute component={SyllabindEditor} />} />
-        <Route path="/creator/syllabus/:id/learners" component={() => <ProtectedRoute component={SyllabindLearners} />} />
-        <Route path="/creator/syllabus/:id/analytics" component={() => <ProtectedRoute component={SyllabindAnalytics} />} />
+        <Route path="/creator/syllabind/new" component={() => <ProtectedRoute component={SyllabindEditor} />} />
+        <Route path="/creator/syllabind/:id/edit" component={() => <ProtectedRoute component={SyllabindEditor} />} />
+        <Route path="/creator/syllabind/:id/learners" component={() => <ProtectedRoute component={SyllabindLearners} />} />
+        <Route path="/creator/syllabind/:id/analytics" component={() => <ProtectedRoute component={SyllabindAnalytics} />} />
         <Route path="/creator/profile" component={() => <ProtectedRoute component={CreatorProfile} />} />
         
         <Route component={NotFound} />

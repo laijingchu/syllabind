@@ -248,8 +248,8 @@ function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, remov
 }
 
 export default function SyllabindEditor() {
-  const [match, params] = useRoute('/creator/syllabus/:id/edit');
-  const isNew = useLocation()[0] === '/creator/syllabus/new';
+  const [match, params] = useRoute('/creator/syllabind/:id/edit');
+  const isNew = useLocation()[0] === '/creator/syllabind/new';
   const { createSyllabus, updateSyllabus, refreshSyllabinds, getSubmissionsForStep, getLearnersForSyllabus, user } = useStore();
   const posthog = usePostHog();
   const [location, setLocation] = useLocation();
@@ -841,7 +841,7 @@ export default function SyllabindEditor() {
                   setOriginalWeeks(updated.weeks);
                 }
                 // Update URL to edit route (replace avoids browser back to /new)
-                window.history.replaceState(null, '', `/creator/syllabus/${syllabusId}/edit`);
+                window.history.replaceState(null, '', `/creator/syllabind/${syllabusId}/edit`);
               });
             break;
 
@@ -890,7 +890,7 @@ export default function SyllabindEditor() {
                 if (updated.weeks?.length > 0) {
                   setOriginalWeeks(updated.weeks);
                 }
-                window.history.replaceState(null, '', `/creator/syllabus/${syllabusId}/edit`);
+                window.history.replaceState(null, '', `/creator/syllabind/${syllabusId}/edit`);
               })
               .catch(() => {}); // Silently fail — user will see the error toast
 
@@ -930,7 +930,7 @@ export default function SyllabindEditor() {
               if (updated.weeks?.length > 0) {
                 setOriginalWeeks(updated.weeks);
               }
-              window.history.replaceState(null, '', `/creator/syllabus/${syllabusId}/edit`);
+              window.history.replaceState(null, '', `/creator/syllabind/${syllabusId}/edit`);
             })
             .catch(() => {});
         }
@@ -980,7 +980,7 @@ export default function SyllabindEditor() {
           credentials: 'include',
           body: JSON.stringify({ status: 'draft' })
         }).catch(() => {});
-        window.history.replaceState(null, '', `/creator/syllabus/${syllabusId}/edit`);
+        window.history.replaceState(null, '', `/creator/syllabind/${syllabusId}/edit`);
       }
       toast({
         title: "Error",
@@ -1273,7 +1273,7 @@ export default function SyllabindEditor() {
   };
 
   const handleShareDraft = () => {
-    const draftUrl = `${window.location.origin}/syllabus/${formData.id}?preview=true`;
+    const draftUrl = `${window.location.origin}/syllabind/${formData.id}?preview=true`;
     navigator.clipboard.writeText(draftUrl);
     posthog?.capture('link_shared', { url: draftUrl, type: 'draft_preview' });
     toast({
@@ -1383,7 +1383,7 @@ export default function SyllabindEditor() {
                 <Button variant="outline" size="sm" onClick={handleShareDraft} className="gap-2">
                   <Share2 className="h-4 w-4" /> <span className="hidden sm:inline">Share Draft</span>
                 </Button>
-                <Link href={`/creator/syllabus/${params?.id}/analytics`}>
+                <Link href={`/creator/syllabind/${params?.id}/analytics`}>
                   <Button variant="ghost" size="sm">
                     <BarChart2 className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Analytics</span>
                   </Button>
@@ -1408,7 +1408,7 @@ export default function SyllabindEditor() {
               <Button size="sm" onClick={() => handleSave('published')}>Publish</Button>
             )}
             {!isNew && (
-              <Link href={`/creator/syllabus/${params?.id}/learners`}>
+              <Link href={`/creator/syllabind/${params?.id}/learners`}>
                 <Button variant="outline" size="sm" className="gap-2">
                    <Users className="h-4 w-4" /> <span className="hidden sm:inline">Learners</span>
                 </Button>
@@ -1703,7 +1703,7 @@ export default function SyllabindEditor() {
         <div className="space-y-4 pt-6 sm:pt-8 border-t">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
              <h2 className="text-lg sm:text-xl font-medium">Recent Submissions</h2>
-             <Link href={`/creator/syllabus/${params?.id}/learners`}>
+             <Link href={`/creator/syllabind/${params?.id}/learners`}>
                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
                  View All <ArrowLeft className="h-4 w-4 ml-2 rotate-180" />
                </Button>
@@ -1747,7 +1747,7 @@ export default function SyllabindEditor() {
                                 <span className="shrink-0">• {new Date(sub.submittedAt).toLocaleDateString()}</span>
                              </div>
                           </div>
-                          <Link href={`/creator/syllabus/${formData.id}/learners`}>
+                          <Link href={`/creator/syllabind/${formData.id}/learners`}>
                              <Button size="sm" variant="secondary" className="w-full sm:w-auto">Review</Button>
                           </Link>
                        </CardContent>

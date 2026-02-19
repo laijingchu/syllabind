@@ -423,7 +423,7 @@ These pages are accessible without authentication, allowing visitors to learn ab
 | `/welcome` | `Marketing.tsx` | Landing page with signup CTA |
 | `/login` | `Login.tsx` | Authentication entry (signup/login modes) |
 | `/catalog` | `Catalog.tsx` | Browse all published syllabinds |
-| `/syllabus/:id` | `SyllabusOverview.tsx` | Syllabind detail with week breakdown |
+| `/syllabind/:id` | `SyllabindOverview.tsx` | Syllabind detail with week breakdown |
 
 #### Learner Pages (Auth Required)
 
@@ -432,8 +432,8 @@ These pages provide the core learning experience. Learners see their dashboard, 
 | Route | Component | Purpose |
 |-------|-----------|---------|
 | `/` | `Dashboard.tsx` | Home - active syllabind progress or catalog |
-| `/syllabus/:id/week/:index` | `WeekView.tsx` | Main learning interface with readings & exercises |
-| `/syllabus/:id/completed` | `Completion.tsx` | Celebration screen post-completion |
+| `/syllabind/:id/week/:index` | `WeekView.tsx` | Main learning interface with readings & exercises |
+| `/syllabind/:id/completed` | `Completion.tsx` | Celebration screen post-completion |
 | `/profile` | `Profile.tsx` | Edit bio, social links, preferences |
 
 #### Creator Pages (Auth + Creator Flag Required)
@@ -443,10 +443,10 @@ These pages are only accessible to users who have enabled creator mode. They pro
 | Route | Component | Purpose |
 |-------|-----------|---------|
 | `/creator` | `CreatorDashboard.tsx` | List of created syllabinds with management |
-| `/creator/syllabus/new` | `SyllabindEditor.tsx` | Build new syllabind (WYSIWYG editor) |
-| `/creator/syllabus/:id/edit` | `SyllabindEditor.tsx` | Edit existing syllabind (auto-save) |
-| `/creator/syllabus/:id/analytics` | `SyllabindAnalytics.tsx` | Learner progress visualization |
-| `/creator/syllabus/:id/learners` | `SyllabindLearners.tsx` | Learner list, cohorts, submissions |
+| `/creator/syllabind/new` | `SyllabindEditor.tsx` | Build new syllabind (WYSIWYG editor) |
+| `/creator/syllabind/:id/edit` | `SyllabindEditor.tsx` | Edit existing syllabind (auto-save) |
+| `/creator/syllabind/:id/analytics` | `SyllabindAnalytics.tsx` | Learner progress visualization |
+| `/creator/syllabind/:id/learners` | `SyllabindLearners.tsx` | Learner list, cohorts, submissions |
 | `/creator/profile` | `CreatorProfile.tsx` | Creator bio, expertise, social links |
 
 ---
@@ -465,7 +465,7 @@ These components are specific to Syllabind's functionality and compose the UI pr
   - User avatar dropdown (Profile, Creator Mode toggle, Logout)
   - Conditional rendering based on auth state
 
-- **`SyllabusCard.tsx`**: Reusable syllabind preview card
+- **`SyllabindCard.tsx`**: Reusable syllabind preview card
   - Displays title, description, level, duration
   - Creator avatar with name; hover tooltip shows bio, expertise, and social links (same pattern as classmates)
   - CTA button (Enroll/Resume/View)
@@ -632,7 +632,7 @@ All methods now make real API calls to the backend. The store provides methods o
 **Important Data Loading Patterns:**
 - The cached `syllabinds` list from `/api/syllabinds` contains only basic metadata (no weeks/steps)
 - Pages that need full Syllabind (weeks/steps) must fetch directly from `/api/syllabinds/:id`
-- `SyllabusOverview` and `SyllabindEditor` both fetch full content via direct API calls
+- `SyllabindOverview` and `SyllabindEditor` both fetch full content via direct API calls
 - This prevents loading heavy Syllabind data for catalog browsing
 
 #### React Query
@@ -854,7 +854,7 @@ The codebase is organized into three main directories: `client` (React frontend)
 │   ├── pages/                - 14 page components (~3,100 lines)
 │   ├── components/
 │   │   ├── Layout.tsx        - Main header
-│   │   ├── SyllabusCard.tsx  - Syllabind preview
+│   │   ├── SyllabindCard.tsx  - Syllabind preview
 │   │   ├── AvatarUpload.tsx  - Image uploader
 │   │   └── ui/               - 50+ UI primitives (~5,950 lines)
 │   ├── hooks/                - Custom React hooks
@@ -1526,7 +1526,7 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 
 1. **Dashboard.tsx — New welcome screen for users with no enrollments:**
    - Replaced the `<Catalog />` early-return with a two-card welcome screen
-   - "Build your own course" card (Wand2 icon + AI badge) → links to `/creator/syllabus/new`
+   - "Build your own course" card (Wand2 icon + AI badge) → links to `/creator/syllabind/new`
    - "Choose from existing courses" card (BookOpen icon) → links to `/catalog`
    - Uses AnimatedPage/AnimatedCard for entrance animations
 
@@ -1806,13 +1806,13 @@ Additionally, regenerating a single week was replacing the title and summary, wh
 
 4. **Final URL sweep**: After all batches complete, `generateSyllabind()` now queries all weeks/steps from the DB and collects any readings still missing URLs across the entire syllabind. Runs one final `repairMissingUrls()` pass for cross-batch coverage.
 
-5. **Learner page filtering**: WeekView and SyllabusOverview hide readings without URLs from learners. Step counts and time estimates only include visible steps. Week locking/progression logic excludes URL-less readings.
+5. **Learner page filtering**: WeekView and SyllabindOverview hide readings without URLs from learners. Step counts and time estimates only include visible steps. Week locking/progression logic excludes URL-less readings.
 
 **Files Modified:**
 - `server/utils/claudeClient.ts` — creationDate description changed to YYYY-MM-DD
 - `server/utils/syllabindGenerator.ts` — `defaultEstimatedMinutes()`, stronger prompts, final URL sweep
 - `client/src/pages/WeekView.tsx` — Date parsing fix, filter out URL-less readings, adjusted locking logic
-- `client/src/pages/SyllabusOverview.tsx` — Filter out URL-less readings from step list and counts
+- `client/src/pages/SyllabindOverview.tsx` — Filter out URL-less readings from step list and counts
 
 ### AI-Powered "Improve Writing" Button (2026-02-16)
 
@@ -1854,7 +1854,7 @@ Added real AI text improvement to the RichTextEditor's "Improve writing" button 
 
 ### Duplicate Weeks Prevention (2026-02-17)
 
-**Problem:** Concurrent generation requests on the same syllabind (e.g., double-clicking "Generate") created duplicate week rows (same `syllabusId` + `index`). The `getSyllabusWithContent` query returned all duplicates, causing the SyllabusOverview accordion to show 12 weeks instead of 6.
+**Problem:** Concurrent generation requests on the same syllabind (e.g., double-clicking "Generate") created duplicate week rows (same `syllabusId` + `index`). The `getSyllabusWithContent` query returned all duplicates, causing the SyllabindOverview accordion to show 12 weeks instead of 6.
 
 **Root cause:** No unique constraint on `weeks(syllabus_id, index)` and no guard against triggering generation while one is already in progress.
 
@@ -1902,7 +1902,7 @@ Added real AI text improvement to the RichTextEditor's "Improve writing" button 
 
 ### Completion Page: Incomplete Assignments Guard (2026-02-17)
 
-**Issue:** Navigating to `/syllabus/:id/completed` with missing steps showed "not found" (store's catalog list lacks full week/step data) and auto-completed the enrollment regardless.
+**Issue:** Navigating to `/syllabind/:id/completed` with missing steps showed "not found" (store's catalog list lacks full week/step data) and auto-completed the enrollment regardless.
 
 **Fix:** Rewrote `Completion.tsx` to fetch full syllabus data and completed steps independently (same pattern as WeekView). The page now computes overall progress and conditionally renders:
 
@@ -1915,9 +1915,9 @@ Added real AI text improvement to the RichTextEditor's "Improve writing" button 
 - `client/src/pages/Completion.tsx` — Full rewrite with data fetching, progress computation, and incomplete/complete conditional rendering
 - `client/src/pages/WeekView.tsx` — `isLastWeek` uses actual week data; redirect to completion page for non-existent weeks
 
-### Fix: Week Locking Indicators on SyllabusOverview (2026-02-17)
+### Fix: Week Locking Indicators on SyllabindOverview (2026-02-17)
 
-**Issue:** SyllabusOverview showed a lock icon for ANY week that wasn't the current week or 100% complete. This meant past accessible weeks (e.g. Week 1 when user is on Week 3) appeared locked even though they were fully accessible.
+**Issue:** SyllabindOverview showed a lock icon for ANY week that wasn't the current week or 100% complete. This meant past accessible weeks (e.g. Week 1 when user is on Week 3) appeared locked even though they were fully accessible.
 
 **Fix:** Changed the week indicator logic to distinguish four states:
 - **Completed** (checkmark): week is 100% done
@@ -1928,7 +1928,7 @@ Added real AI text improvement to the RichTextEditor's "Improve writing" button 
 Also added a "Go to Week N" mobile button for past accessible but incomplete weeks.
 
 **Files Modified:**
-- `client/src/pages/SyllabusOverview.tsx` — Week indicator logic + accessible week navigation button
+- `client/src/pages/SyllabindOverview.tsx` — Week indicator logic + accessible week navigation button
 
 ### Fix: 0-Based Week Index Normalization (2026-02-17)
 

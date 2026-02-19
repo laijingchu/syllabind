@@ -300,7 +300,7 @@ Maximum: 100
 - [x] Verify `GOOGLE_SEARCH_API_KEY` exists
 
 ### Generation Testing
-- [ ] Navigate to `/creator/syllabus/new`
+- [ ] Navigate to `/creator/syllabind/new`
 - [ ] Fill in title, description, audience, duration
 - [ ] Click autogenerate button
 - [ ] Verify progress updates appear in real-time

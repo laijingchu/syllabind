@@ -95,7 +95,7 @@ const mySyllabi = syllabi.filter(s => s.creatorId === user?.username);
 
 ---
 
-### 6. Syllabus Overview - Creator Profile (SyllabusOverview.tsx)
+### 6. Syllabus Overview - Creator Profile (SyllabindOverview.tsx)
 
 **Before:**
 ```tsx
@@ -218,7 +218,7 @@ Examples:
 
 1. ✅ `/client/src/components/Layout.tsx`
 2. ✅ `/client/src/pages/CreatorDashboard.tsx`
-3. ✅ `/client/src/pages/SyllabusOverview.tsx`
+3. ✅ `/client/src/pages/SyllabindOverview.tsx`
 4. ✅ `/client/src/lib/types.ts`
 
 ---
