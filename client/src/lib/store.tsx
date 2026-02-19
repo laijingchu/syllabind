@@ -188,13 +188,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
 
       const newEnrollment = await res.json();
-      setEnrollment({
+      setEnrollment(prev => ({
         id: newEnrollment.id,
         activeSyllabusId: newEnrollment.syllabusId,
         currentWeekIndex: newEnrollment.currentWeekIndex || 1,
         completedStepIds: [],
-        completedSyllabusIds: []
-      });
+        completedSyllabusIds: prev?.completedSyllabusIds || []
+      }));
       posthog?.capture('enrolled_in_syllabind', { syllabind_id: syllabusId });
     } catch (err) {
       console.error('Failed to enroll:', err);
