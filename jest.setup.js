@@ -117,6 +117,71 @@ jest.mock('./server/auth/appleAuth', () => ({
   registerAppleAuthRoutes: jest.fn(),
 }));
 
+// Mock Stripe
+jest.mock('stripe', () => {
+  const mockStripeInstance = {
+    customers: {
+      create: jest.fn().mockResolvedValue({ id: 'cus_test123' }),
+      retrieve: jest.fn().mockResolvedValue({ id: 'cus_test123' }),
+    },
+    checkout: {
+      sessions: {
+        create: jest.fn().mockResolvedValue({
+          id: 'cs_test123',
+          url: 'https://checkout.stripe.com/pay/cs_test123',
+        }),
+        listLineItems: jest.fn().mockResolvedValue({ data: [] }),
+      },
+    },
+    billingPortal: {
+      sessions: {
+        create: jest.fn().mockResolvedValue({
+          url: 'https://billing.stripe.com/session/test',
+        }),
+      },
+    },
+    subscriptions: {
+      retrieve: jest.fn().mockResolvedValue({
+        id: 'sub_test123',
+        status: 'active',
+        current_period_start: Math.floor(Date.now() / 1000),
+        current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+        cancel_at_period_end: false,
+        items: { data: [{ price: { id: 'price_test123' } }] },
+        metadata: { userId: 'test-user-id' },
+      }),
+    },
+    webhooks: {
+      constructEvent: jest.fn(),
+    },
+  };
+
+  const StripeMock = jest.fn(() => mockStripeInstance);
+  StripeMock.errors = {
+    StripeError: class StripeError extends Error {
+      constructor(message) {
+        super(message);
+        this.type = 'api_error';
+      }
+    },
+    StripeSignatureVerificationError: class StripeSignatureVerificationError extends Error {
+      constructor(message) {
+        super(message);
+        this.type = 'StripeSignatureVerificationError';
+      }
+    },
+  };
+  return StripeMock;
+});
+
+// Mock Stripe client helper
+jest.mock('./server/lib/stripe', () => {
+  const stripe = require('stripe');
+  return {
+    getStripeClient: jest.fn(() => stripe()),
+  };
+});
+
 // Mock Storage — the `storage` named export is an object with mock methods
 jest.mock('./server/storage', () => ({
   storage: {
@@ -173,6 +238,11 @@ jest.mock('./server/storage', () => ({
     deleteWeeksBySyllabusId: jest.fn(),
     isStepCompleted: jest.fn().mockResolvedValue(false),
     updateStepUrl: jest.fn(),
+    getUserByStripeCustomerId: jest.fn().mockResolvedValue(null),
+    getSubscriptionByStripeId: jest.fn().mockResolvedValue(null),
+    upsertSubscription: jest.fn().mockResolvedValue({ id: 1 }),
+    updateSubscriptionByStripeId: jest.fn().mockResolvedValue(undefined),
+    countSyllabindsByCreator: jest.fn().mockResolvedValue(0),
   },
   DatabaseStorage: jest.fn(),
 }));

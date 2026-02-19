@@ -7,7 +7,8 @@ import {
   type Submission, type InsertSubmission,
   type CompletedStep, type InsertCompletedStep,
   type ChatMessage, type InsertChatMessage,
-  users, syllabinds, enrollments, weeks, steps, submissions, completedSteps, chatMessages
+  type Subscription, type InsertSubscription,
+  users, syllabinds, enrollments, weeks, steps, submissions, completedSteps, chatMessages, subscriptions
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, asc, inArray } from "drizzle-orm";
@@ -92,6 +93,13 @@ export interface IStorage {
   getChatMessages(syllabusId: number): Promise<ChatMessage[]>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   clearChatMessages(syllabusId: number): Promise<void>;
+
+  // Subscription operations
+  getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined>;
+  getSubscriptionByStripeId(stripeSubscriptionId: string): Promise<Subscription | undefined>;
+  upsertSubscription(data: InsertSubscription): Promise<Subscription>;
+  updateSubscriptionByStripeId(stripeSubscriptionId: string, updates: Partial<Subscription>): Promise<Subscription | undefined>;
+  countSyllabindsByCreator(username: string): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -739,6 +747,51 @@ export class DatabaseStorage implements IStorage {
 
   async clearChatMessages(syllabusId: number): Promise<void> {
     await db.delete(chatMessages).where(eq(chatMessages.syllabusId, syllabusId));
+  }
+
+  // Subscription operations
+  async getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.stripeCustomerId, stripeCustomerId));
+    return user;
+  }
+
+  async getSubscriptionByStripeId(stripeSubscriptionId: string): Promise<Subscription | undefined> {
+    const [sub] = await db.select().from(subscriptions).where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId));
+    return sub;
+  }
+
+  async upsertSubscription(data: InsertSubscription): Promise<Subscription> {
+    const [sub] = await db.insert(subscriptions)
+      .values(data)
+      .onConflictDoUpdate({
+        target: subscriptions.stripeSubscriptionId,
+        set: {
+          status: data.status,
+          stripePriceId: data.stripePriceId,
+          currentPeriodStart: data.currentPeriodStart,
+          currentPeriodEnd: data.currentPeriodEnd,
+          cancelAtPeriodEnd: data.cancelAtPeriodEnd,
+          updatedAt: new Date(),
+        }
+      })
+      .returning();
+    return sub;
+  }
+
+  async updateSubscriptionByStripeId(stripeSubscriptionId: string, updates: Partial<Subscription>): Promise<Subscription | undefined> {
+    const { id: _id, ...updateData } = updates;
+    const [sub] = await db.update(subscriptions)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId))
+      .returning();
+    return sub;
+  }
+
+  async countSyllabindsByCreator(username: string): Promise<number> {
+    const [result] = await db.select({ count: sql<number>`cast(count(*) as int)` })
+      .from(syllabinds)
+      .where(eq(syllabinds.creatorId, username));
+    return result?.count || 0;
   }
 }
 

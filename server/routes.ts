@@ -3,12 +3,15 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupCustomAuth, isAuthenticated } from "./auth";
+import { isAdminUser } from "./auth/admin";
 import {
   insertSyllabusSchema,
   insertEnrollmentSchema,
   insertUserSchema,
   insertSubmissionSchema
 } from "@shared/schema";
+import { registerStripeRoutes } from "./routes/stripe";
+import { registerWebhookRoutes } from "./routes/webhook";
 import multer from "multer";
 import { client, CLAUDE_MODEL } from "./utils/claudeClient";
 import * as path from "path";
@@ -53,6 +56,10 @@ export async function registerRoutes(
 ): Promise<Server> {
   // Set up custom authentication
   setupCustomAuth(app);
+
+  // Register Stripe payment and webhook routes
+  await registerStripeRoutes(app);
+  await registerWebhookRoutes(app);
 
   // Serve uploaded files statically
   app.use("/uploads", express.static(path.join(currentDirPath, "../uploads")));
@@ -178,10 +185,11 @@ export async function registerRoutes(
     const id = parseInt(req.params.id);
     const username = (req.user as any).username;
 
-    // Authorization: only creator can edit
+    // Authorization: only creator (or admin) can edit
     const syllabus = await storage.getSyllabus(id);
     if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
-    if (syllabus.creatorId !== username) {
+    const isAdmin = (req.user as any).isAdmin === true;
+    if (syllabus.creatorId !== username && !isAdmin) {
       return res.status(403).json({ error: "Forbidden: Only creator can edit this syllabind" });
     }
 
@@ -201,10 +209,11 @@ export async function registerRoutes(
     const id = parseInt(req.params.id);
     const username = (req.user as any).username;
 
-    // Authorization: only creator can delete
+    // Authorization: only creator (or admin) can delete
     const syllabus = await storage.getSyllabus(id);
     if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
-    if (syllabus.creatorId !== username) {
+    const isAdmin = (req.user as any).isAdmin === true;
+    if (syllabus.creatorId !== username && !isAdmin) {
       return res.status(403).json({ error: "Forbidden: Only creator can delete this syllabind" });
     }
 
@@ -221,7 +230,8 @@ export async function registerRoutes(
       return res.status(400).json({ message: "Invalid request: ids must be a non-empty array" });
     }
 
-    // Authorization: verify all syllabinds belong to the user
+    // Authorization: verify all syllabinds belong to the user (or user is admin)
+    const isAdmin = (req.user as any).isAdmin === true;
     const syllabinds = await Promise.all(
       ids.map(id => storage.getSyllabus(parseInt(id)))
     );
@@ -230,7 +240,7 @@ export async function registerRoutes(
       if (!syllabus) {
         return res.status(404).json({ message: "One or more syllabinds not found" });
       }
-      if (syllabus.creatorId !== username) {
+      if (syllabus.creatorId !== username && !isAdmin) {
         return res.status(403).json({ error: "Forbidden: You can only delete your own syllabinds" });
       }
     }
@@ -243,9 +253,17 @@ export async function registerRoutes(
     const username = (req.user as any).username;
     const user = req.user as any;
 
-    // Check if user is a creator
-    if (!user.isCreator) {
+    // Check if user is a creator (or admin)
+    if (!user.isCreator && !user.isAdmin) {
       return res.status(403).json({ error: "Creator access required" });
+    }
+
+    // Pro gate: free creators limited to 2 syllabinds (admins bypass)
+    if (user.subscriptionStatus !== 'pro' && !user.isAdmin) {
+      const count = await storage.countSyllabindsByCreator(username);
+      if (count >= 2) {
+        return res.status(403).json({ error: "SUBSCRIPTION_REQUIRED", message: "Free plan limited to 2 syllabinds. Upgrade to Pro for unlimited." });
+      }
     }
 
     const parsed = insertSyllabusSchema.safeParse({ ...req.body, creatorId: username });
@@ -263,12 +281,18 @@ export async function registerRoutes(
   });
 
   // Get creator's syllabinds (including drafts)
+  // Admin can pass ?all=true to list all syllabinds site-wide
   app.get("/api/creator/syllabinds", isAuthenticated, async (req, res) => {
     const username = (req.user as any).username;
     const user = req.user as any;
 
-    if (!user.isCreator) {
+    if (!user.isCreator && !user.isAdmin) {
       return res.status(403).json({ error: "Creator access required" });
+    }
+
+    if (user.isAdmin && req.query.all === 'true') {
+      const syllabinds = await storage.listSyllabinds();
+      return res.json(syllabinds);
     }
 
     const syllabinds = await storage.getSyllabindsByCreator(username);
@@ -282,7 +306,8 @@ export async function registerRoutes(
 
     const syllabus = await storage.getSyllabus(syllabusId);
     if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
-    if (syllabus.creatorId !== username) {
+    const isAdmin = (req.user as any).isAdmin === true;
+    if (syllabus.creatorId !== username && !isAdmin) {
       return res.status(403).json({ error: "Not syllabind owner" });
     }
 
@@ -304,7 +329,8 @@ export async function registerRoutes(
 
     const syllabus = await storage.getSyllabus(id);
     if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
-    if (syllabus.creatorId !== username) {
+    const isAdmin = (req.user as any).isAdmin === true;
+    if (syllabus.creatorId !== username && !isAdmin) {
       return res.status(403).json({ error: "Not syllabind owner" });
     }
 
@@ -322,6 +348,13 @@ export async function registerRoutes(
 
   app.post("/api/enrollments", isAuthenticated, async (req, res) => {
     const username = (req.user as any).username;
+    const user = req.user as any;
+
+    // Pro gate: enrollment requires Pro subscription (admins bypass)
+    if (user.subscriptionStatus !== 'pro' && !user.isAdmin) {
+      return res.status(403).json({ error: "SUBSCRIPTION_REQUIRED", message: "Pro subscription required to enroll in syllabinds." });
+    }
+
     const { shareProfile, ...enrollmentBody } = req.body;
     const parsed = insertEnrollmentSchema.safeParse({
       ...enrollmentBody,
@@ -412,7 +445,8 @@ export async function registerRoutes(
 
     const syllabus = await storage.getSyllabus(enrollment.syllabusId!);
     if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
-    if (syllabus.creatorId !== username) {
+    const isAdmin = (req.user as any).isAdmin === true;
+    if (syllabus.creatorId !== username && !isAdmin) {
       return res.status(403).json({ error: "Not syllabind owner" });
     }
 
@@ -432,7 +466,8 @@ export async function registerRoutes(
     if (!week) return res.status(404).json({ message: "Week not found" });
 
     const syllabus = await storage.getSyllabus(week.syllabusId);
-    if (!syllabus || syllabus.creatorId !== username) {
+    const isAdmin = (req.user as any).isAdmin === true;
+    if (!syllabus || (syllabus.creatorId !== username && !isAdmin)) {
       return res.status(403).json({ error: "Not syllabind owner" });
     }
 
@@ -488,9 +523,10 @@ export async function registerRoutes(
     const syllabusId = parseInt(req.params.id);
     const username = (req.user as any).username;
 
-    // Verify user is creator
+    // Verify user is creator (or admin)
     const syllabus = await storage.getSyllabus(syllabusId);
-    if (!syllabus || syllabus.creatorId !== username) {
+    const isAdmin = (req.user as any).isAdmin === true;
+    if (!syllabus || (syllabus.creatorId !== username && !isAdmin)) {
       return res.status(403).json({ error: "Only creator can view analytics" });
     }
 
@@ -502,9 +538,10 @@ export async function registerRoutes(
     const syllabusId = parseInt(req.params.id);
     const username = (req.user as any).username;
 
-    // Verify user is creator
+    // Verify user is creator (or admin)
     const syllabus = await storage.getSyllabus(syllabusId);
-    if (!syllabus || syllabus.creatorId !== username) {
+    const isAdmin = (req.user as any).isAdmin === true;
+    if (!syllabus || (syllabus.creatorId !== username && !isAdmin)) {
       return res.status(403).json({ error: "Only creator can view analytics" });
     }
 
@@ -516,9 +553,10 @@ export async function registerRoutes(
     const syllabusId = parseInt(req.params.id);
     const username = (req.user as any).username;
 
-    // Verify user is creator
+    // Verify user is creator (or admin)
     const syllabus = await storage.getSyllabus(syllabusId);
-    if (!syllabus || syllabus.creatorId !== username) {
+    const isAdmin = (req.user as any).isAdmin === true;
+    if (!syllabus || (syllabus.creatorId !== username && !isAdmin)) {
       return res.status(403).json({ error: "Only creator can view analytics" });
     }
 
@@ -532,7 +570,7 @@ export async function registerRoutes(
     const username = (req.user as any).username;
     const user = req.user as any;
 
-    if (!user.isCreator) {
+    if (!user.isCreator && !user.isAdmin) {
       return res.status(403).json({ error: "Creator access required" });
     }
 
@@ -543,7 +581,8 @@ export async function registerRoutes(
     }
 
     const syllabus = await storage.getSyllabus(syllabusId);
-    if (!syllabus || syllabus.creatorId !== username) {
+    const isAdmin = (req.user as any).isAdmin === true;
+    if (!syllabus || (syllabus.creatorId !== username && !isAdmin)) {
       return res.status(403).json({ error: "Not your syllabind" });
     }
 
@@ -601,7 +640,7 @@ export async function registerRoutes(
     const username = (req.user as any).username;
     const user = req.user as any;
 
-    if (!user.isCreator) {
+    if (!user.isCreator && !user.isAdmin) {
       return res.status(403).json({ error: "Creator access required" });
     }
 
@@ -616,7 +655,8 @@ export async function registerRoutes(
     }
 
     const syllabus = await storage.getSyllabus(syllabusId);
-    if (!syllabus || syllabus.creatorId !== username) {
+    const isAdmin = (req.user as any).isAdmin === true;
+    if (!syllabus || (syllabus.creatorId !== username && !isAdmin)) {
       return res.status(403).json({ error: "Not your syllabind" });
     }
 
@@ -637,7 +677,8 @@ export async function registerRoutes(
     const username = (req.user as any).username;
 
     const syllabus = await storage.getSyllabus(syllabusId);
-    if (!syllabus || syllabus.creatorId !== username) {
+    const isAdmin = (req.user as any).isAdmin === true;
+    if (!syllabus || (syllabus.creatorId !== username && !isAdmin)) {
       return res.status(403).json({ error: "Not authorized" });
     }
 
@@ -651,7 +692,8 @@ export async function registerRoutes(
     const { role, content } = req.body;
 
     const syllabus = await storage.getSyllabus(syllabusId);
-    if (!syllabus || syllabus.creatorId !== username) {
+    const isAdmin = (req.user as any).isAdmin === true;
+    if (!syllabus || (syllabus.creatorId !== username && !isAdmin)) {
       return res.status(403).json({ error: "Not authorized" });
     }
 

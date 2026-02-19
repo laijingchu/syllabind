@@ -44,6 +44,8 @@ export const users = pgTable("users", {
   threads: text("threads"),
   shareProfile: boolean("share_profile").default(true),
   authProvider: text("auth_provider").default('email'),
+  stripeCustomerId: text("stripe_customer_id").unique(),
+  subscriptionStatus: text("subscription_status").notNull().default('free'), // 'free' | 'pro' | 'past_due'
 });
 
 export const syllabinds = pgTable("syllabi", {
@@ -173,6 +175,23 @@ export const cohortMembers = pgTable("cohort_members", {
   pk: primaryKey({ columns: [table.cohortId, table.studentId] })
 }));
 
+// Subscription audit trail
+export const subscriptions = pgTable("subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  stripeSubscriptionId: text("stripe_subscription_id").unique().notNull(),
+  stripePriceId: text("stripe_price_id"),
+  status: text("status").notNull(), // Mirrors Stripe status
+  currentPeriodStart: timestamp("current_period_start"),
+  currentPeriodEnd: timestamp("current_period_end"),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("subscriptions_user_id_idx").on(table.userId),
+  index("subscriptions_stripe_subscription_id_idx").on(table.stripeSubscriptionId),
+]);
+
 // Chat messages for Syllabind refinement
 export const chatMessages = pgTable("chat_messages", {
   id: serial("id").primaryKey(),
@@ -211,6 +230,7 @@ export const insertCohortSchema = createInsertSchema(cohorts).omit({
 export const insertCohortMemberSchema = createInsertSchema(cohortMembers).omit({
   joinedAt: true
 });
+export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true });
 
 export type User = typeof users.$inferSelect;
@@ -231,5 +251,7 @@ export type Cohort = typeof cohorts.$inferSelect;
 export type InsertCohort = z.infer<typeof insertCohortSchema>;
 export type CohortMember = typeof cohortMembers.$inferSelect;
 export type InsertCohortMember = z.infer<typeof insertCohortMemberSchema>;
+export type Subscription = typeof subscriptions.$inferSelect;
+export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePostHog } from '@posthog/react';
 import { useAuth } from '@/hooks/use-auth';
-import { Syllabus, Enrollment, LearnerProfile, Submission } from './types';
+import { Syllabus, Enrollment, LearnerProfile, Submission, SubscriptionLimits } from './types';
 
 interface StoreContextType {
   user: any;
@@ -44,6 +44,11 @@ interface StoreContextType {
   getSubmissionsForStep: (stepId: number) => Record<string, Submission>;
   refreshSyllabinds: () => Promise<void>;
   refreshEnrollments: () => Promise<void>;
+
+  // Subscription
+  isPro: boolean;
+  subscriptionLimits: SubscriptionLimits | null;
+  refreshSubscriptionLimits: () => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -58,6 +63,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [completedStepIds, setCompletedStepIds] = useState<number[]>([]);
   const [syllabindsLoading, setSyllabindsLoading] = useState(false);
   const [enrollmentLoading, setEnrollmentLoading] = useState(false);
+  const [subscriptionLimits, setSubscriptionLimits] = useState<SubscriptionLimits | null>(null);
+
+  const isPro = user?.subscriptionStatus === 'pro' || user?.isAdmin === true;
 
   // Fetch syllabinds on mount
   useEffect(() => {
@@ -154,6 +162,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setEnrollmentLoading(false);
     }
   };
+
+  const refreshSubscriptionLimits = async () => {
+    try {
+      const res = await fetch('/api/subscription/limits', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setSubscriptionLimits(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch subscription limits:', err);
+    }
+  };
+
+  // Fetch subscription limits when user logs in
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      refreshSubscriptionLimits();
+    } else if (!isAuthenticated) {
+      setSubscriptionLimits(null);
+    }
+  }, [isAuthenticated, isLoading]);
 
   const toggleCreatorMode = async () => {
     try {
@@ -541,7 +570,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       batchDeleteSyllabinds,
       getSubmissionsForStep,
       refreshSyllabinds,
-      refreshEnrollments
+      refreshEnrollments,
+      isPro,
+      subscriptionLimits,
+      refreshSubscriptionLimits,
     }}>
       {children}
     </StoreContext.Provider>

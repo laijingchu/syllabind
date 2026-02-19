@@ -106,6 +106,7 @@ export interface User {
   name: string;
   email?: string;
   isCreator: boolean;
+  isAdmin?: boolean;
   bio?: string;
   expertise?: string;
   avatarUrl?: string;
@@ -116,6 +117,17 @@ export interface User {
   threads?: string;
   // Preferences
   shareProfile?: boolean;
+  // Subscription
+  stripeCustomerId?: string | null;
+  subscriptionStatus?: 'free' | 'pro' | 'past_due';
+}
+
+export interface SubscriptionLimits {
+  syllabindCount: number;
+  syllabindLimit: number | null;
+  canCreateMore: boolean;
+  canEnroll: boolean;
+  isPro: boolean;
 }
 
 export interface LearnerProfile {

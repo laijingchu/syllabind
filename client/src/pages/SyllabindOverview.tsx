@@ -28,13 +28,16 @@ import { ShareDialog } from '@/components/ShareDialog';
 import { useState, useEffect } from 'react';
 import { cn, pluralize } from '@/lib/utils';
 import { LearnerProfile, Syllabus } from '@/lib/types';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { useToast } from '@/hooks/use-toast';
 
 export default function SyllabindOverview() {
   const [match, params] = useRoute('/syllabind/:id');
-  const { getSyllabusById, enrollInSyllabus, enrollment, getExerciseText, getLearnersForSyllabus, updateEnrollmentShareProfile } = useStore();
+  const { getSyllabusById, enrollInSyllabus, enrollment, getExerciseText, getLearnersForSyllabus, updateEnrollmentShareProfile, isPro } = useStore();
   const [location, setLocation] = useLocation();
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [learners, setLearners] = useState<LearnerProfile[]>([]);
   const [totalEnrolled, setTotalEnrolled] = useState(0);
   const [syllabus, setSyllabus] = useState<Syllabus | undefined>(undefined);
@@ -44,8 +47,21 @@ export default function SyllabindOverview() {
   const [localCompletedStepIds, setLocalCompletedStepIds] = useState<number[]>([]);
 
   const syllabusId = match && params?.id ? parseInt(params.id) : undefined;
-  const { user: currentUser, completedStepIds: storeCompletedStepIds } = useStore();
+  const { user: currentUser, completedStepIds: storeCompletedStepIds, refreshSubscriptionLimits } = useStore();
+  const { toast } = useToast();
   const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
+
+  // Handle ?subscription=success return from Stripe checkout
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('subscription') === 'success') {
+      toast({ title: 'Welcome to Syllabind Pro!', description: 'Your subscription is now active. You can now enroll.' });
+      refreshSubscriptionLimits();
+      const url = new URL(window.location.href);
+      url.searchParams.delete('subscription');
+      window.history.replaceState({}, '', url.pathname + url.search);
+    }
+  }, []);
 
   // Fetch full syllabus with weeks and steps
   useEffect(() => {
@@ -179,6 +195,12 @@ export default function SyllabindOverview() {
     // Not authenticated - redirect to login with returnTo
     if (!currentUser) {
       setLocation(`/login?returnTo=${encodeURIComponent(`/syllabind/${syllabus.id}`)}`);
+      return;
+    }
+
+    // Pro gate: must be Pro to enroll
+    if (!isPro) {
+      setShowUpgradePrompt(true);
       return;
     }
 
@@ -596,6 +618,13 @@ export default function SyllabindOverview() {
         open={showShareDialog}
         onOpenChange={setShowShareDialog}
         title="Share this Syllabind"
+      />
+
+      <UpgradePrompt
+        open={showUpgradePrompt}
+        onOpenChange={setShowUpgradePrompt}
+        variant="enrollment-gate"
+        returnTo={`/syllabind/${syllabus.id}`}
       />
     </AnimatedPage>
   );

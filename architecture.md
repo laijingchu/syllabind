@@ -41,7 +41,10 @@ This table stores all user accounts, whether they're learners or creators. A sin
   website: string,
   twitter: string,
   threads: string,
-  shareProfile: boolean DEFAULT true
+  shareProfile: boolean DEFAULT true,
+  // Subscription
+  stripeCustomerId: string UNIQUE,              // Stripe customer ID
+  subscriptionStatus: string DEFAULT 'free',    // 'free' | 'pro' | 'past_due'
 }
 ```
 
@@ -232,6 +235,29 @@ This junction table tracks which students belong to which cohorts. The composite
 - Cohort members track social grouping (cohortId, studentId)
 - These are separate: students can be enrolled without being in a cohort
 - Queries can JOIN both to show cohort members' progress
+
+#### Subscriptions Table
+
+Stores Stripe subscription records as an audit trail for Pro subscriptions. Each record mirrors the Stripe subscription lifecycle and is updated via webhook events. The `userId` references `users.id` with CASCADE delete.
+
+```typescript
+{
+  id: serial PRIMARY KEY,
+  userId: varchar FK → users.id,              // CASCADE delete
+  stripeSubscriptionId: string UNIQUE,        // Stripe subscription ID
+  stripePriceId: string,                      // Stripe price ID
+  status: string,                             // Mirrors Stripe status (active, canceled, past_due, etc.)
+  currentPeriodStart: timestamp,              // Billing period start
+  currentPeriodEnd: timestamp,                // Billing period end
+  cancelAtPeriodEnd: boolean DEFAULT false,   // Whether subscription cancels at period end
+  createdAt: timestamp DEFAULT now(),
+  updatedAt: timestamp DEFAULT now(),
+}
+```
+
+**Indexes:**
+- `subscriptions_user_id_idx` - Fast lookup by user
+- `subscriptions_stripe_subscription_id_idx` - Fast lookup by Stripe subscription ID
 
 #### Sessions Table
 
@@ -753,6 +779,34 @@ GET    /api/syllabinds/:id/analytics/completion-times - Average completion times
 }
 ```
 
+### Subscription Endpoints (Auth Required)
+
+```
+GET    /api/subscription/status    - Get user's subscription status (free/pro)
+GET    /api/subscription/limits    - Get syllabind creation limits and enrollment gating
+POST   /api/create-checkout-session - Create Stripe Checkout session (redirect URL)
+POST   /api/create-portal-session   - Create Stripe Customer Portal session
+POST   /api/webhook                 - Stripe webhook handler (signature verified)
+```
+
+**Subscription Limits Response:**
+```typescript
+{
+  syllabindCount: number;        // Creator's current syllabind count
+  syllabindLimit: number | null; // null = unlimited (Pro), 2 for free
+  canCreateMore: boolean;        // Whether creator can make more syllabinds
+  canEnroll: boolean;            // Whether learner can enroll (Pro only)
+  isPro: boolean;
+}
+```
+
+**Webhook Events Handled:**
+- `checkout.session.completed` → Upgrade user to Pro, create subscription record
+- `customer.subscription.updated` → Sync subscription status
+- `customer.subscription.deleted` → Downgrade user to free
+- `invoice.payment_succeeded` → Confirm Pro status
+- `invoice.payment_failed` → Log only (Stripe retries automatically)
+
 ---
 
 ## Key Features
@@ -827,10 +881,25 @@ Located in `/server/auth/index.ts`, this middleware:
 1. **Authentication** - `isAuthenticated` middleware (401 if not logged in)
 2. **Creator Check** - Verifies `req.user.isCreator === true` (403 if not creator)
 3. **Ownership Check** - Verifies user owns the resource (403 if not owner)
+4. **Admin Bypass** - Admins skip ownership and creator checks (see below)
+
+### Admin Access
+
+Admin status is controlled by the `ADMIN_USERNAMES` environment variable (comma-separated usernames). No database changes required.
+
+**Implementation:**
+- `server/auth/admin.ts` exports `isAdminUser(username)` — parses the env var on each call
+- `isAuthenticated` middleware and `authenticateWebSocket` inject `isAdmin: boolean` into the user object
+- Email auth endpoints (`/api/auth/register`, `/api/auth/login`, `/api/auth/me`) include `isAdmin` in responses
+- All ownership checks in `server/routes.ts` add `&& !isAdmin` to allow admin bypass
+- All creator-required checks allow admin access (`!user.isCreator && !user.isAdmin`)
+- `GET /api/creator/syllabinds?all=true` returns all syllabinds site-wide (admin only)
+- Frontend `CreatorDashboard` shows "My Syllabinds / All Syllabinds" toggle for admin users
+- `User` type in `client/src/lib/types.ts` includes optional `isAdmin` field
 
 ### Protected Routes
 
-All routes except public catalog/syllabind viewing require authentication. Creator-only routes additionally check `isCreator` flag. Resource modification routes verify ownership (username matching).
+All routes except public catalog/syllabind viewing require authentication. Creator-only routes additionally check `isCreator` flag. Resource modification routes verify ownership (username matching). Admin users bypass both creator and ownership checks.
 
 ### Auth Routes
 
@@ -855,6 +924,7 @@ The codebase is organized into three main directories: `client` (React frontend)
 │   ├── components/
 │   │   ├── Layout.tsx        - Main header
 │   │   ├── SyllabindCard.tsx  - Syllabind preview
+│   │   ├── UpgradePrompt.tsx - Pro subscription upgrade dialog
 │   │   ├── AvatarUpload.tsx  - Image uploader
 │   │   └── ui/               - 50+ UI primitives (~5,950 lines)
 │   ├── hooks/                - Custom React hooks
@@ -862,6 +932,7 @@ The codebase is organized into three main directories: `client` (React frontend)
 │       ├── store.tsx         - Context API state
 │       ├── types.ts          - TypeScript interfaces
 │       ├── queryClient.ts    - React Query config
+│       ├── stripe.ts         - Stripe checkout/portal helpers
 │       └── utils.ts          - Utility functions
 │
 ├── server/
@@ -869,6 +940,17 @@ The codebase is organized into three main directories: `client` (React frontend)
 │   ├── routes.ts             - API endpoints
 │   ├── db.ts                 - Drizzle connection
 │   ├── storage.ts            - Database operations
+│   ├── auth/
+│   │   ├── index.ts          - Session setup, isAuthenticated middleware
+│   │   ├── admin.ts          - Admin check via ADMIN_USERNAMES env var
+│   │   ├── emailAuth.ts      - Email/password auth routes
+│   │   ├── googleAuth.ts     - Google OAuth routes
+│   │   └── appleAuth.ts      - Apple OAuth routes
+│   ├── lib/
+│   │   └── stripe.ts         - Stripe client singleton
+│   ├── routes/
+│   │   ├── stripe.ts         - Subscription & checkout routes
+│   │   └── webhook.ts        - Stripe webhook handler
 │   └── replit_integrations/  - Replit Auth setup
 │
 ├── shared/
@@ -1956,3 +2038,48 @@ Also added a "Go to Week N" mobile button for past accessible but incomplete wee
 **Files Modified:**
 - `server/storage.ts` — Added `saveWeeksAndSteps` to IStorage interface and DatabaseStorage implementation
 - `server/routes.ts` — Updated POST and PUT syllabind routes to persist weeks/steps
+
+### Stripe Pro Subscription System (2026-02-19)
+
+**Feature:** Added a $9.99/mo "Syllabind Pro" subscription using Stripe Checkout (redirect flow). Two gating rules:
+- **Creators:** Free tier limited to 2 syllabinds; Pro unlocks unlimited creation
+- **Learners:** All enrollments require a Pro subscription
+
+**Backend:**
+- Added `stripeCustomerId` and `subscriptionStatus` columns to `users` table
+- Added `subscriptions` table for audit trail (mirrors Stripe subscription lifecycle)
+- Stripe client helper with lazy-init singleton (`server/lib/stripe.ts`)
+- 5 new storage methods: `getUserByStripeCustomerId`, `getSubscriptionByStripeId`, `upsertSubscription`, `updateSubscriptionByStripeId`, `countSyllabindsByCreator`
+- Payment routes (`server/routes/stripe.ts`): subscription status, limits, checkout session, portal session
+- Webhook handler (`server/routes/webhook.ts`): handles 5 Stripe event types with signature verification
+- Gating in `POST /api/syllabinds` (creator limit) and `POST /api/enrollments` (Pro required)
+
+**Frontend:**
+- `UpgradePrompt` dialog component with two variants (`creator-limit`, `enrollment-gate`)
+- `returnTo` parameter support — users return to where they were after payment
+- Subscription status in store with `isPro`, `subscriptionLimits`, `refreshSubscriptionLimits()`
+- Profile page subscription card with "Manage Billing" (Pro) or upgrade CTA (free)
+- CreatorDashboard gating at syllabind creation limit
+- SyllabindOverview enrollment gating with upgrade prompt
+
+**Files Created:**
+- `server/lib/stripe.ts` — Stripe client singleton
+- `server/routes/stripe.ts` — Payment API routes
+- `server/routes/webhook.ts` — Stripe webhook handler
+- `client/src/lib/stripe.ts` — Client-side Stripe utilities
+- `client/src/components/UpgradePrompt.tsx` — Upgrade prompt dialog
+- `server/__tests__/stripe-routes.test.ts` — 12 tests for payment routes
+- `server/__tests__/webhook.test.ts` — 11 tests for webhook handling
+
+**Files Modified:**
+- `shared/schema.ts` — Added subscription fields and subscriptions table
+- `server/storage.ts` — Added 5 new storage methods
+- `server/routes.ts` — Wired payment routes, added gating logic
+- `client/src/lib/types.ts` — Added subscription types
+- `client/src/lib/store.tsx` — Added subscription state management
+- `client/src/pages/CreatorDashboard.tsx` — Creation limit gating
+- `client/src/pages/SyllabindOverview.tsx` — Enrollment gating
+- `client/src/pages/Profile.tsx` — Subscription management card
+- `jest.setup.js` — Added Stripe and subscription mocks
+- `server/__tests__/setup/mocks.ts` — Added Pro user mocks
+- `server/__tests__/routes-integration.test.ts` — Updated enrollment tests for Pro gating

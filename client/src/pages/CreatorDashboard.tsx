@@ -1,7 +1,7 @@
 import { useStore } from '@/lib/store';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit2, Eye, BarChart2, Trash2, BookOpen } from 'lucide-react';
+import { Plus, Edit2, Eye, BarChart2, Trash2, BookOpen, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -16,19 +16,50 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { pluralize } from '@/lib/utils';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { AnimatedPage, AnimatedCard } from '@/components/ui/animated-container';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
+import type { Syllabus } from '@/lib/types';
 
 export default function CreatorDashboard() {
-  const { syllabinds, user, getLearnersForSyllabus, batchDeleteSyllabinds } = useStore();
+  const { syllabinds, user, getLearnersForSyllabus, batchDeleteSyllabinds, subscriptionLimits } = useStore();
   const [learnerCounts, setLearnerCounts] = useState<Record<number, { total: number, active: number }>>({});
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+
+  // Admin: toggle between own syllabinds and all syllabinds
+  const isAdmin = user?.isAdmin === true;
+  const [showAll, setShowAll] = useState(false);
+  const [allSyllabinds, setAllSyllabinds] = useState<Syllabus[]>([]);
 
   // Filter syllabinds by current user's username
   const mySyllabinds = syllabinds.filter(s => s.creatorId === user?.username);
+
+  // The displayed list depends on admin toggle
+  const otherSyllabinds = allSyllabinds.filter(s => s.creatorId !== user?.username);
+  const displayedSyllabinds = (isAdmin && showAll) ? otherSyllabinds : mySyllabinds;
+
+  // Fetch all syllabinds when admin toggles "All Syllabinds"
+  const fetchAllSyllabinds = useCallback(async () => {
+    try {
+      const res = await fetch('/api/creator/syllabinds?all=true', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setAllSyllabinds(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch all syllabinds:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAdmin && showAll) {
+      fetchAllSyllabinds();
+    }
+  }, [isAdmin, showAll, fetchAllSyllabinds]);
 
   // Fetch learner counts for each syllabus
   useEffect(() => {
@@ -55,7 +86,7 @@ export default function CreatorDashboard() {
   // Reset selection when syllabinds change
   useEffect(() => {
     setSelectedIds([]);
-  }, [mySyllabinds.length]);
+  }, [displayedSyllabinds.length, showAll]);
 
   const handleToggleSelect = (id: number) => {
     setSelectedIds(prev =>
@@ -64,10 +95,10 @@ export default function CreatorDashboard() {
   };
 
   const handleSelectAll = () => {
-    if (selectedIds.length === mySyllabinds.length) {
+    if (selectedIds.length === displayedSyllabinds.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(mySyllabinds.map(s => s.id));
+      setSelectedIds(displayedSyllabinds.map(s => s.id));
     }
   };
 
@@ -77,13 +108,17 @@ export default function CreatorDashboard() {
       await batchDeleteSyllabinds(selectedIds);
       setSelectedIds([]);
       setShowDeleteDialog(false);
+      // Refresh all syllabinds list if admin is viewing all
+      if (isAdmin && showAll) {
+        fetchAllSyllabinds();
+      }
     } catch (err) {
       console.error('Failed to delete syllabinds:', err);
       alert('Failed to delete syllabinds. Please try again.');
     } finally {
       setIsDeleting(false);
     }
-  }; 
+  };
 
   return (
     <AnimatedPage className="space-y-4 sm:space-y-8 max-w-5xl mx-auto px-1 sm:px-0">
@@ -98,27 +133,55 @@ export default function CreatorDashboard() {
               Edit Profile
             </Button>
           </Link>
-          <Link href="/creator/syllabind/new">
-            <Button size="sm">
+          {subscriptionLimits?.canCreateMore !== false ? (
+            <Link href="/creator/syllabind/new">
+              <Button size="sm">
+                <Plus className="mr-2 h-4 w-4" />Create New
+              </Button>
+            </Link>
+          ) : (
+            <Button size="sm" onClick={() => setShowUpgradePrompt(true)}>
               <Plus className="mr-2 h-4 w-4" />Create New
             </Button>
-          </Link>
+          )}
         </div>
       </div>
 
+      {/* Admin toggle bar */}
+      {isAdmin && (
+        <div className="admin-toggle flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+          <Shield className="h-4 w-4 text-amber-600" />
+          <span className="text-sm font-medium text-amber-800">Admin View</span>
+          <div className="flex items-center gap-1 ml-auto bg-amber-100 rounded-md p-0.5">
+            <button
+              onClick={() => setShowAll(false)}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${!showAll ? 'bg-white text-amber-900 shadow-sm' : 'text-amber-700 hover:text-amber-900'}`}
+            >
+              My Syllabinds
+            </button>
+            <button
+              onClick={() => setShowAll(true)}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${showAll ? 'bg-white text-amber-900 shadow-sm' : 'text-amber-700 hover:text-amber-900'}`}
+            >
+              Others
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Selection toolbar */}
-      {mySyllabinds.length > 0 && (
+      {displayedSyllabinds.length > 0 && (
         <div className="selection-toolbar flex flex-wrap items-center justify-between gap-2 px-6">
           <div className="flex items-center gap-2 sm:gap-3">
             <Checkbox
               id="select-all"
-              checked={selectedIds.length === mySyllabinds.length && mySyllabinds.length > 0}
+              checked={selectedIds.length === displayedSyllabinds.length && displayedSyllabinds.length > 0}
               onCheckedChange={handleSelectAll}
             />
             <label htmlFor="select-all" className="text-xs sm:text-sm text-muted-foreground cursor-pointer">
               {selectedIds.length === 0
                 ? 'Select all'
-                : selectedIds.length === mySyllabinds.length
+                : selectedIds.length === displayedSyllabinds.length
                   ? 'Deselect all'
                   : `${selectedIds.length} selected`}
             </label>
@@ -138,7 +201,7 @@ export default function CreatorDashboard() {
       )}
 
       {/* Empty state */}
-      {mySyllabinds.length === 0 ? (
+      {displayedSyllabinds.length === 0 ? (
         <AnimatedCard delay={0.1}>
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-4">
@@ -146,21 +209,29 @@ export default function CreatorDashboard() {
                 <BookOpen className="h-8 w-8 text-primary" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-xl font-display">No syllabinds yet</h3>
-                <p className="text-muted-foreground max-w-md mx-auto">Create your first Syllabind to start sharing knowledge with learners. Use AI assistance to build a structured multi-week learning experience.</p>
+                <h3 className="text-xl font-display">{showAll ? 'No syllabinds by other creators' : 'No syllabinds yet'}</h3>
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  {showAll
+                    ? 'There are no syllabinds created by other users yet.'
+                    : 'Create your first Syllabind to start sharing knowledge with learners. Use AI assistance to build a structured multi-week learning experience.'}
+                </p>
               </div>
-              <Link href="/creator/syllabind/new">
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Your First Syllabind
-                </Button>
-              </Link>
+              {!showAll && (
+                <Link href="/creator/syllabind/new">
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Your First Syllabind
+                  </Button>
+                </Link>
+              )}
             </CardContent>
           </Card>
         </AnimatedCard>
       ) : (
         <div className="grid gap-4">
-          {mySyllabinds.map((syllabus, index) => (
+          {displayedSyllabinds.map((syllabus, index) => {
+          const isOtherCreator = showAll && syllabus.creatorId !== user?.username;
+          return (
           <AnimatedCard key={syllabus.id} delay={0.05 * index}>
             <Card className={`hover:shadow-md transition-shadow ${selectedIds.includes(syllabus.id) ? 'ring-2 ring-primary' : ''}`}>
               <CardContent className="p-3 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
@@ -171,9 +242,16 @@ export default function CreatorDashboard() {
                     className="mt-1 shrink-0"
                   />
                   <div className="space-y-1 min-w-0">
-                    <Badge variant="secondary" className="capitalize shrink-0 mb-1">
-                      {syllabus.status}
-                    </Badge>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="secondary" className="capitalize shrink-0">
+                        {syllabus.status}
+                      </Badge>
+                      {isOtherCreator && (
+                        <Badge variant="outline" className="text-xs text-amber-700 border-amber-300">
+                          by {syllabus.creator?.name || syllabus.creatorId}
+                        </Badge>
+                      )}
+                    </div>
                     <h3 className="font-medium text-sm sm:text-lg leading-tight">{syllabus.title}</h3>
                     <div className="text-xs sm:text-sm text-muted-foreground">
                       {pluralize(syllabus.durationWeeks, 'week')} • {syllabus.audienceLevel}
@@ -213,7 +291,8 @@ export default function CreatorDashboard() {
               </CardContent>
             </Card>
           </AnimatedCard>
-        ))}
+          );
+        })}
         </div>
       )}
 
@@ -238,6 +317,13 @@ export default function CreatorDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <UpgradePrompt
+        open={showUpgradePrompt}
+        onOpenChange={setShowUpgradePrompt}
+        variant="creator-limit"
+        returnTo="/creator"
+      />
     </AnimatedPage>
   );
 }

@@ -3,6 +3,7 @@ import { Express } from "express";
 import { db } from "../db";
 import { users, type InsertUser } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { isAdminUser } from "./admin";
 
 const SALT_ROUNDS = 10;
 
@@ -51,7 +52,7 @@ export function registerEmailAuthRoutes(app: Express): void {
 
       // Return user without password
       const { password: _, ...userWithoutPassword } = newUser;
-      res.json(userWithoutPassword);
+      res.json({ ...userWithoutPassword, isAdmin: isAdminUser(newUser.username) });
     } catch (error) {
       console.error("Registration error:", error);
       res.status(500).json({ message: "Registration failed" });
@@ -84,7 +85,7 @@ export function registerEmailAuthRoutes(app: Express): void {
 
       // Return user without password
       const { password: _, ...userWithoutPassword } = user;
-      res.json(userWithoutPassword);
+      res.json({ ...userWithoutPassword, isAdmin: isAdminUser(user.username) });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });
@@ -107,7 +108,7 @@ export function registerEmailAuthRoutes(app: Express): void {
 
       // Return user without password
       const { password: _, ...userWithoutPassword } = user;
-      res.json(userWithoutPassword);
+      res.json({ ...userWithoutPassword, isAdmin: isAdminUser(user.username) });
     } catch (error) {
       console.error("Get user error:", error);
       res.status(500).json({ message: "Failed to get user" });
