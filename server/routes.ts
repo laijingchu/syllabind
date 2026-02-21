@@ -162,8 +162,13 @@ export async function registerRoutes(
 
   // Get a site setting (public)
   app.get("/api/site-settings/:key", async (req, res) => {
-    const value = await storage.getSiteSetting(req.params.key);
-    res.json({ value });
+    try {
+      const value = await storage.getSiteSetting(req.params.key);
+      res.json({ value });
+    } catch (err) {
+      console.error("Failed to fetch site setting:", req.params.key, err);
+      res.json({ value: null });
+    }
   });
 
   // Update a site setting (admin only)
