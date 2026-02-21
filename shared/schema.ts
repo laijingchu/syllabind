@@ -42,6 +42,7 @@ export const users = pgTable("users", {
   website: text("website"),
   twitter: text("twitter"),
   threads: text("threads"),
+  schedulingUrl: text("scheduling_url"),
   shareProfile: boolean("share_profile").default(true),
   authProvider: text("auth_provider").default('email'),
   stripeCustomerId: text("stripe_customer_id").unique(),
@@ -205,6 +206,14 @@ export const chatMessages = pgTable("chat_messages", {
   index("chat_messages_syllabus_id_idx").on(table.syllabusId),
 ]);
 
+// Site-wide settings (admin-configurable key-value pairs)
+export const siteSettings = pgTable("site_settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: text("value"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertSyllabusSchema = createInsertSchema(syllabinds).omit({
   id: true,
@@ -232,6 +241,7 @@ export const insertCohortMemberSchema = createInsertSchema(cohortMembers).omit({
 });
 export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true });
+export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({ id: true, updatedAt: true });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -255,3 +265,17 @@ export type Subscription = typeof subscriptions.$inferSelect;
 export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type SiteSetting = typeof siteSettings.$inferSelect;
+export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
+
+// Password validation
+export const passwordSchema = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[a-zA-Z]/, "Password must contain at least one letter")
+  .regex(/[0-9]/, "Password must contain at least one number");
+
+export const PASSWORD_REQUIREMENTS = [
+  { label: "At least 8 characters", test: (pw: string) => pw.length >= 8 },
+  { label: "At least one letter", test: (pw: string) => /[a-zA-Z]/.test(pw) },
+  { label: "At least one number", test: (pw: string) => /[0-9]/.test(pw) },
+];

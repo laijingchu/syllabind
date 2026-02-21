@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { BookOpen, Mail, Loader2 } from 'lucide-react';
+import { BookOpen, Mail, Loader2, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
+import { PASSWORD_REQUIREMENTS } from '@shared/schema';
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -68,8 +69,13 @@ export default function Login() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    const failedReq = PASSWORD_REQUIREMENTS.find(r => !r.test(signupPass));
+    if (failedReq) {
+      toast({ title: 'Weak password', description: failedReq.label, variant: 'destructive' });
+      return;
+    }
     setIsLoading(true);
-    
+
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -243,14 +249,27 @@ export default function Login() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
-                    <Input 
-                      id="signup-password" 
-                      type="password" 
-                      value={signupPass} 
-                      onChange={e => setSignupPass(e.target.value)} 
-                      required 
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      value={signupPass}
+                      onChange={e => setSignupPass(e.target.value)}
+                      required
                       data-testid="input-signup-password"
                     />
+                    {signupPass.length > 0 && (
+                      <ul className="password-requirements space-y-1 text-xs mt-2">
+                        {PASSWORD_REQUIREMENTS.map((req) => {
+                          const met = req.test(signupPass);
+                          return (
+                            <li key={req.label} className={`flex items-center gap-1.5 ${met ? 'text-green-600' : 'text-muted-foreground'}`}>
+                              {met ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                              {req.label}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4">
