@@ -27,10 +27,10 @@ export default function Marketing() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-24 pb-20 pt-8">
-      {/* Beta Banner */}
+      {/* Alpha Banner */}
       <div className="bg-primary/0 border border-primary/20 text-primary p-3 rounded-full text-center text-sm font-medium animate-in fade-in slide-in-from-top-4 mt-[0px] mb-[0px]">
-        <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mr-2">Beta</span>
-        Syllabind is currently in private beta. Learners can sign up now, but curation access is by application only.
+        <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mr-2">Alpha</span>
+        Syllabind is currently in private alpha. Learners can sign up now, but curation access is by application only.
       </div>
       {/* A. Hero */}
       <section className="text-center space-y-8 py-12 md:py-20 animate-in fade-in slide-in-from-bottom-4 duration-700">

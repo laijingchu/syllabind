@@ -102,7 +102,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <BookOpen className="h-6 w-6 text-primary hidden md:block" />
                 <span className="flex items-center gap-2">
                   <span>Syllabind</span>
-                  <span className="text-[10px] font-text font-bold text-primary bg-primary/5 border border-primary/20 px-1.5 py-0.5 rounded-md align-middle">BETA</span>
+                  <span className="text-[10px] font-text font-bold text-primary bg-primary/5 border border-primary/20 px-1.5 py-0.5 rounded-md align-middle">ALPHA</span>
                 </span>
               </span>
             </Link>
@@ -153,7 +153,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <Link href="/profile">
                     <DropdownMenuItem className="cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
-                      <span>Edit Profile</span>
+                      <span>Edit Profile & Settings</span>
                     </DropdownMenuItem>
                   </Link>
                   <DropdownMenuSeparator />

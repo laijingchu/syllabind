@@ -22,7 +22,6 @@ import CreatorProfile from "@/pages/CreatorProfile";
 import Marketing from "@/pages/Marketing";
 import Login from "@/pages/Login";
 import Profile from "@/pages/Profile";
-import AdminSettings from "@/pages/AdminSettings";
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
   const { user, isLoading } = useAuth();
@@ -72,8 +71,6 @@ function Router() {
         <Route path="/creator/syllabind/:id/learners" component={() => <ProtectedRoute component={SyllabindLearners} />} />
         <Route path="/creator/syllabind/:id/analytics" component={() => <ProtectedRoute component={SyllabindAnalytics} />} />
         <Route path="/creator/profile" component={() => <ProtectedRoute component={CreatorProfile} />} />
-
-        <Route path="/admin" component={() => <ProtectedRoute component={AdminSettings} />} />
 
         <Route component={NotFound} />
       </Switch>

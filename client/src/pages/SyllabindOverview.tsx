@@ -342,11 +342,23 @@ export default function SyllabindOverview() {
              />
           </div>
 
-          <div className="share-button-section">
+          <div className="share-button-section flex flex-wrap gap-3">
             <Button variant="outline" onClick={() => setShowShareDialog(true)}>
               <Share2 className="h-4 w-4 mr-2" />
               Share with a Friend
             </Button>
+            {slackUrl && (
+              <Button variant="outline" onClick={handleJoinSlack} className="gap-2">
+                <Hash className="h-4 w-4" />
+                Join Slack Community
+                {(!currentUser || !isPro) && (
+                  <span className="flex items-center gap-0.5 text-muted-foreground">
+                    <Crown className="h-3 w-3" />
+                    <Lock className="h-3 w-3" />
+                  </span>
+                )}
+              </Button>
+            )}
           </div>
 
           {/* Creator Section */}
@@ -405,32 +417,18 @@ export default function SyllabindOverview() {
                 )}
 
                 {/* Pro CTAs */}
-                {(creator.schedulingUrl || slackUrl) && (
+                {creator.schedulingUrl && (
                   <div className="flex flex-wrap gap-3 pt-2">
-                    {creator.schedulingUrl && (
-                      <Button variant="outline" size="sm" onClick={handleBookCall} className="gap-2">
-                        <CalendarDays className="h-4 w-4" />
-                        Book a Call
-                        {(!currentUser || !isPro) && (
-                          <span className="flex items-center gap-0.5 text-muted-foreground">
-                            <Crown className="h-3 w-3" />
-                            <Lock className="h-3 w-3" />
-                          </span>
-                        )}
-                      </Button>
-                    )}
-                    {slackUrl && (
-                      <Button variant="outline" size="sm" onClick={handleJoinSlack} className="gap-2">
-                        <Hash className="h-4 w-4" />
-                        Join Slack Community
-                        {(!currentUser || !isPro) && (
-                          <span className="flex items-center gap-0.5 text-muted-foreground">
-                            <Crown className="h-3 w-3" />
-                            <Lock className="h-3 w-3" />
-                          </span>
-                        )}
-                      </Button>
-                    )}
+                    <Button variant="outline" size="sm" onClick={handleBookCall} className="gap-2">
+                      <CalendarDays className="h-4 w-4" />
+                      Book a Call
+                      {(!currentUser || !isPro) && (
+                        <span className="flex items-center gap-0.5 text-muted-foreground">
+                          <Crown className="h-3 w-3" />
+                          <Lock className="h-3 w-3" />
+                        </span>
+                      )}
+                    </Button>
                   </div>
                 )}
               </div>
@@ -643,7 +641,14 @@ export default function SyllabindOverview() {
                </div>
 
                <p className="text-sm text-muted-foreground">
-                 Connect with others learning {syllabus.title}.
+                 Connect with others learning {syllabus.title}.{slackUrl && (
+                   <>
+                     {' '}
+                     <button onClick={handleJoinSlack} className="inline-flex items-center gap-1 text-primary hover:underline font-medium">
+                       Join Slack{(!currentUser || !isPro) && <Lock className="h-3 w-3" />}.
+                     </button>
+                   </>
+                 )}
                </p>
             </div>
           )}
