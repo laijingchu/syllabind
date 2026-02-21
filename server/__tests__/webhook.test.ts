@@ -34,10 +34,11 @@ describe('Webhook Routes', () => {
       data: {
         object: {
           id: 'cs_test_session123',
-          mode: 'subscription',
+          mode: 'payment',
           payment_status: 'paid',
+          customer: 'cus_test_checkout456',
           metadata: { userId: 'test-user-id-123' },
-          subscription: 'sub_test123',
+          payment_intent: 'pi_test123',
         },
       },
     },
@@ -148,7 +149,7 @@ describe('Webhook Routes', () => {
         .set('content-type', 'application/json')
         .expect(200);
 
-      expect(mockStorage.updateUser).toHaveBeenCalledWith('test-user-id-123', { subscriptionStatus: 'pro' });
+      expect(mockStorage.updateUser).toHaveBeenCalledWith('test-user-id-123', { subscriptionStatus: 'pro', stripeCustomerId: 'cus_test_checkout456' });
       expect(mockStorage.upsertSubscription).toHaveBeenCalled();
       expect(res.body).toEqual({ received: true });
     });

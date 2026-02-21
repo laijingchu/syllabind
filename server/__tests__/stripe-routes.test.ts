@@ -63,7 +63,7 @@ describe('Stripe Routes', () => {
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
         line_items: [{ price: sessionPriceId, quantity: 1 }],
-        mode: 'subscription',
+        mode: 'payment',
         success_url: 'http://localhost:5000/profile?subscription=success',
         cancel_url: 'http://localhost:5000/profile?subscription=canceled',
         metadata: { userId: user.id },
@@ -80,12 +80,23 @@ describe('Stripe Routes', () => {
 
       const userId = (req.user as any).id;
       const user = await mockStorage.getUser(userId);
-      if (!user || !user.stripeCustomerId) {
-        return res.status(404).json({ error: 'Customer not found or no Stripe customer ID' });
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Create Stripe customer if one doesn't exist (e.g., admin-promoted users)
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email || undefined,
+          metadata: { userId: user.id },
+        });
+        customerId = customer.id;
+        await mockStorage.updateUser(userId, { stripeCustomerId: customerId });
       }
 
       const portalSession = await stripe.billingPortal.sessions.create({
-        customer: user.stripeCustomerId,
+        customer: customerId,
         return_url: 'http://localhost:5000/profile',
       });
       res.json({ url: portalSession.url });
@@ -221,14 +232,30 @@ describe('Stripe Routes', () => {
       expect(res.body.url).toContain('billing.stripe.com');
     });
 
-    it('should return 404 if user has no stripe customer', async () => {
-      mockStorage.getUser.mockResolvedValue({ ...mockUser, stripeCustomerId: null });
+    it('should create stripe customer and portal session if no stripe customer exists', async () => {
+      mockStorage.getUser.mockResolvedValue({ ...mockProUser, stripeCustomerId: null });
+      mockStorage.updateUser.mockResolvedValue({ ...mockProUser, stripeCustomerId: 'cus_test123' });
+
+      const res = await request(proApp)
+        .post('/api/create-portal-session')
+        .send({})
+        .expect(200);
+
+      expect(res.body.url).toContain('billing.stripe.com');
+      expect(mockStorage.updateUser).toHaveBeenCalledWith(
+        mockProUser.id,
+        { stripeCustomerId: 'cus_test123' }
+      );
+    });
+
+    it('should return 404 if user not found', async () => {
+      mockStorage.getUser.mockResolvedValue(null);
 
       const res = await request(freeApp)
         .post('/api/create-portal-session')
         .send({})
         .expect(404);
-      expect(res.body.error).toBe('Customer not found or no Stripe customer ID');
+      expect(res.body.error).toBe('User not found');
     });
   });
 });

@@ -11,26 +11,34 @@ async function fulfillCheckoutSession(session: Stripe.Checkout.Session, stripe: 
   }
 
   try {
-    if (session.mode === 'subscription' && session.subscription) {
-      // Update user subscription status
-      await storage.updateUser(userId, { subscriptionStatus: 'pro' });
+    // One-time payment: upgrade user to Pro on successful payment
+    if (session.payment_status === 'paid') {
+      // Store Stripe customer ID if present (ensures portal access works)
+      const stripeCustomerId = typeof session.customer === 'string'
+        ? session.customer
+        : session.customer?.id;
+      const updates: Record<string, any> = { subscriptionStatus: 'pro' };
+      if (stripeCustomerId) {
+        updates.stripeCustomerId = stripeCustomerId;
+      }
+      await storage.updateUser(userId, updates);
 
-      // Upsert subscription record for audit trail
-      const subId = typeof session.subscription === 'string'
-        ? session.subscription
-        : session.subscription.id;
+      // Store payment record for audit trail
+      const paymentIntent = typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : session.payment_intent?.id;
 
-      const sub = await stripe.subscriptions.retrieve(subId);
-      const firstItem = sub.items.data[0];
-      await storage.upsertSubscription({
-        userId,
-        stripeSubscriptionId: subId,
-        stripePriceId: firstItem?.price?.id || null,
-        status: sub.status,
-        currentPeriodStart: firstItem ? new Date(firstItem.current_period_start * 1000) : null,
-        currentPeriodEnd: firstItem ? new Date(firstItem.current_period_end * 1000) : null,
-        cancelAtPeriodEnd: sub.cancel_at_period_end,
-      });
+      if (paymentIntent) {
+        await storage.upsertSubscription({
+          userId,
+          stripeSubscriptionId: paymentIntent,
+          stripePriceId: null,
+          status: 'lifetime',
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: null,
+          cancelAtPeriodEnd: false,
+        });
+      }
     }
   } catch (error) {
     console.error('[Webhook] Error fulfilling checkout session:', error);

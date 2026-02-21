@@ -73,14 +73,11 @@ export async function registerStripeRoutes(app: Express) {
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
         line_items: [{ price: sessionPriceId, quantity: 1 }],
-        mode: 'subscription',
+        mode: 'payment',
         success_url: `${origin}${successPath}`,
         cancel_url: `${origin}${cancelPath}`,
         metadata: { userId: user.id },
         allow_promotion_codes: true,
-        subscription_data: {
-          metadata: { userId: user.id },
-        },
       });
 
       res.json({ sessionId: session.id, url: session.url });
@@ -104,13 +101,24 @@ export async function registerStripeRoutes(app: Express) {
 
       const userId = (req.user as any).id;
       const user = await storage.getUser(userId);
-      if (!user || !user.stripeCustomerId) {
-        return res.status(404).json({ error: 'Customer not found or no Stripe customer ID' });
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Create Stripe customer if one doesn't exist (e.g., admin-promoted users)
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email || undefined,
+          metadata: { userId: user.id },
+        });
+        customerId = customer.id;
+        await storage.updateUser(userId, { stripeCustomerId: customerId });
       }
 
       const port = process.env.PORT || '5000';
       const portalSession = await stripe.billingPortal.sessions.create({
-        customer: user.stripeCustomerId,
+        customer: customerId,
         return_url: `${process.env.FRONTEND_URL || `http://localhost:${port}`}/profile`,
       });
 
