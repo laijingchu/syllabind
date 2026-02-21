@@ -97,7 +97,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             )}
 
             {/* Logo - always visible */}
-            <Link href={isAuthenticated ? "/" : "/welcome"}>
+            <Link href="/welcome">
               <span className="font-display text-2xl font-medium tracking-tight hover:opacity-80 transition-opacity flex items-center gap-2 md:gap-6 cursor-pointer">
                 <BookOpen className="h-6 w-6 text-primary hidden md:block" />
                 <span className="flex items-center gap-2">
