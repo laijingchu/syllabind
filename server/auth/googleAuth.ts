@@ -24,7 +24,7 @@ export function registerGoogleAuthRoutes(app: Express): void {
 
     const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
     const scope = encodeURIComponent("openid email profile");
-    
+
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
       `client_id=${GOOGLE_CLIENT_ID}` +
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
@@ -33,8 +33,15 @@ export function registerGoogleAuthRoutes(app: Express): void {
       `&access_type=offline` +
       `&prompt=consent` +
       `&state=${state}`;
-    
-    res.redirect(authUrl);
+
+    // Save session before redirecting so oauthState is persisted before the callback
+    (req as any).session.save((err: Error | null) => {
+      if (err) {
+        console.error("Session save error before Google redirect:", err);
+        return res.redirect("/login?error=session_failed");
+      }
+      res.redirect(authUrl);
+    });
   });
 
   // Google OAuth callback with state verification
@@ -138,13 +145,19 @@ export function registerGoogleAuthRoutes(app: Express): void {
         }
       }
 
-      // Set session
-      (req as any).session.userId = user.id;
-
-      // Redirect to stored returnTo or default to /
+      // Set session and save before redirecting to avoid race condition
+      // where the browser follows the redirect before the session is persisted
       const returnTo = (req as any).session.oauthReturnTo || '/';
       delete (req as any).session.oauthReturnTo;
-      res.redirect(returnTo);
+      (req as any).session.userId = user.id;
+
+      (req as any).session.save((err: Error | null) => {
+        if (err) {
+          console.error("Session save error after Google auth:", err);
+          return res.redirect("/login?error=session_failed");
+        }
+        res.redirect(returnTo);
+      });
     } catch (error) {
       console.error("Google auth error:", error);
       res.redirect("/login?error=google_auth_failed");

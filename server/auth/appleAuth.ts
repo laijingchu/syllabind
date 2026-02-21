@@ -24,7 +24,7 @@ export function registerAppleAuthRoutes(app: Express): void {
 
     const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/apple/callback`;
     const scope = "name email";
-    
+
     // Request authorization code only - we'll exchange it server-side
     const authUrl = `https://appleid.apple.com/auth/authorize?` +
       `client_id=${APPLE_CLIENT_ID}` +
@@ -33,8 +33,15 @@ export function registerAppleAuthRoutes(app: Express): void {
       `&scope=${encodeURIComponent(scope)}` +
       `&response_mode=form_post` +
       `&state=${state}`;
-    
-    res.redirect(authUrl);
+
+    // Save session before redirecting so oauthState is persisted before the callback
+    (req as any).session.save((err: Error | null) => {
+      if (err) {
+        console.error("Session save error before Apple redirect:", err);
+        return res.redirect("/login?error=session_failed");
+      }
+      res.redirect(authUrl);
+    });
   });
 
   // Apple Sign In callback (POST because Apple uses form_post)
@@ -158,13 +165,19 @@ export function registerAppleAuthRoutes(app: Express): void {
         }
       }
 
-      // Set session
-      (req as any).session.userId = user.id;
-
-      // Redirect to stored returnTo or default to /
+      // Set session and save before redirecting to avoid race condition
+      // where the browser follows the redirect before the session is persisted
       const returnTo = (req as any).session.oauthReturnTo || '/';
       delete (req as any).session.oauthReturnTo;
-      res.redirect(returnTo);
+      (req as any).session.userId = user.id;
+
+      (req as any).session.save((err: Error | null) => {
+        if (err) {
+          console.error("Session save error after Apple auth:", err);
+          return res.redirect("/login?error=session_failed");
+        }
+        res.redirect(returnTo);
+      });
     } catch (error) {
       console.error("Apple auth error:", error);
       res.redirect("/login?error=apple_auth_failed");
