@@ -11,6 +11,27 @@ import { storage } from './storage';
 const app = express();
 const httpServer = createServer(app);
 
+const isProduction = process.env.NODE_ENV === "production";
+
+// HTTPS redirect — in production, redirect HTTP requests to HTTPS
+// Replit's reverse proxy sets X-Forwarded-Proto to indicate the original protocol
+if (isProduction) {
+  app.use((req, res, next) => {
+    if (req.headers["x-forwarded-proto"] !== "https") {
+      return res.redirect(301, `https://${req.hostname}${req.originalUrl}`);
+    }
+    next();
+  });
+}
+
+// HSTS — tell browsers to always use HTTPS (1 year, include subdomains)
+if (isProduction) {
+  app.use((_req, res, next) => {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    next();
+  });
+}
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;

@@ -926,6 +926,15 @@ Admin status is controlled by the `ADMIN_USERNAMES` environment variable (comma-
 - Frontend `CreatorDashboard` shows "My Syllabinds / All Syllabinds" toggle for admin users
 - `User` type in `client/src/lib/types.ts` includes optional `isAdmin` field
 
+### Security Middleware (Production Only)
+
+Located at the top of `server/index.ts`, two middlewares harden HTTPS in production:
+
+1. **HTTPS Redirect** — Checks `X-Forwarded-Proto` header (set by Replit's reverse proxy) and issues a 301 redirect from HTTP to HTTPS.
+2. **HSTS (Strict-Transport-Security)** — Sends `max-age=31536000; includeSubDomains` header, telling browsers to always use HTTPS for 1 year.
+
+Both are skipped in development (plain HTTP).
+
 ### Protected Routes
 
 All routes except public catalog/syllabind viewing require authentication. Creator-only routes additionally check `isCreator` flag. Resource modification routes verify ownership (username matching). Admin users bypass both creator and ownership checks.
