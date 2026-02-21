@@ -66,7 +66,8 @@ Syllabinds are the core learning content created by creators. The Syllabind stru
   createdAt: timestamp DEFAULT now(),
   updatedAt: timestamp DEFAULT now(), // Last modification timestamp
   studentActive: integer DEFAULT 0,   // Number of students currently enrolled (in-progress)
-  studentsCompleted: integer DEFAULT 0 // Number of students who completed the syllabind
+  studentsCompleted: integer DEFAULT 0, // Number of students who completed the syllabind
+  showSchedulingLink: boolean DEFAULT true // Per-syllabind toggle for "Book a Call" button visibility
 }
 ```
 

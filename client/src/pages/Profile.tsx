@@ -96,6 +96,17 @@ export default function Profile() {
     }
   }, []);
 
+  // Scroll to hash anchor (e.g. #scheduling) on mount
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash) {
+      const el = document.querySelector(hash);
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+      }
+    }
+  }, []);
+
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -309,7 +320,7 @@ export default function Profile() {
                 control={form.control}
                 name="schedulingUrl"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem id="scheduling">
                     <FormLabel>Scheduling Link</FormLabel>
                     <FormControl>
                       <Input placeholder="https://calendly.com/you" {...field} />

@@ -62,6 +62,7 @@ export const syllabinds = pgTable("syllabi", {
   updatedAt: timestamp("updated_at").defaultNow(),
   studentActive: integer("student_active").default(0),
   studentsCompleted: integer("students_completed").default(0),
+  showSchedulingLink: boolean("show_scheduling_link").default(true),
 }, (table) => [
   index("syllabi_creator_id_idx").on(table.creatorId),
   index("syllabi_status_idx").on(table.status),

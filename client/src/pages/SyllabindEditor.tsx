@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, AlertTriangle, Users, ExternalLink, Wand2, Loader2, X } from 'lucide-react';
+import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, AlertTriangle, Users, ExternalLink, Wand2, Loader2, X, Pencil } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -263,6 +264,7 @@ export default function SyllabindEditor() {
     durationWeeks: 4,
     status: 'draft',
     creatorId: user?.username || '',
+    showSchedulingLink: true,
     weeks: Array.from({ length: 4 }, (_, i) => ({
       id: generateTempId(),
       syllabusId: generateTempId(),
@@ -1545,6 +1547,30 @@ export default function SyllabindEditor() {
               </Card>
             )}
           </div>
+
+          {/* Scheduling link toggle — only shown when creator has a scheduling URL */}
+          {user?.schedulingUrl && (
+            <div className="scheduling-link-toggle flex items-center justify-between gap-3 pt-2">
+              <div className="flex items-center gap-3">
+                <Switch
+                  id="show-scheduling-link"
+                  checked={formData.showSchedulingLink ?? true}
+                  onCheckedChange={(checked) => setFormData({...formData, showSchedulingLink: checked as boolean})}
+                />
+                <label
+                  htmlFor="show-scheduling-link"
+                  className="text-sm font-medium leading-none cursor-pointer select-none"
+                >
+                  Show scheduling link
+                </label>
+              </div>
+              <Link href="/profile#scheduling">
+                <Button variant="ghost" size="icon" className="h-8 w-8" title="Edit scheduling URL in profile">
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -171,6 +171,7 @@ export async function registerRoutes(
     }
   });
 
+
   // Update a site setting (admin only)
   app.put("/api/admin/settings", isAuthenticated, async (req, res) => {
     const user = req.user as any;

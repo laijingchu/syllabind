@@ -5,9 +5,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ExternalLink, Lock, CheckCircle, ChevronRight, ChevronLeft, Check, Share2, Loader2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Lock, CheckCircle, ChevronRight, ChevronLeft, Check, Share2, Loader2, Hash, CalendarDays, Crown } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ShareDialog } from '@/components/ShareDialog';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { useState, useEffect } from 'react';
 import { cn, pluralize } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,7 +26,8 @@ export default function WeekView() {
     saveExercise,
     getSubmission,
     completedStepIds: storeCompletedStepIds,
-    user: currentUser
+    user: currentUser,
+    isPro
   } = useStore();
   const [location, setLocation] = useLocation();
 
@@ -38,6 +40,10 @@ export default function WeekView() {
   const [localEnrollmentId, setLocalEnrollmentId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [submittingStepId, setSubmittingStepId] = useState<number | null>(null);
+  const [slackUrl, setSlackUrl] = useState<string | null>(null);
+  const [creator, setCreator] = useState<any>(undefined);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [upgradeVariant, setUpgradeVariant] = useState<'enrollment-gate' | 'pro-feature'>('enrollment-gate');
 
   const syllabusId = params?.id ? parseInt(params.id) : undefined;
   const weekIndex = parseInt(params?.index || '1');
@@ -87,11 +93,23 @@ export default function WeekView() {
     }
   }, [localEnrollmentId]);
 
-  // Completion Check
+  // Fetch creator info for scheduling URL
   useEffect(() => {
-    // If all steps in this week are done, and this is the last week, we might want to prompt completion.
-    // Or just let them click "Finish".
-  }, [syllabus, weekIndex]);
+    if (syllabus?.creatorId) {
+      fetch(`/api/users/${syllabus.creatorId}`, { credentials: 'include' })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => setCreator(data))
+        .catch(() => {});
+    }
+  }, [syllabus?.creatorId]);
+
+  // Fetch Slack community URL
+  useEffect(() => {
+    fetch('/api/site-settings/slack_community_url')
+      .then(res => res.json())
+      .then(data => setSlackUrl(data.value || null))
+      .catch(() => {});
+  }, []);
 
   const week = syllabus?.weeks.find(w => w.index === weekIndex);
   const sortedWeeks = syllabus?.weeks ? [...syllabus.weeks].sort((a, b) => a.index - b.index) : [];
@@ -152,6 +170,36 @@ export default function WeekView() {
   }
 
   const progress = getWeekProgress(weekIndex);
+
+  const handleBookCall = () => {
+    if (!currentUser) {
+      setLocation(`/login?returnTo=${encodeURIComponent(`/syllabind/${syllabus.id}/week/${weekIndex}`)}`);
+      return;
+    }
+    if (!isPro) {
+      setUpgradeVariant('pro-feature');
+      setShowUpgradePrompt(true);
+      return;
+    }
+    if (creator?.schedulingUrl) {
+      window.open(creator.schedulingUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleJoinSlack = () => {
+    if (!currentUser) {
+      setLocation(`/login?returnTo=${encodeURIComponent(`/syllabind/${syllabus.id}/week/${weekIndex}`)}`);
+      return;
+    }
+    if (!isPro) {
+      setUpgradeVariant('pro-feature');
+      setShowUpgradePrompt(true);
+      return;
+    }
+    if (slackUrl) {
+      window.open(slackUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   const handleExerciseChange = (stepId: number, val: string) => {
     setExerciseText(prev => ({ ...prev, [stepId]: val }));
@@ -229,6 +277,34 @@ export default function WeekView() {
           </div>
         </div>
         <Progress value={progress} className="h-2" />
+        {(slackUrl || (creator?.schedulingUrl && syllabus?.showSchedulingLink !== false)) && (
+          <div className="flex flex-wrap gap-3 mt-4">
+            {slackUrl && (
+              <Button variant="outline" size="sm" onClick={handleJoinSlack} className="gap-2">
+                <Hash className="h-4 w-4" />
+                Join Slack
+                {(!currentUser || !isPro) && (
+                  <span className="flex items-center gap-0.5 text-muted-foreground">
+                    <Crown className="h-3 w-3" />
+                    <Lock className="h-3 w-3" />
+                  </span>
+                )}
+              </Button>
+            )}
+            {creator?.schedulingUrl && syllabus?.showSchedulingLink !== false && (
+              <Button variant="outline" size="sm" onClick={handleBookCall} className="gap-2">
+                <CalendarDays className="h-4 w-4" />
+                1:1 Office Hour
+                {(!currentUser || !isPro) && (
+                  <span className="flex items-center gap-0.5 text-muted-foreground">
+                    <Crown className="h-3 w-3" />
+                    <Lock className="h-3 w-3" />
+                  </span>
+                )}
+              </Button>
+            )}
+          </div>
+        )}
       </header>
 
       <div className="space-y-8">
@@ -445,6 +521,13 @@ export default function WeekView() {
         open={showShareDialog}
         onOpenChange={setShowShareDialog}
         title="Share this Week"
+      />
+
+      <UpgradePrompt
+        open={showUpgradePrompt}
+        onOpenChange={setShowUpgradePrompt}
+        variant={upgradeVariant}
+        returnTo={`/syllabind/${syllabus.id}/week/${weekIndex}`}
       />
     </div>
   );

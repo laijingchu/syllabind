@@ -355,6 +355,101 @@ describe('Syllabus Routes', () => {
     });
   });
 
+  describe('PUT /api/syllabinds/:id - showSchedulingLink', () => {
+    it('should update showSchedulingLink to false', async () => {
+      const existingSyllabus = {
+        id: 1,
+        title: 'Test Syllabus',
+        description: 'Description',
+        audienceLevel: 'Beginner',
+        durationWeeks: 4,
+        status: 'draft',
+        creatorId: 'testcreator',
+        showSchedulingLink: true,
+      };
+
+      const authenticatedApp = express();
+      authenticatedApp.use(express.json());
+      authenticatedApp.use((req, res, next) => {
+        req.user = mockCreator;
+        next();
+      });
+
+      authenticatedApp.put('/api/syllabinds/:id', async (req, res) => {
+        try {
+          if (!req.user) {
+            return res.status(401).json({ message: 'Unauthorized' });
+          }
+          const id = parseInt(req.params.id);
+          const syllabus = await mockStorage.getSyllabusById(id);
+          if (!syllabus) {
+            return res.status(404).json({ message: 'Syllabus not found' });
+          }
+          if (syllabus.creatorId !== req.user.username) {
+            return res.status(403).json({ message: 'Forbidden' });
+          }
+          await mockStorage.updateSyllabus(id, req.body);
+          res.json({ message: 'Syllabus updated' });
+        } catch (error) {
+          res.status(500).json({ message: 'Failed to update syllabus' });
+        }
+      });
+
+      mockStorage.getSyllabusById.mockResolvedValue(existingSyllabus);
+      mockStorage.updateSyllabus.mockResolvedValue(undefined);
+
+      const response = await request(authenticatedApp)
+        .put('/api/syllabinds/1')
+        .send({ showSchedulingLink: false })
+        .expect(200);
+
+      expect(mockStorage.updateSyllabus).toHaveBeenCalledWith(1, {
+        showSchedulingLink: false,
+      });
+      expect(response.body.message).toEqual('Syllabus updated');
+    });
+
+    it('should include showSchedulingLink default in created syllabus', async () => {
+      const newSyllabus = {
+        title: 'New Syllabus',
+        description: 'Description',
+        audienceLevel: 'Beginner',
+        durationWeeks: 4,
+        status: 'draft',
+        creatorId: 'testcreator',
+        showSchedulingLink: true,
+      };
+
+      const authenticatedApp = express();
+      authenticatedApp.use(express.json());
+      authenticatedApp.use((req, res, next) => {
+        req.user = mockCreator;
+        next();
+      });
+
+      authenticatedApp.post('/api/syllabinds', async (req, res) => {
+        try {
+          if (!req.user) {
+            return res.status(401).json({ message: 'Unauthorized' });
+          }
+          const syllabus = await mockStorage.createSyllabus(req.body);
+          res.status(201).json(syllabus);
+        } catch (error) {
+          res.status(500).json({ message: 'Failed to create syllabus' });
+        }
+      });
+
+      mockStorage.createSyllabus.mockResolvedValue({ id: 1, ...newSyllabus });
+
+      const response = await request(authenticatedApp)
+        .post('/api/syllabinds')
+        .send(newSyllabus)
+        .expect(201);
+
+      expect(response.body.showSchedulingLink).toBe(true);
+    });
+  });
+
   describe('GET /api/syllabinds/:id/learners', () => {
     it('should return learners for a syllabus', async () => {
       const mockLearners = [

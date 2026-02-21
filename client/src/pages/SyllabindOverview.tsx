@@ -417,11 +417,11 @@ export default function SyllabindOverview() {
                 )}
 
                 {/* Pro CTAs */}
-                {creator.schedulingUrl && (
+                {creator.schedulingUrl && syllabus?.showSchedulingLink !== false && (
                   <div className="flex flex-wrap gap-3 pt-2">
                     <Button variant="outline" size="sm" onClick={handleBookCall} className="gap-2">
                       <CalendarDays className="h-4 w-4" />
-                      Book a Call
+                      1:1 Office Hour
                       {(!currentUser || !isPro) && (
                         <span className="flex items-center gap-0.5 text-muted-foreground">
                           <Crown className="h-3 w-3" />
