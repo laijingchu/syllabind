@@ -1486,12 +1486,12 @@ export default function SyllabindEditor() {
             </div>
           </div>
           <div className="pt-4 space-y-3">
-            <div className="flex gap-2">
+            <div className="flex items-center justify-between gap-3">
               <Button
                 variant={isLoadingContent || hasSyllabindContent ? "secondary" : "default"}
                 onClick={handleAutogenerateClick}
                 disabled={isGenerating || !formData.title || !formData.description}
-                className="flex-1 gap-2"
+                className="gap-2"
               >
                 <Wand2 className="h-4 w-4" />
                 {isGenerating
@@ -1500,6 +1500,39 @@ export default function SyllabindEditor() {
                     ? 'Regenerate with AI'
                     : 'Autogenerate with AI'}
               </Button>
+              {/* Scheduling link toggle — only shown when creator has a scheduling URL */}
+              {user?.schedulingUrl && (
+                <div className="scheduling-link-toggle flex items-center gap-2">
+                  <Switch
+                    id="show-scheduling-link"
+                    checked={formData.showSchedulingLink ?? true}
+                    onCheckedChange={(checked) => {
+                      const val = checked as boolean;
+                      setFormData(prev => ({ ...prev, showSchedulingLink: val }));
+                      // Persist immediately (don't wait for debounce)
+                      if (formData.id > 0) {
+                        fetch(`/api/syllabinds/${formData.id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          credentials: 'include',
+                          body: JSON.stringify({ showSchedulingLink: val }),
+                        }).catch(() => {});
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor="show-scheduling-link"
+                    className="text-sm font-medium leading-none cursor-pointer select-none whitespace-nowrap"
+                  >
+                    Scheduling link
+                  </label>
+                  <Link href="/profile#scheduling">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit scheduling URL in profile">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
             {isGenerating && (
               <Card className="mt-4 border-primary/20 bg-primary/5">
@@ -1548,29 +1581,6 @@ export default function SyllabindEditor() {
             )}
           </div>
 
-          {/* Scheduling link toggle — only shown when creator has a scheduling URL */}
-          {user?.schedulingUrl && (
-            <div className="scheduling-link-toggle flex items-center justify-between gap-3 pt-2">
-              <div className="flex items-center gap-3">
-                <Switch
-                  id="show-scheduling-link"
-                  checked={formData.showSchedulingLink ?? true}
-                  onCheckedChange={(checked) => setFormData({...formData, showSchedulingLink: checked as boolean})}
-                />
-                <label
-                  htmlFor="show-scheduling-link"
-                  className="text-sm font-medium leading-none cursor-pointer select-none"
-                >
-                  Show scheduling link
-                </label>
-              </div>
-              <Link href="/profile#scheduling">
-                <Button variant="ghost" size="icon" className="h-8 w-8" title="Edit scheduling URL in profile">
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
-            </div>
-          )}
         </CardContent>
       </Card>
 
