@@ -42,6 +42,7 @@ export const users = pgTable("users", {
   website: text("website"),
   twitter: text("twitter"),
   threads: text("threads"),
+  profileTitle: text("profile_title"),
   schedulingUrl: text("scheduling_url"),
   shareProfile: boolean("share_profile").default(true),
   authProvider: text("auth_provider").default('email'),

@@ -23,7 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle, AlertTriangle, Share2, X } from 'lucide-react';
+import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle, AlertTriangle, Share2, X, CalendarDays, Crown, Hash } from 'lucide-react';
 import { ShareDialog } from '@/components/ShareDialog';
 import { useState, useEffect } from 'react';
 import { cn, pluralize } from '@/lib/utils';
@@ -38,6 +38,8 @@ export default function SyllabindOverview() {
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [upgradeVariant, setUpgradeVariant] = useState<'enrollment-gate' | 'pro-feature'>('enrollment-gate');
+  const [slackUrl, setSlackUrl] = useState<string | null>(null);
   const [learners, setLearners] = useState<LearnerProfile[]>([]);
   const [totalEnrolled, setTotalEnrolled] = useState(0);
   const [syllabus, setSyllabus] = useState<Syllabus | undefined>(undefined);
@@ -133,6 +135,14 @@ export default function SyllabindOverview() {
     }
   }, [syllabus?.creatorId]);
 
+  // Fetch Slack community URL from site settings
+  useEffect(() => {
+    fetch('/api/site-settings/slack_community_url')
+      .then(res => res.json())
+      .then(data => setSlackUrl(data.value || null))
+      .catch(() => {});
+  }, []);
+
   if (!syllabus) return <div className="text-center py-20">Loading...</div>;
 
   // Use locally-fetched completed steps for this enrollment (works for both active and completed)
@@ -200,12 +210,43 @@ export default function SyllabindOverview() {
 
     // Pro gate: must be Pro to enroll
     if (!isPro) {
+      setUpgradeVariant('enrollment-gate');
       setShowUpgradePrompt(true);
       return;
     }
 
     // Authenticated but not enrolled - show privacy dialog to enroll
     setShowPrivacyDialog(true);
+  };
+
+  const handleBookCall = () => {
+    if (!currentUser) {
+      setLocation(`/login?returnTo=${encodeURIComponent(`/syllabind/${syllabus.id}`)}`);
+      return;
+    }
+    if (!isPro) {
+      setUpgradeVariant('pro-feature');
+      setShowUpgradePrompt(true);
+      return;
+    }
+    if (creator?.schedulingUrl) {
+      window.open(creator.schedulingUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleJoinSlack = () => {
+    if (!currentUser) {
+      setLocation(`/login?returnTo=${encodeURIComponent(`/syllabind/${syllabus.id}`)}`);
+      return;
+    }
+    if (!isPro) {
+      setUpgradeVariant('pro-feature');
+      setShowUpgradePrompt(true);
+      return;
+    }
+    if (slackUrl) {
+      window.open(slackUrl, '_blank', 'noopener,noreferrer');
+    }
   };
 
   const handleEnroll = async (shareProfile: boolean) => {
@@ -307,6 +348,94 @@ export default function SyllabindOverview() {
               Share with a Friend
             </Button>
           </div>
+
+          {/* Creator Section */}
+          {creator && (
+            <div className="creator-section space-y-5">
+              <h2 className="text-2xl font-display border-b pb-4">Meet the Creator</h2>
+              <div className="space-y-5">
+                <div className="creator-info flex items-start gap-4">
+                  <Avatar className="h-16 w-16 border-2 border-border shrink-0">
+                    <AvatarImage src={creator.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${creator.name}`} alt={creator.name} />
+                    <AvatarFallback className="text-lg">{creator.name?.charAt(0) || '?'}</AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-1 min-w-0">
+                    <h3 className="font-medium text-lg">{creator.name}</h3>
+                    {creator.profileTitle && (
+                      <p className="text-sm text-muted-foreground">{creator.profileTitle}</p>
+                    )}
+                    {creator.expertise && !creator.profileTitle && (
+                      <p className="text-sm text-muted-foreground">{creator.expertise}</p>
+                    )}
+                  </div>
+                </div>
+
+                {creator.bio && (
+                  <p className="text-sm text-muted-foreground leading-relaxed">{creator.bio}</p>
+                )}
+
+                {/* Social links */}
+                {(creator.linkedin || creator.twitter || creator.threads || creator.website) && (
+                  <div className="flex flex-wrap gap-2">
+                    {creator.linkedin && (
+                      <a href={`https://linkedin.com/in/${creator.linkedin}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-muted hover:bg-muted/80 text-muted-foreground hover:text-[#0077b5] transition-colors">
+                        <Linkedin className="h-3.5 w-3.5" />
+                        LinkedIn
+                      </a>
+                    )}
+                    {creator.twitter && (
+                      <a href={`https://twitter.com/${creator.twitter}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-muted hover:bg-muted/80 text-muted-foreground hover:text-[#1DA1F2] transition-colors">
+                        <Twitter className="h-3.5 w-3.5" />
+                        X / Twitter
+                      </a>
+                    )}
+                    {creator.threads && (
+                      <a href={`https://threads.net/@${creator.threads}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors">
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        Threads
+                      </a>
+                    )}
+                    {creator.website && (
+                      <a href={creator.website.startsWith('http') ? creator.website : `https://${creator.website}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-muted hover:bg-muted/80 text-muted-foreground hover:text-primary transition-colors">
+                        <Globe className="h-3.5 w-3.5" />
+                        Website
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                {/* Pro CTAs */}
+                {(creator.schedulingUrl || slackUrl) && (
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    {creator.schedulingUrl && (
+                      <Button variant="outline" size="sm" onClick={handleBookCall} className="gap-2">
+                        <CalendarDays className="h-4 w-4" />
+                        Book a Call
+                        {(!currentUser || !isPro) && (
+                          <span className="flex items-center gap-0.5 text-muted-foreground">
+                            <Crown className="h-3 w-3" />
+                            <Lock className="h-3 w-3" />
+                          </span>
+                        )}
+                      </Button>
+                    )}
+                    {slackUrl && (
+                      <Button variant="outline" size="sm" onClick={handleJoinSlack} className="gap-2">
+                        <Hash className="h-4 w-4" />
+                        Join Slack Community
+                        {(!currentUser || !isPro) && (
+                          <span className="flex items-center gap-0.5 text-muted-foreground">
+                            <Crown className="h-3 w-3" />
+                            <Lock className="h-3 w-3" />
+                          </span>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="syllabus-metadata flex flex-wrap gap-6 text-sm text-muted-foreground border-y py-6">
             <div className="metadata-duration flex items-center gap-2">
@@ -570,24 +699,6 @@ export default function SyllabindOverview() {
                </div>
             )}
 
-            {creator && (
-              <div className="creator-card pt-6 border-t space-y-4">
-                <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Created by</h4>
-                <div className="creator-info flex items-center gap-3">
-                  <Avatar className="h-9 w-9 border border-border">
-                    <AvatarImage src={creator.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${creator.name}`} alt={creator.name} />
-                    <AvatarFallback>{creator.name?.charAt(0) || '?'}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium text-sm">{creator.name}</div>
-                    <div className="text-xs text-muted-foreground">{creator.expertise}</div>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed italic">
-                  "{creator.bio}"
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -623,7 +734,7 @@ export default function SyllabindOverview() {
       <UpgradePrompt
         open={showUpgradePrompt}
         onOpenChange={setShowUpgradePrompt}
-        variant="enrollment-gate"
+        variant={upgradeVariant}
         returnTo={`/syllabind/${syllabus.id}`}
       />
     </AnimatedPage>

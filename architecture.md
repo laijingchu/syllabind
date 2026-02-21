@@ -36,11 +36,13 @@ This table stores all user accounts, whether they're learners or creators. A sin
   isCreator: boolean DEFAULT false,  // Role flag
   bio: string,
   expertise: string,
+  profileTitle: string,                          // LinkedIn-style headline (e.g. "Product Designer at Acme")
   // Social links
   linkedin: string,
   website: string,
   twitter: string,
   threads: string,
+  schedulingUrl: string,                        // Calendly/Cal.com link (shown to Pro learners)
   shareProfile: boolean DEFAULT true,
   // Subscription
   stripeCustomerId: string UNIQUE,              // Stripe customer ID
@@ -259,6 +261,19 @@ Stores Stripe subscription records as an audit trail for Pro subscriptions. Each
 - `subscriptions_user_id_idx` - Fast lookup by user
 - `subscriptions_stripe_subscription_id_idx` - Fast lookup by Stripe subscription ID
 
+#### Site Settings Table
+
+Stores admin-configurable key-value pairs for platform-wide settings (e.g., Slack community URL). Admins can update these via `PUT /api/admin/settings`. Public read access via `GET /api/site-settings/:key`.
+
+```typescript
+{
+  id: serial PRIMARY KEY,
+  key: text NOT NULL UNIQUE,         // Setting identifier (e.g., 'slack_community_url')
+  value: text,                       // Setting value
+  updatedAt: timestamp DEFAULT now(),
+}
+```
+
 #### Sessions Table
 
 This table is required by Replit Auth and Express-session to store active user sessions. When users log in, their session data is stored here and referenced by a session ID cookie in their browser. The `sess` field stores the complete session state including authentication tokens and user information.
@@ -474,6 +489,7 @@ These pages are only accessible to users who have enabled creator mode. They pro
 | `/creator/syllabind/:id/analytics` | `SyllabindAnalytics.tsx` | Learner progress visualization |
 | `/creator/syllabind/:id/learners` | `SyllabindLearners.tsx` | Learner list, cohorts, submissions |
 | `/creator/profile` | `CreatorProfile.tsx` | Creator bio, expertise, social links |
+| `/admin` | `AdminSettings.tsx` | Admin-only: configure Slack URL and site settings |
 
 ---
 
@@ -694,6 +710,18 @@ PUT    /api/users/me                - Update own profile (auth)
 POST   /api/users/me/toggle-creator - Toggle creator mode (auth)
 ```
 
+### Site Settings Endpoints
+
+**Public:**
+```
+GET    /api/site-settings/:key       - Get a site setting value
+```
+
+**Admin Only:**
+```
+PUT    /api/admin/settings           - Upsert a site setting { key, value }
+```
+
 ### Syllabind Endpoints
 
 **Public:**
@@ -867,6 +895,7 @@ The application uses a custom authentication system with multiple providers (Ema
 - **TTL**: 7 days
 - **Cookie Security**: HttpOnly, Secure (production), SameSite=lax
 - **Session Secret**: Environment variable `SESSION_SECRET`
+- **Explicit saves in OAuth flows**: All OAuth routes call `session.save()` before redirecting to ensure the session (CSRF state, userId) is persisted to PostgreSQL before the browser follows the redirect. This prevents race conditions where the redirect arrives before the session write completes.
 
 ### Auth Middleware: `isAuthenticated`
 
@@ -920,7 +949,7 @@ The codebase is organized into three main directories: `client` (React frontend)
 ├── client/src/
 │   ├── main.tsx              - React entry point
 │   ├── App.tsx               - Router + auth wrapper
-│   ├── pages/                - 14 page components (~3,100 lines)
+│   ├── pages/                - 15 page components (~3,200 lines)
 │   ├── components/
 │   │   ├── Layout.tsx        - Main header
 │   │   ├── SyllabindCard.tsx  - Syllabind preview

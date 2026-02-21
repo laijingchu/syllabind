@@ -35,10 +35,12 @@ export interface CreatorProfile {
   avatarUrl: string | null;
   bio: string | null;
   expertise: string | null;
+  profileTitle: string | null;
   linkedin: string | null;
   twitter: string | null;
   threads: string | null;
   website: string | null;
+  schedulingUrl: string | null;
 }
 
 export interface Syllabus {
@@ -109,12 +111,14 @@ export interface User {
   isAdmin?: boolean;
   bio?: string;
   expertise?: string;
+  profileTitle?: string;
   avatarUrl?: string;
   // Social links
   linkedin?: string;
   website?: string;
   twitter?: string;
   threads?: string;
+  schedulingUrl?: string;
   // Preferences
   shareProfile?: boolean;
   // Subscription

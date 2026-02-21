@@ -93,7 +93,7 @@ export async function registerRoutes(
       return res.status(400).json({ message: "Invalid avatar URL: blob URLs are not allowed" });
     }
 
-    const allowedFields = ['name', 'bio', 'expertise', 'linkedin', 'website', 'twitter', 'threads', 'shareProfile', 'avatarUrl'] as const;
+    const allowedFields = ['name', 'bio', 'expertise', 'profileTitle', 'linkedin', 'website', 'twitter', 'threads', 'schedulingUrl', 'shareProfile', 'avatarUrl'] as const;
     const profileUpdate: Record<string, any> = {};
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {
@@ -156,6 +156,33 @@ export async function registerRoutes(
       console.log("File uploaded successfully:", fileUrl);
       res.json({ url: fileUrl });
     });
+  });
+
+  // ========== SITE SETTINGS ROUTES ==========
+
+  // Get a site setting (public)
+  app.get("/api/site-settings/:key", async (req, res) => {
+    const value = await storage.getSiteSetting(req.params.key);
+    res.json({ value });
+  });
+
+  // Update a site setting (admin only)
+  app.put("/api/admin/settings", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
+    if (!user.isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    const { key, value } = req.body;
+    if (!key || typeof key !== 'string') {
+      return res.status(400).json({ error: "key is required" });
+    }
+    if (typeof value !== 'string') {
+      return res.status(400).json({ error: "value must be a string" });
+    }
+
+    await storage.setSiteSetting(key, value);
+    res.json({ success: true });
   });
 
   // ========== SYLLABIND ROUTES ==========

@@ -28,6 +28,9 @@ const profileSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
   }),
+  profileTitle: z.string().max(100, {
+    message: "Title must not be longer than 100 characters.",
+  }).optional(),
   bio: z.string().max(160, {
     message: "Bio must not be longer than 160 characters.",
   }).optional(),
@@ -35,6 +38,7 @@ const profileSchema = z.object({
   linkedin: z.string().optional(),
   twitter: z.string().optional(),
   threads: z.string().optional(),
+  schedulingUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')),
   shareProfile: z.boolean().default(false),
 });
 
@@ -61,11 +65,13 @@ export default function Profile() {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: user?.name || "",
+      profileTitle: user?.profileTitle || "",
       bio: user?.bio || "",
       website: user?.website || "",
       linkedin: user?.linkedin || "",
       twitter: user?.twitter || "",
       threads: user?.threads || "",
+      schedulingUrl: user?.schedulingUrl || "",
       shareProfile: user?.shareProfile || false,
     },
   });
@@ -161,6 +167,23 @@ export default function Profile() {
 
               <FormField
                 control={form.control}
+                name="profileTitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Product Designer at Acme" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      A short headline, like your role or expertise.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="bio"
                 render={({ field }) => (
                   <FormItem>
@@ -247,6 +270,23 @@ export default function Profile() {
                 />
               </div>
 
+              <FormField
+                control={form.control}
+                name="schedulingUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Scheduling Link</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://calendly.com/you" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Link to your scheduling page (Calendly, Cal.com, etc.). Shown to Pro learners on your syllabinds.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
             </CardContent>
           </Card>
 
@@ -271,7 +311,7 @@ export default function Profile() {
           </div>
           <CardDescription>
             {isPro
-              ? 'You have an active Syllabind Pro subscription.'
+              ? 'You have Syllabind Pro access.'
               : 'Upgrade to Syllabind Pro for unlimited creation and enrollment.'}
           </CardDescription>
         </CardHeader>
@@ -290,7 +330,7 @@ export default function Profile() {
           ) : (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                <strong>$9.99/mo</strong> — Unlimited syllabinds, enroll in any course, full progress tracking.
+                <strong>$9.99 one-time</strong> — Unlimited syllabinds, enroll in any course, full progress tracking.
               </p>
               <Button
                 onClick={async () => {

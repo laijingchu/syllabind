@@ -15,7 +15,7 @@ import { useState } from 'react';
 interface UpgradePromptProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  variant: 'creator-limit' | 'enrollment-gate';
+  variant: 'creator-limit' | 'enrollment-gate' | 'pro-feature';
   returnTo?: string;
 }
 
@@ -39,11 +39,11 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo }: Upgrade
 
   const title = variant === 'creator-limit'
     ? 'Upgrade to Syllabind Pro'
-    : 'Pro Subscription Required';
+    : variant === 'pro-feature'
+    ? 'Unlock Pro Features'
+    : 'Syllabind Pro Required';
 
-  const description = variant === 'creator-limit'
-    ? "You've reached the free plan limit of 2 syllabinds. Upgrade to Pro for $9.99/mo to create unlimited syllabinds."
-    : 'Enrolling in syllabinds requires a Syllabind Pro subscription. Upgrade for $9.99/mo to start learning.';
+  const description = 'To continue, we will charge you $9.99 for one month usage — no autorenewal.';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -63,6 +63,8 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo }: Upgrade
             <li>- Unlimited syllabind creation</li>
             <li>- Enroll in any syllabind</li>
             <li>- Full progress tracking</li>
+            <li>- Book calls with creators</li>
+            <li>- Join the Syllabind Slack community</li>
           </ul>
         </div>
         <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -70,7 +72,7 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo }: Upgrade
             Maybe Later
           </Button>
           <Button onClick={handleUpgrade} disabled={loading}>
-            {loading ? 'Redirecting...' : 'Upgrade to Pro — $9.99/mo'}
+            {loading ? 'Redirecting...' : 'Upgrade to Pro — $9.99'}
           </Button>
         </DialogFooter>
       </DialogContent>

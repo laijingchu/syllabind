@@ -8,7 +8,7 @@ import {
   type CompletedStep, type InsertCompletedStep,
   type ChatMessage, type InsertChatMessage,
   type Subscription, type InsertSubscription,
-  users, syllabinds, enrollments, weeks, steps, submissions, completedSteps, chatMessages, subscriptions
+  users, syllabinds, enrollments, weeks, steps, submissions, completedSteps, chatMessages, subscriptions, siteSettings
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, asc, inArray } from "drizzle-orm";
@@ -100,6 +100,10 @@ export interface IStorage {
   upsertSubscription(data: InsertSubscription): Promise<Subscription>;
   updateSubscriptionByStripeId(stripeSubscriptionId: string, updates: Partial<Subscription>): Promise<Subscription | undefined>;
   countSyllabindsByCreator(username: string): Promise<number>;
+
+  // Site settings
+  getSiteSetting(key: string): Promise<string | null>;
+  setSiteSetting(key: string, value: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -147,10 +151,12 @@ export class DatabaseStorage implements IStorage {
         creatorAvatarUrl: users.avatarUrl,
         creatorBio: users.bio,
         creatorExpertise: users.expertise,
+        creatorProfileTitle: users.profileTitle,
         creatorLinkedin: users.linkedin,
         creatorTwitter: users.twitter,
         creatorThreads: users.threads,
         creatorWebsite: users.website,
+        creatorSchedulingUrl: users.schedulingUrl,
       })
       .from(syllabinds)
       .leftJoin(users, eq(syllabinds.creatorId, users.username));
@@ -163,10 +169,12 @@ export class DatabaseStorage implements IStorage {
         avatarUrl: row.creatorAvatarUrl,
         bio: row.creatorBio,
         expertise: row.creatorExpertise,
+        profileTitle: row.creatorProfileTitle,
         linkedin: row.creatorLinkedin,
         twitter: row.creatorTwitter,
         threads: row.creatorThreads,
         website: row.creatorWebsite,
+        schedulingUrl: row.creatorSchedulingUrl,
       } : undefined,
     }));
   }
@@ -792,6 +800,20 @@ export class DatabaseStorage implements IStorage {
       .from(syllabinds)
       .where(eq(syllabinds.creatorId, username));
     return result?.count || 0;
+  }
+
+  async getSiteSetting(key: string): Promise<string | null> {
+    const [row] = await db.select().from(siteSettings).where(eq(siteSettings.key, key));
+    return row?.value ?? null;
+  }
+
+  async setSiteSetting(key: string, value: string): Promise<void> {
+    await db.insert(siteSettings)
+      .values({ key, value })
+      .onConflictDoUpdate({
+        target: siteSettings.key,
+        set: { value, updatedAt: new Date() },
+      });
   }
 }
 

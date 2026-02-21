@@ -19,6 +19,7 @@ export const mockUser = {
   website: null,
   twitter: null,
   threads: null,
+  schedulingUrl: null,
   shareProfile: false,
   authProvider: 'email',
   stripeCustomerId: null,
@@ -44,6 +45,7 @@ export const mockAdmin = {
   website: null,
   twitter: null,
   threads: null,
+  schedulingUrl: null,
   shareProfile: false,
   authProvider: 'email',
   stripeCustomerId: null,
@@ -69,6 +71,7 @@ export const mockCreator = {
   website: null,
   twitter: null,
   threads: null,
+  schedulingUrl: 'https://calendly.com/testcreator',
   shareProfile: true,
   authProvider: 'email',
   stripeCustomerId: null,
@@ -169,4 +172,6 @@ export const resetAllMocks = () => {
   if (mockStorage.upsertSubscription) mockStorage.upsertSubscription.mockResolvedValue({ id: 1 });
   if (mockStorage.updateSubscriptionByStripeId) mockStorage.updateSubscriptionByStripeId.mockResolvedValue(undefined);
   if (mockStorage.countSyllabindsByCreator) mockStorage.countSyllabindsByCreator.mockResolvedValue(0);
+  if (mockStorage.getSiteSetting) mockStorage.getSiteSetting.mockResolvedValue(null);
+  if (mockStorage.setSiteSetting) mockStorage.setSiteSetting.mockResolvedValue(undefined);
 };

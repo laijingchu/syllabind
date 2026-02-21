@@ -243,6 +243,8 @@ jest.mock('./server/storage', () => ({
     upsertSubscription: jest.fn().mockResolvedValue({ id: 1 }),
     updateSubscriptionByStripeId: jest.fn().mockResolvedValue(undefined),
     countSyllabindsByCreator: jest.fn().mockResolvedValue(0),
+    getSiteSetting: jest.fn().mockResolvedValue(null),
+    setSiteSetting: jest.fn().mockResolvedValue(undefined),
   },
   DatabaseStorage: jest.fn(),
 }));
