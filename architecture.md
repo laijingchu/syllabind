@@ -67,7 +67,8 @@ Syllabinds are the core learning content created by creators. The Syllabind stru
   updatedAt: timestamp DEFAULT now(), // Last modification timestamp
   studentActive: integer DEFAULT 0,   // Number of students currently enrolled (in-progress)
   studentsCompleted: integer DEFAULT 0, // Number of students who completed the syllabind
-  showSchedulingLink: boolean DEFAULT true // Per-syllabind toggle for "Book a Call" button visibility
+  showSchedulingLink: boolean DEFAULT true, // Per-syllabind toggle for "Book a Call" button visibility
+  mediaPreference: text DEFAULT 'auto'   // Audio/video materials: 'auto', 'yes', 'no'
 }
 ```
 
@@ -274,6 +275,10 @@ Stores admin-configurable key-value pairs for platform-wide settings (e.g., Slac
   updatedAt: timestamp DEFAULT now(),
 }
 ```
+
+#### Waitlist Table (Deprecated — table retained, code removed)
+
+The `waitlist` table still exists in the database schema for data preservation, but all API routes, storage methods, and admin UI have been removed. Waitlist signups are now handled via an external form (Google Form, Typeform, etc.) whose URL is stored in `site_settings` under the key `waitlist_form_url`. The Login page "Join Waitlist" tab and Marketing page CTA buttons link to this external URL.
 
 #### Sessions Table
 
@@ -1220,8 +1225,9 @@ Added comprehensive analytics endpoint that provides real data for the Creator A
 Reduced token consumption for AI-powered Syllabind generation and chat refinement:
 
 **Model Selection (Hybrid):**
-- **Haiku** (`claude-3-5-haiku-20241022` / `CLAUDE_MODEL`): Planning (`planCurriculum`) and chat refinement — simple structured output, cost-efficient
-- **Sonnet** (`claude-sonnet-4-5-20250929` / `CLAUDE_MODEL_GENERATION`): Generation batches, week regeneration, and URL repair — needs accurate metadata extraction (title, author, date) from web search results
+- **Haiku** (`claude-haiku-4-5-20251001` / `CLAUDE_MODEL`): Planning (`planCurriculum`) and chat refinement — simple structured output, cost-efficient
+- **Sonnet** (`claude-sonnet-4-5-20250929` / `CLAUDE_MODEL_GENERATION`): Generation batches and week regeneration — needs accurate metadata extraction (title, author, date) from web search results
+- **Haiku for URL repair**: `repairMissingUrls()` uses Haiku instead of Sonnet — repair is simple web search + structured output, no curriculum generation
 - Both constants exported from `server/utils/claudeClient.ts`
 - No user-facing model selector
 
@@ -1236,8 +1242,9 @@ Reduced token consumption for AI-powered Syllabind generation and chat refinemen
 - Message history truncated to last 10 messages (`MAX_HISTORY_MESSAGES`)
 
 **Web Search Limits:**
-- Reduced from 15 to 5 searches per Syllabind generation
-- System prompt updated to reflect new limit
+- Generation: 8 searches per batch (~4/week for 2-week batches)
+- Repair: `min(missingCount * 2, 10)` — 2 searches per reading, capped at 10
+- Per-batch URL repair removed; final sweep handles all missing URLs in one pass
 
 **Files Modified:**
 - `server/utils/claudeClient.ts` - `CLAUDE_MODEL` constant (Haiku), shared client with `maxRetries: 0`
@@ -1874,6 +1881,42 @@ After each 2-week batch completes, readings without URLs are collected. If any e
 - `server/utils/syllabindGenerator.ts` - Multi-turn repair, 4096 tokens, higher search budget
 - `server/utils/claudeClient.ts` - 14 web searches per generation batch
 
+### YouTube oEmbed Validation, Placeholder & Index URL Detection (2026-02-22)
+
+**Problem:**
+1. Claude fabricates placeholder YouTube URLs like `?v=example` that pass HEAD/GET (YouTube returns 200 for any `watch?v=` URL)
+2. Claude returns creator profile/channel pages (e.g. `youtube.com/@creator`, `open.spotify.com/show/xxx`) instead of specific videos/episodes — these also pass HEAD/GET since the pages exist
+
+**Fixes:**
+
+1. **Placeholder URL detection** (`server/utils/validateUrl.ts`):
+   - Before any HTTP validation, reject URLs containing known hallucination patterns: `example`, `placeholder`, `test`, `sample`, `fake`, `lorem`
+   - Uses word-boundary matching (`\b`) so "test" doesn't false-positive on "latest", "greatest", "contest", etc.
+   - Video ID placeholder check uses substring matching (correct for opaque ID strings)
+
+2. **YouTube oEmbed validation** (`server/utils/validateUrl.ts`):
+   - YouTube/YouTube Music URLs routed through `validateYouTubeUrl()` instead of HEAD/GET
+   - Video ID extracted from `youtube.com/watch?v=`, `youtu.be/`, `youtube.com/embed/`, `youtube.com/v/`, `music.youtube.com/watch?v=`
+   - IDs rejected if they don't match YouTube's 11-character `[a-zA-Z0-9_-]{11}` format
+   - oEmbed API confirmation: `https://www.youtube.com/oembed?url=<URL>&format=json`
+   - **Fault-tolerant**: only rejects on explicit 404/401; network errors, timeouts, and rate limits (429/5xx) fall back to accepting (format + isIndexUrl already filter hallucinations)
+
+3. **Index/directory URL rejection** (`server/utils/validateUrl.ts`):
+   - `isIndexUrl()` uses an allowlist approach for all media platforms — only known specific-resource paths pass, everything else is rejected
+   - **Bare domains**: `https://medium.com/` rejected (no meaningful path)
+   - **YouTube**: only `/watch`, `/embed/`, `/v/` (channels, profiles, playlists, shorts, live, search all rejected)
+   - **YouTube Music**: only `/watch` (artist/playlist/album pages rejected)
+   - **Spotify**: only `/episode/`, `/track/` (show, artist, playlist, album, user pages all rejected)
+   - **Apple Podcasts**: must have `?i=` episode param (show pages rejected)
+   - **Apple Music**: only `/song/`, `/music-video/`, or `?i=` album-track param (artist/album index pages rejected)
+   - **SoundCloud**: must have two path segments `/artist/track` (profile pages rejected)
+   - **Vimeo**: only numeric video IDs (channels, groups, user pages rejected)
+   - Runs before any HTTP call — zero network cost
+
+**Files Modified:**
+- `server/utils/validateUrl.ts` - `validateYouTubeUrl()`, `extractYouTubeVideoId()`, `hasPlaceholderPattern()`, `isIndexUrl()`, integrated pre-checks in `validateUrl()`
+- `server/__tests__/validateUrl.test.ts` - New test file covering YouTube validation, placeholder detection, index URL rejection, and non-YouTube fallback
+
 ### Two-Phase Generation — Coherent Curriculum (2026-02-16)
 
 **Problem:**
@@ -2122,3 +2165,85 @@ Also added a "Go to Week N" mobile button for past accessible but incomplete wee
 - `jest.setup.js` — Added Stripe and subscription mocks
 - `server/__tests__/setup/mocks.ts` — Added Pro user mocks
 - `server/__tests__/routes-integration.test.ts` — Updated enrollment tests for Pro gating
+
+### Fix: Audio/Video Materials Toggle (2026-02-22)
+
+**Problem:** The Audio/Video Materials toggle ("Auto"/"Yes"/"No") wasn't affecting generation output, and the selection reset to "Auto" after clicking generate.
+
+**Root Causes:**
+1. `mediaPreference` was missing from the initial `formData` state (started as `undefined`), creating fragile data flow
+2. After generation completed, `setFormData(updated)` replaced the full state with the DB response without preserving the user's selection
+3. The generation prompt's media instruction was too weak — "MUST include at least 1" buried in a long rules list, easily ignored by the model
+
+**Fixes:**
+1. Added `mediaPreference: 'auto'` to initial formData state to prevent undefined-related issues
+2. After generation completes, preserve `mediaPreference` from local state when refetching: `updated.mediaPreference || prev.mediaPreference || 'auto'`
+3. Strengthened generation prompts — "Yes" mode now uses `IMPORTANT:` prefix, specifies search strategies ("topic YouTube", "topic podcast episode"), and labels it "a hard requirement from the creator"
+4. Added server-side logging of `mediaPreference` value when generation starts
+
+**Files Modified:**
+- `client/src/pages/SyllabindEditor.tsx` — Initial state, generation_complete handler, pre-generation logging
+- `server/utils/syllabindGenerator.ts` — Stronger media instructions in both `generateSyllabind` and `regenerateWeek`
+- `server/websocket/generateSyllabind.ts` — Logging of mediaPreference before generation
+
+### Media Preference: API Limitation Acknowledged (2026-02-22)
+
+**Problem:** Despite `media_preference: 'yes'`, Claude (Sonnet 4.5) cannot reliably produce working YouTube/podcast URLs. It pulls video titles from training data (knows creators like "Coach Michelle Hong") but fabricates URLs with fake video IDs instead of extracting them from web search results. oEmbed validation correctly catches the fakes → URL stripped → reading saved with mediaType but no URL.
+
+Multiple approaches were tried and abandoned:
+1. **Stronger prompt wording** — Listing specific platforms, URL patterns, "MUST"/"CRITICAL" language. Claude ignores it.
+2. **Post-generation media repair** — Dedicated API call with focused prompt + web search to find real URLs. Same fabrication problem; extra API calls with no improvement.
+
+**Current approach:** The media instruction is kept short and best-effort. `mediaPreference: 'yes'` adds a soft instruction ("should include") rather than a hard requirement. The `'no'` preference is reliable (text-only constraint is easy to follow). The `'auto'` preference emits no instruction at all.
+
+**Known limitation:** The Audio/Video Materials toggle is best-effort when set to "Yes". Claude may or may not include working media URLs. This is an API-level limitation with web search + URL generation that cannot be solved through prompt engineering alone.
+
+**New storage method** (`storage.ts`): `updateStep(stepId, updates)` — general-purpose partial step update (added during this work, kept as a useful utility).
+
+**Files Modified:**
+- `server/utils/syllabindGenerator.ts` — Simplified media instructions (shorter, best-effort)
+- `server/storage.ts` — `updateStep()` interface + implementation
+
+### YouTube API Integration for Media URLs (2026-02-22)
+
+**Problem:** Claude (Sonnet 4.5) cannot reliably produce working YouTube URLs. It fabricates video IDs from training data; oEmbed validation catches the fakes. Prompt engineering and LLM-based repair loops both failed.
+
+**Solution:** Bypass the LLM entirely. After URL repair passes, use the YouTube Data API v3 to search for real videos by week topic when `mediaPreference === 'yes'`.
+
+**Architecture:**
+
+1. **`searchYouTube(query)`** (`server/utils/youtubeSearch.ts`): Calls `GET youtube/v3/search` with `part=snippet&type=video&maxResults=1`. Returns `{ videoId, title, channelTitle, publishedAt }` or null. 5s timeout. Graceful no-op if `YOUTUBE_API_KEY` not set.
+
+2. **`ensureMediaUrl(weekId, weekTopic, ws)`** (`server/utils/syllabindGenerator.ts`): Post-repair pass that checks if a week already has a media reading with a verified URL. For `mediaType: 'Youtube video'`, verifies the URL is an actual YouTube URL using `extractYouTubeVideoId()` (Claude often sets this mediaType on non-YouTube websites that embed videos). If no verified media exists, calls `searchYouTube(weekTopic)` and updates a candidate reading via `storage.updateStep()`. Candidate selection prioritizes: (1) readings marked as YouTube with non-YouTube URLs, (2) readings without URLs and non-academic types, (3) any reading without a URL, (4) any non-academic reading. Sends `step_url_repaired` WebSocket event.
+
+3. **Integration points:**
+   - `generateSyllabind()` — after batch URL repair, loops through batch weeks calling `ensureMediaUrl()`
+   - `regenerateWeek()` — after URL repair, calls `ensureMediaUrl()` using hoisted `regenWeekId`/`regenWeekTopic`
+
+**No-op conditions** (no YouTube API call made):
+- `YOUTUBE_API_KEY` env var not set
+- `mediaPreference !== 'yes'`
+- Week already has a working media reading (YouTube video with a verified `youtube.com` URL, or Podcast with any URL)
+- No readings exist in the week
+
+**Environment:** Requires `YOUTUBE_API_KEY` env var (YouTube Data API v3 key).
+
+**Files Modified:**
+- `server/utils/youtubeSearch.ts` — **NEW** YouTube Data API v3 search utility
+- `server/utils/syllabindGenerator.ts` — Added `ensureMediaUrl()`, integrated into both `generateSyllabind()` and `regenerateWeek()` flows
+- `server/__tests__/youtubeSearch.test.ts` — **NEW** Tests for search utility (success, missing key, API errors, empty results, timeouts)
+
+### Generation Cost Reduction (~25-35%) (2026-02-22)
+
+**Problem:** Generating a 4-week syllabind cost ~$0.75-1.00 in Claude API usage. Sonnet must stay for generation (Haiku produced fake URLs) and batch size must stay at 2 (larger batches hit rate limits).
+
+**Changes:**
+1. **Reduced web search budget** (`claudeClient.ts`): `max_uses` 14 → 8 per batch (~4 searches/week). Prompt already says "~2-3 searches per week" — 14 was excessive.
+2. **Removed per-batch URL repair** (`syllabindGenerator.ts`): Repair ran after each batch AND as a final sweep. Final sweep catches everything in one pass — fewer API calls, smarter search allocation.
+3. **Reduced repair search budget** (`syllabindGenerator.ts`): `min(count * 3, 20)` → `min(count * 2, 10)` — 2 searches per missing reading instead of 3.
+4. **Haiku for URL repair** (`syllabindGenerator.ts`): `repairMissingUrls()` now uses `CLAUDE_MODEL` (Haiku) instead of `CLAUDE_MODEL_GENERATION` (Sonnet). Repair is simple: search for a title, return the URL.
+5. **Reduced generation max_tokens** (`syllabindGenerator.ts`): 8192 → 4096. Actual output is ~2-3K tokens; no cost savings but faster responses.
+
+**Files Modified:**
+- `server/utils/claudeClient.ts` — Web search budget 14 → 8
+- `server/utils/syllabindGenerator.ts` — Removed per-batch repair, reduced repair budget, Haiku for repair, lower max_tokens

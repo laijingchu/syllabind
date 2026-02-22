@@ -6,7 +6,7 @@ const client = new Anthropic({
 });
 
 // Haiku for planning + chat (simple tasks, cost-efficient)
-export const CLAUDE_MODEL = 'claude-3-5-haiku-20241022';
+export const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
 // Sonnet for generation + repair (needs accurate metadata extraction from web search)
 export const CLAUDE_MODEL_GENERATION = 'claude-sonnet-4-5-20250929';
 
@@ -79,10 +79,10 @@ export function getPlanningTools(): Anthropic.Tool[] {
   return [PLAN_CURRICULUM_TOOL];
 }
 
-/** Returns generation tools with 14 web searches per batch (~7/week for 2-week batches). */
+/** Returns generation tools with 8 web searches per batch (~4/week for 2-week batches). */
 export function getGenerationTools(): Anthropic.Tool[] {
   return [
-    { type: 'web_search_20250305', name: 'web_search', max_uses: 14 } as any,
+    { type: 'web_search_20250305', name: 'web_search', max_uses: 8 } as any,
     FINALIZE_WEEK_TOOL
   ];
 }
