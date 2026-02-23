@@ -249,6 +249,7 @@ jest.mock('./server/storage', () => ({
     setSyllabindTags: jest.fn().mockResolvedValue([]),
     searchCatalog: jest.fn().mockResolvedValue({ syllabinds: [], total: 0 }),
     refreshSearchVector: jest.fn().mockResolvedValue(undefined),
+    deleteUser: jest.fn().mockResolvedValue(undefined),
   },
   DatabaseStorage: jest.fn(),
 }));

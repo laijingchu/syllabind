@@ -457,7 +457,7 @@ The UI is built as a single-page application (SPA) using React with client-side 
 
 ### Page Structure
 
-The application has 14 main pages organized by access level. Public pages handle marketing and browsing, learner pages provide the learning experience with progress tracking, and creator pages offer content management and analytics tools.
+The application has 15 main pages organized by access level. Public pages handle marketing and browsing, learner pages provide the learning experience with progress tracking, and creator pages offer content management and analytics tools.
 
 
 
@@ -482,6 +482,8 @@ These pages provide the core learning experience. Learners see their dashboard, 
 | `/syllabind/:id/week/:index` | `WeekView.tsx` | Main learning interface with readings & exercises |
 | `/syllabind/:id/completed` | `Completion.tsx` | Celebration screen post-completion |
 | `/profile` | `Profile.tsx` | Edit bio, social links, preferences |
+| `/settings` | `Settings.tsx` | Change password, delete account |
+| `/billing` | `Billing.tsx` | Subscription management, upgrade/manage billing |
 
 #### Creator Pages (Auth + Creator Flag Required)
 
@@ -713,6 +715,8 @@ GET    /api/auth/apple      - Apple OAuth login
 ```
 GET    /api/users/:username         - Get user profile (public)
 PUT    /api/users/me                - Update own profile (auth)
+PUT    /api/users/me/password       - Change password (auth, email only)
+DELETE /api/users/me                - Delete account (auth, password for email)
 POST   /api/users/me/toggle-creator - Toggle creator mode (auth)
 ```
 
@@ -2251,3 +2255,41 @@ Multiple approaches were tried and abandoned:
 **Files Modified:**
 - `server/utils/claudeClient.ts` — Web search budget 14 → 8
 - `server/utils/syllabindGenerator.ts` — Removed per-batch repair, reduced repair budget, Haiku for repair, lower max_tokens
+
+### Account Settings Page (2026-02-23)
+
+Added a Settings page for password change and account deletion, accessible from the profile dropdown.
+
+**New endpoints:**
+- `PUT /api/users/me/password` — Change password (email auth only). Validates current password, applies `passwordSchema` to new password.
+- `DELETE /api/users/me` — Delete account. Email users must confirm with password; OAuth users just confirm. Destroys session on success.
+
+**Storage:**
+- Added `deleteUser(id)` to `IStorage` interface and `DatabaseStorage`. FK cascades handle related data.
+
+**Frontend:**
+- `Settings.tsx` — Password change form (email users only) + danger zone with AlertDialog for account deletion.
+- Route at `/settings`, protected by auth.
+- Nav links added to both desktop dropdown and mobile sheet in `Layout.tsx`.
+
+**Files Created:**
+- `client/src/pages/Settings.tsx`
+- `server/__tests__/account-settings.test.ts`
+
+**Files Modified:**
+- `server/storage.ts` — `deleteUser` method
+- `server/routes.ts` — Two new endpoints, imported `hashPassword`/`comparePassword`/`passwordSchema`
+- `client/src/App.tsx` — Settings route
+- `client/src/components/Layout.tsx` — Nav links
+- `jest.setup.js` — `deleteUser` mock
+- `server/__tests__/setup/mocks.ts` — `deleteUser` reset
+
+### Billing Page (2026-02-23)
+
+Moved the Subscription card from Profile page to a dedicated Billing page, accessible from the profile dropdown.
+
+**Changes:**
+- Created `client/src/pages/Billing.tsx` — Subscription card with Pro badge, manage billing (Pro) or upgrade CTA (free), handles `?subscription=success` redirect
+- Removed subscription card, related imports (`Crown`, `Badge`, `redirectToCheckout`, `redirectToPortal`), and `?subscription=success` handler from `client/src/pages/Profile.tsx`
+- Added `/billing` route in `client/src/App.tsx`
+- Added Billing link (CreditCard icon) in profile dropdown and mobile menu in `client/src/components/Layout.tsx`

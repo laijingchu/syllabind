@@ -179,4 +179,5 @@ export const resetAllMocks = () => {
   if (mockStorage.setSyllabindTags) mockStorage.setSyllabindTags.mockResolvedValue([]);
   if (mockStorage.searchCatalog) mockStorage.searchCatalog.mockResolvedValue({ syllabinds: [], total: 0 });
   if (mockStorage.refreshSearchVector) mockStorage.refreshSearchVector.mockResolvedValue(undefined);
+  if (mockStorage.deleteUser) mockStorage.deleteUser.mockResolvedValue(undefined);
 };

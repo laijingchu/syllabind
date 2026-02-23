@@ -46,6 +46,7 @@ export interface IStorage {
   getUserByReplitId(replitId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, user: Partial<User>): Promise<User>;
+  deleteUser(id: string): Promise<void>;
 
   // Syllabus operations
   getSyllabus(id: number): Promise<Syllabus | undefined>;
@@ -164,6 +165,10 @@ export class DatabaseStorage implements IStorage {
     }
     const [user] = await db.update(users).set(update).where(eq(users.id, id)).returning();
     return user;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
   }
 
   async getSyllabus(id: number): Promise<Syllabus | undefined> {

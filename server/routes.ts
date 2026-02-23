@@ -9,7 +9,9 @@ import {
   insertEnrollmentSchema,
   insertUserSchema,
   insertSubmissionSchema,
+  passwordSchema,
 } from "@shared/schema";
+import { hashPassword, comparePassword } from "./auth/emailAuth";
 import { registerStripeRoutes } from "./routes/stripe";
 import { registerWebhookRoutes } from "./routes/webhook";
 import multer from "multer";
@@ -124,6 +126,75 @@ export async function registerRoutes(
     const updated = await storage.updateUser(userId, { isCreator: !user.isCreator });
     const { password, ...userWithoutPassword } = updated;
     res.json(userWithoutPassword);
+  });
+
+  // Change password (email auth only)
+  app.put("/api/users/me/password", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      // Allow password change if user has a stored password (handles null authProvider for legacy accounts)
+      if (!user.password) {
+        return res.status(400).json({ message: "Password change is only available for email accounts" });
+      }
+
+      const { currentPassword, newPassword } = req.body;
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current password and new password are required" });
+      }
+
+      const isValid = await comparePassword(currentPassword, user.password);
+      if (!isValid) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
+
+      const pwResult = passwordSchema.safeParse(newPassword);
+      if (!pwResult.success) {
+        return res.status(400).json({ message: pwResult.error.errors[0].message });
+      }
+
+      const hashed = await hashPassword(newPassword);
+      await storage.updateUser(userId, { password: hashed });
+      res.json({ message: "Password updated successfully" });
+    } catch (error) {
+      console.error("Password change error:", error);
+      res.status(500).json({ message: "Failed to change password" });
+    }
+  });
+
+  // Delete account
+  app.delete("/api/users/me", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      // Users with a stored password must confirm it (handles null authProvider for legacy accounts)
+      if (user.password) {
+        const { password } = req.body;
+        if (!password) {
+          return res.status(400).json({ message: "Password is required to delete your account" });
+        }
+        const isValid = await comparePassword(password, user.password);
+        if (!isValid) {
+          return res.status(401).json({ message: "Incorrect password" });
+        }
+      }
+
+      await storage.deleteUser(userId);
+
+      // Destroy session and clear cookie
+      (req as any).session.destroy((err: any) => {
+        if (err) console.error("Session destroy error:", err);
+        res.clearCookie('connect.sid');
+        res.json({ message: "Account deleted successfully" });
+      });
+    } catch (error) {
+      console.error("Account deletion error:", error);
+      res.status(500).json({ message: "Failed to delete account" });
+    }
   });
 
   // Upload avatar image
