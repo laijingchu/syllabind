@@ -116,6 +116,19 @@ export function SyllabindCard({ syllabus, className }: SyllabindCardProps) {
           className="text-sm text-muted-foreground line-clamp-3 leading-relaxed"
           dangerouslySetInnerHTML={{ __html: sanitizeHtml(syllabus.description) }}
         />
+        {/* Category and tags */}
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {syllabus.category && (
+            <Badge variant="outline" className="text-[10px] font-normal">
+              {syllabus.category.name}
+            </Badge>
+          )}
+          {syllabus.tags?.map(tag => (
+            <Badge key={tag.id} variant="secondary" className="text-[10px] font-normal px-1.5 py-0">
+              {tag.name}
+            </Badge>
+          ))}
+        </div>
       </CardContent>
       <CardFooter className="flex items-center gap-3">
         <Link href={`/syllabind/${syllabus.id}`}>

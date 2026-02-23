@@ -302,7 +302,7 @@ describe('Routes Integration (real registerRoutes)', () => {
       mockStorage.updateSyllabus.mockResolvedValue({ id: 1, status: 'published' });
       const res = await request(authed).post('/api/syllabinds/1/publish');
       expect(res.status).toBe(200);
-      expect(mockStorage.updateSyllabus).toHaveBeenCalledWith(1, { status: 'published' });
+      expect(mockStorage.updateSyllabus).toHaveBeenCalledWith(1, { status: 'published', visibility: 'public' });
     });
 
     it('unpublishes when already published', async () => {
@@ -311,7 +311,7 @@ describe('Routes Integration (real registerRoutes)', () => {
       mockStorage.updateSyllabus.mockResolvedValue({ id: 1, status: 'draft' });
       const res = await request(authed).post('/api/syllabinds/1/publish');
       expect(res.status).toBe(200);
-      expect(mockStorage.updateSyllabus).toHaveBeenCalledWith(1, { status: 'draft' });
+      expect(mockStorage.updateSyllabus).toHaveBeenCalledWith(1, { status: 'draft', visibility: 'public' });
     });
   });
 
@@ -672,38 +672,6 @@ describe('Routes Integration (real registerRoutes)', () => {
     });
   });
 
-  // ========== CHAT MESSAGES ==========
-
-  describe('GET /api/syllabinds/:id/chat-messages', () => {
-    it('returns chat messages for creator', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
-      mockStorage.getChatMessages.mockResolvedValue([{ id: 1, role: 'user', content: 'Hello' }]);
-      const res = await request(authed).get('/api/syllabinds/1/chat-messages');
-      expect(res.status).toBe(200);
-      expect(res.body.length).toBe(1);
-    });
-
-    it('returns 403 for non-creator', async () => {
-      const authed = await createAuthedApp(mockUser);
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'other' });
-      const res = await request(authed).get('/api/syllabinds/1/chat-messages');
-      expect(res.status).toBe(403);
-    });
-  });
-
-  describe('POST /api/syllabinds/:id/chat-messages', () => {
-    it('creates chat message for creator', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
-      mockStorage.createChatMessage.mockResolvedValue({ id: 1, syllabusId: 1, role: 'user', content: 'Hello' });
-      const res = await request(authed)
-        .post('/api/syllabinds/1/chat-messages')
-        .send({ role: 'user', content: 'Hello' });
-      expect(res.status).toBe(200);
-      expect(res.body.content).toBe('Hello');
-    });
-  });
 
   // ========== UPLOAD ==========
 

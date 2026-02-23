@@ -1,7 +1,7 @@
 import { useRoute, useLocation, Link } from 'wouter';
 import { usePostHog } from '@posthog/react';
 import { useStore } from '@/lib/store';
-import { Syllabus, Week, Step, StepType } from '@/lib/types';
+import { Syllabus, Week, Step, StepType, Category, Tag } from '@/lib/types';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
-import { SyllabindChatPanel } from '@/components/SyllabindChatPanel';
 import { GeneratingWeekPlaceholder } from '@/components/GeneratingWeekPlaceholder';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -256,6 +255,12 @@ export default function SyllabindEditor() {
   const [location, setLocation] = useLocation();
   const [learners, setLearners] = useState<any[]>([]);
 
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [syllabindTags, setSyllabindTags] = useState<Tag[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [tagSuggestions, setTagSuggestions] = useState<Tag[]>([]);
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false);
+
   const [formData, setFormData] = useState<Syllabus>({
     id: generateTempId(),
     title: '',
@@ -263,6 +268,7 @@ export default function SyllabindEditor() {
     audienceLevel: 'Beginner',
     durationWeeks: 4,
     status: 'draft',
+    visibility: 'public',
     creatorId: user?.username || '',
     showSchedulingLink: true,
     mediaPreference: 'auto',
@@ -343,6 +349,8 @@ export default function SyllabindEditor() {
 
           setFormData({
             ...existing,
+            visibility: existing.visibility || 'public',
+            categoryId: existing.categoryId || null,
             weeks: weeksArray.length > 0 ? weeksArray : Array.from({ length: existing.durationWeeks || 4 }, (_, i) => ({
               id: generateTempId(),
               syllabusId: existing.id,
@@ -351,6 +359,7 @@ export default function SyllabindEditor() {
               title: ''
             }))
           });
+          if (existing.tags) setSyllabindTags(existing.tags);
           setIsLoadingContent(false);
         })
         .catch(err => {
@@ -419,6 +428,86 @@ export default function SyllabindEditor() {
       getLearnersForSyllabus(formData.id).then(({ classmates }) => setLearners(classmates));
     }
   }, [formData.id]);
+
+  // Fetch categories on mount
+  useEffect(() => {
+    fetch('/api/categories')
+      .then(res => res.json())
+      .then(data => setAllCategories(data))
+      .catch(() => {});
+  }, []);
+
+  // Fetch tags for this syllabind
+  useEffect(() => {
+    if (formData.id > 0) {
+      fetch(`/api/syllabinds/${formData.id}`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          if (data.tags) setSyllabindTags(data.tags);
+        })
+        .catch(() => {});
+    }
+  }, [formData.id]);
+
+  // Tag autocomplete
+  useEffect(() => {
+    if (tagInput.length < 2) {
+      setTagSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      fetch(`/api/tags?q=${encodeURIComponent(tagInput)}`)
+        .then(res => res.json())
+        .then(data => setTagSuggestions(data.filter((t: Tag) => !syllabindTags.some(st => st.id === t.id))))
+        .catch(() => {});
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [tagInput, syllabindTags]);
+
+  const addTag = async (name: string) => {
+    if (syllabindTags.length >= 5) return;
+    const trimmed = name.trim();
+    if (!trimmed || syllabindTags.some(t => t.name.toLowerCase() === trimmed.toLowerCase())) return;
+
+    const newTagNames = [...syllabindTags.map(t => t.name), trimmed];
+    setTagInput('');
+    setShowTagSuggestions(false);
+
+    if (formData.id > 0) {
+      try {
+        const res = await fetch(`/api/syllabinds/${formData.id}/tags`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ tags: newTagNames }),
+        });
+        if (res.ok) {
+          const updatedTags = await res.json();
+          setSyllabindTags(updatedTags);
+        }
+      } catch (err) {
+        console.error('Failed to add tag:', err);
+      }
+    }
+  };
+
+  const removeTag = async (tagId: number) => {
+    const newTags = syllabindTags.filter(t => t.id !== tagId);
+    setSyllabindTags(newTags);
+
+    if (formData.id > 0) {
+      try {
+        await fetch(`/api/syllabinds/${formData.id}/tags`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ tags: newTags.map(t => t.name) }),
+        });
+      } catch (err) {
+        console.error('Failed to remove tag:', err);
+      }
+    }
+  };
 
   // Adjust weeks array when duration changes - restore from database if available
   const handleDurationChange = (weeksStr: string) => {
@@ -1269,21 +1358,6 @@ export default function SyllabindEditor() {
     }
   };
 
-  const handleSyllabindUpdate = async () => {
-    if (formData.id > 0) {
-      const response = await fetch(`/api/syllabinds/${formData.id}`, {
-        credentials: 'include'
-      });
-      if (response.ok) {
-        const updated = await response.json();
-        setFormData(updated);
-        toast({
-          title: "Syllabind Updated",
-          description: "Changes from chat applied.",
-        });
-      }
-    }
-  };
 
   const handleSave = async (statusOverride?: 'draft' | 'published') => {
     // Update formData status immediately so autosave doesn't race with stale status
@@ -1567,6 +1641,88 @@ export default function SyllabindEditor() {
               </Select>
             </div>
           </div>
+          {/* Visibility, Category, Tags */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
+            <div className="space-y-2">
+              <Label className="text-sm">Visibility</Label>
+              <Select
+                value={formData.visibility || 'public'}
+                onValueChange={(v: any) => setFormData({...formData, visibility: v})}
+              >
+                <SelectTrigger className="text-base md:text-lg"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="public">Public</SelectItem>
+                  <SelectItem value="unlisted">Unlisted</SelectItem>
+                  <SelectItem value="private">Private</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {formData.visibility === 'public' && 'Visible in the catalog for everyone.'}
+                {formData.visibility === 'unlisted' && 'Only accessible via direct link.'}
+                {formData.visibility === 'private' && 'Only visible to you.'}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Category</Label>
+              <Select
+                value={formData.categoryId?.toString() || ''}
+                onValueChange={(v: string) => setFormData({...formData, categoryId: v ? parseInt(v) : null})}
+              >
+                <SelectTrigger className="text-base md:text-lg"><SelectValue placeholder="Select a category" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {allCategories.map(cat => (
+                    <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Tags ({syllabindTags.length}/5)</Label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {syllabindTags.map(tag => (
+                  <Badge key={tag.id} variant="secondary" className="gap-1 pr-1">
+                    {tag.name}
+                    <button
+                      onClick={() => removeTag(tag.id)}
+                      className="ml-0.5 rounded-full hover:bg-muted p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+              {syllabindTags.length < 5 && (
+                <div className="relative">
+                  <Input
+                    value={tagInput}
+                    onChange={e => { setTagInput(e.target.value); setShowTagSuggestions(true); }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') { e.preventDefault(); addTag(tagInput); }
+                    }}
+                    onBlur={() => setTimeout(() => setShowTagSuggestions(false), 200)}
+                    onFocus={() => tagInput.length >= 2 && setShowTagSuggestions(true)}
+                    placeholder="Add a tag..."
+                    className="text-sm"
+                  />
+                  {showTagSuggestions && tagSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-md max-h-32 overflow-y-auto">
+                      {tagSuggestions.map(t => (
+                        <button
+                          key={t.id}
+                          className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted transition-colors"
+                          onMouseDown={e => { e.preventDefault(); addTag(t.name); }}
+                        >
+                          {t.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="pt-4 space-y-3">
             <div className="flex items-center justify-between gap-3">
               <Button
@@ -1877,12 +2033,6 @@ export default function SyllabindEditor() {
         </div>
       )}
 
-      {formData.id > 0 && (
-        <SyllabindChatPanel
-          syllabusId={formData.id}
-          onSyllabindUpdate={handleSyllabindUpdate}
-        />
-      )}
 
       </>
       )}

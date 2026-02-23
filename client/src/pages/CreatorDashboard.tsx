@@ -243,9 +243,25 @@ export default function CreatorDashboard() {
                   />
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="secondary" className="capitalize shrink-0">
-                        {syllabus.status}
-                      </Badge>
+                      {syllabus.status === 'published' ? (
+                        syllabus.visibility === 'unlisted' ? (
+                          <Badge variant="secondary" className="shrink-0 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                            Unlisted
+                          </Badge>
+                        ) : syllabus.visibility === 'private' ? (
+                          <Badge variant="secondary" className="shrink-0 bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400">
+                            Private
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="shrink-0 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                            Published
+                          </Badge>
+                        )
+                      ) : (
+                        <Badge variant="secondary" className="shrink-0 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                          Draft
+                        </Badge>
+                      )}
                       {isOtherCreator && (
                         <Badge variant="outline" className="text-xs text-amber-700 border-amber-300">
                           by {syllabus.creator?.name || syllabus.creatorId}

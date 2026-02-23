@@ -6,12 +6,13 @@ import {
   type Step, type InsertStep,
   type Submission, type InsertSubmission,
   type CompletedStep, type InsertCompletedStep,
-  type ChatMessage, type InsertChatMessage,
   type Subscription, type InsertSubscription,
-  users, syllabinds, enrollments, weeks, steps, submissions, completedSteps, chatMessages, subscriptions, siteSettings
+  type Category, type Tag, type SyllabindTag,
+  users, syllabinds, enrollments, weeks, steps, submissions, completedSteps, subscriptions, siteSettings,
+  categories, tags, syllabindTags
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql, asc, inArray } from "drizzle-orm";
+import { eq, and, sql, asc, desc, inArray, ilike, count } from "drizzle-orm";
 
 // Extended types for nested data
 export interface WeekWithSteps extends Week {
@@ -20,6 +21,21 @@ export interface WeekWithSteps extends Week {
 
 export interface SyllabusWithContent extends Syllabus {
   weeks: WeekWithSteps[];
+}
+
+// Catalog search parameters
+export interface CatalogSearchParams {
+  query?: string;
+  category?: string; // category slug
+  level?: string; // audience level
+  sort?: 'newest' | 'popular' | 'relevance';
+  limit?: number;
+  offset?: number;
+}
+
+export interface CatalogSearchResult {
+  syllabinds: any[];
+  total: number;
 }
 
 export interface IStorage {
@@ -90,10 +106,6 @@ export interface IStorage {
   getStepCompletionRates(syllabusId: number): Promise<Array<{ stepId: number; completionCount: number; completionRate: number }>>;
   getAverageCompletionTimes(syllabusId: number): Promise<Array<{ stepId: number; avgMinutes: number }>>;
 
-  // Chat messages
-  getChatMessages(syllabusId: number): Promise<ChatMessage[]>;
-  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
-  clearChatMessages(syllabusId: number): Promise<void>;
 
   // Subscription operations
   getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined>;
@@ -105,6 +117,21 @@ export interface IStorage {
   // Site settings
   getSiteSetting(key: string): Promise<string | null>;
   setSiteSetting(key: string, value: string): Promise<void>;
+
+  // Category operations
+  listCategories(): Promise<Category[]>;
+
+  // Tag operations
+  listTags(query?: string): Promise<Tag[]>;
+  getTagsBySyllabindId(syllabusId: number): Promise<Tag[]>;
+  findOrCreateTag(name: string): Promise<Tag>;
+  setSyllabindTags(syllabusId: number, tagNames: string[]): Promise<Tag[]>;
+
+  // Catalog search
+  searchCatalog(params: CatalogSearchParams): Promise<CatalogSearchResult>;
+
+  // Search vector
+  refreshSearchVector(syllabusId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -181,7 +208,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async listPublishedSyllabinds(): Promise<Syllabus[]> {
-    return await db.select().from(syllabinds).where(eq(syllabinds.status, 'published'));
+    return await db.select().from(syllabinds).where(
+      and(eq(syllabinds.status, 'published'), eq(syllabinds.visibility, 'public'))
+    );
   }
 
   async getSyllabindsByCreator(username: string): Promise<Syllabus[]> {
@@ -740,28 +769,12 @@ export class DatabaseStorage implements IStorage {
       result.push({ ...week, steps: weekSteps });
     }
 
+    // Refresh search vector with new week content
+    await this.refreshSearchVector(syllabusId);
+
     return result;
   }
 
-  async getChatMessages(syllabusId: number): Promise<ChatMessage[]> {
-    return await db
-      .select()
-      .from(chatMessages)
-      .where(eq(chatMessages.syllabusId, syllabusId))
-      .orderBy(asc(chatMessages.createdAt));
-  }
-
-  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
-    const [chatMessage] = await db
-      .insert(chatMessages)
-      .values(message)
-      .returning();
-    return chatMessage;
-  }
-
-  async clearChatMessages(syllabusId: number): Promise<void> {
-    await db.delete(chatMessages).where(eq(chatMessages.syllabusId, syllabusId));
-  }
 
   // Subscription operations
   async getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined> {
@@ -820,6 +833,186 @@ export class DatabaseStorage implements IStorage {
         target: siteSettings.key,
         set: { value, updatedAt: new Date() },
       });
+  }
+
+  // Category operations
+  async listCategories(): Promise<Category[]> {
+    return await db.select().from(categories).orderBy(asc(categories.displayOrder));
+  }
+
+  // Tag operations
+  async listTags(query?: string): Promise<Tag[]> {
+    if (query) {
+      return await db.select().from(tags)
+        .where(ilike(tags.name, `%${query}%`))
+        .orderBy(asc(tags.name))
+        .limit(20);
+    }
+    return await db.select().from(tags).orderBy(asc(tags.name)).limit(50);
+  }
+
+  async getTagsBySyllabindId(syllabusId: number): Promise<Tag[]> {
+    const rows = await db.select({ tag: tags })
+      .from(syllabindTags)
+      .innerJoin(tags, eq(syllabindTags.tagId, tags.id))
+      .where(eq(syllabindTags.syllabusId, syllabusId));
+    return rows.map(r => r.tag);
+  }
+
+  async findOrCreateTag(name: string): Promise<Tag> {
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const [existing] = await db.select().from(tags).where(eq(tags.slug, slug));
+    if (existing) return existing;
+    const [created] = await db.insert(tags).values({ name: name.trim(), slug }).returning();
+    return created;
+  }
+
+  async setSyllabindTags(syllabusId: number, tagNames: string[]): Promise<Tag[]> {
+    // Enforce max 5 tags
+    const trimmed = tagNames.slice(0, 5);
+
+    // Delete existing tags
+    await db.delete(syllabindTags).where(eq(syllabindTags.syllabusId, syllabusId));
+
+    if (trimmed.length === 0) return [];
+
+    // Find or create each tag
+    const resultTags: Tag[] = [];
+    for (const name of trimmed) {
+      const tag = await this.findOrCreateTag(name);
+      resultTags.push(tag);
+      await db.insert(syllabindTags)
+        .values({ syllabusId, tagId: tag.id })
+        .onConflictDoNothing();
+    }
+
+    // Refresh search vector to include new tag names
+    await this.refreshSearchVector(syllabusId);
+
+    return resultTags;
+  }
+
+  // Catalog search
+  async searchCatalog(params: CatalogSearchParams): Promise<CatalogSearchResult> {
+    const {
+      query,
+      category,
+      level,
+      sort = 'newest',
+      limit: resultLimit = 20,
+      offset: resultOffset = 0
+    } = params;
+
+    // Build WHERE conditions: always filter published + public
+    const conditions: any[] = [
+      sql`${syllabinds.status} = 'published'`,
+      sql`${syllabinds.visibility} = 'public'`,
+    ];
+
+    if (category) {
+      conditions.push(sql`${categories.slug} = ${category}`);
+    }
+
+    if (level) {
+      conditions.push(sql`${syllabinds.audienceLevel} = ${level}`);
+    }
+
+    if (query) {
+      conditions.push(sql`${syllabinds.searchVector} @@ plainto_tsquery('english', ${query})`);
+    }
+
+    const whereClause = sql.join(conditions, sql` AND `);
+
+    // Determine ORDER BY
+    let orderByClause;
+    if (sort === 'relevance' && query) {
+      orderByClause = sql`ts_rank(${syllabinds.searchVector}, plainto_tsquery('english', ${query})) DESC`;
+    } else if (sort === 'popular') {
+      orderByClause = sql`${syllabinds.studentActive} DESC NULLS LAST, ${syllabinds.createdAt} DESC`;
+    } else {
+      orderByClause = sql`${syllabinds.createdAt} DESC`;
+    }
+
+    // Count query
+    const [countResult] = await db
+      .select({ total: sql<number>`cast(count(*) as int)` })
+      .from(syllabinds)
+      .leftJoin(categories, eq(syllabinds.categoryId, categories.id))
+      .where(whereClause);
+
+    const total = countResult?.total || 0;
+
+    // Main data query with creator join
+    const rows = await db
+      .select({
+        syllabus: syllabinds,
+        categoryName: categories.name,
+        categorySlug: categories.slug,
+        creatorName: users.name,
+        creatorUsername: users.username,
+        creatorAvatarUrl: users.avatarUrl,
+        creatorBio: users.bio,
+        creatorExpertise: users.expertise,
+        creatorProfileTitle: users.profileTitle,
+        creatorLinkedin: users.linkedin,
+        creatorTwitter: users.twitter,
+        creatorThreads: users.threads,
+        creatorWebsite: users.website,
+        creatorSchedulingUrl: users.schedulingUrl,
+      })
+      .from(syllabinds)
+      .leftJoin(categories, eq(syllabinds.categoryId, categories.id))
+      .leftJoin(users, eq(syllabinds.creatorId, users.username))
+      .where(whereClause)
+      .orderBy(orderByClause)
+      .limit(resultLimit)
+      .offset(resultOffset);
+
+    // Fetch tags for each syllabind
+    const syllabindsList = await Promise.all(rows.map(async (row) => {
+      const syllabindTags = await this.getTagsBySyllabindId(row.syllabus.id);
+      return {
+        ...row.syllabus,
+        category: row.categoryName ? { name: row.categoryName, slug: row.categorySlug } : null,
+        tags: syllabindTags,
+        creator: row.creatorUsername ? {
+          name: row.creatorName,
+          username: row.creatorUsername,
+          avatarUrl: row.creatorAvatarUrl,
+          bio: row.creatorBio,
+          expertise: row.creatorExpertise,
+          profileTitle: row.creatorProfileTitle,
+          linkedin: row.creatorLinkedin,
+          twitter: row.creatorTwitter,
+          threads: row.creatorThreads,
+          website: row.creatorWebsite,
+          schedulingUrl: row.creatorSchedulingUrl,
+        } : undefined,
+      };
+    }));
+
+    return { syllabinds: syllabindsList, total };
+  }
+
+  // Refresh search vector for a syllabind (includes week content and tag names)
+  async refreshSearchVector(syllabusId: number): Promise<void> {
+    // Get syllabind basic info (trigger handles title/description on save)
+    // Here we add week titles + tag names
+    const weekRows = await db.select({ title: weeks.title, description: weeks.description })
+      .from(weeks).where(eq(weeks.syllabusId, syllabusId));
+
+    const tagRows = await this.getTagsBySyllabindId(syllabusId);
+    const tagText = tagRows.map(t => t.name).join(' ');
+    const weekText = weekRows.map(w => [w.title || '', w.description || ''].join(' ')).join(' ');
+
+    await db.execute(sql`
+      UPDATE syllabi SET search_vector =
+        setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
+        setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
+        setweight(to_tsvector('english', ${weekText}), 'C') ||
+        setweight(to_tsvector('english', ${tagText}), 'D')
+      WHERE id = ${syllabusId}
+    `);
   }
 
 }

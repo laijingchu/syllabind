@@ -163,9 +163,6 @@ export const resetAllMocks = () => {
   if (mockStorage.getStep) mockStorage.getStep.mockResolvedValue(null);
   if (mockStorage.getWeek) mockStorage.getWeek.mockResolvedValue(null);
   if (mockStorage.deleteStep) mockStorage.deleteStep.mockResolvedValue(undefined);
-  if (mockStorage.getChatMessages) mockStorage.getChatMessages.mockResolvedValue([]);
-  if (mockStorage.createChatMessage) mockStorage.createChatMessage.mockResolvedValue({ id: 1 });
-  if (mockStorage.clearChatMessages) mockStorage.clearChatMessages.mockResolvedValue(undefined);
   if (mockStorage.updateStepUrl) mockStorage.updateStepUrl.mockResolvedValue(undefined);
   if (mockStorage.updateStep) mockStorage.updateStep.mockResolvedValue(undefined);
   if (mockStorage.getUserByStripeCustomerId) mockStorage.getUserByStripeCustomerId.mockResolvedValue(null);
@@ -175,4 +172,11 @@ export const resetAllMocks = () => {
   if (mockStorage.countSyllabindsByCreator) mockStorage.countSyllabindsByCreator.mockResolvedValue(0);
   if (mockStorage.getSiteSetting) mockStorage.getSiteSetting.mockResolvedValue(null);
   if (mockStorage.setSiteSetting) mockStorage.setSiteSetting.mockResolvedValue(undefined);
+  if (mockStorage.listCategories) mockStorage.listCategories.mockResolvedValue([]);
+  if (mockStorage.listTags) mockStorage.listTags.mockResolvedValue([]);
+  if (mockStorage.getTagsBySyllabindId) mockStorage.getTagsBySyllabindId.mockResolvedValue([]);
+  if (mockStorage.findOrCreateTag) mockStorage.findOrCreateTag.mockResolvedValue({ id: 1, name: 'test', slug: 'test' });
+  if (mockStorage.setSyllabindTags) mockStorage.setSyllabindTags.mockResolvedValue([]);
+  if (mockStorage.searchCatalog) mockStorage.searchCatalog.mockResolvedValue({ syllabinds: [], total: 0 });
+  if (mockStorage.refreshSearchVector) mockStorage.refreshSearchVector.mockResolvedValue(undefined);
 };

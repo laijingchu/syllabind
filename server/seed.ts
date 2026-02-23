@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, syllabinds, weeks, steps, enrollments, completedSteps, siteSettings } from "@shared/schema";
+import { users, syllabinds, weeks, steps, enrollments, completedSteps, siteSettings, categories, tags, syllabindTags } from "@shared/schema";
 import { hashPassword } from "./auth/emailAuth";
 import { eq } from "drizzle-orm";
 
@@ -284,6 +284,91 @@ async function seed() {
 
     console.log(`✅ Created syllabus: ${syllabus2.title} (2 weeks, 1 step)\n`);
 
+    // Syllabus 3: Creative Writing Workshop (unlisted)
+    console.log("Creating: Creative Writing Workshop (unlisted)");
+
+    // Get the Arts & Humanities category
+    const [artsCategory] = await db.select().from(categories).where(eq(categories.slug, 'arts-humanities'));
+    const [personalDevCategory] = await db.select().from(categories).where(eq(categories.slug, 'personal-development'));
+
+    const [syllabus3] = await db.insert(syllabinds).values({
+      title: "Creative Writing Workshop",
+      description: "A hands-on workshop for aspiring writers. Learn storytelling fundamentals, develop your voice, and complete a short story.",
+      audienceLevel: "Beginner",
+      durationWeeks: 3,
+      status: "published",
+      visibility: "unlisted",
+      creatorId: creator.username,
+      categoryId: artsCategory?.id || null,
+    }).returning();
+
+    const [workshop_week1] = await db.insert(weeks).values({
+      syllabusId: syllabus3.id,
+      index: 1,
+      title: "Finding Your Voice",
+    }).returning();
+
+    await db.insert(steps).values([
+      {
+        weekId: workshop_week1.id,
+        position: 1,
+        type: "reading",
+        title: "On Writing Well",
+        url: "https://example.com/on-writing-well",
+        estimatedMinutes: 30,
+      },
+      {
+        weekId: workshop_week1.id,
+        position: 2,
+        type: "exercise",
+        title: "Write a 500-word memoir",
+        promptText: "Write a 500-word memoir about a formative childhood experience.",
+        estimatedMinutes: 45,
+      },
+    ]);
+
+    console.log(`✅ Created syllabus: ${syllabus3.title} (unlisted, 1 week, 2 steps)\n`);
+
+    // Update existing syllabinds with categories
+    if (personalDevCategory) {
+      await db.update(syllabinds).set({ categoryId: personalDevCategory.id }).where(eq(syllabinds.id, syllabus1.id));
+    }
+
+    // Add tags to syllabinds
+    console.log("🏷️  Adding tags...");
+    const tagData = [
+      { name: 'focus', slug: 'focus' },
+      { name: 'productivity', slug: 'productivity' },
+      { name: 'digital wellness', slug: 'digital-wellness' },
+      { name: 'systems', slug: 'systems' },
+      { name: 'mental models', slug: 'mental-models' },
+      { name: 'writing', slug: 'writing' },
+      { name: 'creativity', slug: 'creativity' },
+    ];
+    const createdTags = await db.insert(tags).values(tagData).onConflictDoNothing().returning();
+    const allTags = createdTags.length > 0 ? createdTags : await db.select().from(tags);
+
+    const getTagId = (slug: string) => allTags.find(t => t.slug === slug)?.id;
+
+    // Digital Minimalism tags
+    const dmTags = ['focus', 'productivity', 'digital-wellness'].map(getTagId).filter(Boolean);
+    for (const tagId of dmTags) {
+      await db.insert(syllabindTags).values({ syllabusId: syllabus1.id, tagId: tagId! }).onConflictDoNothing();
+    }
+
+    // Systems Thinking tags
+    const stTags = ['systems', 'mental-models'].map(getTagId).filter(Boolean);
+    for (const tagId of stTags) {
+      await db.insert(syllabindTags).values({ syllabusId: syllabus2.id, tagId: tagId! }).onConflictDoNothing();
+    }
+
+    // Creative Writing tags
+    const cwTags = ['writing', 'creativity'].map(getTagId).filter(Boolean);
+    for (const tagId of cwTags) {
+      await db.insert(syllabindTags).values({ syllabusId: syllabus3.id, tagId: tagId! }).onConflictDoNothing();
+    }
+    console.log("✅ Tags added\n");
+
     // 4. Create Enrollments
     console.log("📋 Creating enrollments...\n");
 
@@ -411,9 +496,10 @@ async function seed() {
     console.log(`   • ${1 + learners.length} users created`);
     console.log(`     - 1 creator (janesmith)`);
     console.log(`     - ${learners.length} learners`);
-    console.log(`   • 2 syllabinds created`);
-    console.log(`     - Digital Minimalism (4 weeks, 8 steps)`);
-    console.log(`     - Systems Thinking 101 (2 weeks, 1 step)`);
+    console.log(`   • 3 syllabinds created`);
+    console.log(`     - Digital Minimalism (4 weeks, 8 steps, public)`);
+    console.log(`     - Systems Thinking 101 (2 weeks, 1 step, public)`);
+    console.log(`     - Creative Writing Workshop (1 week, 2 steps, unlisted)`);
     console.log(`   • 5 enrollments created`);
     console.log(`   • Multiple steps marked as completed\n`);
     console.log("🔑 Login credentials (all users):");

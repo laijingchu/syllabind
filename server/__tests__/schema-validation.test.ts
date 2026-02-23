@@ -14,7 +14,9 @@ import {
   insertCompletedStepSchema,
   insertCohortSchema,
   insertCohortMemberSchema,
-  insertChatMessageSchema,
+  insertCategorySchema,
+  insertTagSchema,
+  insertSyllabindTagSchema,
 } from '@shared/schema';
 
 describe('Schema Validation', () => {
@@ -281,38 +283,86 @@ describe('Schema Validation', () => {
     });
   });
 
-  describe('insertChatMessageSchema', () => {
-    it('accepts valid chat message data', () => {
-      const result = insertChatMessageSchema.safeParse({
+  describe('insertCategorySchema', () => {
+    it('accepts valid category data', () => {
+      const result = insertCategorySchema.safeParse({
+        name: 'Technology',
+        slug: 'technology',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('requires name', () => {
+      const result = insertCategorySchema.safeParse({
+        slug: 'technology',
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('requires slug', () => {
+      const result = insertCategorySchema.safeParse({
+        name: 'Technology',
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('accepts optional description and displayOrder', () => {
+      const result = insertCategorySchema.safeParse({
+        name: 'Technology',
+        slug: 'technology',
+        description: 'Tech courses',
+        displayOrder: 5,
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('insertTagSchema', () => {
+    it('accepts valid tag data', () => {
+      const result = insertTagSchema.safeParse({
+        name: 'javascript',
+        slug: 'javascript',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('requires name', () => {
+      const result = insertTagSchema.safeParse({
+        slug: 'javascript',
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('requires slug', () => {
+      const result = insertTagSchema.safeParse({
+        name: 'javascript',
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('insertSyllabindTagSchema', () => {
+    it('accepts valid syllabind tag data', () => {
+      const result = insertSyllabindTagSchema.safeParse({
         syllabusId: 1,
-        role: 'user',
-        content: 'Hello',
+        tagId: 2,
       });
       expect(result.success).toBe(true);
     });
 
     it('requires syllabusId', () => {
-      const result = insertChatMessageSchema.safeParse({
-        role: 'user',
-        content: 'Hello',
+      const result = insertSyllabindTagSchema.safeParse({
+        tagId: 2,
       });
       expect(result.success).toBe(false);
     });
 
-    it('requires role', () => {
-      const result = insertChatMessageSchema.safeParse({
+    it('requires tagId', () => {
+      const result = insertSyllabindTagSchema.safeParse({
         syllabusId: 1,
-        content: 'Hello',
-      });
-      expect(result.success).toBe(false);
-    });
-
-    it('requires content', () => {
-      const result = insertChatMessageSchema.safeParse({
-        syllabusId: 1,
-        role: 'user',
       });
       expect(result.success).toBe(false);
     });
   });
+
 });
