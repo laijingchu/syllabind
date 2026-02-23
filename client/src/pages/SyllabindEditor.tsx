@@ -264,7 +264,7 @@ export default function SyllabindEditor() {
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [syllabindTags, setSyllabindTags] = useState<Tag[]>([]);
   const [tagInput, setTagInput] = useState('');
-  const [tagSuggestions, setTagSuggestions] = useState<Tag[]>([]);
+  const [tagSuggestions, setTagSuggestions] = useState<(Tag & { usageCount?: number })[]>([]);
   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
 
   const [formData, setFormData] = useState<Syllabus>({
@@ -1689,19 +1689,6 @@ export default function SyllabindEditor() {
             </div>
             <div className="space-y-2">
               <Label className="text-sm">Tags ({syllabindTags.length}/5)</Label>
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {syllabindTags.map(tag => (
-                  <Badge key={tag.id} variant="secondary" className="gap-1 pr-1">
-                    {tag.name}
-                    <button
-                      onClick={() => removeTag(tag.id)}
-                      className="ml-0.5 rounded-full hover:bg-muted p-0.5"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
               {syllabindTags.length < 5 && (
                 <div className="relative">
                   <Input
@@ -1712,22 +1699,38 @@ export default function SyllabindEditor() {
                     }}
                     onBlur={() => setTimeout(() => setShowTagSuggestions(false), 200)}
                     onFocus={() => tagInput.length >= 2 && setShowTagSuggestions(true)}
-                    placeholder="Add a tag..."
-                    className="text-sm"
+                    placeholder="Type a tag and press enter"
+                    className="text-base md:text-lg"
                   />
                   {showTagSuggestions && tagSuggestions.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-md max-h-32 overflow-y-auto">
                       {tagSuggestions.map(t => (
                         <button
                           key={t.id}
-                          className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted transition-colors"
+                          className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted transition-colors flex items-center justify-between"
                           onMouseDown={e => { e.preventDefault(); addTag(t.name); }}
                         >
                           {t.name}
+                          {t.usageCount > 0 && <span className="text-xs text-muted-foreground">({t.usageCount})</span>}
                         </button>
                       ))}
                     </div>
                   )}
+                </div>
+              )}
+              {syllabindTags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {syllabindTags.map(tag => (
+                    <Badge key={tag.id} variant="secondary" className="gap-1 pr-1">
+                      {tag.name}
+                      <button
+                        onClick={() => removeTag(tag.id)}
+                        className="ml-0.5 rounded-full hover:bg-muted p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
                 </div>
               )}
             </div>

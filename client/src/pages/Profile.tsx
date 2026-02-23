@@ -19,7 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
-import { ArrowLeft, Loader2, Crown, Settings, Hash } from 'lucide-react';
+import { ArrowLeft, Loader2, Crown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { redirectToCheckout, redirectToPortal } from '@/lib/stripe';
 import { Badge } from '@/components/ui/badge';
@@ -47,87 +47,6 @@ export default function Profile() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
-  const [slackUrl, setSlackUrl] = useState('');
-  const [slackLoading, setSlackLoading] = useState(false);
-  const [slackSaving, setSlackSaving] = useState(false);
-  const [waitlistUrl, setWaitlistUrl] = useState('');
-  const [waitlistSaving, setWaitlistSaving] = useState(false);
-  const [bugReportUrl, setBugReportUrl] = useState('');
-  const [bugReportSaving, setBugReportSaving] = useState(false);
-
-  // Fetch admin settings for admin users
-  useEffect(() => {
-    if (user?.isAdmin) {
-      setSlackLoading(true);
-      Promise.all([
-        fetch('/api/site-settings/slack_community_url').then(r => r.json()),
-        fetch('/api/site-settings/waitlist_form_url').then(r => r.json()),
-        fetch('/api/site-settings/bug_report_url').then(r => r.json()),
-      ])
-        .then(([slackData, waitlistData, bugReportData]) => {
-          setSlackUrl(slackData.value || '');
-          setWaitlistUrl(waitlistData.value || '');
-          setBugReportUrl(bugReportData.value || '');
-          setSlackLoading(false);
-        })
-        .catch(() => setSlackLoading(false));
-    }
-  }, [user?.isAdmin]);
-
-  const handleSlackSave = async () => {
-    setSlackSaving(true);
-    try {
-      const res = await fetch('/api/admin/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ key: 'slack_community_url', value: slackUrl }),
-      });
-      if (!res.ok) throw new Error('Failed to save');
-      toast({ title: 'Settings saved', description: 'Slack community URL has been updated.' });
-    } catch {
-      toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
-    } finally {
-      setSlackSaving(false);
-    }
-  };
-
-  const handleBugReportSave = async () => {
-    setBugReportSaving(true);
-    try {
-      const res = await fetch('/api/admin/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ key: 'bug_report_url', value: bugReportUrl }),
-      });
-      if (!res.ok) throw new Error('Failed to save');
-      toast({ title: 'Settings saved', description: 'Bug report form URL has been updated.' });
-    } catch {
-      toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
-    } finally {
-      setBugReportSaving(false);
-    }
-  };
-
-  const handleWaitlistSave = async () => {
-    setWaitlistSaving(true);
-    try {
-      const res = await fetch('/api/admin/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ key: 'waitlist_form_url', value: waitlistUrl }),
-      });
-      if (!res.ok) throw new Error('Failed to save');
-      toast({ title: 'Settings saved', description: 'Waitlist form URL has been updated.' });
-    } catch {
-      toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
-    } finally {
-      setWaitlistSaving(false);
-    }
-  };
-
   // Handle ?subscription=success query param
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -216,7 +135,7 @@ export default function Profile() {
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
           </Button>
         </Link>
-        <h1 className="text-3xl font-display font-medium mb-2">Edit Profile & Settings</h1>
+        <h1 className="text-3xl font-display font-medium mb-2">Edit Profile</h1>
         <p className="text-muted-foreground">Manage your public profile and preferences.</p>
       </div>
 
@@ -436,106 +355,6 @@ export default function Profile() {
         </CardContent>
       </Card>
 
-      {/* Admin Settings — only visible to admins */}
-      {user?.isAdmin && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Admin Settings
-            </CardTitle>
-            <CardDescription>Platform-wide configuration (admin only).</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
-                <Hash className="h-4 w-4" />
-                Slack Community URL
-              </label>
-              <p className="text-xs text-muted-foreground">
-                The Slack invite URL shown to Pro users on syllabind overview pages.
-              </p>
-              {slackLoading ? (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading...
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="https://join.slack.com/t/your-workspace/shared_invite/..."
-                    value={slackUrl}
-                    onChange={(e) => setSlackUrl(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button onClick={handleSlackSave} disabled={slackSaving}>
-                    {slackSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
-                <Hash className="h-4 w-4" />
-                Waitlist Form URL
-              </label>
-              <p className="text-xs text-muted-foreground">
-                External form URL (Google Form, Typeform, etc.) for waitlist signups on Login and Marketing pages.
-              </p>
-              {slackLoading ? (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading...
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="https://forms.gle/... or https://yourform.typeform.com/..."
-                    value={waitlistUrl}
-                    onChange={(e) => setWaitlistUrl(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button onClick={handleWaitlistSave} disabled={waitlistSaving}>
-                    {waitlistSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
-                <Hash className="h-4 w-4" />
-                Bug Report Form URL
-              </label>
-              <p className="text-xs text-muted-foreground">
-                Google Form or other URL for bug reports. When set, a bug icon appears in the header next to the user avatar.
-              </p>
-              {slackLoading ? (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading...
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="https://forms.gle/... or https://yourform.typeform.com/..."
-                    value={bugReportUrl}
-                    onChange={(e) => setBugReportUrl(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button onClick={handleBugReportSave} disabled={bugReportSaving}>
-                    {bugReportSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

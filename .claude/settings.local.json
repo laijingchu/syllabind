@@ -50,7 +50,9 @@
       "Bash(NODE_ENV=test npx jest:*)",
       "Bash(npm ls:*)",
       "Bash(npm info:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "WebSearch",
+      "WebFetch(domain:ai.google.dev)"
     ]
   }
 }

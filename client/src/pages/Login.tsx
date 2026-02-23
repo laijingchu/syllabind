@@ -23,6 +23,20 @@ export default function Login() {
   const rawReturnTo = urlParams.get('returnTo') || '/';
   const returnTo = rawReturnTo.startsWith('/') ? rawReturnTo : '/';
   const [isLoading, setIsLoading] = useState(false);
+  const [termsUrl, setTermsUrl] = useState<string | null>(null);
+  const [privacyUrl, setPrivacyUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/site-settings/terms_of_service_url').then(r => r.json()),
+      fetch('/api/site-settings/privacy_policy_url').then(r => r.json()),
+    ])
+      .then(([termsData, privacyData]) => {
+        setTermsUrl(termsData.value || null);
+        setPrivacyUrl(privacyData.value || null);
+      })
+      .catch(() => {});
+  }, []);
 
   // Show toast for OAuth errors on mount
   const [shownError, setShownError] = useState<string | null>(null);
@@ -177,6 +191,12 @@ export default function Login() {
                     </svg>
                     Continue with Google
                   </Button>
+
+                  <p className="auth-legal text-center text-xs text-muted-foreground">
+                    <a href={termsUrl || "/terms"} {...(termsUrl ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="underline hover:text-foreground transition-colors">Terms of Service</a>
+                    {' and '}
+                    <a href={privacyUrl || "/privacy"} {...(privacyUrl ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="underline hover:text-foreground transition-colors">Privacy Policy</a>
+                  </p>
                 </CardFooter>
               </form>
             </Card>
@@ -217,6 +237,15 @@ export default function Login() {
             Back to Home
           </Button>
         </div>
+
+        {(termsUrl || privacyUrl) && (
+          <p className="auth-legal text-center text-xs text-muted-foreground">
+            By signing in, you agree to our{' '}
+            {termsUrl && <a href={termsUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Terms of Service</a>}
+            {termsUrl && privacyUrl && ' and '}
+            {privacyUrl && <a href={privacyUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Privacy Policy</a>}.
+          </p>
+        )}
       </div>
     </div>
   );

@@ -206,7 +206,7 @@ export async function registerRoutes(
       const allowedVisibilities = ['public', 'unlisted', 'private'];
       const result = await storage.searchCatalog({
         query: req.query.q as string | undefined,
-        category: req.query.category as string | undefined,
+        category: req.query.category ? (req.query.category as string).split(',').filter(Boolean) : undefined,
         level: req.query.level as string | undefined,
         visibility: visibility && allowedVisibilities.includes(visibility) ? visibility : 'public',
         sort: (req.query.sort as any) || 'newest',

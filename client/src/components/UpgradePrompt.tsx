@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Crown } from 'lucide-react';
 import { redirectToCheckout } from '@/lib/stripe';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface UpgradePromptProps {
   open: boolean;
@@ -21,7 +21,22 @@ interface UpgradePromptProps {
 
 export function UpgradePrompt({ open, onOpenChange, variant, returnTo }: UpgradePromptProps) {
   const [loading, setLoading] = useState(false);
+  const [termsUrl, setTermsUrl] = useState<string | null>(null);
+  const [privacyUrl, setPrivacyUrl] = useState<string | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!open) return;
+    Promise.all([
+      fetch('/api/site-settings/terms_of_service_url').then(r => r.json()),
+      fetch('/api/site-settings/privacy_policy_url').then(r => r.json()),
+    ])
+      .then(([termsData, privacyData]) => {
+        setTermsUrl(termsData.value || null);
+        setPrivacyUrl(privacyData.value || null);
+      })
+      .catch(() => {});
+  }, [open]);
 
   const handleUpgrade = async () => {
     setLoading(true);
@@ -75,6 +90,14 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo }: Upgrade
             {loading ? 'Redirecting...' : 'Upgrade to Pro — $9.99'}
           </Button>
         </DialogFooter>
+        {(termsUrl || privacyUrl) && (
+          <p className="upgrade-legal text-center text-xs text-muted-foreground">
+            By upgrading, you agree to our{' '}
+            {termsUrl && <a href={termsUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Terms of Service</a>}
+            {termsUrl && privacyUrl && ' and '}
+            {privacyUrl && <a href={privacyUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Privacy Policy</a>}.
+          </p>
+        )}
       </DialogContent>
     </Dialog>
   );

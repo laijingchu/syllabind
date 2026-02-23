@@ -57,16 +57,15 @@ CREATE TRIGGER syllabi_search_vector_trigger
 
 -- 9. Seed initial categories
 INSERT INTO categories (name, slug, description, display_order) VALUES
-  ('Philosophy', 'philosophy', 'Explore foundational ideas about knowledge, existence, and ethics', 1),
-  ('Design', 'design', 'Visual design, UX, product design, and design thinking', 2),
-  ('Technology', 'technology', 'Software engineering, AI, data science, and emerging tech', 3),
-  ('Business', 'business', 'Strategy, entrepreneurship, management, and leadership', 4),
-  ('Science', 'science', 'Natural sciences, research methods, and scientific thinking', 5),
-  ('Arts & Humanities', 'arts-humanities', 'Literature, history, art, music, and cultural studies', 6),
-  ('Social Sciences', 'social-sciences', 'Psychology, sociology, economics, and political science', 7),
-  ('Health & Wellness', 'health-wellness', 'Physical health, mental well-being, and lifestyle habits', 8),
-  ('Personal Development', 'personal-development', 'Productivity, communication, habits, and self-improvement', 9),
-  ('Other', 'other', 'Topics that don''t fit neatly into other categories', 10)
+  ('Design', 'design', 'Visual design, UX, product design, and design thinking', 1),
+  ('Technology', 'technology', 'Software engineering, AI, data science, and emerging tech', 2),
+  ('Business', 'business', 'Strategy, entrepreneurship, management, and leadership', 3),
+  ('Science', 'science', 'Natural sciences, research methods, and scientific thinking', 4),
+  ('Arts & Humanities', 'arts-humanities', 'Literature, history, art, music, and cultural studies', 5),
+  ('Social Sciences', 'social-sciences', 'Psychology, sociology, economics, and political science', 6),
+  ('Health & Wellness', 'health-wellness', 'Physical health, mental well-being, and lifestyle habits', 7),
+  ('Personal Development', 'personal-development', 'Productivity, communication, habits, and self-improvement', 8),
+  ('Other', 'other', 'Topics that don''t fit neatly into other categories', 9)
 ON CONFLICT (slug) DO NOTHING;
 
 -- 10. Backfill search_vector for existing rows

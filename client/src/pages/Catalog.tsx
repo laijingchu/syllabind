@@ -2,21 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'wouter';
 import { SyllabindCard } from '@/components/SyllabindCard';
 import { AnimatedPage, AnimatedCard } from '@/components/ui/animated-container';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Loader2 } from 'lucide-react';
+import { SyllabindFilterBar } from '@/components/sections/SyllabindFilterBar';
+import { Loader2 } from 'lucide-react';
 import { useDebounce } from '@/hooks/use-debounce';
 import type { Syllabus, Category } from '@/lib/types';
-import { cn } from '@/lib/utils';
 
-const AUDIENCE_LEVELS = ['All', 'Beginner', 'Intermediate', 'Advanced'];
-const VISIBILITY_OPTIONS = [
-  { value: 'public', label: 'Public' },
-  { value: 'unlisted', label: 'Unlisted' },
-  { value: 'private', label: 'Private' },
-];
 const PAGE_SIZE = 12;
 
 export default function Catalog() {
@@ -24,8 +15,9 @@ export default function Catalog() {
   const params = new URLSearchParams(window.location.search);
 
   const [searchQuery, setSearchQuery] = useState(params.get('q') || '');
-  const [selectedCategory, setSelectedCategory] = useState(params.get('category') || '');
-  const [selectedLevel, setSelectedLevel] = useState(params.get('level') || '');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    params.get('category') ? params.get('category')!.split(',') : []
+  );
   const [selectedVisibility, setSelectedVisibility] = useState(params.get('visibility') || 'public');
   const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'relevance'>(
     (params.get('sort') as any) || 'newest'
@@ -51,14 +43,13 @@ export default function Catalog() {
   useEffect(() => {
     const p = new URLSearchParams();
     if (debouncedQuery) p.set('q', debouncedQuery);
-    if (selectedCategory) p.set('category', selectedCategory);
-    if (selectedLevel) p.set('level', selectedLevel);
+    if (selectedCategories.length > 0) p.set('category', selectedCategories.join(','));
     if (selectedVisibility !== 'public') p.set('visibility', selectedVisibility);
     if (sortBy !== 'newest') p.set('sort', sortBy);
     const qs = p.toString();
     const newUrl = `/catalog${qs ? `?${qs}` : ''}`;
     window.history.replaceState(null, '', newUrl);
-  }, [debouncedQuery, selectedCategory, selectedLevel, selectedVisibility, sortBy]);
+  }, [debouncedQuery, selectedCategories, selectedVisibility, sortBy]);
 
   // Fetch catalog results
   const fetchCatalog = useCallback(async (loadMore = false) => {
@@ -72,8 +63,7 @@ export default function Catalog() {
 
     const p = new URLSearchParams({ catalog: 'true', limit: String(PAGE_SIZE), offset: String(currentOffset) });
     if (debouncedQuery) p.set('q', debouncedQuery);
-    if (selectedCategory) p.set('category', selectedCategory);
-    if (selectedLevel) p.set('level', selectedLevel);
+    if (selectedCategories.length > 0) p.set('category', selectedCategories.join(','));
     if (selectedVisibility) p.set('visibility', selectedVisibility);
     p.set('sort', debouncedQuery && sortBy === 'newest' ? 'relevance' : sortBy);
 
@@ -93,11 +83,11 @@ export default function Catalog() {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [debouncedQuery, selectedCategory, selectedLevel, selectedVisibility, sortBy]);
+  }, [debouncedQuery, selectedCategories, selectedVisibility, sortBy]);
 
   useEffect(() => {
     fetchCatalog(false);
-  }, [debouncedQuery, selectedCategory, selectedLevel, selectedVisibility, sortBy]);
+  }, [debouncedQuery, selectedCategories, selectedVisibility, sortBy]);
 
   const hasMore = syllabinds.length < total;
 
@@ -110,100 +100,24 @@ export default function Catalog() {
         </p>
       </div>
 
-      {/* Search bar */}
-      <div className="catalog-search relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          placeholder="Search syllabinds..."
-          className="pl-10 text-base"
-        />
-      </div>
-
-      {/* Visibility toggle */}
-      <div className="catalog-visibility flex gap-2">
-        {VISIBILITY_OPTIONS.map(opt => (
-          <button
-            key={opt.value}
-            onClick={() => setSelectedVisibility(opt.value)}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
-              selectedVisibility === opt.value
-                ? "bg-foreground text-background"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            )}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Category pills */}
-      <div className="catalog-categories flex gap-2 flex-wrap">
-        <button
-          onClick={() => setSelectedCategory('')}
-          className={cn(
-            "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
-            !selectedCategory
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
-          )}
-        >
-          All
-        </button>
-        {categories.map(cat => (
-          <button
-            key={cat.slug}
-            onClick={() => setSelectedCategory(selectedCategory === cat.slug ? '' : cat.slug)}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
-              selectedCategory === cat.slug
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            )}
-          >
-            {cat.name}
-          </button>
-        ))}
-      </div>
-
-      {/* Filters row */}
-      <div className="catalog-filters flex flex-wrap items-center gap-3">
-        <div className="flex gap-1.5">
-          {AUDIENCE_LEVELS.map(level => (
-            <button
-              key={level}
-              onClick={() => setSelectedLevel(level === 'All' ? '' : level)}
-              className={cn(
-                "px-3 py-1 rounded-md text-xs font-medium transition-colors",
-                (level === 'All' && !selectedLevel) || selectedLevel === level
-                  ? "bg-foreground text-background"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              )}
-            >
-              {level}
-            </button>
-          ))}
-        </div>
-        <div className="ml-auto">
-          <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
-            <SelectTrigger className="w-[140px] h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">Newest</SelectItem>
-              <SelectItem value="popular">Most Popular</SelectItem>
-              {debouncedQuery && <SelectItem value="relevance">Relevance</SelectItem>}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Result count */}
-      <div className="text-sm text-muted-foreground">
-        {isLoading ? 'Searching...' : `${total} syllabind${total !== 1 ? 's' : ''} found`}
-      </div>
+      <SyllabindFilterBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        visibility={selectedVisibility}
+        onVisibilityChange={setSelectedVisibility}
+        sortBy={sortBy}
+        onSortChange={(v) => setSortBy(v as any)}
+        sortOptions={[
+          { value: 'newest', label: 'Newest' },
+          { value: 'popular', label: 'Most Popular' },
+          ...(debouncedQuery ? [{ value: 'relevance', label: 'Relevance' }] : []),
+        ]}
+        categories={categories}
+        selectedCategories={selectedCategories}
+        onCategoriesChange={setSelectedCategories}
+        resultCount={total}
+        isLoading={isLoading}
+      />
 
       {/* Results grid */}
       {isLoading ? (

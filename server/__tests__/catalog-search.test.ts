@@ -192,7 +192,15 @@ describe('Catalog Search & Categories/Tags', () => {
       mockStorage.searchCatalog.mockResolvedValue({ syllabinds: [], total: 0 });
       await request(app).get('/api/syllabinds?catalog=true&category=technology');
       expect(mockStorage.searchCatalog).toHaveBeenCalledWith(
-        expect.objectContaining({ category: 'technology' }),
+        expect.objectContaining({ category: ['technology'] }),
+      );
+    });
+
+    it('passes multiple categories to searchCatalog', async () => {
+      mockStorage.searchCatalog.mockResolvedValue({ syllabinds: [], total: 0 });
+      await request(app).get('/api/syllabinds?catalog=true&category=technology,design');
+      expect(mockStorage.searchCatalog).toHaveBeenCalledWith(
+        expect.objectContaining({ category: ['technology', 'design'] }),
       );
     });
 
@@ -233,7 +241,7 @@ describe('Catalog Search & Categories/Tags', () => {
       await request(app).get('/api/syllabinds?catalog=true&q=design&category=arts&level=Advanced&visibility=private&sort=relevance&limit=10&offset=5');
       expect(mockStorage.searchCatalog).toHaveBeenCalledWith({
         query: 'design',
-        category: 'arts',
+        category: ['arts'],
         level: 'Advanced',
         visibility: 'private',
         sort: 'relevance',

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
-import { BookOpen, User, LogOut, Menu, X, Bug } from 'lucide-react';
+import { BookOpen, User, LogOut, Menu, X, Bug, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -26,6 +26,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [bugReportUrl, setBugReportUrl] = useState<string | null>(null);
+  const [termsUrl, setTermsUrl] = useState<string | null>(null);
+  const [privacyUrl, setPrivacyUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -35,6 +37,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
         .catch(() => {});
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/site-settings/terms_of_service_url').then(r => r.json()),
+      fetch('/api/site-settings/privacy_policy_url').then(r => r.json()),
+    ])
+      .then(([termsData, privacyData]) => {
+        setTermsUrl(termsData.value || null);
+        setPrivacyUrl(privacyData.value || null);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleMobileNavClick = (path: string) => {
     setMobileMenuOpen(false);
@@ -166,9 +180,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <Link href="/profile">
                     <DropdownMenuItem className="cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
-                      <span>Edit Profile & Settings</span>
+                      <span>Edit Profile</span>
                     </DropdownMenuItem>
                   </Link>
+                  {user.isAdmin && (
+                    <Link href="/admin/settings">
+                      <DropdownMenuItem className="cursor-pointer">
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Admin Settings</span>
+                      </DropdownMenuItem>
+                    </Link>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={logout}>
                     <LogOut className="mr-2 h-4 w-4" />
@@ -208,6 +230,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <main className="container mx-auto px-4 py-8 md:py-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
         {children}
       </main>
+      <footer className="site-footer border-t border-border/40 mt-12">
+        <div className="container mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+          <p>&copy; {new Date().getFullYear()} Syllabind. All rights reserved.</p>
+          <nav className="footer-links flex items-center gap-4">
+            <a href={termsUrl || "/terms"} {...(termsUrl ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="hover:text-foreground transition-colors">Terms of Service</a>
+            <a href={privacyUrl || "/privacy"} {...(privacyUrl ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="hover:text-foreground transition-colors">Privacy Policy</a>
+            <a href="mailto:hello@syllabind.com" className="hover:text-foreground transition-colors">Contact Us</a>
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 }

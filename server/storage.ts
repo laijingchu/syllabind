@@ -26,7 +26,7 @@ export interface SyllabusWithContent extends Syllabus {
 // Catalog search parameters
 export interface CatalogSearchParams {
   query?: string;
-  category?: string; // category slug
+  category?: string | string[]; // category slug(s)
   level?: string; // audience level
   visibility?: string; // 'public' | 'unlisted' | 'private' (default: 'public')
   sort?: 'newest' | 'popular' | 'relevance';
@@ -842,14 +842,28 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Tag operations
-  async listTags(query?: string): Promise<Tag[]> {
+  async listTags(query?: string): Promise<any[]> {
+    const baseQuery = db
+      .select({
+        id: tags.id,
+        name: tags.name,
+        slug: tags.slug,
+        createdAt: tags.createdAt,
+        usageCount: sql<number>`cast(count(${syllabindTags.syllabusId}) as int)`,
+      })
+      .from(tags)
+      .leftJoin(syllabindTags, eq(tags.id, syllabindTags.tagId))
+      .groupBy(tags.id, tags.name, tags.slug, tags.createdAt);
+
     if (query) {
-      return await db.select().from(tags)
+      return await baseQuery
         .where(ilike(tags.name, `%${query}%`))
-        .orderBy(asc(tags.name))
+        .orderBy(sql`count(${syllabindTags.syllabusId}) DESC`, asc(tags.name))
         .limit(20);
     }
-    return await db.select().from(tags).orderBy(asc(tags.name)).limit(50);
+    return await baseQuery
+      .orderBy(sql`count(${syllabindTags.syllabusId}) DESC`, asc(tags.name))
+      .limit(50);
   }
 
   async getTagsBySyllabindId(syllabusId: number): Promise<Tag[]> {
@@ -912,7 +926,8 @@ export class DatabaseStorage implements IStorage {
     ];
 
     if (category) {
-      conditions.push(sql`${categories.slug} = ${category}`);
+      const cats = Array.isArray(category) ? category : [category];
+      conditions.push(sql`${categories.slug} IN ${cats}`);
     }
 
     if (level) {
