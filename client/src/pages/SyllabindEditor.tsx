@@ -10,7 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, AlertTriangle, Users, ExternalLink, Wand2, Loader2, X, Pencil } from 'lucide-react';
+import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, AlertTriangle, Users, ExternalLink, Wand2, Loader2, X, Pencil, ChevronDown, Globe, EyeOff, Lock } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1359,13 +1365,16 @@ export default function SyllabindEditor() {
   };
 
 
-  const handleSave = async (statusOverride?: 'draft' | 'published') => {
-    // Update formData status immediately so autosave doesn't race with stale status
-    if (statusOverride) {
-      setFormData(prev => ({ ...prev, status: statusOverride }));
+  const handleSave = async (statusOverride?: 'draft' | 'published', visibilityOverride?: string) => {
+    // Update formData immediately so autosave doesn't race with stale values
+    const overrides: Record<string, any> = {};
+    if (statusOverride) overrides.status = statusOverride;
+    if (visibilityOverride) overrides.visibility = visibilityOverride;
+    if (Object.keys(overrides).length > 0) {
+      setFormData(prev => ({ ...prev, ...overrides }));
     }
 
-    const dataToSave = statusOverride ? { ...formData, status: statusOverride } : formData;
+    const dataToSave = { ...formData, ...overrides };
 
     try {
       if (formData.id < 0) {
@@ -1549,7 +1558,27 @@ export default function SyllabindEditor() {
             {formData.status === 'published' ? (
               <Button variant="secondary" size="sm" onClick={() => setShowUnpublishDialog(true)}>Unpublish</Button>
             ) : (
-              <Button size="sm" onClick={() => handleSave('published')}>Publish</Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" className="gap-1.5">
+                    Publish <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuItem onClick={() => handleSave('published', 'public')}>
+                    <Globe className="h-4 w-4 mr-2" /> Public
+                    <span className="ml-auto text-xs text-muted-foreground">Catalog</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleSave('published', 'unlisted')}>
+                    <EyeOff className="h-4 w-4 mr-2" /> Unlisted
+                    <span className="ml-auto text-xs text-muted-foreground">Link only</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleSave('published', 'private')}>
+                    <Lock className="h-4 w-4 mr-2" /> Private
+                    <span className="ml-auto text-xs text-muted-foreground">Only you</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             {!isNew && (
               <Link href={`/creator/syllabind/${params?.id}/learners`}>
@@ -1641,36 +1670,17 @@ export default function SyllabindEditor() {
               </Select>
             </div>
           </div>
-          {/* Visibility, Category, Tags */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
-            <div className="space-y-2">
-              <Label className="text-sm">Visibility</Label>
-              <Select
-                value={formData.visibility || 'public'}
-                onValueChange={(v: any) => setFormData({...formData, visibility: v})}
-              >
-                <SelectTrigger className="text-base md:text-lg"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="public">Public</SelectItem>
-                  <SelectItem value="unlisted">Unlisted</SelectItem>
-                  <SelectItem value="private">Private</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {formData.visibility === 'public' && 'Visible in the catalog for everyone.'}
-                {formData.visibility === 'unlisted' && 'Only accessible via direct link.'}
-                {formData.visibility === 'private' && 'Only visible to you.'}
-              </p>
-            </div>
+          {/* Category, Tags */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-10">
             <div className="space-y-2">
               <Label className="text-sm">Category</Label>
               <Select
-                value={formData.categoryId?.toString() || ''}
-                onValueChange={(v: string) => setFormData({...formData, categoryId: v ? parseInt(v) : null})}
+                value={formData.categoryId?.toString() || 'none'}
+                onValueChange={(v: string) => setFormData({...formData, categoryId: v === 'none' ? null : parseInt(v)})}
               >
                 <SelectTrigger className="text-base md:text-lg"><SelectValue placeholder="Select a category" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {allCategories.map(cat => (
                     <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
                   ))}
