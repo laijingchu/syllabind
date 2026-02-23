@@ -4,6 +4,7 @@ import { db } from "../db";
 import { users, type InsertUser, type User, passwordSchema } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { isAdminUser } from "./admin";
+import { logSecurity } from "../lib/audit";
 
 const SALT_ROUNDS = 10;
 
@@ -92,16 +93,19 @@ export function registerEmailAuthRoutes(app: Express): void {
       // Find user by email
       const [user] = await db.select().from(users).where(eq(users.email, email));
       if (!user) {
+        logSecurity("login_failed", { email, reason: "user_not_found", ip: req.ip });
         return res.status(401).json({ message: "Invalid email or password" });
       }
       if (!user.password) {
         const oauthMsg = getOAuthProviderMessage(user);
+        logSecurity("login_failed", { email, reason: "oauth_account", ip: req.ip });
         return res.status(401).json({ message: oauthMsg || "Invalid email or password" });
       }
 
       // Compare password
       const isValid = await comparePassword(password, user.password);
       if (!isValid) {
+        logSecurity("login_failed", { email, reason: "invalid_password", ip: req.ip });
         return res.status(401).json({ message: "Invalid email or password" });
       }
 

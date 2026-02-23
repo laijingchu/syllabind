@@ -932,14 +932,34 @@ Admin status is controlled by the `ADMIN_USERNAMES` environment variable (comma-
 - Frontend `CreatorDashboard` shows "My Syllabinds / All Syllabinds" toggle for admin users
 - `User` type in `client/src/lib/types.ts` includes optional `isAdmin` field
 
-### Security Middleware (Production Only)
+### Security Middleware
 
-Located at the top of `server/index.ts`, two middlewares harden HTTPS in production:
+Located at the top of `server/index.ts`:
 
-1. **HTTPS Redirect** — Checks `X-Forwarded-Proto` header (set by Replit's reverse proxy) and issues a 301 redirect from HTTP to HTTPS.
-2. **HSTS (Strict-Transport-Security)** — Sends `max-age=31536000; includeSubDomains` header, telling browsers to always use HTTPS for 1 year.
+1. **HTTPS Redirect** (production only) — Checks `X-Forwarded-Proto` header and issues a 301 redirect from HTTP to HTTPS.
+2. **HSTS** (production only) — Sends `max-age=31536000; includeSubDomains` header.
+3. **Security Headers** (all environments) — Sets `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 1; mode=block`, `Referrer-Policy: strict-origin-when-cross-origin`, and `Permissions-Policy: camera=(), microphone=(), geolocation=()`.
 
-Both are skipped in development (plain HTTP).
+### Rate Limiting
+
+Auth endpoints are rate-limited via `server/utils/rateLimiter.ts` (in-memory sliding-window per IP):
+
+- **Login/Register** (`/api/auth/login`, `/api/auth/register`): 10 requests per 15 minutes
+- **OAuth** (`/api/auth/google`, `/api/auth/apple`): 20 requests per 15 minutes
+
+Applied in `server/auth/index.ts` before auth route registration.
+
+### HTML Sanitization
+
+All user-generated HTML rendered via `dangerouslySetInnerHTML` is sanitized through `client/src/lib/sanitize.ts` (DOMPurify wrapper) to prevent XSS. The `chart.tsx` tooltip is excluded as it renders static config, not user content.
+
+### Security Event Logging
+
+`server/lib/audit.ts` provides PostHog-based security event logging (`logSecurity()`) for login failures and rate limit hits. Requires `POSTHOG_API_KEY` env var.
+
+### Error Handler
+
+The global Express error handler in `server/index.ts` logs errors server-side and returns generic messages in production (status 500) to prevent information leakage.
 
 ### Protected Routes
 
@@ -947,11 +967,11 @@ All routes except public catalog/syllabind viewing require authentication. Creat
 
 ### Auth Routes
 
-- `POST /api/auth/register` - Email/password registration
-- `POST /api/auth/login` - Email/password login
+- `POST /api/auth/register` - Email/password registration (rate-limited)
+- `POST /api/auth/login` - Email/password login (rate-limited)
 - `GET /api/auth/me` - Get current user
 - `POST /api/auth/logout` - Destroy session
-- OAuth routes for Google and Apple in respective auth modules
+- OAuth routes for Google and Apple in respective auth modules (rate-limited)
 
 ---
 

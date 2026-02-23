@@ -27,6 +27,7 @@ import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, Use
 import { ShareDialog } from '@/components/ShareDialog';
 import { useState, useEffect } from 'react';
 import { cn, pluralize } from '@/lib/utils';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { LearnerProfile, Syllabus } from '@/lib/types';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { useToast } from '@/hooks/use-toast';
@@ -338,7 +339,7 @@ export default function SyllabindOverview() {
              </h1>
              <div
                className="text-xl text-muted-foreground leading-relaxed prose dark:prose-invert prose-p:my-2 prose-headings:my-3 prose-ul:list-disc prose-ul:pl-5 max-w-none"
-               dangerouslySetInnerHTML={{ __html: syllabus.description }}
+               dangerouslySetInnerHTML={{ __html: sanitizeHtml(syllabus.description) }}
              />
           </div>
 

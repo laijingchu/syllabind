@@ -8,6 +8,7 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/comp
 import { Clock, ArrowRight, Calendar, Linkedin, Twitter, MessageCircle, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn, pluralize } from '@/lib/utils';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { format } from 'date-fns';
 
 interface SyllabindCardProps {
@@ -113,7 +114,7 @@ export function SyllabindCard({ syllabus, className }: SyllabindCardProps) {
       <CardContent className="pb-4 space-y-3 flex-1">
         <div
           className="text-sm text-muted-foreground line-clamp-3 leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: syllabus.description }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(syllabus.description) }}
         />
       </CardContent>
       <CardFooter className="flex items-center gap-3">

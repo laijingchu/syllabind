@@ -32,6 +32,16 @@ if (isProduction) {
   });
 }
 
+// Security headers
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  next();
+});
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
@@ -175,10 +185,12 @@ app.use((req, res, next) => {
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    const message = isProduction && status === 500
+      ? "Internal Server Error"
+      : err.message || "Internal Server Error";
 
+    console.error(`[error] ${status} - ${err.message || err}`);
     res.status(status).json({ message });
-    throw err;
   });
 
   // importantly only setup vite in development and after

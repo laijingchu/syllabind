@@ -12,6 +12,7 @@ import { isAdminUser } from "./admin";
 import { db } from "../db";
 import { users } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
+import { createRateLimiter } from "../utils/rateLimiter";
 
 // Module-level session secret so it's shared between setupCustomAuth and authenticateWebSocket
 const isProduction = process.env.NODE_ENV === 'production';
@@ -53,6 +54,15 @@ export function setupCustomAuth(app: Express): void {
       sameSite: 'lax',
     },
   }));
+
+  // Rate limiters for auth endpoints
+  const authLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, maxRequests: 10 });
+  const oauthLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, maxRequests: 20 });
+
+  app.use("/api/auth/login", authLimiter);
+  app.use("/api/auth/register", authLimiter);
+  app.use("/api/auth/google", oauthLimiter);
+  app.use("/api/auth/apple", oauthLimiter);
 
   // Register all auth routes
   registerEmailAuthRoutes(app);

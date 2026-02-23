@@ -126,11 +126,6 @@ export async function registerRoutes(
     res.json(userWithoutPassword);
   });
 
-  // Debug: show upload paths
-  app.get("/api/debug/uploads-path", (_req, res) => {
-    res.json({ currentDirPath: process.cwd() });
-  });
-
   // Upload avatar image
   app.post("/api/upload", isAuthenticated, (req, res) => {
     console.log("Upload request received from user:", (req.user as any)?.username || "unauthenticated");

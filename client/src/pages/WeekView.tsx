@@ -11,6 +11,7 @@ import { ShareDialog } from '@/components/ShareDialog';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { useState, useEffect } from 'react';
 import { cn, pluralize } from '@/lib/utils';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -267,7 +268,7 @@ export default function WeekView() {
             {week.description && (
               <div
                 className="text-muted-foreground mt-2 prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 max-w-none text-sm sm:text-base"
-                dangerouslySetInnerHTML={{ __html: week.description }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(week.description) }}
               />
             )}
           </div>
@@ -387,7 +388,7 @@ export default function WeekView() {
                   {step.note && (
                     <div 
                       className="text-muted-foreground text-sm prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 max-w-none"
-                      dangerouslySetInnerHTML={{ __html: step.note }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(step.note) }}
                     />
                   )}
                   
@@ -407,7 +408,7 @@ export default function WeekView() {
                     <div className="mt-4 space-y-3">
                       <div 
                         className="text-sm font-medium mb-2 prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 max-w-none"
-                        dangerouslySetInnerHTML={{ __html: step.promptText || '' }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(step.promptText || '') }}
                       />
                       {!isDone ? (
                         <div className="space-y-4">
@@ -466,7 +467,7 @@ export default function WeekView() {
                                 {getSubmission(step.id)?.feedback && (
                                    <div 
                                      className="text-sm prose dark:prose-invert max-w-none"
-                                     dangerouslySetInnerHTML={{ __html: getSubmission(step.id)?.feedback || '' }}
+                                     dangerouslySetInnerHTML={{ __html: sanitizeHtml(getSubmission(step.id)?.feedback || '') }}
                                    />
                                 )}
                                 {getSubmission(step.id)?.rubricUrl && (

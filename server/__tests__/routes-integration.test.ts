@@ -705,15 +705,7 @@ describe('Routes Integration (real registerRoutes)', () => {
     });
   });
 
-  // ========== UPLOAD / DEBUG ==========
-
-  describe('GET /api/debug/uploads-path', () => {
-    it('returns paths info', async () => {
-      const res = await request(app).get('/api/debug/uploads-path');
-      expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('currentDirPath');
-    });
-  });
+  // ========== UPLOAD ==========
 
   describe('POST /api/upload', () => {
     it('returns 401 when not authenticated', async () => {

@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import { logSecurity } from "../lib/audit";
 
 interface RateLimiterOptions {
   windowMs: number;
@@ -32,6 +33,7 @@ export function createRateLimiter({ windowMs, maxRequests }: RateLimiterOptions)
     const timestamps = (hits.get(ip) || []).filter(t => now - t < windowMs);
 
     if (timestamps.length >= maxRequests) {
+      logSecurity("rate_limit_exceeded", { ip, path: req.path });
       return res.status(429).json({ error: "Too many requests. Please try again later." });
     }
 

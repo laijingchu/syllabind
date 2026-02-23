@@ -8,6 +8,7 @@ import { SyllabindCard } from '@/components/SyllabindCard';
 import { pluralize } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { Syllabus } from '@/lib/types';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { AnimatedCard, AnimatedPage } from '@/components/ui/animated-container';
 
 export default function Dashboard() {
@@ -181,7 +182,7 @@ export default function Dashboard() {
                   <h2 className="text-3xl font-display">{activeSyllabus.title}</h2>
                   <div
                     className="text-muted-foreground max-w-xl prose dark:prose-invert prose-p:my-0"
-                    dangerouslySetInnerHTML={{ __html: activeSyllabus.description }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeSyllabus.description) }}
                   />
                 </div>
                 
