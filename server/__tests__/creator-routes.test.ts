@@ -224,6 +224,15 @@ describe('Creator Routes', () => {
       mockStorage.getSyllabus.mockResolvedValue(null);
       await request(creatorApp).post('/api/syllabinds/999/publish').expect(404);
     });
+
+    it('should preserve showSchedulingLink when toggling publish status', async () => {
+      mockStorage.getSyllabus.mockResolvedValue({ id: 1, status: 'draft', creatorId: 'testcreator', showSchedulingLink: false });
+      mockStorage.updateSyllabus.mockResolvedValue({ id: 1, status: 'published', showSchedulingLink: false });
+
+      const res = await request(creatorApp).post('/api/syllabinds/1/publish').expect(200);
+      // Only status should be updated, not showSchedulingLink
+      expect(mockStorage.updateSyllabus).toHaveBeenCalledWith(1, { status: 'published' });
+    });
   });
 
   describe('GET /api/syllabinds/:id/classmates', () => {

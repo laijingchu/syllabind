@@ -1,8 +1,9 @@
 import bcrypt from "bcryptjs";
 import { Express } from "express";
 import { db } from "../db";
-import { users, type InsertUser } from "@shared/schema";
+import { users, type InsertUser, type User, passwordSchema } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { isAdminUser } from "./admin";
 
 const SALT_ROUNDS = 10;
 
@@ -12,6 +13,17 @@ export async function hashPassword(password: string): Promise<string> {
 
 export async function comparePassword(password: string, hash: string): Promise<boolean> {
   return bcrypt.compare(password, hash);
+}
+
+export function getOAuthProviderMessage(user: User): string | null {
+  if (user.password) return null;
+  if (user.googleId || user.authProvider === 'google') {
+    return "This account uses Google Sign-In. Please log in with Google instead.";
+  }
+  if (user.appleId || user.authProvider === 'apple') {
+    return "This account uses Apple Sign-In. Please log in with Apple instead.";
+  }
+  return "This account uses a third-party login provider. Please use the original sign-in method.";
 }
 
 export function registerEmailAuthRoutes(app: Express): void {
@@ -24,9 +36,19 @@ export function registerEmailAuthRoutes(app: Express): void {
         return res.status(400).json({ message: "Email, password, and name are required" });
       }
 
+      // Validate password strength
+      const passwordResult = passwordSchema.safeParse(password);
+      if (!passwordResult.success) {
+        return res.status(400).json({ message: passwordResult.error.errors[0].message });
+      }
+
       // Check if email already exists
       const [existingUser] = await db.select().from(users).where(eq(users.email, email));
       if (existingUser) {
+        const oauthMsg = getOAuthProviderMessage(existingUser);
+        if (oauthMsg) {
+          return res.status(409).json({ message: oauthMsg });
+        }
         return res.status(400).json({ message: "Email already registered" });
       }
 
@@ -51,7 +73,7 @@ export function registerEmailAuthRoutes(app: Express): void {
 
       // Return user without password
       const { password: _, ...userWithoutPassword } = newUser;
-      res.json(userWithoutPassword);
+      res.json({ ...userWithoutPassword, isAdmin: isAdminUser(newUser.username) });
     } catch (error) {
       console.error("Registration error:", error);
       res.status(500).json({ message: "Registration failed" });
@@ -69,8 +91,12 @@ export function registerEmailAuthRoutes(app: Express): void {
 
       // Find user by email
       const [user] = await db.select().from(users).where(eq(users.email, email));
-      if (!user || !user.password) {
+      if (!user) {
         return res.status(401).json({ message: "Invalid email or password" });
+      }
+      if (!user.password) {
+        const oauthMsg = getOAuthProviderMessage(user);
+        return res.status(401).json({ message: oauthMsg || "Invalid email or password" });
       }
 
       // Compare password
@@ -84,7 +110,7 @@ export function registerEmailAuthRoutes(app: Express): void {
 
       // Return user without password
       const { password: _, ...userWithoutPassword } = user;
-      res.json(userWithoutPassword);
+      res.json({ ...userWithoutPassword, isAdmin: isAdminUser(user.username) });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });
@@ -107,7 +133,7 @@ export function registerEmailAuthRoutes(app: Express): void {
 
       // Return user without password
       const { password: _, ...userWithoutPassword } = user;
-      res.json(userWithoutPassword);
+      res.json({ ...userWithoutPassword, isAdmin: isAdminUser(user.username) });
     } catch (error) {
       console.error("Get user error:", error);
       res.status(500).json({ message: "Failed to get user" });

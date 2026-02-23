@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, syllabinds, weeks, steps, enrollments, completedSteps } from "@shared/schema";
+import { users, syllabinds, weeks, steps, enrollments, completedSteps, siteSettings } from "@shared/schema";
 import { hashPassword } from "./auth/emailAuth";
 import { eq } from "drizzle-orm";
 
@@ -44,8 +44,10 @@ async function seed() {
       name: "Jane Smith",
       isCreator: true,
       bio: "Educator and systems thinker. Building learning paths for the curious.",
+      profileTitle: "Learning Designer & Systems Thinker",
       linkedin: "janesmith",
       twitter: "jane_teaches",
+      schedulingUrl: "https://calendly.com/janesmith",
       shareProfile: true,
     }).returning();
     console.log(`✅ Created creator: ${creator.username}\n`);
@@ -393,6 +395,14 @@ async function seed() {
       });
     }
     console.log(`✅ ${learners[4].username}: 1 step completed (all)\n`);
+
+    // 6. Seed site settings
+    console.log("⚙️  Seeding site settings...");
+    await db.insert(siteSettings).values({
+      key: 'slack_community_url',
+      value: 'https://join.slack.com/t/syllabind/shared_invite/example',
+    }).onConflictDoNothing();
+    console.log("✅ Site settings seeded\n");
 
     // Summary
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");

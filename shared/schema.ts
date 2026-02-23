@@ -42,8 +42,12 @@ export const users = pgTable("users", {
   website: text("website"),
   twitter: text("twitter"),
   threads: text("threads"),
+  profileTitle: text("profile_title"),
+  schedulingUrl: text("scheduling_url"),
   shareProfile: boolean("share_profile").default(true),
   authProvider: text("auth_provider").default('email'),
+  stripeCustomerId: text("stripe_customer_id").unique(),
+  subscriptionStatus: text("subscription_status").notNull().default('free'), // 'free' | 'pro' | 'past_due'
 });
 
 export const syllabinds = pgTable("syllabi", {
@@ -58,6 +62,8 @@ export const syllabinds = pgTable("syllabi", {
   updatedAt: timestamp("updated_at").defaultNow(),
   studentActive: integer("student_active").default(0),
   studentsCompleted: integer("students_completed").default(0),
+  showSchedulingLink: boolean("show_scheduling_link").default(true),
+  mediaPreference: text("media_preference").default('auto'), // 'auto', 'yes', 'no'
 }, (table) => [
   index("syllabi_creator_id_idx").on(table.creatorId),
   index("syllabi_status_idx").on(table.status),
@@ -173,6 +179,23 @@ export const cohortMembers = pgTable("cohort_members", {
   pk: primaryKey({ columns: [table.cohortId, table.studentId] })
 }));
 
+// Subscription audit trail
+export const subscriptions = pgTable("subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  stripeSubscriptionId: text("stripe_subscription_id").unique().notNull(),
+  stripePriceId: text("stripe_price_id"),
+  status: text("status").notNull(), // Mirrors Stripe status
+  currentPeriodStart: timestamp("current_period_start"),
+  currentPeriodEnd: timestamp("current_period_end"),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("subscriptions_user_id_idx").on(table.userId),
+  index("subscriptions_stripe_subscription_id_idx").on(table.stripeSubscriptionId),
+]);
+
 // Chat messages for Syllabind refinement
 export const chatMessages = pgTable("chat_messages", {
   id: serial("id").primaryKey(),
@@ -185,6 +208,34 @@ export const chatMessages = pgTable("chat_messages", {
 }, (table) => [
   index("chat_messages_syllabus_id_idx").on(table.syllabusId),
 ]);
+
+// Waitlist for alpha gating
+export const waitlist = pgTable("waitlist", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  role: text("role").notNull(), // 'learner' | 'creator' | 'both'
+  occupation: text("occupation").notNull(),
+  occupationDetail: text("occupation_detail"),
+  topicInterest: text("topic_interest"),
+  referralSource: text("referral_source"),
+  appeals: text("appeals").notNull(), // comma-separated keys
+  status: text("status").notNull().default('pending'), // 'pending' | 'approved' | 'rejected'
+  adminNote: text("admin_note"),
+  createdAt: timestamp("created_at").defaultNow(),
+  reviewedAt: timestamp("reviewed_at"),
+}, (table) => [
+  index("waitlist_status_idx").on(table.status),
+  index("waitlist_created_at_idx").on(table.createdAt),
+]);
+
+// Site-wide settings (admin-configurable key-value pairs)
+export const siteSettings = pgTable("site_settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: text("value"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertSyllabusSchema = createInsertSchema(syllabinds).omit({
@@ -211,9 +262,12 @@ export const insertCohortSchema = createInsertSchema(cohorts).omit({
 export const insertCohortMemberSchema = createInsertSchema(cohortMembers).omit({
   joinedAt: true
 });
+export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true });
+export const insertWaitlistSchema = createInsertSchema(waitlist).omit({ id: true, status: true, adminNote: true, createdAt: true, reviewedAt: true });
+export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({ id: true, updatedAt: true });
 
-export type User = typeof users.$inferSelect;
+export type User = typeof users.$inferSelect & { isAdmin?: boolean };
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Syllabus = typeof syllabinds.$inferSelect;
 export type InsertSyllabus = z.infer<typeof insertSyllabusSchema>;
@@ -231,5 +285,23 @@ export type Cohort = typeof cohorts.$inferSelect;
 export type InsertCohort = z.infer<typeof insertCohortSchema>;
 export type CohortMember = typeof cohortMembers.$inferSelect;
 export type InsertCohortMember = z.infer<typeof insertCohortMemberSchema>;
+export type Subscription = typeof subscriptions.$inferSelect;
+export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type WaitlistEntry = typeof waitlist.$inferSelect;
+export type InsertWaitlistEntry = z.infer<typeof insertWaitlistSchema>;
+export type SiteSetting = typeof siteSettings.$inferSelect;
+export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
+
+// Password validation
+export const passwordSchema = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[a-zA-Z]/, "Password must contain at least one letter")
+  .regex(/[0-9]/, "Password must contain at least one number");
+
+export const PASSWORD_REQUIREMENTS = [
+  { label: "At least 8 characters", test: (pw: string) => pw.length >= 8 },
+  { label: "At least one letter", test: (pw: string) => /[a-zA-Z]/.test(pw) },
+  { label: "At least one number", test: (pw: string) => /[0-9]/.test(pw) },
+];

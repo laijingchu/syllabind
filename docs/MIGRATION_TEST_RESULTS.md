@@ -205,7 +205,7 @@ Several client pages need updates for ID type changes (string → number):
 - `client/src/pages/SyllabindAnalytics.tsx`
 - `client/src/pages/SyllabindEditor.tsx`
 - `client/src/pages/SyllabindLearners.tsx`
-- `client/src/pages/SyllabusOverview.tsx`
+- `client/src/pages/SyllabindOverview.tsx`
 - `client/src/pages/WeekView.tsx`
 
 **Fix Required:** Convert URL parameters (strings) to numbers using `parseInt()`

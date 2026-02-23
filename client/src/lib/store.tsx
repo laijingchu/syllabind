@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePostHog } from '@posthog/react';
 import { useAuth } from '@/hooks/use-auth';
-import { Syllabus, Enrollment, LearnerProfile, Submission } from './types';
+import { Syllabus, Enrollment, LearnerProfile, Submission, SubscriptionLimits } from './types';
 
 interface StoreContextType {
   user: any;
@@ -24,9 +24,9 @@ interface StoreContextType {
   completeActiveSyllabus: () => Promise<void>;
   updateEnrollment: (updates: Partial<Enrollment>) => void;
   completeStep: (stepId: number) => Promise<void>;
-  markStepComplete: (stepId: number) => Promise<void>;
-  markStepIncomplete: (stepId: number) => Promise<void>;
-  saveExercise: (stepId: number, answer: string, isShared: boolean) => Promise<void>;
+  markStepComplete: (stepId: number, enrollmentId?: number) => Promise<void>;
+  markStepIncomplete: (stepId: number, enrollmentId?: number) => Promise<void>;
+  saveExercise: (stepId: number, answer: string, isShared: boolean, enrollmentId?: number) => Promise<void>;
   getSubmission: (stepId: number) => Submission | undefined;
   getActiveSyllabus: () => Syllabus | undefined;
   getSyllabusById: (id: number) => Syllabus | undefined;
@@ -44,6 +44,11 @@ interface StoreContextType {
   getSubmissionsForStep: (stepId: number) => Record<string, Submission>;
   refreshSyllabinds: () => Promise<void>;
   refreshEnrollments: () => Promise<void>;
+
+  // Subscription
+  isPro: boolean;
+  subscriptionLimits: SubscriptionLimits | null;
+  refreshSubscriptionLimits: () => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -58,6 +63,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [completedStepIds, setCompletedStepIds] = useState<number[]>([]);
   const [syllabindsLoading, setSyllabindsLoading] = useState(false);
   const [enrollmentLoading, setEnrollmentLoading] = useState(false);
+  const [subscriptionLimits, setSubscriptionLimits] = useState<SubscriptionLimits | null>(null);
+
+  const isPro = user?.subscriptionStatus === 'pro' || user?.isAdmin === true;
 
   // Fetch syllabinds on mount
   useEffect(() => {
@@ -155,6 +163,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const refreshSubscriptionLimits = async () => {
+    try {
+      const res = await fetch('/api/subscription/limits', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setSubscriptionLimits(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch subscription limits:', err);
+    }
+  };
+
+  // Fetch subscription limits when user logs in
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      refreshSubscriptionLimits();
+    } else if (!isAuthenticated) {
+      setSubscriptionLimits(null);
+    }
+  }, [isAuthenticated, isLoading]);
+
   const toggleCreatorMode = async () => {
     try {
       const res = await fetch('/api/users/me/toggle-creator', {
@@ -188,13 +217,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
 
       const newEnrollment = await res.json();
-      setEnrollment({
+      setEnrollment(prev => ({
         id: newEnrollment.id,
         activeSyllabusId: newEnrollment.syllabusId,
         currentWeekIndex: newEnrollment.currentWeekIndex || 1,
         completedStepIds: [],
-        completedSyllabusIds: []
-      });
+        completedSyllabusIds: prev?.completedSyllabusIds || []
+      }));
       posthog?.capture('enrolled_in_syllabind', { syllabind_id: syllabusId });
     } catch (err) {
       console.error('Failed to enroll:', err);
@@ -202,11 +231,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const markStepComplete = async (stepId: number) => {
-    if (!enrollment?.id) return;
+  const markStepComplete = async (stepId: number, enrollmentId?: number) => {
+    const effectiveId = enrollmentId || enrollment?.id;
+    if (!effectiveId) return;
 
     try {
-      const res = await fetch(`/api/enrollments/${enrollment.id}/steps/${stepId}/complete`, {
+      const res = await fetch(`/api/enrollments/${effectiveId}/steps/${stepId}/complete`, {
         method: 'POST',
         credentials: 'include'
       });
@@ -218,18 +248,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (prev.includes(stepId)) return prev;
         return [...prev, stepId];
       });
-      posthog?.capture('step_completed', { step_id: stepId, syllabind_id: enrollment.activeSyllabusId });
+      posthog?.capture('step_completed', { step_id: stepId, syllabind_id: enrollment?.activeSyllabusId });
     } catch (err) {
       console.error('Failed to mark step complete:', err);
       throw err;
     }
   };
 
-  const markStepIncomplete = async (stepId: number) => {
-    if (!enrollment?.id) return;
+  const markStepIncomplete = async (stepId: number, enrollmentId?: number) => {
+    const effectiveId = enrollmentId || enrollment?.id;
+    if (!effectiveId) return;
 
     try {
-      const res = await fetch(`/api/enrollments/${enrollment.id}/steps/${stepId}/complete`, {
+      const res = await fetch(`/api/enrollments/${effectiveId}/steps/${stepId}/complete`, {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -275,8 +306,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const saveExercise = async (stepId: number, answer: string, isShared: boolean) => {
-    if (!enrollment?.id) {
+  const saveExercise = async (stepId: number, answer: string, isShared: boolean, enrollmentId?: number) => {
+    const effectiveId = enrollmentId || enrollment?.id;
+    if (!effectiveId) {
       console.error('No enrollment ID - cannot save submission');
       return;
     }
@@ -287,7 +319,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          enrollmentId: enrollment.id,
+          enrollmentId: effectiveId,
           stepId,
           answer,
           isShared,
@@ -299,7 +331,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
 
       const submission = await response.json();
-      posthog?.capture('exercise_submitted', { step_id: stepId, syllabind_id: enrollment.activeSyllabusId });
+      posthog?.capture('exercise_submitted', { step_id: stepId, syllabind_id: enrollment?.activeSyllabusId });
 
       // Update local state
       setSubmissions(prev => {
@@ -313,7 +345,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       });
 
       // Mark the step as complete
-      await markStepComplete(stepId);
+      await markStepComplete(stepId, effectiveId);
     } catch (error) {
       console.error('Failed to save exercise submission:', error);
       throw error;
@@ -333,6 +365,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       const updatedUser = await res.json();
       queryClient.setQueryData(["/api/auth/me"], updatedUser);
+      // Refresh syllabinds so creator profile data on cards stays current
+      refreshSyllabinds();
     } catch (err) {
       console.error('Failed to update user:', err);
       throw err;
@@ -536,7 +570,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       batchDeleteSyllabinds,
       getSubmissionsForStep,
       refreshSyllabinds,
-      refreshEnrollments
+      refreshEnrollments,
+      isPro,
+      subscriptionLimits,
+      refreshSubscriptionLimits,
     }}>
       {children}
     </StoreContext.Provider>

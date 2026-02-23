@@ -234,7 +234,7 @@ After making changes:
 ```typescript
 const stream = await client.messages.stream({
 - model: 'claude-sonnet-4-20250514',
-+ model: 'claude-3-5-haiku-20241022', // Much cheaper
++ model: 'claude-haiku-4-5-20251001', // Much cheaper
   max_tokens: 2000,
 ```
 

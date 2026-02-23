@@ -2,7 +2,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { storage } from '../storage';
 import { getGenerationTools, getPlanningTools, getRepairTools, CLAUDE_MODEL, CLAUDE_MODEL_GENERATION, client } from './claudeClient';
 import { markdownToHtml } from './markdownToHtml';
-import { validateUrl } from './validateUrl';
+import { validateUrl, extractYouTubeVideoId } from './validateUrl';
+import { searchYouTube } from './youtubeSearch';
 import { apiQueue } from './requestQueue';
 import WebSocket from 'ws';
 
@@ -103,7 +104,7 @@ export interface CurriculumWeek {
  * Returns distinct week titles and descriptions for all weeks.
  */
 async function planCurriculum(
-  basics: { title: string; description: string; audienceLevel: string; durationWeeks: number },
+  basics: { title: string; description: string; audienceLevel: string; durationWeeks: number; mediaPreference?: string },
   ws: WebSocket,
   signal?: AbortSignal
 ): Promise<CurriculumWeek[]> {
@@ -144,8 +145,28 @@ Rules:
     if (toolUse) {
       const input = toolUse.input as { weeks: CurriculumWeek[] };
       if (Array.isArray(input.weeks) && input.weeks.length > 0) {
-        console.log(`[PlanCurriculum] Got ${input.weeks.length} week outlines`);
-        return input.weeks;
+        console.log(`[PlanCurriculum] Got ${input.weeks.length} week outlines (expected ${basics.durationWeeks})`);
+
+        // Validate week count matches requested duration
+        if (input.weeks.length < basics.durationWeeks) {
+          console.warn(`[PlanCurriculum] Model returned ${input.weeks.length} weeks but ${basics.durationWeeks} requested, retrying`);
+          const filtered = response.content.filter((block: any) =>
+            block.type === 'text' || block.type === 'tool_use'
+          );
+          messages.push({ role: 'assistant', content: filtered.length > 0 ? filtered : [{ type: 'text', text: '(thinking)' }] });
+          messages.push({
+            role: 'user',
+            content: `You returned ${input.weeks.length} weeks but the course requires exactly ${basics.durationWeeks} weeks. Call plan_curriculum again with exactly ${basics.durationWeeks} weeks.`
+          });
+          continue;
+        }
+
+        // Normalize: take only the requested number, ensure 1-based weekIndex
+        const normalizedWeeks = input.weeks.slice(0, basics.durationWeeks).map((w, i) => ({
+          ...w,
+          weekIndex: i + 1
+        }));
+        return normalizedWeeks;
       }
     }
 
@@ -197,7 +218,7 @@ async function repairMissingUrls(
     }));
   }
 
-  const searchBudget = Math.min(missingSteps.length * 3, 20);
+  const searchBudget = Math.min(missingSteps.length * 2, 10);
 
   const stepList = missingSteps.map(s =>
     `- stepId: ${s.stepId} | "${s.title}"${s.author ? ` by ${s.author}` : ''}${s.mediaType ? ` (${s.mediaType})` : ''}`
@@ -227,7 +248,7 @@ Instructions:
       if (signal?.aborted) return;
 
       const response = await createMessageWithRetry({
-        model: CLAUDE_MODEL_GENERATION,
+        model: CLAUDE_MODEL,
         max_tokens: 4096,
         system: [{ type: 'text', text: systemPrompt }],
         tools: getRepairTools(searchBudget),
@@ -318,6 +339,83 @@ Instructions:
   }
 }
 
+/**
+ * After URL repair, ensure a week has at least one YouTube video.
+ * Runs for all mediaPreference values except 'no'.
+ * Uses progressively broader search queries to guarantee a result.
+ */
+async function ensureMediaUrl(
+  weekId: number,
+  weekTopic: string,
+  weekDescription: string,
+  syllabindTitle: string,
+  ws: WebSocket
+): Promise<void> {
+  const weekSteps = await storage.getStepsByWeekId(weekId);
+  const readings = weekSteps.filter(s => s.type === 'reading');
+
+  if (readings.length === 0) return;
+
+  // Already has a media reading with a verified URL — nothing to do
+  // For YouTube videos, verify the URL is actually a youtube.com URL (Claude often
+  // sets mediaType: 'Youtube video' on non-YouTube websites that embed videos)
+  const hasMedia = readings.some(s => {
+    if (!s.url) return false;
+    if (s.mediaType === 'Youtube video') {
+      return extractYouTubeVideoId(s.url) !== null;
+    }
+    if (s.mediaType === 'Podcast') return true;
+    return false;
+  });
+  if (hasMedia) return;
+
+  // Try progressively broader queries to guarantee a result
+  const queries = [
+    `${weekTopic} ${syllabindTitle}`,
+    `${weekDescription} ${syllabindTitle}`,
+    syllabindTitle
+  ];
+  let result = null;
+  for (const query of queries) {
+    result = await searchYouTube(query);
+    if (result) break;
+  }
+  if (!result) return;
+
+  // Pick a candidate reading to convert: prefer Blog/Article types, avoid academic sources
+  const academicTypes = new Set(['Journal Article', 'Book', 'Research Paper']);
+  const candidate =
+    // Best: a reading already marked as YouTube but with a non-YouTube URL
+    readings.find(s => s.mediaType === 'Youtube video' && s.url && !extractYouTubeVideoId(s.url)) ||
+    // Next: a reading with no URL and non-academic type
+    readings.find(s => !s.url && s.mediaType && !academicTypes.has(s.mediaType)) ||
+    // Next: any reading with no URL
+    readings.find(s => !s.url) ||
+    // Next: any non-academic reading
+    readings.find(s => s.mediaType && !academicTypes.has(s.mediaType)) ||
+    readings[0];
+
+  const videoUrl = `https://www.youtube.com/watch?v=${result.videoId}`;
+  const creationDate = result.publishedAt ? result.publishedAt.slice(0, 10) : null;
+
+  await storage.updateStep(candidate.id, {
+    title: result.title,
+    url: videoUrl,
+    mediaType: 'Youtube video',
+    author: result.channelTitle,
+    ...(creationDate ? { creationDate } : {})
+  });
+
+  console.log(`[EnsureMedia] Week "${weekTopic}": set step ${candidate.id} to YouTube video ${result.videoId} ("${result.title}" by ${result.channelTitle})`);
+
+  if (ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      type: 'step_url_repaired',
+      data: { stepId: candidate.id, url: videoUrl, title: result.title, author: result.channelTitle }
+    }));
+  }
+}
+
 interface GenerationContext {
   syllabusId: number;
   basics: {
@@ -325,6 +423,7 @@ interface GenerationContext {
     description: string;
     audienceLevel: string;
     durationWeeks: number;
+    mediaPreference?: string;
   };
   ws: WebSocket;
   signal?: AbortSignal;
@@ -401,6 +500,13 @@ export async function generateSyllabind(context: GenerationContext): Promise<voi
       if (cw) batchTopics.push(`Week ${i}: "${cw.title}" — ${cw.description}`);
     }
 
+    // Build media instruction based on creator preference
+    const mediaInstruction = basics.mediaPreference === 'yes'
+      ? `- At least 1 reading per week should be a YouTube video or podcast. Search "topic YouTube" or "topic podcast episode". Set mediaType to "Youtube video" or "Podcast".`
+      : basics.mediaPreference === 'no'
+        ? `- Do NOT include YouTube videos or podcasts. Only use text-based media types.`
+        : ``;
+
     const systemPrompt = `You are a Syllabind designer. Generate readings and exercises for ${weekLabel} of "${basics.title}" (${basics.audienceLevel}).
 
 Description: ${basics.description}
@@ -420,6 +526,7 @@ Rules:
 - Include 1+ academic source per week (jstor, arxiv, scholar.google, .edu, worldcat, academia.edu)
 - No Wikipedia links.
 - Use mediaType "Book" for book chapters, "Journal Article" for papers
+${mediaInstruction}
 - EVERY reading MUST have creationDate in YYYY-MM-DD format. Extract from search results; if unknown, use best estimate.
 - Exercises: creative, open-ended, producing real outputs.
 - Tailor difficulty to ${basics.audienceLevel} (Beginner=middle school, Intermediate=college, Advanced=post-grad)
@@ -449,7 +556,7 @@ weekIndex values: Week ${batchStart} = ${batchStart}${batchWeekCount > 1 ? `, We
       try {
         response = await createMessageWithRetry({
           model: CLAUDE_MODEL_GENERATION,
-          max_tokens: 8192,
+          max_tokens: 4096,
           system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
           tools: getGenerationTools(),
           messages,
@@ -755,10 +862,18 @@ weekIndex values: Week ${batchStart} = ${batchStart}${batchWeekCount > 1 ? `, We
       });
     }
 
-    // URL repair pass: find URLs for readings that are missing them
-    if (batchSavedSteps.length > 0 && !signal?.aborted) {
-      await repairMissingUrls(batchSavedSteps, basics.title, ws, signal);
+    // Per-batch URL repair removed — final sweep handles all missing URLs in one pass
+
+    // YouTube media pass: ensure each week has a real video when media is requested
+    if (basics.mediaPreference !== 'no' && !signal?.aborted) {
+      for (let wi = batchStart; wi <= batchEnd; wi++) {
+        const sw = savedWeeks.get(wi);
+        if (sw && !signal?.aborted) {
+          await ensureMediaUrl(sw.id, sw.title, sw.description, basics.title, ws);
+        }
+      }
     }
+
   }
 
   // === Final sweep: collect ALL readings missing URLs across all weeks ===
@@ -806,6 +921,7 @@ interface WeekRegenerationContext {
     description: string;
     audienceLevel: string;
     durationWeeks: number;
+    mediaPreference?: string;
   };
   weekTitle?: string;
   weekDescription?: string;
@@ -839,6 +955,13 @@ export async function regenerateWeek(context: WeekRegenerationContext): Promise<
     ? `\nThis week's topic: "${weekTitle}"${weekDescription ? ` — ${weekDescription}` : ''}\nThe week title and description are already set. Generate ONLY the readings and exercises. Do NOT include title or description in finalize_week.`
     : '';
 
+  // Build media instruction based on creator preference
+  const regenMediaInstruction = basics.mediaPreference === 'yes'
+    ? `- At least 1 reading should be a YouTube video or podcast. Search "topic YouTube" or "topic podcast episode". Set mediaType to "Youtube video" or "Podcast".`
+    : basics.mediaPreference === 'no'
+      ? `- Do NOT include YouTube videos or podcasts. Only use text-based media types.`
+      : ``;
+
   const systemPrompt = `You are a Syllabind designer regenerating Week ${weekIndex} for "${basics.title}" (${basics.audienceLevel}).
 
 Description: ${basics.description}
@@ -854,6 +977,7 @@ Rules:
 - Include 1+ academic source (jstor, arxiv, scholar.google, .edu, worldcat, academia.edu)
 - No Wikipedia links.
 - Use mediaType "Book" for book chapters, "Journal Article" for papers
+${regenMediaInstruction}
 - EVERY reading MUST have creationDate in YYYY-MM-DD format. Extract from search results; if unknown, use best estimate.
 - Exercises: creative, open-ended, producing real outputs.
 - Tailor difficulty to ${basics.audienceLevel} (Beginner=middle school, Intermediate=college, Advanced=post-grad)
@@ -959,6 +1083,8 @@ Process: Search for resources first (~2-3 searches), then call finalize_week.`;
   }
 
   const regenSavedSteps: MissingUrlStep[] = []; // Track readings for URL repair
+  let regenWeekId: number | undefined = existingWeekId;
+  let regenWeekTopic: string | undefined;
 
   if (response.stop_reason === 'tool_use') {
     const toolUseBlocks = response.content.filter(
@@ -973,6 +1099,7 @@ Process: Search for resources first (~2-3 searches), then call finalize_week.`;
         // Use preserved title/description if available, otherwise use Claude's output
         const finalTitle = weekTitle || toolInput.title;
         const finalDescription = weekDescription || toolInput.description;
+        regenWeekTopic = finalTitle;
 
         let weekId = existingWeekId;
         if (!weekId) {
@@ -990,6 +1117,7 @@ Process: Search for resources first (~2-3 searches), then call finalize_week.`;
             description: finalDescription
           });
         }
+        regenWeekId = weekId;
 
         ws.send(JSON.stringify({
           type: 'week_info',
@@ -1094,6 +1222,11 @@ Process: Search for resources first (~2-3 searches), then call finalize_week.`;
   // URL repair pass: find URLs for readings that are missing them
   if (regenSavedSteps.length > 0 && !signal?.aborted) {
     await repairMissingUrls(regenSavedSteps, basics.title, ws, signal);
+  }
+
+  // YouTube media pass: ensure the week has a real video when media is requested
+  if (basics.mediaPreference !== 'no' && regenWeekId && regenWeekTopic && !signal?.aborted) {
+    await ensureMediaUrl(regenWeekId, regenWeekTopic, weekDescription || '', basics.title, ws);
   }
 
   const totalTime = ((Date.now() - sessionStartTime) / 1000).toFixed(1);

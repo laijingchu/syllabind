@@ -99,11 +99,12 @@ export default function CreatorProfile() {
             <div className="grid gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Display Name</Label>
-                <Input 
+                <Input
                   id="name"
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                 />
+                <p className="text-xs text-muted-foreground">Username: {user?.username}</p>
               </div>
 
               <div className="space-y-2">

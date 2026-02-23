@@ -36,12 +36,17 @@ This table stores all user accounts, whether they're learners or creators. A sin
   isCreator: boolean DEFAULT false,  // Role flag
   bio: string,
   expertise: string,
+  profileTitle: string,                          // LinkedIn-style headline (e.g. "Product Designer at Acme")
   // Social links
   linkedin: string,
   website: string,
   twitter: string,
   threads: string,
-  shareProfile: boolean DEFAULT true
+  schedulingUrl: string,                        // Calendly/Cal.com link (shown to Pro learners)
+  shareProfile: boolean DEFAULT true,
+  // Subscription
+  stripeCustomerId: string UNIQUE,              // Stripe customer ID
+  subscriptionStatus: string DEFAULT 'free',    // 'free' | 'pro' | 'past_due'
 }
 ```
 
@@ -61,7 +66,9 @@ Syllabinds are the core learning content created by creators. The Syllabind stru
   createdAt: timestamp DEFAULT now(),
   updatedAt: timestamp DEFAULT now(), // Last modification timestamp
   studentActive: integer DEFAULT 0,   // Number of students currently enrolled (in-progress)
-  studentsCompleted: integer DEFAULT 0 // Number of students who completed the syllabind
+  studentsCompleted: integer DEFAULT 0, // Number of students who completed the syllabind
+  showSchedulingLink: boolean DEFAULT true, // Per-syllabind toggle for "Book a Call" button visibility
+  mediaPreference: text DEFAULT 'auto'   // Audio/video materials: 'auto', 'yes', 'no'
 }
 ```
 
@@ -232,6 +239,46 @@ This junction table tracks which students belong to which cohorts. The composite
 - Cohort members track social grouping (cohortId, studentId)
 - These are separate: students can be enrolled without being in a cohort
 - Queries can JOIN both to show cohort members' progress
+
+#### Subscriptions Table
+
+Stores Stripe subscription records as an audit trail for Pro subscriptions. Each record mirrors the Stripe subscription lifecycle and is updated via webhook events. The `userId` references `users.id` with CASCADE delete.
+
+```typescript
+{
+  id: serial PRIMARY KEY,
+  userId: varchar FK → users.id,              // CASCADE delete
+  stripeSubscriptionId: string UNIQUE,        // Stripe subscription ID
+  stripePriceId: string,                      // Stripe price ID
+  status: string,                             // Mirrors Stripe status (active, canceled, past_due, etc.)
+  currentPeriodStart: timestamp,              // Billing period start
+  currentPeriodEnd: timestamp,                // Billing period end
+  cancelAtPeriodEnd: boolean DEFAULT false,   // Whether subscription cancels at period end
+  createdAt: timestamp DEFAULT now(),
+  updatedAt: timestamp DEFAULT now(),
+}
+```
+
+**Indexes:**
+- `subscriptions_user_id_idx` - Fast lookup by user
+- `subscriptions_stripe_subscription_id_idx` - Fast lookup by Stripe subscription ID
+
+#### Site Settings Table
+
+Stores admin-configurable key-value pairs for platform-wide settings (e.g., Slack community URL). Admins can update these via `PUT /api/admin/settings`. Public read access via `GET /api/site-settings/:key`.
+
+```typescript
+{
+  id: serial PRIMARY KEY,
+  key: text NOT NULL UNIQUE,         // Setting identifier (e.g., 'slack_community_url')
+  value: text,                       // Setting value
+  updatedAt: timestamp DEFAULT now(),
+}
+```
+
+#### Waitlist Table (Deprecated — table retained, code removed)
+
+The `waitlist` table still exists in the database schema for data preservation, but all API routes, storage methods, and admin UI have been removed. Waitlist signups are now handled via an external form (Google Form, Typeform, etc.) whose URL is stored in `site_settings` under the key `waitlist_form_url`. The Login page "Join Waitlist" tab and Marketing page CTA buttons link to this external URL.
 
 #### Sessions Table
 
@@ -423,7 +470,7 @@ These pages are accessible without authentication, allowing visitors to learn ab
 | `/welcome` | `Marketing.tsx` | Landing page with signup CTA |
 | `/login` | `Login.tsx` | Authentication entry (signup/login modes) |
 | `/catalog` | `Catalog.tsx` | Browse all published syllabinds |
-| `/syllabus/:id` | `SyllabusOverview.tsx` | Syllabind detail with week breakdown |
+| `/syllabind/:id` | `SyllabindOverview.tsx` | Syllabind detail with week breakdown |
 
 #### Learner Pages (Auth Required)
 
@@ -432,8 +479,8 @@ These pages provide the core learning experience. Learners see their dashboard, 
 | Route | Component | Purpose |
 |-------|-----------|---------|
 | `/` | `Dashboard.tsx` | Home - active syllabind progress or catalog |
-| `/syllabus/:id/week/:index` | `WeekView.tsx` | Main learning interface with readings & exercises |
-| `/syllabus/:id/completed` | `Completion.tsx` | Celebration screen post-completion |
+| `/syllabind/:id/week/:index` | `WeekView.tsx` | Main learning interface with readings & exercises |
+| `/syllabind/:id/completed` | `Completion.tsx` | Celebration screen post-completion |
 | `/profile` | `Profile.tsx` | Edit bio, social links, preferences |
 
 #### Creator Pages (Auth + Creator Flag Required)
@@ -443,11 +490,12 @@ These pages are only accessible to users who have enabled creator mode. They pro
 | Route | Component | Purpose |
 |-------|-----------|---------|
 | `/creator` | `CreatorDashboard.tsx` | List of created syllabinds with management |
-| `/creator/syllabus/new` | `SyllabindEditor.tsx` | Build new syllabind (WYSIWYG editor) |
-| `/creator/syllabus/:id/edit` | `SyllabindEditor.tsx` | Edit existing syllabind (auto-save) |
-| `/creator/syllabus/:id/analytics` | `SyllabindAnalytics.tsx` | Learner progress visualization |
-| `/creator/syllabus/:id/learners` | `SyllabindLearners.tsx` | Learner list, cohorts, submissions |
+| `/creator/syllabind/new` | `SyllabindEditor.tsx` | Build new syllabind (WYSIWYG editor) |
+| `/creator/syllabind/:id/edit` | `SyllabindEditor.tsx` | Edit existing syllabind (auto-save) |
+| `/creator/syllabind/:id/analytics` | `SyllabindAnalytics.tsx` | Learner progress visualization |
+| `/creator/syllabind/:id/learners` | `SyllabindLearners.tsx` | Learner list, cohorts, submissions |
 | `/creator/profile` | `CreatorProfile.tsx` | Creator bio, expertise, social links |
+| `/admin` | `AdminSettings.tsx` | Admin-only: configure Slack URL and site settings |
 
 ---
 
@@ -465,9 +513,9 @@ These components are specific to Syllabind's functionality and compose the UI pr
   - User avatar dropdown (Profile, Creator Mode toggle, Logout)
   - Conditional rendering based on auth state
 
-- **`SyllabusCard.tsx`**: Reusable syllabind preview card
+- **`SyllabindCard.tsx`**: Reusable syllabind preview card
   - Displays title, description, level, duration
-  - Shows enrolled/completed status
+  - Creator avatar with name; hover tooltip shows bio, expertise, and social links (same pattern as classmates)
   - CTA button (Enroll/Resume/View)
 
 - **`AvatarUpload.tsx`**: Profile picture upload component
@@ -632,7 +680,7 @@ All methods now make real API calls to the backend. The store provides methods o
 **Important Data Loading Patterns:**
 - The cached `syllabinds` list from `/api/syllabinds` contains only basic metadata (no weeks/steps)
 - Pages that need full Syllabind (weeks/steps) must fetch directly from `/api/syllabinds/:id`
-- `SyllabusOverview` and `SyllabindEditor` both fetch full content via direct API calls
+- `SyllabindOverview` and `SyllabindEditor` both fetch full content via direct API calls
 - This prevents loading heavy Syllabind data for catalog browsing
 
 #### React Query
@@ -668,6 +716,18 @@ PUT    /api/users/me                - Update own profile (auth)
 POST   /api/users/me/toggle-creator - Toggle creator mode (auth)
 ```
 
+### Site Settings Endpoints
+
+**Public:**
+```
+GET    /api/site-settings/:key       - Get a site setting value
+```
+
+**Admin Only:**
+```
+PUT    /api/admin/settings           - Upsert a site setting { key, value }
+```
+
 ### Syllabind Endpoints
 
 **Public:**
@@ -678,8 +738,8 @@ GET    /api/syllabinds/:id  - Get syllabind with content
 
 **Protected (Auth + Creator + Ownership):**
 ```
-POST   /api/syllabinds             - Create syllabind
-PUT    /api/syllabinds/:id         - Update syllabind
+POST   /api/syllabinds             - Create syllabind (with weeks/steps)
+PUT    /api/syllabinds/:id         - Update syllabind (syncs weeks/steps)
 DELETE /api/syllabinds/:id         - Delete syllabind
 POST   /api/syllabinds/:id/publish - Publish/unpublish syllabind
 GET    /api/creator/syllabinds     - Get creator's syllabinds (including drafts)
@@ -753,6 +813,34 @@ GET    /api/syllabinds/:id/analytics/completion-times - Average completion times
 }
 ```
 
+### Subscription Endpoints (Auth Required)
+
+```
+GET    /api/subscription/status    - Get user's subscription status (free/pro)
+GET    /api/subscription/limits    - Get syllabind creation limits and enrollment gating
+POST   /api/create-checkout-session - Create Stripe Checkout session (redirect URL)
+POST   /api/create-portal-session   - Create Stripe Customer Portal session
+POST   /api/webhook                 - Stripe webhook handler (signature verified)
+```
+
+**Subscription Limits Response:**
+```typescript
+{
+  syllabindCount: number;        // Creator's current syllabind count
+  syllabindLimit: number | null; // null = unlimited (Pro), 2 for free
+  canCreateMore: boolean;        // Whether creator can make more syllabinds
+  canEnroll: boolean;            // Whether learner can enroll (Pro only)
+  isPro: boolean;
+}
+```
+
+**Webhook Events Handled:**
+- `checkout.session.completed` → Upgrade user to Pro, create subscription record
+- `customer.subscription.updated` → Sync subscription status
+- `customer.subscription.deleted` → Downgrade user to free
+- `invoice.payment_succeeded` → Confirm Pro status
+- `invoice.payment_failed` → Log only (Stripe retries automatically)
+
 ---
 
 ## Key Features
@@ -813,6 +901,7 @@ The application uses a custom authentication system with multiple providers (Ema
 - **TTL**: 7 days
 - **Cookie Security**: HttpOnly, Secure (production), SameSite=lax
 - **Session Secret**: Environment variable `SESSION_SECRET`
+- **Explicit saves in OAuth flows**: All OAuth routes call `session.save()` before redirecting to ensure the session (CSRF state, userId) is persisted to PostgreSQL before the browser follows the redirect. This prevents race conditions where the redirect arrives before the session write completes.
 
 ### Auth Middleware: `isAuthenticated`
 
@@ -827,10 +916,34 @@ Located in `/server/auth/index.ts`, this middleware:
 1. **Authentication** - `isAuthenticated` middleware (401 if not logged in)
 2. **Creator Check** - Verifies `req.user.isCreator === true` (403 if not creator)
 3. **Ownership Check** - Verifies user owns the resource (403 if not owner)
+4. **Admin Bypass** - Admins skip ownership and creator checks (see below)
+
+### Admin Access
+
+Admin status is controlled by the `ADMIN_USERNAMES` environment variable (comma-separated usernames). No database changes required.
+
+**Implementation:**
+- `server/auth/admin.ts` exports `isAdminUser(username)` — parses the env var on each call
+- `isAuthenticated` middleware and `authenticateWebSocket` inject `isAdmin: boolean` into the user object
+- Email auth endpoints (`/api/auth/register`, `/api/auth/login`, `/api/auth/me`) include `isAdmin` in responses
+- All ownership checks in `server/routes.ts` add `&& !isAdmin` to allow admin bypass
+- All creator-required checks allow admin access (`!user.isCreator && !user.isAdmin`)
+- `GET /api/creator/syllabinds?all=true` returns all syllabinds site-wide (admin only)
+- Frontend `CreatorDashboard` shows "My Syllabinds / All Syllabinds" toggle for admin users
+- `User` type in `client/src/lib/types.ts` includes optional `isAdmin` field
+
+### Security Middleware (Production Only)
+
+Located at the top of `server/index.ts`, two middlewares harden HTTPS in production:
+
+1. **HTTPS Redirect** — Checks `X-Forwarded-Proto` header (set by Replit's reverse proxy) and issues a 301 redirect from HTTP to HTTPS.
+2. **HSTS (Strict-Transport-Security)** — Sends `max-age=31536000; includeSubDomains` header, telling browsers to always use HTTPS for 1 year.
+
+Both are skipped in development (plain HTTP).
 
 ### Protected Routes
 
-All routes except public catalog/syllabind viewing require authentication. Creator-only routes additionally check `isCreator` flag. Resource modification routes verify ownership (username matching).
+All routes except public catalog/syllabind viewing require authentication. Creator-only routes additionally check `isCreator` flag. Resource modification routes verify ownership (username matching). Admin users bypass both creator and ownership checks.
 
 ### Auth Routes
 
@@ -851,10 +964,11 @@ The codebase is organized into three main directories: `client` (React frontend)
 ├── client/src/
 │   ├── main.tsx              - React entry point
 │   ├── App.tsx               - Router + auth wrapper
-│   ├── pages/                - 14 page components (~3,100 lines)
+│   ├── pages/                - 15 page components (~3,200 lines)
 │   ├── components/
 │   │   ├── Layout.tsx        - Main header
-│   │   ├── SyllabusCard.tsx  - Syllabind preview
+│   │   ├── SyllabindCard.tsx  - Syllabind preview
+│   │   ├── UpgradePrompt.tsx - Pro subscription upgrade dialog
 │   │   ├── AvatarUpload.tsx  - Image uploader
 │   │   └── ui/               - 50+ UI primitives (~5,950 lines)
 │   ├── hooks/                - Custom React hooks
@@ -862,6 +976,7 @@ The codebase is organized into three main directories: `client` (React frontend)
 │       ├── store.tsx         - Context API state
 │       ├── types.ts          - TypeScript interfaces
 │       ├── queryClient.ts    - React Query config
+│       ├── stripe.ts         - Stripe checkout/portal helpers
 │       └── utils.ts          - Utility functions
 │
 ├── server/
@@ -869,6 +984,17 @@ The codebase is organized into three main directories: `client` (React frontend)
 │   ├── routes.ts             - API endpoints
 │   ├── db.ts                 - Drizzle connection
 │   ├── storage.ts            - Database operations
+│   ├── auth/
+│   │   ├── index.ts          - Session setup, isAuthenticated middleware
+│   │   ├── admin.ts          - Admin check via ADMIN_USERNAMES env var
+│   │   ├── emailAuth.ts      - Email/password auth routes
+│   │   ├── googleAuth.ts     - Google OAuth routes
+│   │   └── appleAuth.ts      - Apple OAuth routes
+│   ├── lib/
+│   │   └── stripe.ts         - Stripe client singleton
+│   ├── routes/
+│   │   ├── stripe.ts         - Subscription & checkout routes
+│   │   └── webhook.ts        - Stripe webhook handler
 │   └── replit_integrations/  - Replit Auth setup
 │
 ├── shared/
@@ -1099,8 +1225,9 @@ Added comprehensive analytics endpoint that provides real data for the Creator A
 Reduced token consumption for AI-powered Syllabind generation and chat refinement:
 
 **Model Selection (Hybrid):**
-- **Haiku** (`claude-3-5-haiku-20241022` / `CLAUDE_MODEL`): Planning (`planCurriculum`) and chat refinement — simple structured output, cost-efficient
-- **Sonnet** (`claude-sonnet-4-5-20250929` / `CLAUDE_MODEL_GENERATION`): Generation batches, week regeneration, and URL repair — needs accurate metadata extraction (title, author, date) from web search results
+- **Haiku** (`claude-haiku-4-5-20251001` / `CLAUDE_MODEL`): Planning (`planCurriculum`) and chat refinement — simple structured output, cost-efficient
+- **Sonnet** (`claude-sonnet-4-5-20250929` / `CLAUDE_MODEL_GENERATION`): Generation batches and week regeneration — needs accurate metadata extraction (title, author, date) from web search results
+- **Haiku for URL repair**: `repairMissingUrls()` uses Haiku instead of Sonnet — repair is simple web search + structured output, no curriculum generation
 - Both constants exported from `server/utils/claudeClient.ts`
 - No user-facing model selector
 
@@ -1115,8 +1242,9 @@ Reduced token consumption for AI-powered Syllabind generation and chat refinemen
 - Message history truncated to last 10 messages (`MAX_HISTORY_MESSAGES`)
 
 **Web Search Limits:**
-- Reduced from 15 to 5 searches per Syllabind generation
-- System prompt updated to reflect new limit
+- Generation: 8 searches per batch (~4/week for 2-week batches)
+- Repair: `min(missingCount * 2, 10)` — 2 searches per reading, capped at 10
+- Per-batch URL repair removed; final sweep handles all missing URLs in one pass
 
 **Files Modified:**
 - `server/utils/claudeClient.ts` - `CLAUDE_MODEL` constant (Haiku), shared client with `maxRetries: 0`
@@ -1526,7 +1654,7 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 
 1. **Dashboard.tsx — New welcome screen for users with no enrollments:**
    - Replaced the `<Catalog />` early-return with a two-card welcome screen
-   - "Build your own course" card (Wand2 icon + AI badge) → links to `/creator/syllabus/new`
+   - "Build your own course" card (Wand2 icon + AI badge) → links to `/creator/syllabind/new`
    - "Choose from existing courses" card (BookOpen icon) → links to `/catalog`
    - Uses AnimatedPage/AnimatedCard for entrance animations
 
@@ -1753,6 +1881,42 @@ After each 2-week batch completes, readings without URLs are collected. If any e
 - `server/utils/syllabindGenerator.ts` - Multi-turn repair, 4096 tokens, higher search budget
 - `server/utils/claudeClient.ts` - 14 web searches per generation batch
 
+### YouTube oEmbed Validation, Placeholder & Index URL Detection (2026-02-22)
+
+**Problem:**
+1. Claude fabricates placeholder YouTube URLs like `?v=example` that pass HEAD/GET (YouTube returns 200 for any `watch?v=` URL)
+2. Claude returns creator profile/channel pages (e.g. `youtube.com/@creator`, `open.spotify.com/show/xxx`) instead of specific videos/episodes — these also pass HEAD/GET since the pages exist
+
+**Fixes:**
+
+1. **Placeholder URL detection** (`server/utils/validateUrl.ts`):
+   - Before any HTTP validation, reject URLs containing known hallucination patterns: `example`, `placeholder`, `test`, `sample`, `fake`, `lorem`
+   - Uses word-boundary matching (`\b`) so "test" doesn't false-positive on "latest", "greatest", "contest", etc.
+   - Video ID placeholder check uses substring matching (correct for opaque ID strings)
+
+2. **YouTube oEmbed validation** (`server/utils/validateUrl.ts`):
+   - YouTube/YouTube Music URLs routed through `validateYouTubeUrl()` instead of HEAD/GET
+   - Video ID extracted from `youtube.com/watch?v=`, `youtu.be/`, `youtube.com/embed/`, `youtube.com/v/`, `music.youtube.com/watch?v=`
+   - IDs rejected if they don't match YouTube's 11-character `[a-zA-Z0-9_-]{11}` format
+   - oEmbed API confirmation: `https://www.youtube.com/oembed?url=<URL>&format=json`
+   - **Fault-tolerant**: only rejects on explicit 404/401; network errors, timeouts, and rate limits (429/5xx) fall back to accepting (format + isIndexUrl already filter hallucinations)
+
+3. **Index/directory URL rejection** (`server/utils/validateUrl.ts`):
+   - `isIndexUrl()` uses an allowlist approach for all media platforms — only known specific-resource paths pass, everything else is rejected
+   - **Bare domains**: `https://medium.com/` rejected (no meaningful path)
+   - **YouTube**: only `/watch`, `/embed/`, `/v/` (channels, profiles, playlists, shorts, live, search all rejected)
+   - **YouTube Music**: only `/watch` (artist/playlist/album pages rejected)
+   - **Spotify**: only `/episode/`, `/track/` (show, artist, playlist, album, user pages all rejected)
+   - **Apple Podcasts**: must have `?i=` episode param (show pages rejected)
+   - **Apple Music**: only `/song/`, `/music-video/`, or `?i=` album-track param (artist/album index pages rejected)
+   - **SoundCloud**: must have two path segments `/artist/track` (profile pages rejected)
+   - **Vimeo**: only numeric video IDs (channels, groups, user pages rejected)
+   - Runs before any HTTP call — zero network cost
+
+**Files Modified:**
+- `server/utils/validateUrl.ts` - `validateYouTubeUrl()`, `extractYouTubeVideoId()`, `hasPlaceholderPattern()`, `isIndexUrl()`, integrated pre-checks in `validateUrl()`
+- `server/__tests__/validateUrl.test.ts` - New test file covering YouTube validation, placeholder detection, index URL rejection, and non-YouTube fallback
+
 ### Two-Phase Generation — Coherent Curriculum (2026-02-16)
 
 **Problem:**
@@ -1806,13 +1970,13 @@ Additionally, regenerating a single week was replacing the title and summary, wh
 
 4. **Final URL sweep**: After all batches complete, `generateSyllabind()` now queries all weeks/steps from the DB and collects any readings still missing URLs across the entire syllabind. Runs one final `repairMissingUrls()` pass for cross-batch coverage.
 
-5. **Learner page filtering**: WeekView and SyllabusOverview hide readings without URLs from learners. Step counts and time estimates only include visible steps. Week locking/progression logic excludes URL-less readings.
+5. **Learner page filtering**: WeekView and SyllabindOverview hide readings without URLs from learners. Step counts and time estimates only include visible steps. Week locking/progression logic excludes URL-less readings.
 
 **Files Modified:**
 - `server/utils/claudeClient.ts` — creationDate description changed to YYYY-MM-DD
 - `server/utils/syllabindGenerator.ts` — `defaultEstimatedMinutes()`, stronger prompts, final URL sweep
 - `client/src/pages/WeekView.tsx` — Date parsing fix, filter out URL-less readings, adjusted locking logic
-- `client/src/pages/SyllabusOverview.tsx` — Filter out URL-less readings from step list and counts
+- `client/src/pages/SyllabindOverview.tsx` — Filter out URL-less readings from step list and counts
 
 ### AI-Powered "Improve Writing" Button (2026-02-16)
 
@@ -1854,7 +2018,7 @@ Added real AI text improvement to the RichTextEditor's "Improve writing" button 
 
 ### Duplicate Weeks Prevention (2026-02-17)
 
-**Problem:** Concurrent generation requests on the same syllabind (e.g., double-clicking "Generate") created duplicate week rows (same `syllabusId` + `index`). The `getSyllabusWithContent` query returned all duplicates, causing the SyllabusOverview accordion to show 12 weeks instead of 6.
+**Problem:** Concurrent generation requests on the same syllabind (e.g., double-clicking "Generate") created duplicate week rows (same `syllabusId` + `index`). The `getSyllabusWithContent` query returned all duplicates, causing the SyllabindOverview accordion to show 12 weeks instead of 6.
 
 **Root cause:** No unique constraint on `weeks(syllabus_id, index)` and no guard against triggering generation while one is already in progress.
 
@@ -1886,3 +2050,200 @@ Added real AI text improvement to the RichTextEditor's "Improve writing" button 
 - `client/src/lib/store.tsx` — User identification + 4 custom events (enroll, step complete, syllabind complete, exercise submit)
 - `client/src/pages/SyllabindEditor.tsx` — `syllabind_published` and draft `link_shared` events
 - `client/src/components/ShareDialog.tsx` — `link_shared` event
+
+### Bug Fixes: WeekView Loading Flash, Exercise Submit, Button Copy (2026-02-17)
+
+**Issues Fixed:**
+1. **"Not Found" flash on page load** — WeekView showed "Not found" briefly before syllabus data loaded. Added a `loading` state that shows a spinner during fetch, only showing "Not found" after loading completes with no data.
+2. **Exercise submit didn't update UI** — `handleExerciseSubmit` called `saveExercise` (which updates store state) but never updated `localCompletedStepIds`. Since local state takes priority when non-empty, the step appeared incomplete after submission. Fixed by syncing local state after successful save.
+3. **Button copy** — Changed exercise submit button from "Save & Complete" to "Submit".
+
+**Defensive improvement:** `markStepComplete`, `markStepIncomplete`, and `saveExercise` in the store now accept an optional `enrollmentId` parameter, falling back to `enrollment?.id`. WeekView passes its locally-fetched `localEnrollmentId` so operations work correctly even when the global store enrollment doesn't match the viewed syllabind.
+
+**Files Modified:**
+- `client/src/pages/WeekView.tsx` — Loading state, local state sync fix, error toast, enrollmentId pass-through, button copy, exercise checkbox edit, submit loading spinner
+- `client/src/lib/store.tsx` — Optional `enrollmentId` param on 3 functions + interface update
+
+### Completion Page: Incomplete Assignments Guard (2026-02-17)
+
+**Issue:** Navigating to `/syllabind/:id/completed` with missing steps showed "not found" (store's catalog list lacks full week/step data) and auto-completed the enrollment regardless.
+
+**Fix:** Rewrote `Completion.tsx` to fetch full syllabus data and completed steps independently (same pattern as WeekView). The page now computes overall progress and conditionally renders:
+
+- **Incomplete state (progress < 100%):** Amber warning icon, "Almost There!" heading, remaining assignment count, progress bar with step count, and CTAs for "Back to Last Week" and "Return to Syllabind Overview"
+- **Complete state (100%):** Original celebration with confetti, award icon, congratulations message. Enrollment is only marked as completed in this state.
+
+**Also fixed in WeekView:** `isLastWeek` previously compared `weekIndex` to `syllabus.durationWeeks` (a metadata field), which could be stale or mismatched with actual week data. Changed to compute `maxWeekIndex` from the actual weeks array. Additionally, if the user navigates to a non-existent week (past the last one), WeekView now redirects to the completion page instead of showing "Not found."
+
+**Files Modified:**
+- `client/src/pages/Completion.tsx` — Full rewrite with data fetching, progress computation, and incomplete/complete conditional rendering
+- `client/src/pages/WeekView.tsx` — `isLastWeek` uses actual week data; redirect to completion page for non-existent weeks
+
+### Fix: Week Locking Indicators on SyllabindOverview (2026-02-17)
+
+**Issue:** SyllabindOverview showed a lock icon for ANY week that wasn't the current week or 100% complete. This meant past accessible weeks (e.g. Week 1 when user is on Week 3) appeared locked even though they were fully accessible.
+
+**Fix:** Changed the week indicator logic to distinguish four states:
+- **Completed** (checkmark): week is 100% done
+- **Current** (chevron): the effective current week
+- **Accessible** (week number): past weeks that aren't 100% done — shown with the week number instead of a lock
+- **Locked** (lock icon): future weeks beyond the effective current week
+
+Also added a "Go to Week N" mobile button for past accessible but incomplete weeks.
+
+**Files Modified:**
+- `client/src/pages/SyllabindOverview.tsx` — Week indicator logic + accessible week navigation button
+
+### Fix: 0-Based Week Index Normalization (2026-02-17)
+
+**Issue:** Some syllabinds (e.g. AI-generated ones) stored week indices starting at 0 instead of 1. This caused cascading issues: Week 1 appeared locked, Dashboard's "Continue" button navigated to the wrong week, WeekView's prev/next navigation broke, and "Not found" appeared for non-existent weeks.
+
+**Fix (API normalization):** The `GET /api/syllabinds/:id` endpoint now normalizes week indices to 1-based after fetching from the database. Weeks are sorted by their original index and re-indexed as 1, 2, 3, etc. This fixes all frontend consumers at once.
+
+**Fix (data-driven navigation in WeekView):** Replaced all hardcoded `weekIndex - 1` / `weekIndex + 1` arithmetic with actual prev/next week lookups from the sorted weeks array. `isLastWeek` is now `nextWeek === null`. Locking checks use `prevWeek` data. Navigation links use `prevWeek.index` / `nextWeek.index`.
+
+**Files Modified:**
+- `server/routes.ts` — Week index normalization in GET `/api/syllabinds/:id`
+- `client/src/pages/WeekView.tsx` — Data-driven prev/next week navigation
+
+---
+
+### Weeks/Steps Persistence Fix (2026-02-19)
+
+**Problem:** The create and update syllabind routes discarded nested weeks/steps data. `POST /api/syllabinds` only created the base syllabind row via `insertSyllabusSchema` (which strips unknown fields). `PUT /api/syllabinds/:id` explicitly filtered out the `weeks` property in `storage.updateSyllabus()`. This meant the editor could save metadata (title, description, status) but all content (weeks and steps) was never persisted. Preview and overview pages showed empty syllabinds.
+
+**Solution:**
+1. Added `saveWeeksAndSteps(syllabusId, weeksData)` method to storage — deletes existing weeks (steps cascade), then bulk-inserts new weeks and steps
+2. Updated `POST /api/syllabinds` to call `saveWeeksAndSteps` after creating the syllabind when `weeks` data is present
+3. Updated `PUT /api/syllabinds/:id` to call `saveWeeksAndSteps` after updating metadata when `weeks` data is present
+
+**Files Modified:**
+- `server/storage.ts` — Added `saveWeeksAndSteps` to IStorage interface and DatabaseStorage implementation
+- `server/routes.ts` — Updated POST and PUT syllabind routes to persist weeks/steps
+
+### Stripe Pro Subscription System (2026-02-19)
+
+**Feature:** Added a $9.99/mo "Syllabind Pro" subscription using Stripe Checkout (redirect flow). Two gating rules:
+- **Creators:** Free tier limited to 2 syllabinds; Pro unlocks unlimited creation
+- **Learners:** All enrollments require a Pro subscription
+
+**Backend:**
+- Added `stripeCustomerId` and `subscriptionStatus` columns to `users` table
+- Added `subscriptions` table for audit trail (mirrors Stripe subscription lifecycle)
+- Stripe client helper with lazy-init singleton (`server/lib/stripe.ts`)
+- 5 new storage methods: `getUserByStripeCustomerId`, `getSubscriptionByStripeId`, `upsertSubscription`, `updateSubscriptionByStripeId`, `countSyllabindsByCreator`
+- Payment routes (`server/routes/stripe.ts`): subscription status, limits, checkout session, portal session
+- Webhook handler (`server/routes/webhook.ts`): handles 5 Stripe event types with signature verification
+- Gating in `POST /api/syllabinds` (creator limit) and `POST /api/enrollments` (Pro required)
+
+**Frontend:**
+- `UpgradePrompt` dialog component with two variants (`creator-limit`, `enrollment-gate`)
+- `returnTo` parameter support — users return to where they were after payment
+- Subscription status in store with `isPro`, `subscriptionLimits`, `refreshSubscriptionLimits()`
+- Profile page subscription card with "Manage Billing" (Pro) or upgrade CTA (free)
+- CreatorDashboard gating at syllabind creation limit
+- SyllabindOverview enrollment gating with upgrade prompt
+
+**Files Created:**
+- `server/lib/stripe.ts` — Stripe client singleton
+- `server/routes/stripe.ts` — Payment API routes
+- `server/routes/webhook.ts` — Stripe webhook handler
+- `client/src/lib/stripe.ts` — Client-side Stripe utilities
+- `client/src/components/UpgradePrompt.tsx` — Upgrade prompt dialog
+- `server/__tests__/stripe-routes.test.ts` — 12 tests for payment routes
+- `server/__tests__/webhook.test.ts` — 11 tests for webhook handling
+
+**Files Modified:**
+- `shared/schema.ts` — Added subscription fields and subscriptions table
+- `server/storage.ts` — Added 5 new storage methods
+- `server/routes.ts` — Wired payment routes, added gating logic
+- `client/src/lib/types.ts` — Added subscription types
+- `client/src/lib/store.tsx` — Added subscription state management
+- `client/src/pages/CreatorDashboard.tsx` — Creation limit gating
+- `client/src/pages/SyllabindOverview.tsx` — Enrollment gating
+- `client/src/pages/Profile.tsx` — Subscription management card
+- `jest.setup.js` — Added Stripe and subscription mocks
+- `server/__tests__/setup/mocks.ts` — Added Pro user mocks
+- `server/__tests__/routes-integration.test.ts` — Updated enrollment tests for Pro gating
+
+### Fix: Audio/Video Materials Toggle (2026-02-22)
+
+**Problem:** The Audio/Video Materials toggle ("Auto"/"Yes"/"No") wasn't affecting generation output, and the selection reset to "Auto" after clicking generate.
+
+**Root Causes:**
+1. `mediaPreference` was missing from the initial `formData` state (started as `undefined`), creating fragile data flow
+2. After generation completed, `setFormData(updated)` replaced the full state with the DB response without preserving the user's selection
+3. The generation prompt's media instruction was too weak — "MUST include at least 1" buried in a long rules list, easily ignored by the model
+
+**Fixes:**
+1. Added `mediaPreference: 'auto'` to initial formData state to prevent undefined-related issues
+2. After generation completes, preserve `mediaPreference` from local state when refetching: `updated.mediaPreference || prev.mediaPreference || 'auto'`
+3. Strengthened generation prompts — "Yes" mode now uses `IMPORTANT:` prefix, specifies search strategies ("topic YouTube", "topic podcast episode"), and labels it "a hard requirement from the creator"
+4. Added server-side logging of `mediaPreference` value when generation starts
+
+**Files Modified:**
+- `client/src/pages/SyllabindEditor.tsx` — Initial state, generation_complete handler, pre-generation logging
+- `server/utils/syllabindGenerator.ts` — Stronger media instructions in both `generateSyllabind` and `regenerateWeek`
+- `server/websocket/generateSyllabind.ts` — Logging of mediaPreference before generation
+
+### Media Preference: API Limitation Acknowledged (2026-02-22)
+
+**Problem:** Despite `media_preference: 'yes'`, Claude (Sonnet 4.5) cannot reliably produce working YouTube/podcast URLs. It pulls video titles from training data (knows creators like "Coach Michelle Hong") but fabricates URLs with fake video IDs instead of extracting them from web search results. oEmbed validation correctly catches the fakes → URL stripped → reading saved with mediaType but no URL.
+
+Multiple approaches were tried and abandoned:
+1. **Stronger prompt wording** — Listing specific platforms, URL patterns, "MUST"/"CRITICAL" language. Claude ignores it.
+2. **Post-generation media repair** — Dedicated API call with focused prompt + web search to find real URLs. Same fabrication problem; extra API calls with no improvement.
+
+**Current approach:** The media instruction is kept short and best-effort. `mediaPreference: 'yes'` adds a soft instruction ("should include") rather than a hard requirement. The `'no'` preference is reliable (text-only constraint is easy to follow). The `'auto'` preference emits no instruction at all.
+
+**Known limitation:** The Audio/Video Materials toggle is best-effort when set to "Yes". Claude may or may not include working media URLs. This is an API-level limitation with web search + URL generation that cannot be solved through prompt engineering alone.
+
+**New storage method** (`storage.ts`): `updateStep(stepId, updates)` — general-purpose partial step update (added during this work, kept as a useful utility).
+
+**Files Modified:**
+- `server/utils/syllabindGenerator.ts` — Simplified media instructions (shorter, best-effort)
+- `server/storage.ts` — `updateStep()` interface + implementation
+
+### YouTube API Integration for Media URLs (2026-02-22)
+
+**Problem:** Claude (Sonnet 4.5) cannot reliably produce working YouTube URLs. It fabricates video IDs from training data; oEmbed validation catches the fakes. Prompt engineering and LLM-based repair loops both failed.
+
+**Solution:** Bypass the LLM entirely. After URL repair passes, use the YouTube Data API v3 to search for real videos by week topic when `mediaPreference === 'yes'`.
+
+**Architecture:**
+
+1. **`searchYouTube(query)`** (`server/utils/youtubeSearch.ts`): Calls `GET youtube/v3/search` with `part=snippet&type=video&maxResults=1`. Returns `{ videoId, title, channelTitle, publishedAt }` or null. 5s timeout. Graceful no-op if `YOUTUBE_API_KEY` not set.
+
+2. **`ensureMediaUrl(weekId, weekTopic, ws)`** (`server/utils/syllabindGenerator.ts`): Post-repair pass that checks if a week already has a media reading with a verified URL. For `mediaType: 'Youtube video'`, verifies the URL is an actual YouTube URL using `extractYouTubeVideoId()` (Claude often sets this mediaType on non-YouTube websites that embed videos). If no verified media exists, calls `searchYouTube(weekTopic)` and updates a candidate reading via `storage.updateStep()`. Candidate selection prioritizes: (1) readings marked as YouTube with non-YouTube URLs, (2) readings without URLs and non-academic types, (3) any reading without a URL, (4) any non-academic reading. Sends `step_url_repaired` WebSocket event.
+
+3. **Integration points:**
+   - `generateSyllabind()` — after batch URL repair, loops through batch weeks calling `ensureMediaUrl()`
+   - `regenerateWeek()` — after URL repair, calls `ensureMediaUrl()` using hoisted `regenWeekId`/`regenWeekTopic`
+
+**No-op conditions** (no YouTube API call made):
+- `YOUTUBE_API_KEY` env var not set
+- `mediaPreference !== 'yes'`
+- Week already has a working media reading (YouTube video with a verified `youtube.com` URL, or Podcast with any URL)
+- No readings exist in the week
+
+**Environment:** Requires `YOUTUBE_API_KEY` env var (YouTube Data API v3 key).
+
+**Files Modified:**
+- `server/utils/youtubeSearch.ts` — **NEW** YouTube Data API v3 search utility
+- `server/utils/syllabindGenerator.ts` — Added `ensureMediaUrl()`, integrated into both `generateSyllabind()` and `regenerateWeek()` flows
+- `server/__tests__/youtubeSearch.test.ts` — **NEW** Tests for search utility (success, missing key, API errors, empty results, timeouts)
+
+### Generation Cost Reduction (~25-35%) (2026-02-22)
+
+**Problem:** Generating a 4-week syllabind cost ~$0.75-1.00 in Claude API usage. Sonnet must stay for generation (Haiku produced fake URLs) and batch size must stay at 2 (larger batches hit rate limits).
+
+**Changes:**
+1. **Reduced web search budget** (`claudeClient.ts`): `max_uses` 14 → 8 per batch (~4 searches/week). Prompt already says "~2-3 searches per week" — 14 was excessive.
+2. **Removed per-batch URL repair** (`syllabindGenerator.ts`): Repair ran after each batch AND as a final sweep. Final sweep catches everything in one pass — fewer API calls, smarter search allocation.
+3. **Reduced repair search budget** (`syllabindGenerator.ts`): `min(count * 3, 20)` → `min(count * 2, 10)` — 2 searches per missing reading instead of 3.
+4. **Haiku for URL repair** (`syllabindGenerator.ts`): `repairMissingUrls()` now uses `CLAUDE_MODEL` (Haiku) instead of `CLAUDE_MODEL_GENERATION` (Sonnet). Repair is simple: search for a title, return the URL.
+5. **Reduced generation max_tokens** (`syllabindGenerator.ts`): 8192 → 4096. Actual output is ~2-3K tokens; no cost savings but faster responses.
+
+**Files Modified:**
+- `server/utils/claudeClient.ts` — Web search budget 14 → 8
+- `server/utils/syllabindGenerator.ts` — Removed per-batch repair, reduced repair budget, Haiku for repair, lower max_tokens

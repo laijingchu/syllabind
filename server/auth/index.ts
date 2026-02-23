@@ -8,6 +8,7 @@ import connectPg from "connect-pg-simple";
 import { registerEmailAuthRoutes } from "./emailAuth";
 import { registerGoogleAuthRoutes } from "./googleAuth";
 import { registerAppleAuthRoutes } from "./appleAuth";
+import { isAdminUser } from "./admin";
 import { db } from "../db";
 import { users } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
@@ -78,7 +79,7 @@ export async function isAuthenticated(req: Request, res: Response, next: NextFun
 
     // Attach user to request for use in routes (without password)
     const { password: _, ...userWithoutPassword } = user;
-    (req as any).user = userWithoutPassword;
+    (req as any).user = { ...userWithoutPassword, isAdmin: isAdminUser(user.username) };
     
     next();
   } catch (error) {
@@ -91,7 +92,7 @@ export async function isAuthenticated(req: Request, res: Response, next: NextFun
  * Authenticate a WebSocket connection using the session cookie.
  * Returns the user (without password) or null if unauthenticated.
  */
-export async function authenticateWebSocket(req: IncomingMessage): Promise<Omit<typeof users.$inferSelect, 'password'> | null> {
+export async function authenticateWebSocket(req: IncomingMessage): Promise<(Omit<typeof users.$inferSelect, 'password'> & { isAdmin: boolean }) | null> {
   try {
     const cookies = cookie.parse(req.headers.cookie || '');
     const raw = cookies['connect.sid'];
@@ -119,7 +120,7 @@ export async function authenticateWebSocket(req: IncomingMessage): Promise<Omit<
     if (!user) return null;
 
     const { password: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return { ...userWithoutPassword, isAdmin: isAdminUser(user.username) };
   } catch (error) {
     console.error('WebSocket auth error:', error);
     return null;

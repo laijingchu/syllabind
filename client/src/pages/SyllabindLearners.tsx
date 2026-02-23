@@ -37,7 +37,7 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { cn } from '@/lib/utils';
 
 export default function SyllabindLearners() {
-  const [match, params] = useRoute('/creator/syllabus/:id/learners');
+  const [match, params] = useRoute('/creator/syllabind/:id/learners');
   const { getSyllabusById, getLearnersForSyllabus, getSubmissionsForStep } = useStore();
   const [, setLocation] = useLocation();
 
@@ -117,7 +117,7 @@ export default function SyllabindLearners() {
       <div className="border-b bg-card">
         <div className="container mx-auto px-4 py-3 sm:py-4 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
           <div className="space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-4">
-             <Link href={`/creator/syllabus/${syllabus.id}/edit`}>
+             <Link href={`/creator/syllabind/${syllabus.id}/edit`}>
                <Button variant="ghost" size="sm" className="gap-2 -ml-2 sm:ml-0">
                  <ArrowLeft className="h-4 w-4" /> Back to Editor
                </Button>

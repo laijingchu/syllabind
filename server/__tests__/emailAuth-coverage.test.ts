@@ -103,7 +103,7 @@ describe('Email Auth Coverage', () => {
 
       const res = await request(app)
         .post('/api/auth/register')
-        .send({ email: 'test@example.com', password: 'pass123', name: 'Test' });
+        .send({ email: 'test@example.com', password: 'Password1', name: 'Test' });
 
       expect(res.status).toBe(400);
       expect(res.body.message).toContain('already registered');
@@ -118,7 +118,7 @@ describe('Email Auth Coverage', () => {
 
       const res = await request(app)
         .post('/api/auth/register')
-        .send({ email: 'new@example.com', password: 'pass123', name: 'New User' });
+        .send({ email: 'new@example.com', password: 'Password1', name: 'New User' });
 
       expect(res.status).toBe(200);
       expect(res.body.username).toBe('testuser');
@@ -229,6 +229,87 @@ describe('Email Auth Coverage', () => {
       expect(res.status).toBe(500);
       expect(res.body.message).toContain('Failed to get user');
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe('OAuth provider detection on login', () => {
+    it('returns Google Sign-In message for Google OAuth user', async () => {
+      const googleUser = { ...mockUser, password: null, googleId: 'google-123', authProvider: 'google' };
+      mockDbResult.mockResolvedValueOnce([googleUser]);
+
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'test@example.com', password: 'Password1' });
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toContain('Google Sign-In');
+    });
+
+    it('returns Apple Sign-In message for Apple OAuth user', async () => {
+      const appleUser = { ...mockUser, password: null, appleId: 'apple-123', authProvider: 'apple' };
+      mockDbResult.mockResolvedValueOnce([appleUser]);
+
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'test@example.com', password: 'Password1' });
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toContain('Apple Sign-In');
+    });
+  });
+
+  describe('OAuth provider detection on register', () => {
+    it('returns 409 with Google message when registering with Google OAuth email', async () => {
+      const googleUser = { ...mockUser, password: null, googleId: 'google-123', authProvider: 'google' };
+      mockDbResult.mockResolvedValueOnce([googleUser]);
+
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({ email: 'test@example.com', password: 'Password1', name: 'Test' });
+
+      expect(res.status).toBe(409);
+      expect(res.body.message).toContain('Google Sign-In');
+    });
+
+    it('returns 409 with Apple message when registering with Apple OAuth email', async () => {
+      const appleUser = { ...mockUser, password: null, appleId: 'apple-123', authProvider: 'apple' };
+      mockDbResult.mockResolvedValueOnce([appleUser]);
+
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({ email: 'test@example.com', password: 'Password1', name: 'Test' });
+
+      expect(res.status).toBe(409);
+      expect(res.body.message).toContain('Apple Sign-In');
+    });
+  });
+
+  describe('Password validation on register', () => {
+    it('rejects password shorter than 8 characters', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({ email: 'new@example.com', password: 'Pass1', name: 'Test' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('8 characters');
+    });
+
+    it('rejects password with no letters', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({ email: 'new@example.com', password: '12345678', name: 'Test' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('letter');
+    });
+
+    it('rejects password with no numbers', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({ email: 'new@example.com', password: 'abcdefgh', name: 'Test' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('number');
     });
   });
 

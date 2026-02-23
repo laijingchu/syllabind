@@ -3,15 +3,18 @@ import { PostHogProvider } from "@posthog/react";
 import App from "./App";
 import "./index.css";
 
+const posthogKey = import.meta.env.VITE_PUBLIC_POSTHOG_KEY;
+
 const options = {
-  api_host: import.meta.env.VITE_POSTHOG_HOST,
+  api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
 } as const;
 
 createRoot(document.getElementById("root")!).render(
-  <PostHogProvider
-    apiKey={import.meta.env.VITE_POSTHOG_KEY}
-    options={options}
-  >
+  posthogKey ? (
+    <PostHogProvider apiKey={posthogKey} options={options}>
+      <App />
+    </PostHogProvider>
+  ) : (
     <App />
-  </PostHogProvider>,
+  ),
 );

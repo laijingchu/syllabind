@@ -19,13 +19,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowLeft, Loader2, Crown, Settings, Hash } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { redirectToCheckout, redirectToPortal } from '@/lib/stripe';
+import { Badge } from '@/components/ui/badge';
 
 const profileSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
   }),
+  profileTitle: z.string().max(100, {
+    message: "Title must not be longer than 100 characters.",
+  }).optional(),
   bio: z.string().max(160, {
     message: "Bio must not be longer than 160 characters.",
   }).optional(),
@@ -33,23 +38,131 @@ const profileSchema = z.object({
   linkedin: z.string().optional(),
   twitter: z.string().optional(),
   threads: z.string().optional(),
+  schedulingUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')),
   shareProfile: z.boolean().default(false),
 });
 
 export default function Profile() {
-  const { user, updateUser } = useStore();
+  const { user, updateUser, isPro, refreshSubscriptionLimits } = useStore();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [slackUrl, setSlackUrl] = useState('');
+  const [slackLoading, setSlackLoading] = useState(false);
+  const [slackSaving, setSlackSaving] = useState(false);
+  const [waitlistUrl, setWaitlistUrl] = useState('');
+  const [waitlistSaving, setWaitlistSaving] = useState(false);
+  const [bugReportUrl, setBugReportUrl] = useState('');
+  const [bugReportSaving, setBugReportSaving] = useState(false);
+
+  // Fetch admin settings for admin users
+  useEffect(() => {
+    if (user?.isAdmin) {
+      setSlackLoading(true);
+      Promise.all([
+        fetch('/api/site-settings/slack_community_url').then(r => r.json()),
+        fetch('/api/site-settings/waitlist_form_url').then(r => r.json()),
+        fetch('/api/site-settings/bug_report_url').then(r => r.json()),
+      ])
+        .then(([slackData, waitlistData, bugReportData]) => {
+          setSlackUrl(slackData.value || '');
+          setWaitlistUrl(waitlistData.value || '');
+          setBugReportUrl(bugReportData.value || '');
+          setSlackLoading(false);
+        })
+        .catch(() => setSlackLoading(false));
+    }
+  }, [user?.isAdmin]);
+
+  const handleSlackSave = async () => {
+    setSlackSaving(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ key: 'slack_community_url', value: slackUrl }),
+      });
+      if (!res.ok) throw new Error('Failed to save');
+      toast({ title: 'Settings saved', description: 'Slack community URL has been updated.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
+    } finally {
+      setSlackSaving(false);
+    }
+  };
+
+  const handleBugReportSave = async () => {
+    setBugReportSaving(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ key: 'bug_report_url', value: bugReportUrl }),
+      });
+      if (!res.ok) throw new Error('Failed to save');
+      toast({ title: 'Settings saved', description: 'Bug report form URL has been updated.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
+    } finally {
+      setBugReportSaving(false);
+    }
+  };
+
+  const handleWaitlistSave = async () => {
+    setWaitlistSaving(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ key: 'waitlist_form_url', value: waitlistUrl }),
+      });
+      if (!res.ok) throw new Error('Failed to save');
+      toast({ title: 'Settings saved', description: 'Waitlist form URL has been updated.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
+    } finally {
+      setWaitlistSaving(false);
+    }
+  };
+
+  // Handle ?subscription=success query param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('subscription') === 'success') {
+      toast({ title: 'Welcome to Syllabind Pro!', description: 'Your subscription is now active.' });
+      refreshSubscriptionLimits();
+      // Clean up URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('subscription');
+      window.history.replaceState({}, '', url.pathname + url.search);
+    }
+  }, []);
+
+  // Scroll to hash anchor (e.g. #scheduling) on mount
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash) {
+      const el = document.querySelector(hash);
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+      }
+    }
+  }, []);
 
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: user?.name || "",
+      profileTitle: user?.profileTitle || "",
       bio: user?.bio || "",
       website: user?.website || "",
       linkedin: user?.linkedin || "",
       twitter: user?.twitter || "",
       threads: user?.threads || "",
+      schedulingUrl: user?.schedulingUrl || "",
       shareProfile: user?.shareProfile || false,
     },
   });
@@ -103,7 +216,7 @@ export default function Profile() {
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
           </Button>
         </Link>
-        <h1 className="text-3xl font-display font-medium mb-2">Edit Profile</h1>
+        <h1 className="text-3xl font-display font-medium mb-2">Edit Profile & Settings</h1>
         <p className="text-muted-foreground">Manage your public profile and preferences.</p>
       </div>
 
@@ -137,6 +250,24 @@ export default function Profile() {
                     <FormControl>
                       <Input placeholder="Your name" {...field} />
                     </FormControl>
+                    <p className="text-xs text-muted-foreground">Username: {user?.username}</p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="profileTitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Product Designer at Acme" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      A short headline, like your role or expertise.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -230,6 +361,23 @@ export default function Profile() {
                 />
               </div>
 
+              <FormField
+                control={form.control}
+                name="schedulingUrl"
+                render={({ field }) => (
+                  <FormItem id="scheduling">
+                    <FormLabel>Scheduling Link</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://calendly.com/you" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Link to your scheduling page (Calendly, Cal.com, etc.). Shown to Pro learners on your syllabinds.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
             </CardContent>
           </Card>
 
@@ -241,6 +389,153 @@ export default function Profile() {
           </div>
         </form>
       </Form>
+
+      {/* Subscription Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5" />
+              Subscription
+            </CardTitle>
+            {isPro && <Badge className="bg-primary text-primary-foreground">Pro</Badge>}
+          </div>
+          <CardDescription>
+            {isPro
+              ? 'You have Syllabind Pro access.'
+              : 'Upgrade to Syllabind Pro for unlimited creation and enrollment.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isPro ? (
+            <Button
+              variant="outline"
+              onClick={async () => {
+                setPortalLoading(true);
+                try { await redirectToPortal(); } catch (e) { setPortalLoading(false); toast({ title: 'Unable to open billing portal', description: e instanceof Error ? e.message : 'Please try again later.', variant: 'destructive' }); }
+              }}
+              disabled={portalLoading}
+            >
+              {portalLoading ? 'Redirecting...' : 'Manage Billing'}
+            </Button>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                <strong>$9.99 one-time</strong> — Unlimited syllabinds, enroll in any course, full progress tracking.
+              </p>
+              <Button
+                onClick={async () => {
+                  try { await redirectToCheckout('/profile'); } catch (e) { toast({ title: 'Unable to start checkout', description: e instanceof Error ? e.message : 'Please try again later.', variant: 'destructive' }); }
+                }}
+              >
+                <Crown className="mr-2 h-4 w-4" />
+                Upgrade to Pro
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Admin Settings — only visible to admins */}
+      {user?.isAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Admin Settings
+            </CardTitle>
+            <CardDescription>Platform-wide configuration (admin only).</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Hash className="h-4 w-4" />
+                Slack Community URL
+              </label>
+              <p className="text-xs text-muted-foreground">
+                The Slack invite URL shown to Pro users on syllabind overview pages.
+              </p>
+              {slackLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="https://join.slack.com/t/your-workspace/shared_invite/..."
+                    value={slackUrl}
+                    onChange={(e) => setSlackUrl(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button onClick={handleSlackSave} disabled={slackSaving}>
+                    {slackSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Hash className="h-4 w-4" />
+                Waitlist Form URL
+              </label>
+              <p className="text-xs text-muted-foreground">
+                External form URL (Google Form, Typeform, etc.) for waitlist signups on Login and Marketing pages.
+              </p>
+              {slackLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="https://forms.gle/... or https://yourform.typeform.com/..."
+                    value={waitlistUrl}
+                    onChange={(e) => setWaitlistUrl(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button onClick={handleWaitlistSave} disabled={waitlistSaving}>
+                    {waitlistSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Hash className="h-4 w-4" />
+                Bug Report Form URL
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Google Form or other URL for bug reports. When set, a bug icon appears in the header next to the user avatar.
+              </p>
+              {slackLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="https://forms.gle/... or https://yourform.typeform.com/..."
+                    value={bugReportUrl}
+                    onChange={(e) => setBugReportUrl(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button onClick={handleBugReportSave} disabled={bugReportSaving}>
+                    {bugReportSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

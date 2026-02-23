@@ -23,18 +23,23 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle, AlertTriangle, Share2, X } from 'lucide-react';
+import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle, AlertTriangle, Share2, X, CalendarDays, Crown, Hash } from 'lucide-react';
 import { ShareDialog } from '@/components/ShareDialog';
 import { useState, useEffect } from 'react';
 import { cn, pluralize } from '@/lib/utils';
 import { LearnerProfile, Syllabus } from '@/lib/types';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { useToast } from '@/hooks/use-toast';
 
-export default function SyllabusOverview() {
-  const [match, params] = useRoute('/syllabus/:id');
-  const { getSyllabusById, enrollInSyllabus, enrollment, getExerciseText, getLearnersForSyllabus, updateEnrollmentShareProfile } = useStore();
+export default function SyllabindOverview() {
+  const [match, params] = useRoute('/syllabind/:id');
+  const { getSyllabusById, enrollInSyllabus, enrollment, getExerciseText, getLearnersForSyllabus, updateEnrollmentShareProfile, isPro } = useStore();
   const [location, setLocation] = useLocation();
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [upgradeVariant, setUpgradeVariant] = useState<'enrollment-gate' | 'pro-feature'>('enrollment-gate');
+  const [slackUrl, setSlackUrl] = useState<string | null>(null);
   const [learners, setLearners] = useState<LearnerProfile[]>([]);
   const [totalEnrolled, setTotalEnrolled] = useState(0);
   const [syllabus, setSyllabus] = useState<Syllabus | undefined>(undefined);
@@ -44,8 +49,21 @@ export default function SyllabusOverview() {
   const [localCompletedStepIds, setLocalCompletedStepIds] = useState<number[]>([]);
 
   const syllabusId = match && params?.id ? parseInt(params.id) : undefined;
-  const { user: currentUser, completedStepIds: storeCompletedStepIds } = useStore();
+  const { user: currentUser, completedStepIds: storeCompletedStepIds, refreshSubscriptionLimits } = useStore();
+  const { toast } = useToast();
   const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
+
+  // Handle ?subscription=success return from Stripe checkout
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('subscription') === 'success') {
+      toast({ title: 'Welcome to Syllabind Pro!', description: 'Your subscription is now active. You can now enroll.' });
+      refreshSubscriptionLimits();
+      const url = new URL(window.location.href);
+      url.searchParams.delete('subscription');
+      window.history.replaceState({}, '', url.pathname + url.search);
+    }
+  }, []);
 
   // Fetch full syllabus with weeks and steps
   useEffect(() => {
@@ -117,6 +135,14 @@ export default function SyllabusOverview() {
     }
   }, [syllabus?.creatorId]);
 
+  // Fetch Slack community URL from site settings
+  useEffect(() => {
+    fetch('/api/site-settings/slack_community_url')
+      .then(res => res.json())
+      .then(data => setSlackUrl(data.value || null))
+      .catch(() => {});
+  }, []);
+
   if (!syllabus) return <div className="text-center py-20">Loading...</div>;
 
   // Use locally-fetched completed steps for this enrollment (works for both active and completed)
@@ -172,13 +198,20 @@ export default function SyllabusOverview() {
   const handleStartClick = () => {
     // Already enrolled in this syllabus - just navigate to effective current week
     if (existingEnrollment) {
-      setLocation(`/syllabus/${syllabus.id}/week/${effectiveCurrentWeek}`);
+      setLocation(`/syllabind/${syllabus.id}/week/${effectiveCurrentWeek}`);
       return;
     }
 
     // Not authenticated - redirect to login with returnTo
     if (!currentUser) {
-      setLocation(`/login?returnTo=${encodeURIComponent(`/syllabus/${syllabus.id}`)}`);
+      setLocation(`/login?returnTo=${encodeURIComponent(`/syllabind/${syllabus.id}`)}`);
+      return;
+    }
+
+    // Pro gate: must be Pro to enroll
+    if (!isPro) {
+      setUpgradeVariant('enrollment-gate');
+      setShowUpgradePrompt(true);
       return;
     }
 
@@ -186,11 +219,41 @@ export default function SyllabusOverview() {
     setShowPrivacyDialog(true);
   };
 
+  const handleBookCall = () => {
+    if (!currentUser) {
+      setLocation(`/login?returnTo=${encodeURIComponent(`/syllabind/${syllabus.id}`)}`);
+      return;
+    }
+    if (!isPro) {
+      setUpgradeVariant('pro-feature');
+      setShowUpgradePrompt(true);
+      return;
+    }
+    if (creator?.schedulingUrl) {
+      window.open(creator.schedulingUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleJoinSlack = () => {
+    if (!currentUser) {
+      setLocation(`/login?returnTo=${encodeURIComponent(`/syllabind/${syllabus.id}`)}`);
+      return;
+    }
+    if (!isPro) {
+      setUpgradeVariant('pro-feature');
+      setShowUpgradePrompt(true);
+      return;
+    }
+    if (slackUrl) {
+      window.open(slackUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   const handleEnroll = async (shareProfile: boolean) => {
     await enrollInSyllabus(syllabus.id, shareProfile);
     setEnrollmentShareProfile(shareProfile);
     setShowPrivacyDialog(false);
-    setLocation(`/syllabus/${syllabus.id}/week/1`);
+    setLocation(`/syllabind/${syllabus.id}/week/1`);
   };
 
   const LearnerAvatar = ({ learner }: { learner: LearnerProfile }) => {
@@ -279,12 +342,98 @@ export default function SyllabusOverview() {
              />
           </div>
 
-          <div className="share-button-section">
+          <div className="share-button-section flex flex-wrap gap-3">
             <Button variant="outline" onClick={() => setShowShareDialog(true)}>
               <Share2 className="h-4 w-4 mr-2" />
               Share with a Friend
             </Button>
+            {slackUrl && (
+              <Button variant="outline" onClick={handleJoinSlack} className="gap-2">
+                <Hash className="h-4 w-4" />
+                Join Slack Community
+                {(!currentUser || !isPro) && (
+                  <span className="flex items-center gap-0.5 text-muted-foreground">
+                    <Crown className="h-3 w-3" />
+                    <Lock className="h-3 w-3" />
+                  </span>
+                )}
+              </Button>
+            )}
           </div>
+
+          {/* Creator Section */}
+          {creator && (
+            <div className="creator-section space-y-5">
+              <h2 className="text-2xl font-display border-b pb-4">Meet the Creator</h2>
+              <div className="space-y-5">
+                <div className="creator-info flex items-start gap-4">
+                  <Avatar className="h-16 w-16 border-2 border-border shrink-0">
+                    <AvatarImage src={creator.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${creator.name}`} alt={creator.name} />
+                    <AvatarFallback className="text-lg">{creator.name?.charAt(0) || '?'}</AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-1 min-w-0">
+                    <h3 className="font-medium text-lg">{creator.name}</h3>
+                    {creator.profileTitle && (
+                      <p className="text-sm text-muted-foreground">{creator.profileTitle}</p>
+                    )}
+                    {creator.expertise && !creator.profileTitle && (
+                      <p className="text-sm text-muted-foreground">{creator.expertise}</p>
+                    )}
+                  </div>
+                </div>
+
+                {creator.bio && (
+                  <p className="text-sm text-muted-foreground leading-relaxed">{creator.bio}</p>
+                )}
+
+                {/* Social links */}
+                {(creator.linkedin || creator.twitter || creator.threads || creator.website) && (
+                  <div className="flex flex-wrap gap-2">
+                    {creator.linkedin && (
+                      <a href={`https://linkedin.com/in/${creator.linkedin}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-muted hover:bg-muted/80 text-muted-foreground hover:text-[#0077b5] transition-colors">
+                        <Linkedin className="h-3.5 w-3.5" />
+                        LinkedIn
+                      </a>
+                    )}
+                    {creator.twitter && (
+                      <a href={`https://twitter.com/${creator.twitter}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-muted hover:bg-muted/80 text-muted-foreground hover:text-[#1DA1F2] transition-colors">
+                        <Twitter className="h-3.5 w-3.5" />
+                        X / Twitter
+                      </a>
+                    )}
+                    {creator.threads && (
+                      <a href={`https://threads.net/@${creator.threads}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors">
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        Threads
+                      </a>
+                    )}
+                    {creator.website && (
+                      <a href={creator.website.startsWith('http') ? creator.website : `https://${creator.website}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-muted hover:bg-muted/80 text-muted-foreground hover:text-primary transition-colors">
+                        <Globe className="h-3.5 w-3.5" />
+                        Website
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                {/* Pro CTAs */}
+                {creator.schedulingUrl && syllabus?.showSchedulingLink !== false && (
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    <Button variant="outline" size="sm" onClick={handleBookCall} className="gap-2">
+                      <CalendarDays className="h-4 w-4" />
+                      1:1 Office Hour
+                      {(!currentUser || !isPro) && (
+                        <span className="flex items-center gap-0.5 text-muted-foreground">
+                          <Crown className="h-3 w-3" />
+                          <Lock className="h-3 w-3" />
+                        </span>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="syllabus-metadata flex flex-wrap gap-6 text-sm text-muted-foreground border-y py-6">
             <div className="metadata-duration flex items-center gap-2">
@@ -308,19 +457,21 @@ export default function SyllabusOverview() {
 
           <div className="syllabind-section space-y-6">
             <h2 className="text-2xl font-display">What you'll learn</h2>
-            <Accordion type="single" collapsible className="space-y-4">
+            <Accordion type="single" collapsible className="space-y-4" defaultValue={`week-${effectiveCurrentWeek}`}>
               {syllabus.weeks.filter(w => w.steps.length > 0).map((week) => {
                 const weekDone = isActive && getWeekProgress(week.index) === 100;
                 const isCurrentWeek = isActive && effectiveCurrentWeek === week.index;
-                
+                const isLockedWeek = isActive && week.index > effectiveCurrentWeek;
+                const isAccessible = isActive && week.index < effectiveCurrentWeek && !weekDone;
+
                 return (
-                  <AccordionItem 
-                    key={week.index} 
+                  <AccordionItem
+                    key={week.index}
                     value={`week-${week.index}`}
                     className="border-none"
                   >
                     <AccordionTrigger className="hover:no-underline py-4 px-4 rounded-lg hover:bg-muted/50 transition-colors [&[data-state=open]>div]:bg-transparent">
-                      <div 
+                      <div
                         className={cn(
                           "flex gap-4 items-start w-full text-left transition-colors",
                         )}
@@ -328,9 +479,10 @@ export default function SyllabusOverview() {
                         <div className={cn(
                           "bg-background h-8 w-8 rounded-full flex items-center justify-center font-mono text-sm font-medium shrink-0 border transition-colors",
                           weekDone && "bg-primary text-primary-foreground border-primary",
-                          isCurrentWeek && !weekDone && "border-primary text-primary ring-2 ring-primary/20"
+                          isCurrentWeek && !weekDone && "border-primary text-primary ring-2 ring-primary/20",
+                          isAccessible && "border-muted-foreground/40 text-muted-foreground"
                         )}>
-                          {weekDone ? <Check className="h-4 w-4" /> : isCurrentWeek ? <ChevronRight className="h-4 w-4" /> : <Lock className="h-3.5 w-3.5 text-muted-foreground/70" />}
+                          {weekDone ? <Check className="h-4 w-4" /> : isCurrentWeek ? <ChevronRight className="h-4 w-4" /> : isLockedWeek ? <Lock className="h-3.5 w-3.5 text-muted-foreground/70" /> : week.index}
                         </div>
                         <div className="flex-1">
                           <div className="flex justify-between items-start">
@@ -411,9 +563,23 @@ export default function SyllabusOverview() {
                           <Button
                             size="sm"
                             className="w-full"
-                            onClick={() => setLocation(`/syllabus/${syllabus.id}/week/${week.index}`)}
+                            onClick={() => setLocation(`/syllabind/${syllabus.id}/week/${week.index}`)}
                           >
                             Continue Learning
+                          </Button>
+                        </div>
+                      )}
+
+                      {/* Button for past accessible but incomplete weeks */}
+                      {isAccessible && !isCompleted && (
+                        <div className="pt-4 md:hidden">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => setLocation(`/syllabind/${syllabus.id}/week/${week.index}`)}
+                          >
+                            Go to Week {week.index}
                           </Button>
                         </div>
                       )}
@@ -424,7 +590,7 @@ export default function SyllabusOverview() {
                             variant="secondary"
                             size="sm"
                             className="w-full"
-                            onClick={() => setLocation(`/syllabus/${syllabus.id}/week/${week.index}`)}
+                            onClick={() => setLocation(`/syllabind/${syllabus.id}/week/${week.index}`)}
                           >
                             Review Week {week.index}
                           </Button>
@@ -475,7 +641,14 @@ export default function SyllabusOverview() {
                </div>
 
                <p className="text-sm text-muted-foreground">
-                 Connect with others learning {syllabus.title}.
+                 Connect with others learning {syllabus.title}.{slackUrl && (
+                   <>
+                     {' '}
+                     <button onClick={handleJoinSlack} className="inline-flex items-center gap-1 text-primary hover:underline font-medium">
+                       Join Slack{(!currentUser || !isPro) && <Lock className="h-3 w-3" />}.
+                     </button>
+                   </>
+                 )}
                </p>
             </div>
           )}
@@ -498,7 +671,7 @@ export default function SyllabusOverview() {
             </div>
 
             <Button size="lg" className="w-full" onClick={handleStartClick}>
-              {isActive ? 'Continue Learning' : isCompleted ? 'Review Syllabus' : 'Start this Syllabind'}
+              {isActive ? 'Continue Learning' : isCompleted ? 'Review Syllabind' : 'Start this Syllabind'}
             </Button>
 
             {(isActive || isCompleted) && (
@@ -531,24 +704,6 @@ export default function SyllabusOverview() {
                </div>
             )}
 
-            {creator && (
-              <div className="creator-card pt-6 border-t space-y-4">
-                <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Created by</h4>
-                <div className="creator-info flex items-center gap-3">
-                  <Avatar className="h-9 w-9 border border-border">
-                    <AvatarImage src={creator.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${creator.name}`} alt={creator.name} />
-                    <AvatarFallback>{creator.name?.charAt(0) || '?'}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium text-sm">{creator.name}</div>
-                    <div className="text-xs text-muted-foreground">{creator.expertise}</div>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed italic">
-                  "{creator.bio}"
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -579,6 +734,13 @@ export default function SyllabusOverview() {
         open={showShareDialog}
         onOpenChange={setShowShareDialog}
         title="Share this Syllabind"
+      />
+
+      <UpgradePrompt
+        open={showUpgradePrompt}
+        onOpenChange={setShowUpgradePrompt}
+        variant={upgradeVariant}
+        returnTo={`/syllabind/${syllabus.id}`}
       />
     </AnimatedPage>
   );

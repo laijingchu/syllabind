@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, AlertTriangle, Users, ExternalLink, Wand2, Loader2, X } from 'lucide-react';
+import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, AlertTriangle, Users, ExternalLink, Wand2, Loader2, X, Pencil } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -248,9 +249,9 @@ function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, remov
 }
 
 export default function SyllabindEditor() {
-  const [match, params] = useRoute('/creator/syllabus/:id/edit');
-  const isNew = useLocation()[0] === '/creator/syllabus/new';
-  const { createSyllabus, updateSyllabus, refreshSyllabinds, getSubmissionsForStep, getLearnersForSyllabus } = useStore();
+  const [match, params] = useRoute('/creator/syllabind/:id/edit');
+  const isNew = useLocation()[0] === '/creator/syllabind/new';
+  const { createSyllabus, updateSyllabus, refreshSyllabinds, getSubmissionsForStep, getLearnersForSyllabus, user } = useStore();
   const posthog = usePostHog();
   const [location, setLocation] = useLocation();
   const [learners, setLearners] = useState<any[]>([]);
@@ -262,7 +263,9 @@ export default function SyllabindEditor() {
     audienceLevel: 'Beginner',
     durationWeeks: 4,
     status: 'draft',
-    creatorId: 'user-1',
+    creatorId: user?.username || '',
+    showSchedulingLink: true,
+    mediaPreference: 'auto',
     weeks: Array.from({ length: 4 }, (_, i) => ({
       id: generateTempId(),
       syllabusId: generateTempId(),
@@ -286,6 +289,7 @@ export default function SyllabindEditor() {
   const [justCompletedWeek, setJustCompletedWeek] = useState<number | null>(null);
   const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showUnpublishDialog, setShowUnpublishDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [regeneratingWeekIndex, setRegeneratingWeekIndex] = useState<number | null>(null);
   const [showRegenerateWeekDialog, setShowRegenerateWeekDialog] = useState(false);
@@ -356,21 +360,54 @@ export default function SyllabindEditor() {
     }
   }, [isNew, params?.id]);
 
+  // Auto-create effect: when user types a title on /new, create the record in the DB
+  // so that subsequent auto-saves work and content persists across refresh
+  const isCreatingRef = useRef(false);
+  useEffect(() => {
+    if (formData.id >= 0 || !formData.title?.trim() || isCreatingRef.current) return;
+
+    isCreatingRef.current = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/syllabinds', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ ...formData, creatorId: undefined, status: 'draft' })
+        });
+        if (!res.ok) throw new Error('Failed to create syllabind');
+        const created = await res.json();
+        setFormData(prev => ({ ...prev, id: created.id }));
+        window.history.replaceState(null, '', `/creator/syllabind/${created.id}/edit`);
+        setLastSaved(new Date());
+      } catch (err) {
+        console.error('Failed to auto-create syllabind:', err);
+      } finally {
+        isCreatingRef.current = false;
+      }
+    })();
+  }, [debouncedFormData.title]);
+
   // Auto-save effect
   useEffect(() => {
     // Skip initial load, empty title, or unsaved syllabinds (negative IDs)
     if (!formData.title || formData.id < 0) return;
 
+    // Skip auto-save during AI generation/regeneration — the server is actively
+    // creating weeks/steps, and a concurrent saveWeeksAndSteps would race with it,
+    // causing "duplicate key" constraint violations on weeks(syllabus_id, index)
+    if (isGenerating || regeneratingWeekIndex !== null) return;
+
     const save = async () => {
       setIsSaving(true);
-      // Simulate network delay for realism
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Only auto-save existing syllabinds (positive IDs)
-      updateSyllabus(debouncedFormData);
-
-      setLastSaved(new Date());
-      setIsSaving(false);
+      try {
+        await updateSyllabus(debouncedFormData);
+        setLastSaved(new Date());
+      } catch (err) {
+        console.error('Auto-save failed:', err);
+      } finally {
+        setIsSaving(false);
+      }
     };
 
     save();
@@ -565,6 +602,23 @@ export default function SyllabindEditor() {
         const created = await res.json();
         syllabusId = created.id;
         setFormData(prev => ({ ...prev, id: syllabusId }));
+      } else {
+        // Flush current basics to DB before generation — auto-save is debounced and
+        // skipped during generation, so durationWeeks/title/etc. may be stale in the DB
+        const mediaPref = formData.mediaPreference || 'auto';
+        console.log('[Generate] Pre-generation save mediaPreference:', mediaPref);
+        await fetch(`/api/syllabinds/${syllabusId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            title: formData.title,
+            description: formData.description,
+            audienceLevel: formData.audienceLevel,
+            durationWeeks: formData.durationWeeks,
+            mediaPreference: mediaPref,
+          })
+        });
       }
 
       // Reset all weeks to empty slots — server deletes existing data before regenerating,
@@ -835,12 +889,17 @@ export default function SyllabindEditor() {
             fetch(`/api/syllabinds/${syllabusId}`, { credentials: 'include' })
               .then(res => res.json())
               .then(updated => {
-                setFormData(updated);
+                // Preserve mediaPreference from local state — the DB value is authoritative
+                // but we keep the user's selection in case it wasn't flushed yet
+                setFormData(prev => ({
+                  ...updated,
+                  mediaPreference: updated.mediaPreference || prev.mediaPreference || 'auto',
+                }));
                 if (updated.weeks?.length > 0) {
                   setOriginalWeeks(updated.weeks);
                 }
                 // Update URL to edit route (replace avoids browser back to /new)
-                window.history.replaceState(null, '', `/creator/syllabus/${syllabusId}/edit`);
+                window.history.replaceState(null, '', `/creator/syllabind/${syllabusId}/edit`);
               });
             break;
 
@@ -889,7 +948,7 @@ export default function SyllabindEditor() {
                 if (updated.weeks?.length > 0) {
                   setOriginalWeeks(updated.weeks);
                 }
-                window.history.replaceState(null, '', `/creator/syllabus/${syllabusId}/edit`);
+                window.history.replaceState(null, '', `/creator/syllabind/${syllabusId}/edit`);
               })
               .catch(() => {}); // Silently fail — user will see the error toast
 
@@ -929,7 +988,7 @@ export default function SyllabindEditor() {
               if (updated.weeks?.length > 0) {
                 setOriginalWeeks(updated.weeks);
               }
-              window.history.replaceState(null, '', `/creator/syllabus/${syllabusId}/edit`);
+              window.history.replaceState(null, '', `/creator/syllabind/${syllabusId}/edit`);
             })
             .catch(() => {});
         }
@@ -953,8 +1012,8 @@ export default function SyllabindEditor() {
 
         const errorMessages: Record<number, string> = {
           4401: 'Authentication failed. Please log in again.',
-          4403: 'Not authorized to modify this syllabus.',
-          4404: 'Syllabus not found.',
+          4403: 'Not authorized to modify this Syllabind.',
+          4404: 'Syllabind not found.',
           4400: 'Invalid request.',
         };
 
@@ -979,7 +1038,7 @@ export default function SyllabindEditor() {
           credentials: 'include',
           body: JSON.stringify({ status: 'draft' })
         }).catch(() => {});
-        window.history.replaceState(null, '', `/creator/syllabus/${syllabusId}/edit`);
+        window.history.replaceState(null, '', `/creator/syllabind/${syllabusId}/edit`);
       }
       toast({
         title: "Error",
@@ -1184,8 +1243,8 @@ export default function SyllabindEditor() {
 
         const errorMessages: Record<number, string> = {
           4401: 'Authentication failed. Please log in again.',
-          4403: 'Not authorized to modify this syllabus.',
-          4404: 'Syllabus not found.',
+          4403: 'Not authorized to modify this Syllabind.',
+          4404: 'Syllabind not found.',
           4400: 'Invalid request.',
         };
 
@@ -1226,32 +1285,53 @@ export default function SyllabindEditor() {
     }
   };
 
-  const handleSave = (statusOverride?: 'draft' | 'published') => {
+  const handleSave = async (statusOverride?: 'draft' | 'published') => {
+    // Update formData status immediately so autosave doesn't race with stale status
+    if (statusOverride) {
+      setFormData(prev => ({ ...prev, status: statusOverride }));
+    }
+
     const dataToSave = statusOverride ? { ...formData, status: statusOverride } : formData;
 
-    if (formData.id < 0) {
-      createSyllabus(dataToSave);
-    } else {
-      updateSyllabus(dataToSave);
+    try {
+      if (formData.id < 0) {
+        await createSyllabus(dataToSave);
+      } else {
+        await updateSyllabus(dataToSave);
+      }
+
+      if (statusOverride === 'published') {
+        posthog?.capture('syllabind_published', { syllabind_id: dataToSave.id, title: dataToSave.title });
+      }
+
+      const message = statusOverride === 'published'
+        ? "Syllabind published successfully!"
+        : statusOverride === 'draft' && formData.status === 'published'
+          ? "Syllabind has been unpublished."
+          : "Your changes have been saved successfully.";
+
+      toast({
+        title: statusOverride === 'published' ? "Syllabind Published" : statusOverride === 'draft' && formData.status === 'published' ? "Syllabind Unpublished" : "Syllabind saved",
+        description: message
+      });
+      if (!statusOverride) {
+        setLocation('/creator');
+      }
+    } catch (err) {
+      // Revert status on failure
+      if (statusOverride) {
+        setFormData(prev => ({ ...prev, status: statusOverride === 'published' ? 'draft' : 'published' }));
+      }
+      toast({
+        title: "Save failed",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
     }
-
-    if (statusOverride === 'published') {
-      posthog?.capture('syllabind_published', { syllabind_id: dataToSave.id, title: dataToSave.title });
-    }
-
-    const message = statusOverride === 'published'
-      ? "Syllabind published successfully!"
-      : "Your changes have been saved successfully.";
-
-    toast({
-      title: statusOverride === 'published' ? "Syllabind Published" : "Syllabind saved",
-      description: message
-    });
-    setLocation('/creator');
   };
 
   const handleShareDraft = () => {
-    const draftUrl = `${window.location.origin}/syllabus/${formData.id}?preview=true`;
+    const draftUrl = `${window.location.origin}/syllabind/${formData.id}?preview=true`;
     navigator.clipboard.writeText(draftUrl);
     posthog?.capture('link_shared', { url: draftUrl, type: 'draft_preview' });
     toast({
@@ -1361,28 +1441,44 @@ export default function SyllabindEditor() {
                 <Button variant="outline" size="sm" onClick={handleShareDraft} className="gap-2">
                   <Share2 className="h-4 w-4" /> <span className="hidden sm:inline">Share Draft</span>
                 </Button>
-                <Link href={`/creator/syllabus/${params?.id}/analytics`}>
+                <Link href={`/creator/syllabind/${params?.id}/analytics`}>
                   <Button variant="ghost" size="sm">
                     <BarChart2 className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Analytics</span>
                   </Button>
                 </Link>
               </>
             )}
-            <Button variant="outline" size="sm" onClick={() => handleSave()}>Save<span className="hidden sm:inline">Draft</span> </Button>
+            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span className="hidden sm:inline">Saving...</span>
+                </>
+              ) : lastSaved ? (
+                <>
+                  <CheckCircle2 className="h-3 w-3 text-green-500/70" />
+                  <span className="hidden sm:inline">Saved</span>
+                </>
+              ) : null}
+            </span>
             {!isNew && (
               <Button
-                variant="destructive"
+                variant="outline"
                 size="sm"
                 onClick={() => setShowDeleteDialog(true)}
                 disabled={isDeleting}
-                className="gap-1.5"
+                className="gap-1.5 border-destructive text-destructive hover:bg-destructive/10"
               >
                 {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} <span className="hidden sm:inline">{isDeleting ? 'Deleting...' : 'Delete'}</span>
               </Button>
             )}
-            <Button size="sm" onClick={() => handleSave('published')}>Publish</Button>
+            {formData.status === 'published' ? (
+              <Button variant="secondary" size="sm" onClick={() => setShowUnpublishDialog(true)}>Unpublish</Button>
+            ) : (
+              <Button size="sm" onClick={() => handleSave('published')}>Publish</Button>
+            )}
             {!isNew && (
-              <Link href={`/creator/syllabus/${params?.id}/learners`}>
+              <Link href={`/creator/syllabind/${params?.id}/learners`}>
                 <Button variant="outline" size="sm" className="gap-2">
                    <Users className="h-4 w-4" /> <span className="hidden sm:inline">Learners</span>
                 </Button>
@@ -1422,7 +1518,7 @@ export default function SyllabindEditor() {
               lastSaved={lastSaved}
             />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
             <div className="space-y-2">
               <Label className="text-sm">Audience Level</Label>
               <Select
@@ -1456,14 +1552,28 @@ export default function SyllabindEditor() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Audio/Video Materials</Label>
+              <Select
+                value={formData.mediaPreference || 'auto'}
+                onValueChange={(v: any) => setFormData({...formData, mediaPreference: v})}
+              >
+                <SelectTrigger className="text-base md:text-lg"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">Auto</SelectItem>
+                  <SelectItem value="yes">Yes</SelectItem>
+                  <SelectItem value="no">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="pt-4 space-y-3">
-            <div className="flex gap-2">
+            <div className="flex items-center justify-between gap-3">
               <Button
                 variant={isLoadingContent || hasSyllabindContent ? "secondary" : "default"}
                 onClick={handleAutogenerateClick}
                 disabled={isGenerating || !formData.title || !formData.description}
-                className="flex-1 gap-2"
+                className="gap-2"
               >
                 <Wand2 className="h-4 w-4" />
                 {isGenerating
@@ -1472,6 +1582,39 @@ export default function SyllabindEditor() {
                     ? 'Regenerate with AI'
                     : 'Autogenerate with AI'}
               </Button>
+              {/* Scheduling link toggle — only shown when creator has a scheduling URL */}
+              {user?.schedulingUrl && (
+                <div className="scheduling-link-toggle flex items-center gap-2">
+                  <Switch
+                    id="show-scheduling-link"
+                    checked={formData.showSchedulingLink ?? true}
+                    onCheckedChange={(checked) => {
+                      const val = checked as boolean;
+                      setFormData(prev => ({ ...prev, showSchedulingLink: val }));
+                      // Persist immediately (don't wait for debounce)
+                      if (formData.id > 0) {
+                        fetch(`/api/syllabinds/${formData.id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          credentials: 'include',
+                          body: JSON.stringify({ showSchedulingLink: val }),
+                        }).catch(() => {});
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor="show-scheduling-link"
+                    className="text-sm font-medium leading-none cursor-pointer select-none whitespace-nowrap"
+                  >
+                    Scheduling link
+                  </label>
+                  <Link href="/profile#scheduling">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit scheduling URL in profile">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
             {isGenerating && (
               <Card className="mt-4 border-primary/20 bg-primary/5">
@@ -1519,6 +1662,7 @@ export default function SyllabindEditor() {
               </Card>
             )}
           </div>
+
         </CardContent>
       </Card>
 
@@ -1677,7 +1821,7 @@ export default function SyllabindEditor() {
         <div className="space-y-4 pt-6 sm:pt-8 border-t">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
              <h2 className="text-lg sm:text-xl font-medium">Recent Submissions</h2>
-             <Link href={`/creator/syllabus/${params?.id}/learners`}>
+             <Link href={`/creator/syllabind/${params?.id}/learners`}>
                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
                  View All <ArrowLeft className="h-4 w-4 ml-2 rotate-180" />
                </Button>
@@ -1721,7 +1865,7 @@ export default function SyllabindEditor() {
                                 <span className="shrink-0">• {new Date(sub.submittedAt).toLocaleDateString()}</span>
                              </div>
                           </div>
-                          <Link href={`/creator/syllabus/${formData.id}/learners`}>
+                          <Link href={`/creator/syllabind/${formData.id}/learners`}>
                              <Button size="sm" variant="secondary" className="w-full sm:w-auto">Review</Button>
                           </Link>
                        </CardContent>
@@ -1761,6 +1905,28 @@ export default function SyllabindEditor() {
             }}>
               Regenerate
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showUnpublishDialog} onOpenChange={setShowUnpublishDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unpublish Syllabind?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove "{formData.title || 'this syllabind'}" from the Catalog. It will no longer be visible to new learners. Current students' progress will be kept and restored if you republish.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <Button
+              onClick={() => {
+                setShowUnpublishDialog(false);
+                handleSave('draft');
+              }}
+            >
+              Unpublish
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

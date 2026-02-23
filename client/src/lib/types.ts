@@ -29,6 +29,20 @@ export interface Week {
   steps: Step[];
 }
 
+export interface CreatorProfile {
+  name: string | null;
+  username: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  expertise: string | null;
+  profileTitle: string | null;
+  linkedin: string | null;
+  twitter: string | null;
+  threads: string | null;
+  website: string | null;
+  schedulingUrl: string | null;
+}
+
 export interface Syllabus {
   id: number; // Changed from string to number for normalized DB
   title: string;
@@ -37,7 +51,10 @@ export interface Syllabus {
   durationWeeks: number; // 1-4
   status: SyllabusStatus;
   weeks: Week[];
+  showSchedulingLink?: boolean;
+  mediaPreference?: 'auto' | 'yes' | 'no';
   creatorId: string; // Username (unique) instead of UUID
+  creator?: CreatorProfile; // Populated when listing syllabinds
   createdAt?: string | Date | null;
   updatedAt?: string | Date | null;
 }
@@ -93,16 +110,30 @@ export interface User {
   name: string;
   email?: string;
   isCreator: boolean;
+  isAdmin?: boolean;
   bio?: string;
   expertise?: string;
+  profileTitle?: string;
   avatarUrl?: string;
   // Social links
   linkedin?: string;
   website?: string;
   twitter?: string;
   threads?: string;
+  schedulingUrl?: string;
   // Preferences
   shareProfile?: boolean;
+  // Subscription
+  stripeCustomerId?: string | null;
+  subscriptionStatus?: 'free' | 'pro' | 'past_due';
+}
+
+export interface SubscriptionLimits {
+  syllabindCount: number;
+  syllabindLimit: number | null;
+  canCreateMore: boolean;
+  canEnroll: boolean;
+  isPro: boolean;
 }
 
 export interface LearnerProfile {

@@ -32,12 +32,12 @@ const mockSyllabus: Syllabus = {
 
 describe("ogTags", () => {
   describe("parseSyllabindIdFromUrl", () => {
-    it("extracts ID from /syllabus/:id", () => {
-      expect(parseSyllabindIdFromUrl("/syllabus/42")).toBe(42);
+    it("extracts ID from /syllabind/:id", () => {
+      expect(parseSyllabindIdFromUrl("/syllabind/42")).toBe(42);
     });
 
-    it("extracts ID from /syllabus/:id with trailing path", () => {
-      expect(parseSyllabindIdFromUrl("/syllabus/42/week/1")).toBe(42);
+    it("extracts ID from /syllabind/:id with trailing path", () => {
+      expect(parseSyllabindIdFromUrl("/syllabind/42/week/1")).toBe(42);
     });
 
     it("returns null for non-syllabind URLs", () => {
@@ -47,8 +47,8 @@ describe("ogTags", () => {
     });
 
     it("returns null for invalid IDs", () => {
-      expect(parseSyllabindIdFromUrl("/syllabus/abc")).toBeNull();
-      expect(parseSyllabindIdFromUrl("/syllabus/")).toBeNull();
+      expect(parseSyllabindIdFromUrl("/syllabind/abc")).toBeNull();
+      expect(parseSyllabindIdFromUrl("/syllabind/")).toBeNull();
     });
   });
 

@@ -3,7 +3,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { registerRoutes } from '../routes';
 import { storage } from '../storage';
-import { resetAllMocks, mockUser, mockCreator } from './setup/mocks';
+import { resetAllMocks, mockUser, mockCreator, mockProUser } from './setup/mocks';
 
 // Cast storage to jest mocks for type convenience
 const mockStorage = storage as unknown as Record<string, jest.Mock>;
@@ -334,8 +334,8 @@ describe('Routes Integration (real registerRoutes)', () => {
   });
 
   describe('POST /api/enrollments', () => {
-    it('creates a new enrollment', async () => {
-      const authed = await createAuthedApp(mockUser);
+    it('creates a new enrollment (Pro user)', async () => {
+      const authed = await createAuthedApp(mockProUser);
       mockStorage.getEnrollment.mockResolvedValue(null);
       mockStorage.dropActiveEnrollments.mockResolvedValue(undefined);
       mockStorage.createEnrollment.mockResolvedValue({ id: 1, syllabusId: 1, status: 'in-progress' });
@@ -346,8 +346,17 @@ describe('Routes Integration (real registerRoutes)', () => {
       expect(res.body.id).toBe(1);
     });
 
-    it('returns 409 for already-enrolled user', async () => {
+    it('returns 403 for free user (subscription required)', async () => {
       const authed = await createAuthedApp(mockUser);
+      const res = await request(authed).post('/api/enrollments').send({
+        syllabusId: 1, status: 'in-progress'
+      });
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('SUBSCRIPTION_REQUIRED');
+    });
+
+    it('returns 409 for already-enrolled pro user', async () => {
+      const authed = await createAuthedApp(mockProUser);
       mockStorage.getEnrollment.mockResolvedValue({ id: 1, status: 'in-progress' });
       const res = await request(authed).post('/api/enrollments').send({
         syllabusId: 1, status: 'in-progress'
@@ -355,8 +364,8 @@ describe('Routes Integration (real registerRoutes)', () => {
       expect(res.status).toBe(409);
     });
 
-    it('reactivates a dropped enrollment', async () => {
-      const authed = await createAuthedApp(mockUser);
+    it('reactivates a dropped enrollment (Pro user)', async () => {
+      const authed = await createAuthedApp(mockProUser);
       mockStorage.getEnrollment.mockResolvedValue({ id: 1, status: 'dropped' });
       mockStorage.dropActiveEnrollments.mockResolvedValue(undefined);
       mockStorage.updateEnrollment.mockResolvedValue({ id: 1, status: 'in-progress' });

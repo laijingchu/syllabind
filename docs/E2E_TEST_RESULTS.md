@@ -21,7 +21,7 @@ All TypeScript compilation errors have been fixed. The database schema is proper
 
 ### ✅ Code Fixes Applied
 - [x] WeekView.tsx - Fixed ID type mismatches
-- [x] SyllabusOverview.tsx - Fixed URL param parsing
+- [x] SyllabindOverview.tsx - Fixed URL param parsing
 - [x] SyllabindEditor.tsx - Fixed Week/Step structure
 - [x] SyllabindLearners.tsx - Added cohort stubs
 - [x] SyllabindAnalytics.tsx - Fixed URL param parsing
@@ -235,7 +235,7 @@ curl -X PUT http://localhost:5000/api/submissions/1/feedback \
 **Objective:** Verify all ID conversions work correctly
 
 **Test 8.1: URL Params**
-- Navigate to `/syllabus/1/week/1`
+- Navigate to `/syllabind/1/week/1`
 - Verify page loads correctly
 - Check browser console for errors
 

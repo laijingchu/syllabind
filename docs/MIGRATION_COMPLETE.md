@@ -76,7 +76,7 @@ enrollments ──┬── submissions ──┬── (FK: enrollment_id)
 6. **client/src/lib/store.tsx** - Submissions use API instead of local state
 7. **client/src/lib/mockData.ts** - Updated to numeric IDs, added username field
 8. **client/src/pages/WeekView.tsx** - Fixed ID type handling
-9. **client/src/pages/SyllabusOverview.tsx** - Fixed URL param parsing
+9. **client/src/pages/SyllabindOverview.tsx** - Fixed URL param parsing
 10. **client/src/pages/SyllabindEditor.tsx** - Fixed Week/Step structure
 11. **client/src/pages/SyllabindLearners.tsx** - Added cohort stubs, fixed IDs
 12. **client/src/pages/SyllabindAnalytics.tsx** - Fixed URL param parsing

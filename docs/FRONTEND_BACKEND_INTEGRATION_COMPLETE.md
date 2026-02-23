@@ -58,7 +58,7 @@ All store methods now make real API calls:
 
 ### 3. Updated Pages for Async Data
 
-**SyllabusOverview.tsx:**
+**SyllabindOverview.tsx:**
 - Added `useState` and `useEffect` for learners
 - Changed `getLearnersForSyllabus` to async
 - Added null checks for enrollment
@@ -122,7 +122,7 @@ All store methods now make real API calls:
 
 ### Core Integration
 - ✅ `client/src/lib/store.tsx` - Complete rewrite with API calls
-- ✅ `client/src/pages/SyllabusOverview.tsx` - Async learners, null checks
+- ✅ `client/src/pages/SyllabindOverview.tsx` - Async learners, null checks
 - ✅ `client/src/pages/SyllabindLearners.tsx` - Async learners
 - ✅ `client/src/pages/SyllabindEditor.tsx` - Async learners
 - ✅ `client/src/pages/Dashboard.tsx` - Null-safe enrollment handling

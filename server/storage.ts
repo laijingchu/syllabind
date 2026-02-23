@@ -7,7 +7,8 @@ import {
   type Submission, type InsertSubmission,
   type CompletedStep, type InsertCompletedStep,
   type ChatMessage, type InsertChatMessage,
-  users, syllabinds, enrollments, weeks, steps, submissions, completedSteps, chatMessages
+  type Subscription, type InsertSubscription,
+  users, syllabinds, enrollments, weeks, steps, submissions, completedSteps, chatMessages, subscriptions, siteSettings
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, asc, inArray } from "drizzle-orm";
@@ -40,6 +41,9 @@ export interface IStorage {
   deleteSyllabus(id: number): Promise<void>;
   batchDeleteSyllabinds(ids: number[]): Promise<void>;
 
+  // Bulk content operations
+  saveWeeksAndSteps(syllabusId: number, weeksData: Array<{ index: number; title?: string; description?: string; steps: Array<Omit<InsertStep, 'weekId'>> }>): Promise<WeekWithSteps[]>;
+
   // Week operations
   createWeek(week: InsertWeek): Promise<Week>;
   getWeeksBySyllabusId(syllabusId: number): Promise<Week[]>;
@@ -50,6 +54,7 @@ export interface IStorage {
   getStep(stepId: number): Promise<Step | undefined>;
   getStepsByWeekId(weekId: number): Promise<Step[]>;
   updateStepUrl(stepId: number, url: string): Promise<Step>;
+  updateStep(stepId: number, updates: Partial<Step>): Promise<Step>;
   deleteStep(stepId: number): Promise<void>;
   deleteStepsByWeekId(weekId: number): Promise<void>;
   deleteWeeksBySyllabusId(syllabusId: number): Promise<void>;
@@ -89,6 +94,17 @@ export interface IStorage {
   getChatMessages(syllabusId: number): Promise<ChatMessage[]>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   clearChatMessages(syllabusId: number): Promise<void>;
+
+  // Subscription operations
+  getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined>;
+  getSubscriptionByStripeId(stripeSubscriptionId: string): Promise<Subscription | undefined>;
+  upsertSubscription(data: InsertSubscription): Promise<Subscription>;
+  updateSubscriptionByStripeId(stripeSubscriptionId: string, updates: Partial<Subscription>): Promise<Subscription | undefined>;
+  countSyllabindsByCreator(username: string): Promise<number>;
+
+  // Site settings
+  getSiteSetting(key: string): Promise<string | null>;
+  setSiteSetting(key: string, value: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -128,7 +144,40 @@ export class DatabaseStorage implements IStorage {
   }
 
   async listSyllabinds(): Promise<Syllabus[]> {
-    return await db.select().from(syllabinds);
+    const rows = await db
+      .select({
+        syllabus: syllabinds,
+        creatorName: users.name,
+        creatorUsername: users.username,
+        creatorAvatarUrl: users.avatarUrl,
+        creatorBio: users.bio,
+        creatorExpertise: users.expertise,
+        creatorProfileTitle: users.profileTitle,
+        creatorLinkedin: users.linkedin,
+        creatorTwitter: users.twitter,
+        creatorThreads: users.threads,
+        creatorWebsite: users.website,
+        creatorSchedulingUrl: users.schedulingUrl,
+      })
+      .from(syllabinds)
+      .leftJoin(users, eq(syllabinds.creatorId, users.username));
+
+    return rows.map(row => ({
+      ...row.syllabus,
+      creator: row.creatorUsername ? {
+        name: row.creatorName,
+        username: row.creatorUsername,
+        avatarUrl: row.creatorAvatarUrl,
+        bio: row.creatorBio,
+        expertise: row.creatorExpertise,
+        profileTitle: row.creatorProfileTitle,
+        linkedin: row.creatorLinkedin,
+        twitter: row.creatorTwitter,
+        threads: row.creatorThreads,
+        website: row.creatorWebsite,
+        schedulingUrl: row.creatorSchedulingUrl,
+      } : undefined,
+    }));
   }
 
   async listPublishedSyllabinds(): Promise<Syllabus[]> {
@@ -145,8 +194,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateSyllabus(id: number, update: Partial<Syllabus>): Promise<Syllabus> {
-    // Filter out readonly fields and nested objects that aren't part of the syllabinds table
-    const { createdAt, updatedAt, weeks, ...updateData } = update as Partial<Syllabus> & { weeks?: unknown };
+    // Filter out immutable fields (id, creatorId), readonly fields, and nested objects
+    const { id: _id, creatorId: _creatorId, createdAt, updatedAt, weeks, ...updateData } = update as Partial<Syllabus> & { weeks?: unknown };
 
     // Automatically set updatedAt to current time
     const [syllabus] = await db.update(syllabinds).set({
@@ -324,6 +373,11 @@ export class DatabaseStorage implements IStorage {
 
   async updateStepUrl(stepId: number, url: string): Promise<Step> {
     const [step] = await db.update(steps).set({ url }).where(eq(steps.id, stepId)).returning();
+    return step;
+  }
+
+  async updateStep(stepId: number, updates: Partial<Step>): Promise<Step> {
+    const [step] = await db.update(steps).set(updates).where(eq(steps.id, stepId)).returning();
     return step;
   }
 
@@ -648,6 +702,47 @@ export class DatabaseStorage implements IStorage {
     await db.delete(weeks).where(eq(weeks.syllabusId, syllabusId));
   }
 
+  async saveWeeksAndSteps(
+    syllabusId: number,
+    weeksData: Array<{ index: number; title?: string; description?: string; steps: Array<Omit<InsertStep, 'weekId'>> }>
+  ): Promise<WeekWithSteps[]> {
+    // Delete existing weeks (steps cascade)
+    await this.deleteWeeksBySyllabusId(syllabusId);
+
+    const result: WeekWithSteps[] = [];
+
+    for (const weekData of weeksData) {
+      const [week] = await db.insert(weeks).values({
+        syllabusId,
+        index: weekData.index,
+        title: weekData.title || null,
+        description: weekData.description || null,
+      }).returning();
+
+      const weekSteps: Step[] = [];
+      for (const stepData of weekData.steps) {
+        const [step] = await db.insert(steps).values({
+          weekId: week.id,
+          position: stepData.position,
+          type: stepData.type,
+          title: stepData.title,
+          url: stepData.url || null,
+          note: stepData.note || null,
+          author: stepData.author || null,
+          creationDate: stepData.creationDate || null,
+          mediaType: stepData.mediaType || null,
+          promptText: stepData.promptText || null,
+          estimatedMinutes: stepData.estimatedMinutes || null,
+        }).returning();
+        weekSteps.push(step);
+      }
+
+      result.push({ ...week, steps: weekSteps });
+    }
+
+    return result;
+  }
+
   async getChatMessages(syllabusId: number): Promise<ChatMessage[]> {
     return await db
       .select()
@@ -667,6 +762,66 @@ export class DatabaseStorage implements IStorage {
   async clearChatMessages(syllabusId: number): Promise<void> {
     await db.delete(chatMessages).where(eq(chatMessages.syllabusId, syllabusId));
   }
+
+  // Subscription operations
+  async getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.stripeCustomerId, stripeCustomerId));
+    return user;
+  }
+
+  async getSubscriptionByStripeId(stripeSubscriptionId: string): Promise<Subscription | undefined> {
+    const [sub] = await db.select().from(subscriptions).where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId));
+    return sub;
+  }
+
+  async upsertSubscription(data: InsertSubscription): Promise<Subscription> {
+    const [sub] = await db.insert(subscriptions)
+      .values(data)
+      .onConflictDoUpdate({
+        target: subscriptions.stripeSubscriptionId,
+        set: {
+          status: data.status,
+          stripePriceId: data.stripePriceId,
+          currentPeriodStart: data.currentPeriodStart,
+          currentPeriodEnd: data.currentPeriodEnd,
+          cancelAtPeriodEnd: data.cancelAtPeriodEnd,
+          updatedAt: new Date(),
+        }
+      })
+      .returning();
+    return sub;
+  }
+
+  async updateSubscriptionByStripeId(stripeSubscriptionId: string, updates: Partial<Subscription>): Promise<Subscription | undefined> {
+    const { id: _id, ...updateData } = updates;
+    const [sub] = await db.update(subscriptions)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId))
+      .returning();
+    return sub;
+  }
+
+  async countSyllabindsByCreator(username: string): Promise<number> {
+    const [result] = await db.select({ count: sql<number>`cast(count(*) as int)` })
+      .from(syllabinds)
+      .where(eq(syllabinds.creatorId, username));
+    return result?.count || 0;
+  }
+
+  async getSiteSetting(key: string): Promise<string | null> {
+    const [row] = await db.select().from(siteSettings).where(eq(siteSettings.key, key));
+    return row?.value ?? null;
+  }
+
+  async setSiteSetting(key: string, value: string): Promise<void> {
+    await db.insert(siteSettings)
+      .values({ key, value })
+      .onConflictDoUpdate({
+        target: siteSettings.key,
+        set: { value, updatedAt: new Date() },
+      });
+  }
+
 }
 
 export const storage = new DatabaseStorage();

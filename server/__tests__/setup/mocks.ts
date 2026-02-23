@@ -11,6 +11,7 @@ export const mockUser = {
   googleId: null,
   appleId: null,
   isCreator: false,
+  isAdmin: false,
   bio: null,
   expertise: null,
   avatarUrl: null,
@@ -18,8 +19,37 @@ export const mockUser = {
   website: null,
   twitter: null,
   threads: null,
+  schedulingUrl: null,
   shareProfile: false,
   authProvider: 'email',
+  stripeCustomerId: null,
+  subscriptionStatus: 'free',
+};
+
+// Mock admin user (non-creator admin — tests admin bypass without creator flag)
+export const mockAdmin = {
+  id: 'admin-user-id-789',
+  username: 'adminuser',
+  name: 'Admin User',
+  email: 'admin@example.com',
+  password: null,
+  replitId: null,
+  googleId: null,
+  appleId: null,
+  isCreator: false,
+  isAdmin: true,
+  bio: null,
+  expertise: null,
+  avatarUrl: null,
+  linkedin: null,
+  website: null,
+  twitter: null,
+  threads: null,
+  schedulingUrl: null,
+  shareProfile: false,
+  authProvider: 'email',
+  stripeCustomerId: null,
+  subscriptionStatus: 'free',
 };
 
 // Mock creator user
@@ -33,6 +63,7 @@ export const mockCreator = {
   googleId: null,
   appleId: null,
   isCreator: true,
+  isAdmin: false,
   bio: 'Test creator bio',
   expertise: 'Test expertise',
   avatarUrl: null,
@@ -40,8 +71,29 @@ export const mockCreator = {
   website: null,
   twitter: null,
   threads: null,
+  schedulingUrl: 'https://calendly.com/testcreator',
   shareProfile: true,
   authProvider: 'email',
+  stripeCustomerId: null,
+  subscriptionStatus: 'free',
+};
+
+// Mock Pro user (creator with Pro subscription)
+export const mockProCreator = {
+  ...mockCreator,
+  id: 'pro-creator-id-789',
+  username: 'procreator',
+  subscriptionStatus: 'pro',
+  stripeCustomerId: 'cus_pro123',
+};
+
+// Mock Pro user (learner with Pro subscription)
+export const mockProUser = {
+  ...mockUser,
+  id: 'pro-user-id-101',
+  username: 'prouser',
+  subscriptionStatus: 'pro',
+  stripeCustomerId: 'cus_prouser123',
 };
 
 // Mock authenticated request
@@ -115,4 +167,12 @@ export const resetAllMocks = () => {
   if (mockStorage.createChatMessage) mockStorage.createChatMessage.mockResolvedValue({ id: 1 });
   if (mockStorage.clearChatMessages) mockStorage.clearChatMessages.mockResolvedValue(undefined);
   if (mockStorage.updateStepUrl) mockStorage.updateStepUrl.mockResolvedValue(undefined);
+  if (mockStorage.updateStep) mockStorage.updateStep.mockResolvedValue(undefined);
+  if (mockStorage.getUserByStripeCustomerId) mockStorage.getUserByStripeCustomerId.mockResolvedValue(null);
+  if (mockStorage.getSubscriptionByStripeId) mockStorage.getSubscriptionByStripeId.mockResolvedValue(null);
+  if (mockStorage.upsertSubscription) mockStorage.upsertSubscription.mockResolvedValue({ id: 1 });
+  if (mockStorage.updateSubscriptionByStripeId) mockStorage.updateSubscriptionByStripeId.mockResolvedValue(undefined);
+  if (mockStorage.countSyllabindsByCreator) mockStorage.countSyllabindsByCreator.mockResolvedValue(0);
+  if (mockStorage.getSiteSetting) mockStorage.getSiteSetting.mockResolvedValue(null);
+  if (mockStorage.setSiteSetting) mockStorage.setSiteSetting.mockResolvedValue(undefined);
 };

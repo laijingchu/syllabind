@@ -67,7 +67,7 @@ describe('Email Auth Routes (real handlers)', () => {
       // which is expected since we're testing with a mock db that returns []
       const res = await request(app)
         .post('/api/auth/register')
-        .send({ email: 'new@example.com', password: 'pass123', name: 'New User' });
+        .send({ email: 'new@example.com', password: 'Password1', name: 'New User' });
       // With mock db returning [], the insert will return undefined for newUser
       // The handler will throw and return 500
       expect([200, 500]).toContain(res.status);

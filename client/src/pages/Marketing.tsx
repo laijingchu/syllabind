@@ -5,8 +5,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowRight, BookOpen, CheckCircle, Clock, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowRight, BookOpen, CheckCircle, Clock, ExternalLink, Zap } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function Marketing() {
   const [, setLocation] = useLocation();
@@ -14,23 +14,36 @@ export default function Marketing() {
   const [role, setRole] = useState('learner');
   const [submitted, setSubmitted] = useState(false);
 
+  // Fetch waitlist form URL from site settings
+  const [waitlistUrl, setWaitlistUrl] = useState<string | null>(null);
+  useEffect(() => {
+    fetch('/api/site-settings/waitlist_form_url')
+      .then(res => res.json())
+      .then(data => setWaitlistUrl(data.value || null))
+      .catch(() => {});
+  }, []);
+
+  const handleWaitlistClick = () => {
+    if (waitlistUrl) {
+      window.open(waitlistUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      setLocation('/login?mode=signup');
+    }
+  };
+
   const handleQuickSignup = (e: React.FormEvent) => {
     e.preventDefault();
     if (email) {
-      // Direct them to full signup or just fake it here?
-      // PRD: "Get early access -> opens sign-up flow"
-      // Let's redirect to login page with pre-filled email or just use the signup action if we want to be quick.
-      // But specs say "Form (frontend spec) ... Success state: Thanks for signing up"
       setSubmitted(true);
     }
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-24 pb-20 pt-8">
-      {/* Beta Banner */}
+      {/* Alpha Banner */}
       <div className="bg-primary/0 border border-primary/20 text-primary p-3 rounded-full text-center text-sm font-medium animate-in fade-in slide-in-from-top-4 mt-[0px] mb-[0px]">
-        <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mr-2">Beta</span>
-        Syllabind is currently in private beta. Learners can sign up now, but curation access is by application only.
+        <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mr-2">Alpha</span>
+        Syllabind is in private alpha. Join the waitlist to get early access.
       </div>
       {/* A. Hero */}
       <section className="text-center space-y-8 py-12 md:py-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -45,11 +58,10 @@ export default function Marketing() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-           <Link href="/login?mode=signup">
-             <Button size="lg" className="h-12 px-8 text-lg rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all bg-black text-white hover:bg-neutral-800 border-none">
-               Sign up
-             </Button>
-           </Link>
+           <Button size="lg" className="h-12 px-8 text-lg rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all bg-black text-white hover:bg-neutral-800 border-none" onClick={handleWaitlistClick}>
+             Join waitlist
+             {waitlistUrl && <ExternalLink className="ml-2 h-4 w-4" />}
+           </Button>
            <Link href="/catalog">
              <Button variant="outline" size="lg" className="h-12 px-8 text-lg rounded-full border-primary/20 hover:border-primary/50 text-primary">
                See a sample Syllabind
@@ -205,9 +217,10 @@ export default function Marketing() {
             ))}
           </ul>
           <div className="pt-2">
-            <Link href="/login?mode=signup">
-              <Button size="lg" className="w-full sm:w-auto">Sign up</Button>
-            </Link>
+            <Button size="lg" className="w-full sm:w-auto" onClick={handleWaitlistClick}>
+              Join waitlist
+              {waitlistUrl && <ExternalLink className="ml-2 h-4 w-4" />}
+            </Button>
           </div>
         </div>
         <div className="space-y-6 border-t md:border-t-0 md:border-l border-border pt-8 md:pt-0 md:pl-12">
