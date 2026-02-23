@@ -146,6 +146,17 @@ export default function SyllabindOverview() {
 
   if (!syllabus) return <div className="text-center py-20">Loading...</div>;
 
+  // Private syllabind: non-creator sees 404
+  const isCreatorViewing = currentUser?.username === syllabus.creatorId;
+  if (syllabus.visibility === 'private' && !isCreatorViewing) {
+    return (
+      <AnimatedPage className="max-w-2xl mx-auto text-center py-20 space-y-4">
+        <h1 className="text-2xl font-display">Syllabind not found</h1>
+        <p className="text-muted-foreground">This syllabind doesn't exist or is not available.</p>
+      </AnimatedPage>
+    );
+  }
+
   // Use locally-fetched completed steps for this enrollment (works for both active and completed)
   const completedStepIds = localCompletedStepIds.length > 0 ? localCompletedStepIds : storeCompletedStepIds;
 
@@ -323,10 +334,18 @@ export default function SyllabindOverview() {
   return (
     <AnimatedPage className="max-w-4xl mx-auto">
       {isPreview && (
-        <div className="preview-banner mb-6 bg-amber-500/15 border border-amber-500/20 text-amber-600 dark:text-amber-500 px-4 py-3 rounded-lg flex items-center gap-3">
+        <div className="preview-banner mb-6 bg-muted border border-border text-muted-foreground px-4 py-3 rounded-lg flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 shrink-0" />
           <p className="text-sm font-medium">
             Draft Preview: You are viewing a private draft. This content is not yet public.
+          </p>
+        </div>
+      )}
+      {syllabus.visibility === 'unlisted' && (
+        <div className="unlisted-banner mb-6 bg-muted border border-border text-muted-foreground px-4 py-3 rounded-lg flex items-center gap-3">
+          <LinkIcon className="h-5 w-5 shrink-0" />
+          <p className="text-sm font-medium">
+            This syllabind is unlisted. Only people with the link can access it.
           </p>
         </div>
       )}
@@ -437,6 +456,11 @@ export default function SyllabindOverview() {
           )}
 
           <div className="syllabus-metadata flex flex-wrap gap-6 text-sm text-muted-foreground border-y py-6">
+            {syllabus.category && (
+              <div className="metadata-category">
+                <Badge variant="outline">{syllabus.category.name}</Badge>
+              </div>
+            )}
             <div className="metadata-duration flex items-center gap-2">
               <Clock className="h-4 w-4" />
               <span>{pluralize(syllabus.durationWeeks, 'Week')}</span>
@@ -455,6 +479,17 @@ export default function SyllabindOverview() {
               </div>
             ) : null}
           </div>
+
+          {/* Tags */}
+          {syllabus.tags && syllabus.tags.length > 0 && (
+            <div className="syllabind-tags flex flex-wrap gap-1.5">
+              {syllabus.tags.map((tag: any) => (
+                <Badge key={tag.id} variant="secondary" className="text-xs font-normal">
+                  {tag.name}
+                </Badge>
+              ))}
+            </div>
+          )}
 
           <div className="syllabind-section space-y-6">
             <h2 className="text-2xl font-display">What you'll learn</h2>
@@ -492,7 +527,7 @@ export default function SyllabindOverview() {
                                 {week.title || `Week ${week.index}`}
                               </h3>
                               {isCurrentWeek && (
-                                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] uppercase tracking-wider bg-primary/10 text-primary border-primary/20">
+                                <Badge variant="outline" className="h-5 px-1.5 text-[10px] uppercase tracking-wider">
                                   Current
                                 </Badge>
                               )}

@@ -4,7 +4,6 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 import { WebSocketServer } from 'ws';
 import { handleGenerateSyllabindWS, handleRegenerateWeekWS } from './websocket/generateSyllabind';
-import { handleChatSyllabindWS } from './websocket/chatSyllabind';
 import { authenticateWebSocket } from './auth';
 import { storage } from './storage';
 
@@ -139,8 +138,6 @@ app.use((req, res, next) => {
       const urlObj = new URL(url, 'http://localhost');
       const pathParts = urlObj.pathname.split('/');
       syllabusId = parseInt(pathParts[3] || '');
-    } else if (url?.startsWith('/ws/chat-syllabind/')) {
-      syllabusId = parseInt(url.split('/').pop() || '');
     }
 
     if (!syllabusId) {
@@ -178,8 +175,6 @@ app.use((req, res, next) => {
         ws.send(JSON.stringify({ type: 'error', data: { message: 'Invalid week index.' } }));
         ws.close(4400, 'Bad Request');
       }
-    } else if (url?.startsWith('/ws/chat-syllabind/')) {
-      handleChatSyllabindWS(ws, syllabusId);
     }
   });
 

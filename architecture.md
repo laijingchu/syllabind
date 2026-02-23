@@ -986,9 +986,9 @@ The codebase is organized into three main directories: `client` (React frontend)
 │   ├── App.tsx               - Router + auth wrapper
 │   ├── pages/                - 15 page components (~3,200 lines)
 │   ├── components/
-│   │   ├── Layout.tsx        - Main header
+│   │   ├── Layout.tsx        - Main header + footer (legal links)
 │   │   ├── SyllabindCard.tsx  - Syllabind preview
-│   │   ├── UpgradePrompt.tsx - Pro subscription upgrade dialog
+│   │   ├── UpgradePrompt.tsx - Pro subscription upgrade dialog (with legal links)
 │   │   ├── AvatarUpload.tsx  - Image uploader
 │   │   └── ui/               - 50+ UI primitives (~5,950 lines)
 │   ├── hooks/                - Custom React hooks
@@ -1166,7 +1166,7 @@ psql "$DATABASE_URL" -f migrations/manual_username_migration.sql
 **Objective:** Add indexes to all tables based on actual query patterns in `storage.ts` to eliminate sequential scans on foreign key columns and frequently-filtered columns.
 
 **Changes Made:**
-1. **11 new indexes across 7 tables** — sessions, syllabi, enrollments, weeks, steps, submissions, chat_messages
+1. **10 new indexes across 6 tables** — sessions, syllabi, enrollments, weeks, steps, submissions
 2. **Unique index on enrollments** — `(student_id, syllabus_id)` enforces one-enrollment-per-student-per-syllabind business rule at the database level
 3. **Tables already indexed** (no changes): completed_steps (0001), cohorts/cohort_members (0002), users (unique constraints)
 
@@ -1242,10 +1242,10 @@ Added comprehensive analytics endpoint that provides real data for the Creator A
 
 ### AI Token Optimization (2026-02-03)
 
-Reduced token consumption for AI-powered Syllabind generation and chat refinement:
+Reduced token consumption for AI-powered Syllabind generation:
 
 **Model Selection (Hybrid):**
-- **Haiku** (`claude-haiku-4-5-20251001` / `CLAUDE_MODEL`): Planning (`planCurriculum`) and chat refinement — simple structured output, cost-efficient
+- **Haiku** (`claude-haiku-4-5-20251001` / `CLAUDE_MODEL`): Planning (`planCurriculum`) — simple structured output, cost-efficient
 - **Sonnet** (`claude-sonnet-4-5-20250929` / `CLAUDE_MODEL_GENERATION`): Generation batches and week regeneration — needs accurate metadata extraction (title, author, date) from web search results
 - **Haiku for URL repair**: `repairMissingUrls()` uses Haiku instead of Sonnet — repair is simple web search + structured output, no curriculum generation
 - Both constants exported from `server/utils/claudeClient.ts`
@@ -1254,12 +1254,7 @@ Reduced token consumption for AI-powered Syllabind generation and chat refinemen
 **Prompt Caching:**
 - Enabled `cache_control: { type: 'ephemeral' }` on system prompts
 - System prompts are cached for 5 minutes, reducing re-tokenization
-- Applied to both generation and chat handlers
-
-**Chat Optimizations:**
-- Removed full syllabind JSON serialization from system prompt (saved ~3,000-5,000 tokens/message)
-- Replaced with on-demand `read_current_Syllabind` tool
-- Message history truncated to last 10 messages (`MAX_HISTORY_MESSAGES`)
+- Applied to generation handlers
 
 **Web Search Limits:**
 - Generation: 8 searches per batch (~4/week for 2-week batches)
@@ -1270,7 +1265,6 @@ Reduced token consumption for AI-powered Syllabind generation and chat refinemen
 - `server/utils/claudeClient.ts` - `CLAUDE_MODEL` constant (Haiku), shared client with `maxRetries: 0`
 - `server/utils/syllabindGenerator.ts` - Prompt caching via `system` parameter, trimmed prompts, exponential backoff with jitter
 - `server/utils/requestQueue.ts` - In-memory sliding window rate limiter (40 RPM)
-- `server/websocket/chatSyllabind.ts` - Uses shared client and request queue, prompt caching via `system` parameter
 
 ### Syllabind Generation Structure (2026-02-03)
 
@@ -1313,21 +1307,20 @@ Fixed issue where changing durationWeeks would lose existing week content:
 Optimized API usage for Anthropic Tier 1 (50 RPM) to prevent 429 rate limit errors in production:
 
 **Changes:**
-- Hybrid model strategy: Haiku for planning/chat, Sonnet for generation/repair (see AI Token Optimization section)
+- Hybrid model strategy: Haiku for planning, Sonnet for generation/repair (see AI Token Optimization section)
 - Added in-memory request queue (`server/utils/requestQueue.ts`) capping at 40 RPM (10 RPM headroom)
 - Replaced simple retry with exponential backoff + jitter (5 retries, 1s→16s base delay, +0-1s random jitter)
 - Respects `retry-after` header from API when available (capped at 120s)
 - Removed pre-flight rate limit check (`rateLimitCheck.ts` deleted) — wasted an API call, redundant with retry logic
 - Trimmed system prompts (~50% reduction) and reduced `max_tokens` from 8192 to 4096
 - Moved system prompts to `system` parameter with `cache_control: { type: 'ephemeral' }` for better cache hits
-- All API calls (generation, regeneration, chat) go through shared `apiQueue.acquire()` before calling Anthropic
+- All API calls (generation, regeneration) go through shared `apiQueue.acquire()` before calling Anthropic
 
 **Files Modified:**
 - `server/utils/claudeClient.ts` - `CLAUDE_MODEL` (Haiku) + `CLAUDE_MODEL_GENERATION` (Sonnet), shared client export
 - `server/utils/requestQueue.ts` - **NEW** sliding window rate limiter
 - `server/utils/syllabindGenerator.ts` - Backoff, trimmed prompts, system param caching, reduced max_tokens
 - `server/websocket/generateSyllabind.ts` - Removed pre-flight rate check, removed model param
-- `server/websocket/chatSyllabind.ts` - Uses shared client and queue, system param caching
 - `server/routes.ts` - Removed model validation, simplified WebSocket URLs
 - `server/index.ts` - Removed model parsing from WebSocket URL
 - `client/src/pages/SyllabindEditor.tsx` - Removed model selector dropdown and state
@@ -1488,7 +1481,6 @@ Refined the generation streaming effect so that step cards appear one-by-one as 
 
 **Integration Points:**
 - `server/utils/syllabindGenerator.ts` - Converts `promptText` and `note` fields before saving
-- `server/websocket/chatSyllabind.ts` - Converts fields when adding steps via chat
 
 **Files Modified:**
 - `server/utils/markdownToHtml.ts` - Conversion utility with nested list support
@@ -1501,16 +1493,14 @@ Refined the generation streaming effect so that step cards appear one-by-one as 
 **Problem:** AI-generated syllabinds rarely included `creationDate` values for reading steps because:
 1. The `creationDate` field had no description in the tool schema telling Claude what it's for or what format to use
 2. The prompt said "publication dates" but the field was named `creationDate` (terminology mismatch)
-3. The `add_step` tool in `SYLLABIND_CHAT_TOOLS` was missing the `creationDate` field entirely
-4. The prompt instruction was too weak ("Include author names and publication dates when available")
+3. The prompt instruction was too weak ("Include author names and publication dates when available")
 
 **Solution:**
 1. Added description to `creationDate` in `finalize_week` tool schema explaining the dd/mm/yyyy format and purpose
-2. Added `creationDate` field to `add_step` tool in chat tools (was missing entirely)
-3. Strengthened the generation prompt from "Include author names and publication dates when available" to "ALWAYS extract and include creationDate (publication/creation date) in dd/mm/yyyy format from web search results"
+2. Strengthened the generation prompt from "Include author names and publication dates when available" to "ALWAYS extract and include creationDate (publication/creation date) in dd/mm/yyyy format from web search results"
 
 **Files Modified:**
-- `server/utils/claudeClient.ts` - Added descriptions to `creationDate` in both `finalize_week` and `add_step` tools
+- `server/utils/claudeClient.ts` - Added descriptions to `creationDate` in `finalize_week` tool
 - `server/utils/syllabindGenerator.ts` - Strengthened prompt instruction for date extraction
 
 ### Regenerate Week Button and Step Deletion Persistence (2026-02-03)
@@ -1574,7 +1564,6 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 - `server/__tests__/submission-routes.test.ts` - Create submissions, feedback with ownership chain (8 tests)
 - `server/__tests__/analytics-routes.test.ts` - Analytics, completion rates, completion times (7 tests)
 - `server/__tests__/ai-generation-routes.test.ts` - Generate syllabind, regenerate week with validation (14 tests)
-- `server/__tests__/chat-messages-routes.test.ts` - Get/create chat messages with auth (5 tests)
 - `server/__tests__/rateLimitCheck.test.ts` - Rate limit status checking, 429/529 handling (6 tests)
 - `server/__tests__/claudeClient.test.ts` - Model selection, executeToolCall dispatch (10 tests)
 
@@ -1611,7 +1600,7 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 
 ### WebSocket Authentication & Authorization (2026-02-09)
 
-**Problem:** All three WebSocket endpoints (`/ws/generate-syllabind/`, `/ws/regenerate-week/`, `/ws/chat-syllabind/`) bypassed Express middleware entirely, allowing unauthenticated users to connect and perform destructive operations on any syllabind by guessing integer IDs. Additionally, the `update_basics` chat tool handler passed unfiltered AI output to `storage.updateSyllabind`.
+**Problem:** WebSocket endpoints (`/ws/generate-syllabind/`, `/ws/regenerate-week/`) bypassed Express middleware entirely, allowing unauthenticated users to connect and perform destructive operations on any syllabind by guessing integer IDs.
 
 **Solution:**
 
@@ -1625,14 +1614,9 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
    - Ownership verified: `syllabind.creatorId === user.username` (close code 4403 if not owner)
    - Syllabind existence checked (close code 4404 if not found)
 
-3. **Field Allowlisting** (`server/websocket/chatSyllabind.ts`):
-   - `update_basics` handler now destructures only `title`, `description`, `audienceLevel`, `durationWeeks`
-   - Prevents AI from writing unexpected fields like `creatorId` or `status`
-
 **Files Modified:**
 - `server/auth/index.ts` - Added `authenticateWebSocket()`, extracted session secret
 - `server/index.ts` - Added auth + ownership checks in WebSocket connection handler
-- `server/websocket/chatSyllabind.ts` - Allowlisted fields in `update_basics`
 - `jest.setup.js` - Added `authenticateWebSocket` to auth mock
 
 ### Fix AI Autogenerate Button Not Working (2026-02-15)

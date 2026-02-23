@@ -1,7 +1,14 @@
-import { pgTable, text, integer, boolean, jsonb, timestamp, varchar, serial, primaryKey, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, jsonb, timestamp, varchar, serial, primaryKey, index, uniqueIndex, customType } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
+
+// Custom type for PostgreSQL tsvector (full-text search)
+const tsvector = customType<{ data: string }>({
+  dataType() {
+    return 'tsvector';
+  },
+});
 
 /**
  * SCHEMA NOTE:
@@ -50,6 +57,16 @@ export const users = pgTable("users", {
   subscriptionStatus: text("subscription_status").notNull().default('free'), // 'free' | 'pro' | 'past_due'
 });
 
+// Admin-managed categories for syllabind discovery
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  displayOrder: integer("display_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const syllabinds = pgTable("syllabi", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
@@ -57,16 +74,21 @@ export const syllabinds = pgTable("syllabi", {
   audienceLevel: text("audience_level").notNull(), // 'Beginner', 'Intermediate', 'Advanced'
   durationWeeks: integer("duration_weeks").notNull(),
   status: text("status").notNull().default('draft'), // 'draft', 'published'
+  visibility: text("visibility").notNull().default('public'), // 'public', 'unlisted', 'private'
   creatorId: text("creator_id").references(() => users.username, { onDelete: 'set null', onUpdate: 'cascade' }),
+  categoryId: integer("category_id").references(() => categories.id, { onDelete: 'set null' }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   studentActive: integer("student_active").default(0),
   studentsCompleted: integer("students_completed").default(0),
   showSchedulingLink: boolean("show_scheduling_link").default(true),
   mediaPreference: text("media_preference").default('auto'), // 'auto', 'yes', 'no'
+  searchVector: tsvector("search_vector"),
 }, (table) => [
   index("syllabi_creator_id_idx").on(table.creatorId),
   index("syllabi_status_idx").on(table.status),
+  index("syllabi_status_visibility_idx").on(table.status, table.visibility),
+  index("syllabi_category_id_idx").on(table.categoryId),
 ]);
 
 export const enrollments = pgTable("enrollments", {
@@ -196,19 +218,6 @@ export const subscriptions = pgTable("subscriptions", {
   index("subscriptions_stripe_subscription_id_idx").on(table.stripeSubscriptionId),
 ]);
 
-// Chat messages for Syllabind refinement
-export const chatMessages = pgTable("chat_messages", {
-  id: serial("id").primaryKey(),
-  syllabusId: integer("syllabus_id")
-    .references(() => syllabinds.id, { onDelete: 'cascade' })
-    .notNull(),
-  role: text("role").notNull(), // 'user' | 'assistant'
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("chat_messages_syllabus_id_idx").on(table.syllabusId),
-]);
-
 // Waitlist for alpha gating
 export const waitlist = pgTable("waitlist", {
   id: serial("id").primaryKey(),
@@ -237,6 +246,26 @@ export const siteSettings = pgTable("site_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Free-form tags for syllabind discovery
+export const tags = pgTable("tags", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Junction table: syllabind <-> tags (many-to-many)
+export const syllabindTags = pgTable("syllabind_tags", {
+  syllabusId: integer("syllabus_id")
+    .references(() => syllabinds.id, { onDelete: 'cascade' })
+    .notNull(),
+  tagId: integer("tag_id")
+    .references(() => tags.id, { onDelete: 'cascade' })
+    .notNull(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.syllabusId, table.tagId] }),
+}));
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertSyllabusSchema = createInsertSchema(syllabinds).omit({
   id: true,
@@ -263,9 +292,11 @@ export const insertCohortMemberSchema = createInsertSchema(cohortMembers).omit({
   joinedAt: true
 });
 export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true });
 export const insertWaitlistSchema = createInsertSchema(waitlist).omit({ id: true, status: true, adminNote: true, createdAt: true, reviewedAt: true });
 export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({ id: true, updatedAt: true });
+export const insertCategorySchema = createInsertSchema(categories).omit({ id: true, createdAt: true });
+export const insertTagSchema = createInsertSchema(tags).omit({ id: true, createdAt: true });
+export const insertSyllabindTagSchema = createInsertSchema(syllabindTags);
 
 export type User = typeof users.$inferSelect & { isAdmin?: boolean };
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -287,12 +318,16 @@ export type CohortMember = typeof cohortMembers.$inferSelect;
 export type InsertCohortMember = z.infer<typeof insertCohortMemberSchema>;
 export type Subscription = typeof subscriptions.$inferSelect;
 export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
-export type ChatMessage = typeof chatMessages.$inferSelect;
-export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type WaitlistEntry = typeof waitlist.$inferSelect;
 export type InsertWaitlistEntry = z.infer<typeof insertWaitlistSchema>;
 export type SiteSetting = typeof siteSettings.$inferSelect;
 export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
+export type Category = typeof categories.$inferSelect;
+export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type Tag = typeof tags.$inferSelect;
+export type InsertTag = z.infer<typeof insertTagSchema>;
+export type SyllabindTag = typeof syllabindTags.$inferSelect;
+export type InsertSyllabindTag = z.infer<typeof insertSyllabindTagSchema>;
 
 // Password validation
 export const passwordSchema = z.string()

@@ -15,10 +15,14 @@ export default function AdminSettings() {
   const [slackUrl, setSlackUrl] = useState('');
   const [waitlistUrl, setWaitlistUrl] = useState('');
   const [bugReportUrl, setBugReportUrl] = useState('');
+  const [termsUrl, setTermsUrl] = useState('');
+  const [privacyUrl, setPrivacyUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [waitlistSaving, setWaitlistSaving] = useState(false);
   const [bugReportSaving, setBugReportSaving] = useState(false);
+  const [termsSaving, setTermsSaving] = useState(false);
+  const [privacySaving, setPrivacySaving] = useState(false);
 
   // Redirect non-admin users
   useEffect(() => {
@@ -33,11 +37,15 @@ export default function AdminSettings() {
       fetch('/api/site-settings/slack_community_url').then(r => r.json()),
       fetch('/api/site-settings/waitlist_form_url').then(r => r.json()),
       fetch('/api/site-settings/bug_report_url').then(r => r.json()),
+      fetch('/api/site-settings/terms_of_service_url').then(r => r.json()),
+      fetch('/api/site-settings/privacy_policy_url').then(r => r.json()),
     ])
-      .then(([slackData, waitlistData, bugReportData]) => {
+      .then(([slackData, waitlistData, bugReportData, termsData, privacyData]) => {
         setSlackUrl(slackData.value || '');
         setWaitlistUrl(waitlistData.value || '');
         setBugReportUrl(bugReportData.value || '');
+        setTermsUrl(termsData.value || '');
+        setPrivacyUrl(privacyData.value || '');
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -76,6 +84,42 @@ export default function AdminSettings() {
       toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
     } finally {
       setBugReportSaving(false);
+    }
+  };
+
+  const handleTermsSave = async () => {
+    setTermsSaving(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ key: 'terms_of_service_url', value: termsUrl }),
+      });
+      if (!res.ok) throw new Error('Failed to save');
+      toast({ title: 'Settings saved', description: 'Terms of Service URL has been updated.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
+    } finally {
+      setTermsSaving(false);
+    }
+  };
+
+  const handlePrivacySave = async () => {
+    setPrivacySaving(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ key: 'privacy_policy_url', value: privacyUrl }),
+      });
+      if (!res.ok) throw new Error('Failed to save');
+      toast({ title: 'Settings saved', description: 'Privacy Policy URL has been updated.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
+    } finally {
+      setPrivacySaving(false);
     }
   };
 
@@ -194,6 +238,66 @@ export default function AdminSettings() {
               />
               <Button onClick={handleBugReportSave} disabled={bugReportSaving}>
                 {bugReportSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Terms of Service</CardTitle>
+          <CardDescription>
+            URL for your Terms of Service page. Linked in the footer, login page, and upgrade prompt.
+            Leave empty to hide the link.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading...
+            </div>
+          ) : (
+            <>
+              <Input
+                placeholder="https://example.com/terms"
+                value={termsUrl}
+                onChange={(e) => setTermsUrl(e.target.value)}
+              />
+              <Button onClick={handleTermsSave} disabled={termsSaving}>
+                {termsSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Privacy Policy</CardTitle>
+          <CardDescription>
+            URL for your Privacy Policy page. Linked in the footer, login page, and upgrade prompt.
+            Leave empty to hide the link.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading...
+            </div>
+          ) : (
+            <>
+              <Input
+                placeholder="https://example.com/privacy"
+                value={privacyUrl}
+                onChange={(e) => setPrivacyUrl(e.target.value)}
+              />
+              <Button onClick={handlePrivacySave} disabled={privacySaving}>
+                {privacySaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save
               </Button>
             </>

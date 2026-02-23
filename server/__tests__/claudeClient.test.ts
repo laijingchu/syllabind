@@ -107,35 +107,6 @@ describe('claudeClient', () => {
       expect(result.steps).toHaveLength(1);
     });
 
-    it('should handle read_current_syllabind tool', async () => {
-      const context = { currentSyllabus: { id: 1, title: 'My Syllabus' } };
-      const result = await executeToolCall('read_current_syllabind', {}, context);
-      expect(result).toEqual(context.currentSyllabus);
-    });
-
-    it('should handle update_week tool', async () => {
-      const input = { weekIndex: 2, updates: { title: 'New Title' } };
-      const result = await executeToolCall('update_week', input, {});
-      expect(result).toEqual(input);
-    });
-
-    it('should handle add_step tool', async () => {
-      const input = { weekIndex: 1, step: { type: 'reading', title: 'Article' } };
-      const result = await executeToolCall('add_step', input, {});
-      expect(result).toEqual(input);
-    });
-
-    it('should handle remove_step tool', async () => {
-      const input = { weekIndex: 1, stepPosition: 2 };
-      const result = await executeToolCall('remove_step', input, {});
-      expect(result).toEqual(input);
-    });
-
-    it('should handle update_basics tool', async () => {
-      const input = { title: 'Updated Title', durationWeeks: 6 };
-      const result = await executeToolCall('update_basics', input, {});
-      expect(result).toEqual(input);
-    });
 
     it('should throw for unknown tool', async () => {
       await expect(executeToolCall('unknown_tool', {}, {}))

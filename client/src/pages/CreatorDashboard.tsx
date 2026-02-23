@@ -1,7 +1,7 @@
 import { useStore } from '@/lib/store';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit2, Eye, BarChart2, Trash2, BookOpen, Shield } from 'lucide-react';
+import { Plus, Edit2, BarChart2, Trash2, BookOpen, Shield, ChevronDown, Globe, EyeOff, Lock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -15,20 +15,41 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { SyllabindFilterBar } from '@/components/sections/SyllabindFilterBar';
 import { pluralize } from '@/lib/utils';
-import { useState, useEffect, useCallback } from 'react';
+import { toast } from '@/hooks/use-toast';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { AnimatedPage, AnimatedCard } from '@/components/ui/animated-container';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
-import type { Syllabus } from '@/lib/types';
+import type { Syllabus, Category } from '@/lib/types';
 
 export default function CreatorDashboard() {
-  const { syllabinds, user, getLearnersForSyllabus, batchDeleteSyllabinds, subscriptionLimits } = useStore();
+  const { syllabinds, user, getLearnersForSyllabus, batchDeleteSyllabinds, subscriptionLimits, refreshSyllabinds } = useStore();
   const [learnerCounts, setLearnerCounts] = useState<Record<number, { total: number, active: number }>>({});
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedVisibility, setSelectedVisibility] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  // Fetch categories on mount
+  useEffect(() => {
+    fetch('/api/categories')
+      .then(res => res.json())
+      .then(data => setCategories(data))
+      .catch(() => {});
+  }, []);
 
   // Admin: toggle between own syllabinds and all syllabinds
   const isAdmin = user?.isAdmin === true;
@@ -38,9 +59,54 @@ export default function CreatorDashboard() {
   // Filter syllabinds by current user's username
   const mySyllabinds = syllabinds.filter(s => s.creatorId === user?.username);
 
-  // The displayed list depends on admin toggle
+  // Build slug→id map for category filtering
+  const categorySlugToId = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const cat of categories) map[cat.slug] = cat.id;
+    return map;
+  }, [categories]);
+
+  // The displayed list depends on admin toggle + all filters (client-side)
   const otherSyllabinds = allSyllabinds.filter(s => s.creatorId !== user?.username);
-  const displayedSyllabinds = (isAdmin && showAll) ? otherSyllabinds : mySyllabinds;
+  const baseSyllabinds = (isAdmin && showAll) ? otherSyllabinds : mySyllabinds;
+  const displayedSyllabinds = useMemo(() => {
+    let result = baseSyllabinds;
+
+    // Search filter
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(s => s.title.toLowerCase().includes(q));
+    }
+
+    // Visibility filter (empty = all)
+    if (selectedVisibility) {
+      if (selectedVisibility === 'draft') {
+        result = result.filter(s => s.status === 'draft');
+      } else {
+        result = result.filter(s => s.status === 'published' && s.visibility === selectedVisibility);
+      }
+    }
+
+    // Category filter
+    if (selectedCategories.length > 0) {
+      const catIds = new Set(selectedCategories.map(slug => categorySlugToId[slug]).filter(Boolean));
+      result = result.filter(s => s.categoryId && catIds.has(s.categoryId));
+    }
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      if (sortBy === 'popular') {
+        return (learnerCounts[b.id]?.total || 0) - (learnerCounts[a.id]?.total || 0);
+      }
+      if (sortBy === 'alphabetical') {
+        return a.title.localeCompare(b.title);
+      }
+      // newest (default)
+      return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+    });
+
+    return result;
+  }, [baseSyllabinds, searchQuery, selectedVisibility, selectedCategories, categorySlugToId, sortBy, learnerCounts]);
 
   // Fetch all syllabinds when admin toggles "All Syllabinds"
   const fetchAllSyllabinds = useCallback(async () => {
@@ -120,6 +186,37 @@ export default function CreatorDashboard() {
     }
   };
 
+  const handlePublish = async (id: number, visibility: string) => {
+    try {
+      const res = await fetch(`/api/syllabinds/${id}/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ visibility }),
+      });
+      if (!res.ok) throw new Error('Failed to publish');
+      await refreshSyllabinds();
+      toast({ title: "Syllabind Published", description: `Published as ${visibility}.` });
+    } catch {
+      toast({ title: "Publish failed", description: "Something went wrong.", variant: "destructive" });
+    }
+  };
+
+  const handleUnpublish = async (id: number) => {
+    try {
+      const res = await fetch(`/api/syllabinds/${id}/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to unpublish');
+      await refreshSyllabinds();
+      toast({ title: "Syllabind Unpublished", description: "Moved back to draft." });
+    } catch {
+      toast({ title: "Unpublish failed", description: "Something went wrong.", variant: "destructive" });
+    }
+  };
+
   return (
     <AnimatedPage className="space-y-4 sm:space-y-8 max-w-5xl mx-auto px-1 sm:px-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
@@ -147,21 +244,46 @@ export default function CreatorDashboard() {
         </div>
       </div>
 
+      <SyllabindFilterBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        visibility={selectedVisibility}
+        onVisibilityChange={setSelectedVisibility}
+        visibilityOptions={[
+          { value: '', label: 'All' },
+          { value: 'draft', label: 'Draft' },
+          { value: 'public', label: 'Public' },
+          { value: 'unlisted', label: 'Unlisted' },
+          { value: 'private', label: 'Private' },
+        ]}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        sortOptions={[
+          { value: 'newest', label: 'Newest' },
+          { value: 'popular', label: 'Most Popular' },
+          { value: 'alphabetical', label: 'A–Z' },
+        ]}
+        categories={categories}
+        selectedCategories={selectedCategories}
+        onCategoriesChange={setSelectedCategories}
+        resultCount={displayedSyllabinds.length}
+      />
+
       {/* Admin toggle bar */}
       {isAdmin && (
-        <div className="admin-toggle flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg">
-          <Shield className="h-4 w-4 text-amber-600" />
-          <span className="text-sm font-medium text-amber-800">Admin View</span>
-          <div className="flex items-center gap-1 ml-auto bg-amber-100 rounded-md p-0.5">
+        <div className="admin-toggle flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-lg">
+          <Shield className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-foreground">Admin View</span>
+          <div className="flex items-center gap-1 ml-auto bg-secondary rounded-md p-0.5">
             <button
               onClick={() => setShowAll(false)}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${!showAll ? 'bg-white text-amber-900 shadow-sm' : 'text-amber-700 hover:text-amber-900'}`}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${!showAll ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               My Syllabinds
             </button>
             <button
               onClick={() => setShowAll(true)}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${showAll ? 'bg-white text-amber-900 shadow-sm' : 'text-amber-700 hover:text-amber-900'}`}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${showAll ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Others
             </button>
@@ -243,11 +365,27 @@ export default function CreatorDashboard() {
                   />
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="secondary" className="capitalize shrink-0">
-                        {syllabus.status}
-                      </Badge>
+                      {syllabus.status === 'published' ? (
+                        syllabus.visibility === 'unlisted' ? (
+                          <Badge variant="secondary" className="shrink-0">
+                            Unlisted
+                          </Badge>
+                        ) : syllabus.visibility === 'private' ? (
+                          <Badge variant="secondary" className="shrink-0">
+                            Private
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="shrink-0">
+                            Published
+                          </Badge>
+                        )
+                      ) : (
+                        <Badge variant="secondary" className="shrink-0">
+                          Draft
+                        </Badge>
+                      )}
                       {isOtherCreator && (
-                        <Badge variant="outline" className="text-xs text-amber-700 border-amber-300">
+                        <Badge variant="outline" className="text-xs">
                           by {syllabus.creator?.name || syllabus.creatorId}
                         </Badge>
                       )}
@@ -281,12 +419,33 @@ export default function CreatorDashboard() {
                       <span className="hidden sm:inline">Edit</span>
                     </Button>
                   </Link>
-                  <Link href={`/syllabind/${syllabus.id}`}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3">
-                      <Eye className="h-4 w-4 sm:mr-2" />
-                      <span className="hidden sm:inline">Preview</span>
+                  {syllabus.status === 'published' ? (
+                    <Button variant="secondary" size="sm" className="h-8 sm:h-9 px-2 sm:px-3" onClick={() => handleUnpublish(syllabus.id)}>
+                      Unpublish
                     </Button>
-                  </Link>
+                  ) : (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5">
+                          Publish <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-52">
+                        <DropdownMenuItem onClick={() => handlePublish(syllabus.id, 'public')}>
+                          <Globe className="h-4 w-4 mr-2" /> Public
+                          <span className="ml-auto text-xs text-muted-foreground">Catalog</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handlePublish(syllabus.id, 'unlisted')}>
+                          <EyeOff className="h-4 w-4 mr-2" /> Unlisted
+                          <span className="ml-auto text-xs text-muted-foreground">Link only</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handlePublish(syllabus.id, 'private')}>
+                          <Lock className="h-4 w-4 mr-2" /> Private
+                          <span className="ml-auto text-xs text-muted-foreground">Only you</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               </CardContent>
             </Card>

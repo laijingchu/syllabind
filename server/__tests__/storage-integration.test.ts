@@ -322,29 +322,6 @@ describe('DatabaseStorage (real class, mocked db)', () => {
     });
   });
 
-  // --- Chat messages ---
-
-  describe('getChatMessages', () => {
-    it('returns empty array', async () => {
-      const result = await storage.getChatMessages(1);
-      expect(result).toEqual([]);
-    });
-  });
-
-  describe('createChatMessage', () => {
-    it('calls db.insert', async () => {
-      const result = await storage.createChatMessage({
-        syllabusId: 1, role: 'user', content: 'Hello'
-      });
-      expect(result).toBeUndefined();
-    });
-  });
-
-  describe('clearChatMessages', () => {
-    it('calls db.delete', async () => {
-      await storage.clearChatMessages(1);
-    });
-  });
 
   // --- Analytics ---
 

@@ -182,10 +182,39 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
+  // ========== CATEGORY & TAG ROUTES ==========
+
+  // List all categories (public)
+  app.get("/api/categories", async (_req, res) => {
+    const cats = await storage.listCategories();
+    res.json(cats);
+  });
+
+  // List/search tags (public, for autocomplete)
+  app.get("/api/tags", async (req, res) => {
+    const query = req.query.q as string | undefined;
+    const tagList = await storage.listTags(query);
+    res.json(tagList);
+  });
+
   // ========== SYLLABIND ROUTES ==========
 
-  // List all published syllabinds (public)
-  app.get("/api/syllabinds", async (_req, res) => {
+  // List syllabinds. When catalog=true, use server-side search with filters.
+  app.get("/api/syllabinds", async (req, res) => {
+    if (req.query.catalog === 'true') {
+      const visibility = req.query.visibility as string | undefined;
+      const allowedVisibilities = ['public', 'unlisted', 'private'];
+      const result = await storage.searchCatalog({
+        query: req.query.q as string | undefined,
+        category: req.query.category ? (req.query.category as string).split(',').filter(Boolean) : undefined,
+        level: req.query.level as string | undefined,
+        visibility: visibility && allowedVisibilities.includes(visibility) ? visibility : 'public',
+        sort: (req.query.sort as any) || 'newest',
+        limit: Math.min(parseInt(req.query.limit as string) || 20, 50),
+        offset: parseInt(req.query.offset as string) || 0,
+      });
+      return res.json(result);
+    }
     const syllabinds = await storage.listSyllabinds();
     res.json(syllabinds);
   });
@@ -195,6 +224,14 @@ export async function registerRoutes(
     const syllabus = await storage.getSyllabusWithContent(id);
     if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
 
+    // Visibility enforcement: private syllabinds only visible to creator
+    const currentUsername = (req.user as any)?.username;
+    const isPreview = req.query.preview === 'true';
+    if (syllabus.visibility === 'private' && syllabus.creatorId !== currentUsername) {
+      return res.status(404).json({ message: "Syllabind not found" });
+    }
+    // Unlisted: accessible by link (no catalog filtering needed here)
+
     // Normalize week indices to 1-based (some syllabinds have 0-based indices)
     if (syllabus.weeks?.length > 0) {
       const sorted = [...syllabus.weeks].sort((a, b) => a.index - b.index);
@@ -202,7 +239,14 @@ export async function registerRoutes(
       syllabus.weeks = sorted;
     }
 
-    res.json(syllabus);
+    // Attach tags and category
+    const syllabindTags = await storage.getTagsBySyllabindId(id);
+    const categoryList = await storage.listCategories();
+    const category = (syllabus as any).categoryId
+      ? categoryList.find(c => c.id === (syllabus as any).categoryId) || null
+      : null;
+
+    res.json({ ...syllabus, tags: syllabindTags, category });
   });
 
   app.put("/api/syllabinds/:id", isAuthenticated, async (req, res) => {
@@ -346,6 +390,30 @@ export async function registerRoutes(
     res.json(classmates);
   });
 
+  // Set tags for a syllabind (creator only)
+  app.put("/api/syllabinds/:id/tags", isAuthenticated, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const username = (req.user as any).username;
+
+    const syllabus = await storage.getSyllabus(id);
+    if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
+    const isAdmin = (req.user as any).isAdmin === true;
+    if (syllabus.creatorId !== username && !isAdmin) {
+      return res.status(403).json({ error: "Not syllabind owner" });
+    }
+
+    const { tags: tagNames } = req.body;
+    if (!Array.isArray(tagNames)) {
+      return res.status(400).json({ error: "tags must be an array of strings" });
+    }
+    if (tagNames.length > 5) {
+      return res.status(400).json({ error: "Maximum 5 tags allowed" });
+    }
+
+    const resultTags = await storage.setSyllabindTags(id, tagNames);
+    res.json(resultTags);
+  });
+
   // Publish/unpublish syllabind
   app.post("/api/syllabinds/:id/publish", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
@@ -359,7 +427,9 @@ export async function registerRoutes(
     }
 
     const newStatus = syllabus.status === 'published' ? 'draft' : 'published';
-    const updated = await storage.updateSyllabus(id, { status: newStatus });
+    // Accept visibility in request body; default to existing or 'public'
+    const visibility = req.body?.visibility || syllabus.visibility || 'public';
+    const updated = await storage.updateSyllabus(id, { status: newStatus, visibility });
     res.json(updated);
   });
 
@@ -377,6 +447,14 @@ export async function registerRoutes(
     // Pro gate: enrollment requires Pro subscription (admins bypass)
     if (user.subscriptionStatus !== 'pro' && !user.isAdmin) {
       return res.status(403).json({ error: "SUBSCRIPTION_REQUIRED", message: "Pro subscription required to enroll in syllabinds." });
+    }
+
+    // Block enrollment on private syllabinds for non-creators
+    if (req.body.syllabusId) {
+      const targetSyllabus = await storage.getSyllabus(parseInt(req.body.syllabusId));
+      if (targetSyllabus?.visibility === 'private' && targetSyllabus.creatorId !== username) {
+        return res.status(404).json({ message: "Syllabind not found" });
+      }
     }
 
     const { shareProfile, ...enrollmentBody } = req.body;
@@ -696,38 +774,6 @@ export async function registerRoutes(
     });
   });
 
-  app.get("/api/syllabinds/:id/chat-messages", isAuthenticated, async (req, res) => {
-    const syllabusId = parseInt(req.params.id);
-    const username = (req.user as any).username;
-
-    const syllabus = await storage.getSyllabus(syllabusId);
-    const isAdmin = (req.user as any).isAdmin === true;
-    if (!syllabus || (syllabus.creatorId !== username && !isAdmin)) {
-      return res.status(403).json({ error: "Not authorized" });
-    }
-
-    const messages = await storage.getChatMessages(syllabusId);
-    res.json(messages);
-  });
-
-  app.post("/api/syllabinds/:id/chat-messages", isAuthenticated, async (req, res) => {
-    const syllabusId = parseInt(req.params.id);
-    const username = (req.user as any).username;
-    const { role, content } = req.body;
-
-    const syllabus = await storage.getSyllabus(syllabusId);
-    const isAdmin = (req.user as any).isAdmin === true;
-    if (!syllabus || (syllabus.creatorId !== username && !isAdmin)) {
-      return res.status(403).json({ error: "Not authorized" });
-    }
-
-    const message = await storage.createChatMessage({
-      syllabusId,
-      role,
-      content
-    });
-    res.json(message);
-  });
 
   return httpServer;
 }

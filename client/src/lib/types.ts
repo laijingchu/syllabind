@@ -1,6 +1,21 @@
 export type AudienceLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 export type StepType = 'reading' | 'exercise';
 export type SyllabusStatus = 'draft' | 'published' | 'generating';
+export type SyllabusVisibility = 'public' | 'unlisted' | 'private';
+
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string | null;
+  displayOrder: number;
+}
+
+export interface Tag {
+  id: number;
+  name: string;
+  slug: string;
+}
 
 export interface Step {
   id: number; // Changed from string to number for normalized DB
@@ -50,11 +65,15 @@ export interface Syllabus {
   audienceLevel: AudienceLevel;
   durationWeeks: number; // 1-4
   status: SyllabusStatus;
+  visibility?: SyllabusVisibility;
   weeks: Week[];
   showSchedulingLink?: boolean;
   mediaPreference?: 'auto' | 'yes' | 'no';
   creatorId: string; // Username (unique) instead of UUID
   creator?: CreatorProfile; // Populated when listing syllabinds
+  categoryId?: number | null;
+  category?: { name: string; slug: string } | null;
+  tags?: Tag[];
   createdAt?: string | Date | null;
   updatedAt?: string | Date | null;
 }
