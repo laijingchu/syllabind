@@ -23,6 +23,7 @@ import Marketing from "@/pages/Marketing";
 import Login from "@/pages/Login";
 import Profile from "@/pages/Profile";
 
+
 function ProtectedRoute({ component: Component, ...rest }: any) {
   const { user, isLoading } = useAuth();
   

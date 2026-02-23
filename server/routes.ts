@@ -8,7 +8,7 @@ import {
   insertSyllabusSchema,
   insertEnrollmentSchema,
   insertUserSchema,
-  insertSubmissionSchema
+  insertSubmissionSchema,
 } from "@shared/schema";
 import { registerStripeRoutes } from "./routes/stripe";
 import { registerWebhookRoutes } from "./routes/webhook";
@@ -124,15 +124,6 @@ export async function registerRoutes(
     const updated = await storage.updateUser(userId, { isCreator: !user.isCreator });
     const { password, ...userWithoutPassword } = updated;
     res.json(userWithoutPassword);
-  });
-
-  // Debug route to check uploads path
-  app.get("/api/debug/uploads-path", (req, res) => {
-    res.json({
-      currentDirPath,
-      uploadsPath: path.join(currentDirPath, "../uploads"),
-      resolved: path.resolve(currentDirPath, "../uploads")
-    });
   });
 
   // Upload avatar image

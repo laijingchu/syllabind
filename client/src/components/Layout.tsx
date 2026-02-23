@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
-import { BookOpen, User, LogOut, Menu, X } from 'lucide-react';
+import { BookOpen, User, LogOut, Menu, X, Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -25,6 +25,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, logout } = useStore();
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [bugReportUrl, setBugReportUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetch('/api/site-settings/bug_report_url')
+        .then(res => res.json())
+        .then(data => setBugReportUrl(data.value || null))
+        .catch(() => {});
+    }
+  }, [isAuthenticated]);
 
   const handleMobileNavClick = (path: string) => {
     setMobileMenuOpen(false);
@@ -111,20 +121,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <nav className="hidden md:flex items-center gap-6">
               {isAuthenticated && (
                 <>
-                  <Link href="/">
-                    <a className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/" ? "text-primary" : "text-muted-foreground")}>
-                      Dashboard
-                    </a>
+                  <Link href="/" className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/" ? "text-primary" : "text-muted-foreground")}>
+                    Dashboard
                   </Link>
-                  <Link href="/catalog">
-                    <a className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/catalog" ? "text-primary" : "text-muted-foreground")}>
-                      Catalog
-                    </a>
+                  <Link href="/catalog" className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/catalog" ? "text-primary" : "text-muted-foreground")}>
+                    Catalog
                   </Link>
-                  <Link href="/creator">
-                    <a className={cn("text-sm font-medium transition-colors hover:text-primary", location.startsWith("/creator") ? "text-primary" : "text-muted-foreground")}>
-                      Syllabind Builder
-                    </a>
+                  <Link href="/creator" className={cn("text-sm font-medium transition-colors hover:text-primary", location.startsWith("/creator") ? "text-primary" : "text-muted-foreground")}>
+                    Syllabind Builder
                   </Link>
                 </>
               )}
@@ -133,6 +137,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center gap-4">
             {isAuthenticated && user ? (
+              <>
+              {bugReportUrl && (
+                <a href={bugReportUrl} target="_blank" rel="noopener noreferrer">
+                  <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-primary" title="Report a bug">
+                    <Bug className="h-4 w-4" />
+                    <span className="sr-only">Report a bug</span>
+                  </Button>
+                </a>
+              )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-muted/50">
@@ -163,6 +176,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              </>
             ) : (
               <div className="flex items-center gap-4">
                 {location !== '/login' && (

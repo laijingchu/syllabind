@@ -63,6 +63,7 @@ export const syllabinds = pgTable("syllabi", {
   studentActive: integer("student_active").default(0),
   studentsCompleted: integer("students_completed").default(0),
   showSchedulingLink: boolean("show_scheduling_link").default(true),
+  mediaPreference: text("media_preference").default('auto'), // 'auto', 'yes', 'no'
 }, (table) => [
   index("syllabi_creator_id_idx").on(table.creatorId),
   index("syllabi_status_idx").on(table.status),
@@ -208,6 +209,26 @@ export const chatMessages = pgTable("chat_messages", {
   index("chat_messages_syllabus_id_idx").on(table.syllabusId),
 ]);
 
+// Waitlist for alpha gating
+export const waitlist = pgTable("waitlist", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  role: text("role").notNull(), // 'learner' | 'creator' | 'both'
+  occupation: text("occupation").notNull(),
+  occupationDetail: text("occupation_detail"),
+  topicInterest: text("topic_interest"),
+  referralSource: text("referral_source"),
+  appeals: text("appeals").notNull(), // comma-separated keys
+  status: text("status").notNull().default('pending'), // 'pending' | 'approved' | 'rejected'
+  adminNote: text("admin_note"),
+  createdAt: timestamp("created_at").defaultNow(),
+  reviewedAt: timestamp("reviewed_at"),
+}, (table) => [
+  index("waitlist_status_idx").on(table.status),
+  index("waitlist_created_at_idx").on(table.createdAt),
+]);
+
 // Site-wide settings (admin-configurable key-value pairs)
 export const siteSettings = pgTable("site_settings", {
   id: serial("id").primaryKey(),
@@ -243,9 +264,10 @@ export const insertCohortMemberSchema = createInsertSchema(cohortMembers).omit({
 });
 export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true });
+export const insertWaitlistSchema = createInsertSchema(waitlist).omit({ id: true, status: true, adminNote: true, createdAt: true, reviewedAt: true });
 export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({ id: true, updatedAt: true });
 
-export type User = typeof users.$inferSelect;
+export type User = typeof users.$inferSelect & { isAdmin?: boolean };
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Syllabus = typeof syllabinds.$inferSelect;
 export type InsertSyllabus = z.infer<typeof insertSyllabusSchema>;
@@ -267,6 +289,8 @@ export type Subscription = typeof subscriptions.$inferSelect;
 export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type WaitlistEntry = typeof waitlist.$inferSelect;
+export type InsertWaitlistEntry = z.infer<typeof insertWaitlistSchema>;
 export type SiteSetting = typeof siteSettings.$inferSelect;
 export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
 

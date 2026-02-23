@@ -180,6 +180,9 @@ export function handleGenerateSyllabindWS(ws: WebSocket, syllabusId: number, use
       console.log('[Generate] Deleting existing Syllabind data...');
       await storage.deleteWeeksBySyllabusId(syllabusId);
 
+      const mediaPreference = syllabus.mediaPreference ?? 'auto';
+      console.log(`[Generate] Syllabind ${syllabusId} mediaPreference: ${mediaPreference}`);
+
       // Use mock mode for testing streaming without API calls
       if (useMock) {
         await mockGenerateSyllabind(ws, syllabusId, syllabus.durationWeeks);
@@ -190,7 +193,8 @@ export function handleGenerateSyllabindWS(ws: WebSocket, syllabusId: number, use
             title: syllabus.title,
             description: syllabus.description,
             audienceLevel: syllabus.audienceLevel,
-            durationWeeks: syllabus.durationWeeks
+            durationWeeks: syllabus.durationWeeks,
+            mediaPreference
           },
           ws,
           signal: abortController.signal
@@ -372,7 +376,8 @@ export function handleRegenerateWeekWS(
             title: syllabus.title,
             description: syllabus.description,
             audienceLevel: syllabus.audienceLevel,
-            durationWeeks: syllabus.durationWeeks
+            durationWeeks: syllabus.durationWeeks,
+            mediaPreference: syllabus.mediaPreference ?? 'auto'
           },
           weekTitle: existingWeek?.title ?? undefined,
           weekDescription: existingWeek?.description ?? undefined,

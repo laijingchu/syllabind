@@ -50,15 +50,24 @@ export default function Profile() {
   const [slackUrl, setSlackUrl] = useState('');
   const [slackLoading, setSlackLoading] = useState(false);
   const [slackSaving, setSlackSaving] = useState(false);
+  const [waitlistUrl, setWaitlistUrl] = useState('');
+  const [waitlistSaving, setWaitlistSaving] = useState(false);
+  const [bugReportUrl, setBugReportUrl] = useState('');
+  const [bugReportSaving, setBugReportSaving] = useState(false);
 
-  // Fetch Slack community URL for admin users
+  // Fetch admin settings for admin users
   useEffect(() => {
     if (user?.isAdmin) {
       setSlackLoading(true);
-      fetch('/api/site-settings/slack_community_url')
-        .then(res => res.json())
-        .then(data => {
-          setSlackUrl(data.value || '');
+      Promise.all([
+        fetch('/api/site-settings/slack_community_url').then(r => r.json()),
+        fetch('/api/site-settings/waitlist_form_url').then(r => r.json()),
+        fetch('/api/site-settings/bug_report_url').then(r => r.json()),
+      ])
+        .then(([slackData, waitlistData, bugReportData]) => {
+          setSlackUrl(slackData.value || '');
+          setWaitlistUrl(waitlistData.value || '');
+          setBugReportUrl(bugReportData.value || '');
           setSlackLoading(false);
         })
         .catch(() => setSlackLoading(false));
@@ -80,6 +89,42 @@ export default function Profile() {
       toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
     } finally {
       setSlackSaving(false);
+    }
+  };
+
+  const handleBugReportSave = async () => {
+    setBugReportSaving(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ key: 'bug_report_url', value: bugReportUrl }),
+      });
+      if (!res.ok) throw new Error('Failed to save');
+      toast({ title: 'Settings saved', description: 'Bug report form URL has been updated.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
+    } finally {
+      setBugReportSaving(false);
+    }
+  };
+
+  const handleWaitlistSave = async () => {
+    setWaitlistSaving(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ key: 'waitlist_form_url', value: waitlistUrl }),
+      });
+      if (!res.ok) throw new Error('Failed to save');
+      toast({ title: 'Settings saved', description: 'Waitlist form URL has been updated.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
+    } finally {
+      setWaitlistSaving(false);
     }
   };
 
@@ -425,6 +470,64 @@ export default function Profile() {
                   />
                   <Button onClick={handleSlackSave} disabled={slackSaving}>
                     {slackSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Hash className="h-4 w-4" />
+                Waitlist Form URL
+              </label>
+              <p className="text-xs text-muted-foreground">
+                External form URL (Google Form, Typeform, etc.) for waitlist signups on Login and Marketing pages.
+              </p>
+              {slackLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="https://forms.gle/... or https://yourform.typeform.com/..."
+                    value={waitlistUrl}
+                    onChange={(e) => setWaitlistUrl(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button onClick={handleWaitlistSave} disabled={waitlistSaving}>
+                    {waitlistSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Hash className="h-4 w-4" />
+                Bug Report Form URL
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Google Form or other URL for bug reports. When set, a bug icon appears in the header next to the user avatar.
+              </p>
+              {slackLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="https://forms.gle/... or https://yourform.typeform.com/..."
+                    value={bugReportUrl}
+                    onChange={(e) => setBugReportUrl(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button onClick={handleBugReportSave} disabled={bugReportSaving}>
+                    {bugReportSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Save
                   </Button>
                 </div>

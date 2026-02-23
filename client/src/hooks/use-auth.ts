@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 
 async function fetchUser(): Promise<User | null> {
@@ -25,7 +25,6 @@ async function logout(): Promise<void> {
 }
 
 export function useAuth() {
-  const queryClient = useQueryClient();
   const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ["/api/auth/me"],
     queryFn: fetchUser,
@@ -36,7 +35,9 @@ export function useAuth() {
   const logoutMutation = useMutation({
     mutationFn: logout,
     onSuccess: () => {
-      queryClient.setQueryData(["/api/auth/me"], null);
+      // Navigate first — window.location.href triggers a full page reload
+      // which clears all React state. Setting query data to null before
+      // navigating causes a re-render with null user that can blank the page.
       window.location.href = "/welcome";
     },
   });

@@ -13,8 +13,12 @@ export default function AdminSettings() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [slackUrl, setSlackUrl] = useState('');
+  const [waitlistUrl, setWaitlistUrl] = useState('');
+  const [bugReportUrl, setBugReportUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [waitlistSaving, setWaitlistSaving] = useState(false);
+  const [bugReportSaving, setBugReportSaving] = useState(false);
 
   // Redirect non-admin users
   useEffect(() => {
@@ -23,12 +27,17 @@ export default function AdminSettings() {
     }
   }, [user, setLocation]);
 
-  // Fetch current setting
+  // Fetch current settings
   useEffect(() => {
-    fetch('/api/site-settings/slack_community_url')
-      .then(res => res.json())
-      .then(data => {
-        setSlackUrl(data.value || '');
+    Promise.all([
+      fetch('/api/site-settings/slack_community_url').then(r => r.json()),
+      fetch('/api/site-settings/waitlist_form_url').then(r => r.json()),
+      fetch('/api/site-settings/bug_report_url').then(r => r.json()),
+    ])
+      .then(([slackData, waitlistData, bugReportData]) => {
+        setSlackUrl(slackData.value || '');
+        setWaitlistUrl(waitlistData.value || '');
+        setBugReportUrl(bugReportData.value || '');
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -49,6 +58,42 @@ export default function AdminSettings() {
       toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleBugReportSave = async () => {
+    setBugReportSaving(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ key: 'bug_report_url', value: bugReportUrl }),
+      });
+      if (!res.ok) throw new Error('Failed to save');
+      toast({ title: 'Settings saved', description: 'Bug report form URL has been updated.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
+    } finally {
+      setBugReportSaving(false);
+    }
+  };
+
+  const handleWaitlistSave = async () => {
+    setWaitlistSaving(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ key: 'waitlist_form_url', value: waitlistUrl }),
+      });
+      if (!res.ok) throw new Error('Failed to save');
+      toast({ title: 'Settings saved', description: 'Waitlist form URL has been updated.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
+    } finally {
+      setWaitlistSaving(false);
     }
   };
 
@@ -91,6 +136,64 @@ export default function AdminSettings() {
               />
               <Button onClick={handleSave} disabled={saving}>
                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Waitlist Form URL</CardTitle>
+          <CardDescription>
+            External form URL (Google Form, Typeform, etc.) shown on the Login and Marketing pages for waitlist signups.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading...
+            </div>
+          ) : (
+            <>
+              <Input
+                placeholder="https://forms.gle/... or https://yourform.typeform.com/..."
+                value={waitlistUrl}
+                onChange={(e) => setWaitlistUrl(e.target.value)}
+              />
+              <Button onClick={handleWaitlistSave} disabled={waitlistSaving}>
+                {waitlistSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Bug Report Form</CardTitle>
+          <CardDescription>
+            Google Form or other URL for bug reports. When set, a bug icon appears in the header next to the user avatar.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading...
+            </div>
+          ) : (
+            <>
+              <Input
+                placeholder="https://forms.gle/... or https://yourform.typeform.com/..."
+                value={bugReportUrl}
+                onChange={(e) => setBugReportUrl(e.target.value)}
+              />
+              <Button onClick={handleBugReportSave} disabled={bugReportSaving}>
+                {bugReportSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save
               </Button>
             </>

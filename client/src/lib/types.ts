@@ -52,6 +52,7 @@ export interface Syllabus {
   status: SyllabusStatus;
   weeks: Week[];
   showSchedulingLink?: boolean;
+  mediaPreference?: 'auto' | 'yes' | 'no';
   creatorId: string; // Username (unique) instead of UUID
   creator?: CreatorProfile; // Populated when listing syllabinds
   createdAt?: string | Date | null;

@@ -265,6 +265,7 @@ export default function SyllabindEditor() {
     status: 'draft',
     creatorId: user?.username || '',
     showSchedulingLink: true,
+    mediaPreference: 'auto',
     weeks: Array.from({ length: 4 }, (_, i) => ({
       id: generateTempId(),
       syllabusId: generateTempId(),
@@ -359,21 +360,54 @@ export default function SyllabindEditor() {
     }
   }, [isNew, params?.id]);
 
+  // Auto-create effect: when user types a title on /new, create the record in the DB
+  // so that subsequent auto-saves work and content persists across refresh
+  const isCreatingRef = useRef(false);
+  useEffect(() => {
+    if (formData.id >= 0 || !formData.title?.trim() || isCreatingRef.current) return;
+
+    isCreatingRef.current = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/syllabinds', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ ...formData, creatorId: undefined, status: 'draft' })
+        });
+        if (!res.ok) throw new Error('Failed to create syllabind');
+        const created = await res.json();
+        setFormData(prev => ({ ...prev, id: created.id }));
+        window.history.replaceState(null, '', `/creator/syllabind/${created.id}/edit`);
+        setLastSaved(new Date());
+      } catch (err) {
+        console.error('Failed to auto-create syllabind:', err);
+      } finally {
+        isCreatingRef.current = false;
+      }
+    })();
+  }, [debouncedFormData.title]);
+
   // Auto-save effect
   useEffect(() => {
     // Skip initial load, empty title, or unsaved syllabinds (negative IDs)
     if (!formData.title || formData.id < 0) return;
 
+    // Skip auto-save during AI generation/regeneration — the server is actively
+    // creating weeks/steps, and a concurrent saveWeeksAndSteps would race with it,
+    // causing "duplicate key" constraint violations on weeks(syllabus_id, index)
+    if (isGenerating || regeneratingWeekIndex !== null) return;
+
     const save = async () => {
       setIsSaving(true);
-      // Simulate network delay for realism
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Only auto-save existing syllabinds (positive IDs)
-      updateSyllabus(debouncedFormData);
-
-      setLastSaved(new Date());
-      setIsSaving(false);
+      try {
+        await updateSyllabus(debouncedFormData);
+        setLastSaved(new Date());
+      } catch (err) {
+        console.error('Auto-save failed:', err);
+      } finally {
+        setIsSaving(false);
+      }
     };
 
     save();
@@ -568,6 +602,23 @@ export default function SyllabindEditor() {
         const created = await res.json();
         syllabusId = created.id;
         setFormData(prev => ({ ...prev, id: syllabusId }));
+      } else {
+        // Flush current basics to DB before generation — auto-save is debounced and
+        // skipped during generation, so durationWeeks/title/etc. may be stale in the DB
+        const mediaPref = formData.mediaPreference || 'auto';
+        console.log('[Generate] Pre-generation save mediaPreference:', mediaPref);
+        await fetch(`/api/syllabinds/${syllabusId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            title: formData.title,
+            description: formData.description,
+            audienceLevel: formData.audienceLevel,
+            durationWeeks: formData.durationWeeks,
+            mediaPreference: mediaPref,
+          })
+        });
       }
 
       // Reset all weeks to empty slots — server deletes existing data before regenerating,
@@ -838,7 +889,12 @@ export default function SyllabindEditor() {
             fetch(`/api/syllabinds/${syllabusId}`, { credentials: 'include' })
               .then(res => res.json())
               .then(updated => {
-                setFormData(updated);
+                // Preserve mediaPreference from local state — the DB value is authoritative
+                // but we keep the user's selection in case it wasn't flushed yet
+                setFormData(prev => ({
+                  ...updated,
+                  mediaPreference: updated.mediaPreference || prev.mediaPreference || 'auto',
+                }));
                 if (updated.weeks?.length > 0) {
                   setOriginalWeeks(updated.weeks);
                 }
@@ -1392,7 +1448,19 @@ export default function SyllabindEditor() {
                 </Link>
               </>
             )}
-            <Button variant="outline" size="sm" onClick={() => handleSave()}>Save<span className="hidden sm:inline">Draft</span> </Button>
+            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span className="hidden sm:inline">Saving...</span>
+                </>
+              ) : lastSaved ? (
+                <>
+                  <CheckCircle2 className="h-3 w-3 text-green-500/70" />
+                  <span className="hidden sm:inline">Saved</span>
+                </>
+              ) : null}
+            </span>
             {!isNew && (
               <Button
                 variant="outline"
@@ -1450,7 +1518,7 @@ export default function SyllabindEditor() {
               lastSaved={lastSaved}
             />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
             <div className="space-y-2">
               <Label className="text-sm">Audience Level</Label>
               <Select
@@ -1481,6 +1549,20 @@ export default function SyllabindEditor() {
                   <SelectItem value="6">6 Weeks</SelectItem>
                   <SelectItem value="7">7 Weeks</SelectItem>
                   <SelectItem value="8">8 Weeks</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Audio/Video Materials</Label>
+              <Select
+                value={formData.mediaPreference || 'auto'}
+                onValueChange={(v: any) => setFormData({...formData, mediaPreference: v})}
+              >
+                <SelectTrigger className="text-base md:text-lg"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">Auto</SelectItem>
+                  <SelectItem value="yes">Yes</SelectItem>
+                  <SelectItem value="no">No</SelectItem>
                 </SelectContent>
               </Select>
             </div>
