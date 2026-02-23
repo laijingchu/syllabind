@@ -28,6 +28,7 @@ export interface CatalogSearchParams {
   query?: string;
   category?: string; // category slug
   level?: string; // audience level
+  visibility?: string; // 'public' | 'unlisted' | 'private' (default: 'public')
   sort?: 'newest' | 'popular' | 'relevance';
   limit?: number;
   offset?: number;
@@ -898,15 +899,16 @@ export class DatabaseStorage implements IStorage {
       query,
       category,
       level,
+      visibility = 'public',
       sort = 'newest',
       limit: resultLimit = 20,
       offset: resultOffset = 0
     } = params;
 
-    // Build WHERE conditions: always filter published + public
+    // Build WHERE conditions: always filter published; visibility is configurable
     const conditions: any[] = [
       sql`${syllabinds.status} = 'published'`,
-      sql`${syllabinds.visibility} = 'public'`,
+      sql`${syllabinds.visibility} = ${visibility}`,
     ];
 
     if (category) {

@@ -12,6 +12,11 @@ import type { Syllabus, Category } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 const AUDIENCE_LEVELS = ['All', 'Beginner', 'Intermediate', 'Advanced'];
+const VISIBILITY_OPTIONS = [
+  { value: 'public', label: 'Public' },
+  { value: 'unlisted', label: 'Unlisted' },
+  { value: 'private', label: 'Private' },
+];
 const PAGE_SIZE = 12;
 
 export default function Catalog() {
@@ -21,6 +26,7 @@ export default function Catalog() {
   const [searchQuery, setSearchQuery] = useState(params.get('q') || '');
   const [selectedCategory, setSelectedCategory] = useState(params.get('category') || '');
   const [selectedLevel, setSelectedLevel] = useState(params.get('level') || '');
+  const [selectedVisibility, setSelectedVisibility] = useState(params.get('visibility') || 'public');
   const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'relevance'>(
     (params.get('sort') as any) || 'newest'
   );
@@ -47,11 +53,12 @@ export default function Catalog() {
     if (debouncedQuery) p.set('q', debouncedQuery);
     if (selectedCategory) p.set('category', selectedCategory);
     if (selectedLevel) p.set('level', selectedLevel);
+    if (selectedVisibility !== 'public') p.set('visibility', selectedVisibility);
     if (sortBy !== 'newest') p.set('sort', sortBy);
     const qs = p.toString();
     const newUrl = `/catalog${qs ? `?${qs}` : ''}`;
     window.history.replaceState(null, '', newUrl);
-  }, [debouncedQuery, selectedCategory, selectedLevel, sortBy]);
+  }, [debouncedQuery, selectedCategory, selectedLevel, selectedVisibility, sortBy]);
 
   // Fetch catalog results
   const fetchCatalog = useCallback(async (loadMore = false) => {
@@ -67,6 +74,7 @@ export default function Catalog() {
     if (debouncedQuery) p.set('q', debouncedQuery);
     if (selectedCategory) p.set('category', selectedCategory);
     if (selectedLevel) p.set('level', selectedLevel);
+    if (selectedVisibility) p.set('visibility', selectedVisibility);
     p.set('sort', debouncedQuery && sortBy === 'newest' ? 'relevance' : sortBy);
 
     try {
@@ -85,11 +93,11 @@ export default function Catalog() {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [debouncedQuery, selectedCategory, selectedLevel, sortBy]);
+  }, [debouncedQuery, selectedCategory, selectedLevel, selectedVisibility, sortBy]);
 
   useEffect(() => {
     fetchCatalog(false);
-  }, [debouncedQuery, selectedCategory, selectedLevel, sortBy]);
+  }, [debouncedQuery, selectedCategory, selectedLevel, selectedVisibility, sortBy]);
 
   const hasMore = syllabinds.length < total;
 
@@ -111,6 +119,24 @@ export default function Catalog() {
           placeholder="Search syllabinds..."
           className="pl-10 text-base"
         />
+      </div>
+
+      {/* Visibility toggle */}
+      <div className="catalog-visibility flex gap-2">
+        {VISIBILITY_OPTIONS.map(opt => (
+          <button
+            key={opt.value}
+            onClick={() => setSelectedVisibility(opt.value)}
+            className={cn(
+              "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
+              selectedVisibility === opt.value
+                ? "bg-foreground text-background"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
 
       {/* Category pills */}

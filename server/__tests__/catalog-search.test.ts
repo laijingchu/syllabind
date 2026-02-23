@@ -157,10 +157,27 @@ describe('Catalog Search & Categories/Tags', () => {
         query: undefined,
         category: undefined,
         level: undefined,
+        visibility: 'public',
         sort: 'newest',
         limit: 20,
         offset: 0,
       });
+    });
+
+    it('passes visibility filter to searchCatalog', async () => {
+      mockStorage.searchCatalog.mockResolvedValue({ syllabinds: [], total: 0 });
+      await request(app).get('/api/syllabinds?catalog=true&visibility=unlisted');
+      expect(mockStorage.searchCatalog).toHaveBeenCalledWith(
+        expect.objectContaining({ visibility: 'unlisted' }),
+      );
+    });
+
+    it('defaults to public for invalid visibility values', async () => {
+      mockStorage.searchCatalog.mockResolvedValue({ syllabinds: [], total: 0 });
+      await request(app).get('/api/syllabinds?catalog=true&visibility=invalid');
+      expect(mockStorage.searchCatalog).toHaveBeenCalledWith(
+        expect.objectContaining({ visibility: 'public' }),
+      );
     });
 
     it('passes search query to searchCatalog', async () => {
@@ -213,11 +230,12 @@ describe('Catalog Search & Categories/Tags', () => {
 
     it('combines multiple filters', async () => {
       mockStorage.searchCatalog.mockResolvedValue({ syllabinds: [], total: 0 });
-      await request(app).get('/api/syllabinds?catalog=true&q=design&category=arts&level=Advanced&sort=relevance&limit=10&offset=5');
+      await request(app).get('/api/syllabinds?catalog=true&q=design&category=arts&level=Advanced&visibility=private&sort=relevance&limit=10&offset=5');
       expect(mockStorage.searchCatalog).toHaveBeenCalledWith({
         query: 'design',
         category: 'arts',
         level: 'Advanced',
+        visibility: 'private',
         sort: 'relevance',
         limit: 10,
         offset: 5,

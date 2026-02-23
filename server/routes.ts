@@ -202,10 +202,13 @@ export async function registerRoutes(
   // List syllabinds. When catalog=true, use server-side search with filters.
   app.get("/api/syllabinds", async (req, res) => {
     if (req.query.catalog === 'true') {
+      const visibility = req.query.visibility as string | undefined;
+      const allowedVisibilities = ['public', 'unlisted', 'private'];
       const result = await storage.searchCatalog({
         query: req.query.q as string | undefined,
         category: req.query.category as string | undefined,
         level: req.query.level as string | undefined,
+        visibility: visibility && allowedVisibilities.includes(visibility) ? visibility : 'public',
         sort: (req.query.sort as any) || 'newest',
         limit: Math.min(parseInt(req.query.limit as string) || 20, 50),
         offset: parseInt(req.query.offset as string) || 0,
