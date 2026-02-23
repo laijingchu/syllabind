@@ -354,7 +354,7 @@ export default function SyllabindLearners() {
                                       <div className="text-xs text-muted-foreground">{new Date(sub.submittedAt).toLocaleDateString()}</div>
                                     </div>
                                     {sub.grade ? (
-                                      <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20 text-xs w-fit">
+                                      <Badge variant="secondary" className="text-xs w-fit">
                                         Grade: {sub.grade}
                                       </Badge>
                                     ) : (

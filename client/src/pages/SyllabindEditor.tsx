@@ -1809,8 +1809,8 @@ export default function SyllabindEditor() {
                         value={generationProgress.currentWeek === 0
                           ? 5
                           : (completedWeeks.size / formData.durationWeeks) * 100}
-                        className="h-2 bg-emerald-100"
-                        indicatorClassName="bg-emerald-500"
+                        className="h-2 bg-secondary"
+                        indicatorClassName="bg-foreground"
                       />
                     </div>
                   </div>

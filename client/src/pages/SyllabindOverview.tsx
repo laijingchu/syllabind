@@ -334,7 +334,7 @@ export default function SyllabindOverview() {
   return (
     <AnimatedPage className="max-w-4xl mx-auto">
       {isPreview && (
-        <div className="preview-banner mb-6 bg-amber-500/15 border border-amber-500/20 text-amber-600 dark:text-amber-500 px-4 py-3 rounded-lg flex items-center gap-3">
+        <div className="preview-banner mb-6 bg-muted border border-border text-muted-foreground px-4 py-3 rounded-lg flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 shrink-0" />
           <p className="text-sm font-medium">
             Draft Preview: You are viewing a private draft. This content is not yet public.
@@ -342,7 +342,7 @@ export default function SyllabindOverview() {
         </div>
       )}
       {syllabus.visibility === 'unlisted' && (
-        <div className="unlisted-banner mb-6 bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 px-4 py-3 rounded-lg flex items-center gap-3">
+        <div className="unlisted-banner mb-6 bg-muted border border-border text-muted-foreground px-4 py-3 rounded-lg flex items-center gap-3">
           <LinkIcon className="h-5 w-5 shrink-0" />
           <p className="text-sm font-medium">
             This syllabind is unlisted. Only people with the link can access it.
@@ -527,7 +527,7 @@ export default function SyllabindOverview() {
                                 {week.title || `Week ${week.index}`}
                               </h3>
                               {isCurrentWeek && (
-                                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] uppercase tracking-wider bg-primary/10 text-primary border-primary/20">
+                                <Badge variant="outline" className="h-5 px-1.5 text-[10px] uppercase tracking-wider">
                                   Current
                                 </Badge>
                               )}

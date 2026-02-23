@@ -271,19 +271,19 @@ export default function CreatorDashboard() {
 
       {/* Admin toggle bar */}
       {isAdmin && (
-        <div className="admin-toggle flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg">
-          <Shield className="h-4 w-4 text-amber-600" />
-          <span className="text-sm font-medium text-amber-800">Admin View</span>
-          <div className="flex items-center gap-1 ml-auto bg-amber-100 rounded-md p-0.5">
+        <div className="admin-toggle flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-lg">
+          <Shield className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-foreground">Admin View</span>
+          <div className="flex items-center gap-1 ml-auto bg-secondary rounded-md p-0.5">
             <button
               onClick={() => setShowAll(false)}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${!showAll ? 'bg-white text-amber-900 shadow-sm' : 'text-amber-700 hover:text-amber-900'}`}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${!showAll ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               My Syllabinds
             </button>
             <button
               onClick={() => setShowAll(true)}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${showAll ? 'bg-white text-amber-900 shadow-sm' : 'text-amber-700 hover:text-amber-900'}`}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${showAll ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Others
             </button>
@@ -367,25 +367,25 @@ export default function CreatorDashboard() {
                     <div className="flex items-center gap-2 flex-wrap">
                       {syllabus.status === 'published' ? (
                         syllabus.visibility === 'unlisted' ? (
-                          <Badge variant="secondary" className="shrink-0 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                          <Badge variant="secondary" className="shrink-0">
                             Unlisted
                           </Badge>
                         ) : syllabus.visibility === 'private' ? (
-                          <Badge variant="secondary" className="shrink-0 bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400">
+                          <Badge variant="secondary" className="shrink-0">
                             Private
                           </Badge>
                         ) : (
-                          <Badge variant="secondary" className="shrink-0 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                          <Badge variant="outline" className="shrink-0">
                             Published
                           </Badge>
                         )
                       ) : (
-                        <Badge variant="secondary" className="shrink-0 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                        <Badge variant="secondary" className="shrink-0">
                           Draft
                         </Badge>
                       )}
                       {isOtherCreator && (
-                        <Badge variant="outline" className="text-xs text-amber-700 border-amber-300">
+                        <Badge variant="outline" className="text-xs">
                           by {syllabus.creator?.name || syllabus.creatorId}
                         </Badge>
                       )}

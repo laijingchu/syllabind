@@ -273,8 +273,8 @@ export default function SyllabindAnalytics() {
             {isLoading ? (
               <Skeleton className="h-32 w-full" />
             ) : analytics?.topDropoutStep ? (
-              <div className="p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
-                <div className="text-xs font-bold text-orange-600 uppercase tracking-widest mb-1">
+              <div className="p-4 rounded-xl bg-muted border border-border">
+                <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">
                   Week {analytics.topDropoutStep.weekIndex}
                 </div>
                 <h4 className="text-lg font-medium leading-tight mb-2">{analytics.topDropoutStep.stepTitle}</h4>
@@ -283,7 +283,7 @@ export default function SyllabindAnalytics() {
                 </p>
               </div>
             ) : (
-              <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+              <div className="p-4 rounded-xl bg-muted border border-border">
                 <h4 className="text-lg font-medium leading-tight mb-2">No significant dropoff detected</h4>
                 <p className="text-sm text-muted-foreground">
                   Learners are progressing smoothly through your content.
@@ -300,7 +300,7 @@ export default function SyllabindAnalytics() {
                       <span className="text-muted-foreground truncate max-w-[180px]">
                         W{step.weekIndex} – {step.stepTitle}
                       </span>
-                      <span className="font-mono text-orange-500">{step.dropoffRate}% drop</span>
+                      <span className="font-mono text-muted-foreground">{step.dropoffRate}% drop</span>
                     </div>
                   ))}
                 </div>
