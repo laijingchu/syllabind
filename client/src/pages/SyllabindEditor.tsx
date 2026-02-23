@@ -1711,7 +1711,7 @@ export default function SyllabindEditor() {
                           onMouseDown={e => { e.preventDefault(); addTag(t.name); }}
                         >
                           {t.name}
-                          {t.usageCount > 0 && <span className="text-xs text-muted-foreground">({t.usageCount})</span>}
+                          {typeof t.usageCount === "number" && t.usageCount > 0 && <span className="text-xs text-muted-foreground">({t.usageCount})</span>}
                         </button>
                       ))}
                     </div>
