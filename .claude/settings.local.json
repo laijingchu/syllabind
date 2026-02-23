@@ -52,7 +52,9 @@
       "Bash(npm info:*)",
       "Bash(npm run build:*)",
       "WebSearch",
-      "WebFetch(domain:ai.google.dev)"
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(gh:*)",
+      "Bash(git remote:*)"
     ]
   }
 }
