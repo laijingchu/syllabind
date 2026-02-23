@@ -919,8 +919,15 @@ export class DatabaseStorage implements IStorage {
       conditions.push(sql`${syllabinds.audienceLevel} = ${level}`);
     }
 
+    // Full-text search with ILIKE fallback for stop-word-only queries (e.g. "how to")
     if (query) {
-      conditions.push(sql`${syllabinds.searchVector} @@ plainto_tsquery('english', ${query})`);
+      // We can't easily check at query-build time, so use a combined condition:
+      // try tsvector match first; if tsquery is empty, fall back to ILIKE on title
+      conditions.push(sql`(
+        (plainto_tsquery('english', ${query})::text != '' AND ${syllabinds.searchVector} @@ plainto_tsquery('english', ${query}))
+        OR
+        (plainto_tsquery('english', ${query})::text = '' AND (${syllabinds.title} ILIKE ${'%' + query + '%'} OR ${syllabinds.description} ILIKE ${'%' + query + '%'}))
+      )`);
     }
 
     const whereClause = sql.join(conditions, sql` AND `);
