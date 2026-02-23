@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
-import { BookOpen, User, LogOut, Menu, X, Bug, Settings } from 'lucide-react';
+import { BookOpen, User, LogOut, Menu, X, Bug, Settings, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -115,6 +115,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       <User className="h-4 w-4" />
                       <span className="font-medium">Edit Profile</span>
                     </button>
+                    <button
+                      onClick={() => handleMobileNavClick("/settings")}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
+                        location === "/settings" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                      )}
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span className="font-medium">Account Settings</span>
+                    </button>
+                    <button
+                      onClick={() => handleMobileNavClick("/billing")}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
+                        location === "/billing" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                      )}
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      <span className="font-medium">Billing</span>
+                    </button>
                   </nav>
                 </SheetContent>
               </Sheet>
@@ -181,6 +201,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     <DropdownMenuItem className="cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
                       <span>Edit Profile</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link href="/settings">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Account Settings</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link href="/billing">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      <span>Billing</span>
                     </DropdownMenuItem>
                   </Link>
                   {user.isAdmin && (

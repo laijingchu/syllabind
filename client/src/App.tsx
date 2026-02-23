@@ -23,6 +23,8 @@ import Marketing from "@/pages/Marketing";
 import Login from "@/pages/Login";
 import Profile from "@/pages/Profile";
 import AdminSettings from "@/pages/AdminSettings";
+import Settings from "@/pages/Settings";
+import Billing from "@/pages/Billing";
 
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
@@ -73,6 +75,8 @@ function Router() {
         <Route path="/creator/syllabind/:id/learners" component={() => <ProtectedRoute component={SyllabindLearners} />} />
         <Route path="/creator/syllabind/:id/analytics" component={() => <ProtectedRoute component={SyllabindAnalytics} />} />
         <Route path="/creator/profile" component={() => <ProtectedRoute component={CreatorProfile} />} />
+        <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
+        <Route path="/billing" component={() => <ProtectedRoute component={Billing} />} />
         <Route path="/admin/settings" component={() => <ProtectedRoute component={AdminSettings} />} />
 
         <Route component={NotFound} />

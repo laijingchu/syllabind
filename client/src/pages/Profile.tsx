@@ -19,10 +19,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
-import { ArrowLeft, Loader2, Crown } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { redirectToCheckout, redirectToPortal } from '@/lib/stripe';
-import { Badge } from '@/components/ui/badge';
 
 const profileSchema = z.object({
   name: z.string().min(2, {
@@ -43,22 +41,9 @@ const profileSchema = z.object({
 });
 
 export default function Profile() {
-  const { user, updateUser, isPro, refreshSubscriptionLimits } = useStore();
+  const { user, updateUser } = useStore();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
-  const [portalLoading, setPortalLoading] = useState(false);
-  // Handle ?subscription=success query param
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('subscription') === 'success') {
-      toast({ title: 'Welcome to Syllabind Pro!', description: 'Your subscription is now active.' });
-      refreshSubscriptionLimits();
-      // Clean up URL
-      const url = new URL(window.location.href);
-      url.searchParams.delete('subscription');
-      window.history.replaceState({}, '', url.pathname + url.search);
-    }
-  }, []);
 
   // Scroll to hash anchor (e.g. #scheduling) on mount
   useEffect(() => {
@@ -308,52 +293,6 @@ export default function Profile() {
           </div>
         </form>
       </Form>
-
-      {/* Subscription Card */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Crown className="h-5 w-5" />
-              Subscription
-            </CardTitle>
-            {isPro && <Badge className="bg-primary text-primary-foreground">Pro</Badge>}
-          </div>
-          <CardDescription>
-            {isPro
-              ? 'You have Syllabind Pro access.'
-              : 'Upgrade to Syllabind Pro for unlimited creation and enrollment.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isPro ? (
-            <Button
-              variant="outline"
-              onClick={async () => {
-                setPortalLoading(true);
-                try { await redirectToPortal(); } catch (e) { setPortalLoading(false); toast({ title: 'Unable to open billing portal', description: e instanceof Error ? e.message : 'Please try again later.', variant: 'destructive' }); }
-              }}
-              disabled={portalLoading}
-            >
-              {portalLoading ? 'Redirecting...' : 'Manage Billing'}
-            </Button>
-          ) : (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                <strong>$9.99 one-time</strong> — Unlimited syllabinds, enroll in any course, full progress tracking.
-              </p>
-              <Button
-                onClick={async () => {
-                  try { await redirectToCheckout('/profile'); } catch (e) { toast({ title: 'Unable to start checkout', description: e instanceof Error ? e.message : 'Please try again later.', variant: 'destructive' }); }
-                }}
-              >
-                <Crown className="mr-2 h-4 w-4" />
-                Upgrade to Pro
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
     </div>
   );
