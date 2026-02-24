@@ -467,7 +467,7 @@ These pages are accessible without authentication, allowing visitors to learn ab
 
 | Route | Component | Purpose |
 |-------|-----------|---------|
-| `/welcome` | `Marketing.tsx` | Landing page with signup CTA |
+| `/welcome` | `Marketing.tsx` | Landing page with hero + real syllabind card showcase |
 | `/login` | `Login.tsx` | Authentication entry (signup/login modes) |
 | `/catalog` | `Catalog.tsx` | Browse all published syllabinds |
 | `/syllabind/:id` | `SyllabindOverview.tsx` | Syllabind detail with week breakdown |
@@ -2293,3 +2293,15 @@ Moved the Subscription card from Profile page to a dedicated Billing page, acces
 - Removed subscription card, related imports (`Crown`, `Badge`, `redirectToCheckout`, `redirectToPortal`), and `?subscription=success` handler from `client/src/pages/Profile.tsx`
 - Added `/billing` route in `client/src/App.tsx`
 - Added Billing link (CreditCard icon) in profile dropdown and mobile menu in `client/src/components/Layout.tsx`
+
+### Marketing Page — Single Page Decision (2026-02-24)
+
+The marketing page (`Marketing.tsx`) has 8 sections: Hero, Two Pathways, Build Your Own (card showcase), Expert-Curated (card showcase), Plans & Pricing, Comparison Chart, About, and FAQ. Evaluated whether to split into multiple pages.
+
+**Decision: Keep as single page.** The content follows a standard landing page narrative that would break across separate routes. Content is concise (placeholder pricing, 5 FAQs, 2-paragraph about), and fewer routes means fewer conversion drop-off points.
+
+**Revisit when:**
+- Pricing needs real tiers, feature matrix, or enterprise plans → own page
+- FAQ grows past ~10-15 questions → own page
+- About adds team bios, press, or mission statement → own page
+- Creator and Learner audiences need separate funnels → separate landing pages
