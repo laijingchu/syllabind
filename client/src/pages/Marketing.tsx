@@ -1,25 +1,49 @@
 import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowRight, BookOpen, CheckCircle, Clock, ExternalLink, Zap } from 'lucide-react';
+import { ExternalLink, ArrowRight, Plus, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { SyllabindCard } from '@/components/SyllabindCard';
+import type { Syllabus } from '@/lib/types';
+
+// Responsive two-row visibility for 1/2/3-column grid
+// Mobile (1 col): show 2, md (2 cols): show 4, lg (3 cols): show 6
+function twoRowClass(index: number): string {
+  if (index < 2) return '';
+  if (index < 4) return 'hidden md:block';
+  return 'hidden lg:block';
+}
 
 export default function Marketing() {
   const [, setLocation] = useLocation();
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState('learner');
-  const [submitted, setSubmitted] = useState(false);
 
-  // Fetch waitlist form URL from site settings
+  // Fetch site settings
   const [waitlistUrl, setWaitlistUrl] = useState<string | null>(null);
+  const [getPaidToTeachUrl, setGetPaidToTeachUrl] = useState<string | null>(null);
   useEffect(() => {
     fetch('/api/site-settings/waitlist_form_url')
       .then(res => res.json())
       .then(data => setWaitlistUrl(data.value || null))
+      .catch(() => {});
+    fetch('/api/site-settings/get_paid_to_teach_url')
+      .then(res => res.json())
+      .then(data => setGetPaidToTeachUrl(data.value || null))
+      .catch(() => {});
+  }, []);
+
+  // Fetch syllabinds for showcase sections
+  const [buildCards, setBuildCards] = useState<Syllabus[]>([]);
+  const [curatedCards, setCuratedCards] = useState<Syllabus[]>([]);
+  useEffect(() => {
+    // Section 1: unlisted syllabinds from admin account
+    fetch('/api/syllabinds?catalog=true&visibility=unlisted&creator=@admin&sort=newest&limit=6')
+      .then(res => res.json())
+      .then(data => setBuildCards((data.syllabinds || []).slice(0, 6)))
+      .catch(() => {});
+    // Section 2: public syllabinds from all creators
+    fetch('/api/syllabinds?catalog=true&visibility=public&sort=newest&limit=6')
+      .then(res => res.json())
+      .then(data => setCuratedCards((data.syllabinds || []).slice(0, 6)))
       .catch(() => {});
   }, []);
 
@@ -31,302 +55,330 @@ export default function Marketing() {
     }
   };
 
-  const handleQuickSignup = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) {
-      setSubmitted(true);
+  const handleGetPaidToTeachClick = () => {
+    if (getPaidToTeachUrl) {
+      window.open(getPaidToTeachUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-24 pb-20 pt-8">
-      {/* Alpha Banner */}
-      <div className="bg-primary/0 border border-primary/20 text-primary p-3 rounded-full text-center text-sm font-medium animate-in fade-in slide-in-from-top-4 mt-[0px] mb-[0px]">
-        <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mr-2">Alpha</span>
-        Syllabind is in private alpha. Join the waitlist to get early access.
-      </div>
+    <div className="max-w-6xl mx-auto space-y-24 md:space-y-32 pb-12 md:pb-20 pt-4 md:pt-8 px-4 md:px-6">
       {/* A. Hero */}
       <section className="text-center space-y-8 py-12 md:py-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="space-y-4 max-w-3xl mx-auto">
-          <h1 className="text-5xl md:text-7xl font-display font-medium tracking-tight text-foreground">
+          <h1 className="text-4xl md:text-7xl font-display font-medium tracking-tight text-foreground">
             Syllabind<span className="text-primary">.</span>
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground font-display italic">Stay on top of chaos with one calm syllabus at a time.</p>
+          <p className="text-xl md:text-2xl text-muted-foreground font-display">Make knowledge accessible; excellence recognizable.</p>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Turn expert listicles into four-week learning journeys you can actually finish.
+            Goodbye: scattered bookmarks, tutorial hells, commoditized bootcamps. <br className="hidden md:block" /> Hello: pluralistic perspectives, community and guidance, impactful projects.
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-           <Button size="lg" className="h-12 px-8 text-lg rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all bg-black text-white hover:bg-neutral-800 border-none" onClick={handleWaitlistClick}>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+           <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-lg rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all bg-black text-white hover:bg-neutral-800 border-none" onClick={handleWaitlistClick}>
              Join waitlist
              {waitlistUrl && <ExternalLink className="ml-2 h-4 w-4" />}
            </Button>
-           <Link href="/catalog">
-             <Button variant="outline" size="lg" className="h-12 px-8 text-lg rounded-full border-primary/20 hover:border-primary/50 text-primary">
-               See a sample Syllabind
+           {getPaidToTeachUrl && (
+             <Button variant="outline" size="lg" className="w-full sm:w-auto h-12 px-8 text-lg rounded-full border-primary/20 hover:border-primary/50 text-primary" onClick={handleGetPaidToTeachClick}>
+               💰 Get paid to teach
              </Button>
-           </Link>
-        </div>
-
-        {/* Hero Visual */}
-        <div className="relative mt-12 mx-auto max-w-4xl rounded-xl border bg-card shadow-2xl overflow-hidden aspect-[16/9] group text-left">
-          <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent z-10 pointer-events-none" />
-           
-           <div className="flex h-full">
-              {/* Sidebar Mock */}
-              <div className="w-1/3 bg-secondary/20 border-r p-6 space-y-6 hidden sm:block">
-                 <div className="space-y-2">
-                    <div className="h-2 w-20 bg-muted rounded-full" />
-                    <div className="h-6 w-32 bg-primary/20 rounded-md" />
-                 </div>
-                 <div className="space-y-3 pt-4">
-                    <div className="flex items-center gap-3 p-2 bg-background rounded-md border shadow-sm">
-                       <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">1</div>
-                       <div className="text-xs font-medium">Foundations</div>
-                    </div>
-                    <div className="flex items-center gap-3 p-2 opacity-50">
-                       <div className="h-5 w-5 rounded-full border border-muted flex items-center justify-center text-[10px]">2</div>
-                       <div className="text-xs font-medium">Tools & Setup</div>
-                    </div>
-                    <div className="flex items-center gap-3 p-2 opacity-50">
-                       <div className="h-5 w-5 rounded-full border border-muted flex items-center justify-center text-[10px]">3</div>
-                       <div className="text-xs font-medium">Deep Dive</div>
-                    </div>
-                 </div>
-              </div>
-
-              {/* Main Content Mock */}
-              <div className="flex-1 p-6 md:p-8 space-y-6 bg-card">
-                 <div className="space-y-2">
-                    <div className="text-xs font-semibold text-primary uppercase tracking-wider">Week 1</div>
-                    <h3 className="text-2xl font-display">The Philosophy of Less</h3>
-                    <div className="h-1 w-full bg-muted overflow-hidden rounded-full">
-                       <div className="h-full w-1/3 bg-primary" />
-                    </div>
-                 </div>
-
-                 <div className="space-y-4">
-                    {/* Step 1 */}
-                    <div className="flex gap-4 p-4 border rounded-lg bg-background shadow-sm">
-                       <div className="h-5 w-5 rounded border-2 border-primary bg-primary text-primary-foreground flex items-center justify-center">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="20 6 9 17 4 12" /></svg>
-                       </div>
-                       <div>
-                          <div className="text-sm font-medium line-through text-muted-foreground">Reading: Why We Are Distracted</div>
-                          <div className="text-xs text-muted-foreground mt-1">15 min read • James Williams</div>
-                       </div>
-                    </div>
-
-                    {/* Step 2 */}
-                    <div className="flex gap-4 p-4 border rounded-lg bg-background shadow-sm">
-                       <div className="h-5 w-5 rounded border-2 border-muted" />
-                       <div>
-                          <div className="text-sm font-medium">Exercise: Audit Your Screen Time</div>
-                          <div className="text-xs text-muted-foreground mt-1">Check your stats and write down top 3 apps.</div>
-                       </div>
-                    </div>
-                 </div>
-              </div>
-           </div>
+           )}
         </div>
       </section>
-      {/* B. "Why" Section */}
-      <section className="max-w-3xl mx-auto text-center space-y-6">
-        <h2 className="text-3xl md:text-4xl font-display">The internet made learning infinite.<br/>It also made it unbearable.</h2>
-        <p className="text-lg text-muted-foreground leading-relaxed">
-          Feeds full of "ultimate guides" and threads. Saving hundreds of links but finishing none. 
-          The constant anxiety of being behind. We replaced the joy of learning with the stress of collecting.
-        </p>
-      </section>
-      {/* C. "What is Syllabind" Section */}
-      <section className="grid md:grid-cols-3 gap-8">
-        <Card className="bg-secondary/30 border-transparent hover:bg-secondary/50 transition-colors">
-          <CardHeader>
-            <Clock className="h-8 w-8 text-primary mb-2" />
-            <CardTitle className="font-display">One at a time</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">No juggling five courses. Commit to one path this month and actually finish it.</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-secondary/30 border-transparent hover:bg-secondary/50 transition-colors">
-          <CardHeader>
-            <BookOpen className="h-8 w-8 text-primary mb-2" />
-            <CardTitle className="font-display">4-Week Structure</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Finite, finishable journeys. Clear weekly plans that fit into your busy life.</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-secondary/30 border-transparent hover:bg-secondary/50 transition-colors">
-          <CardHeader>
-            <Zap className="h-8 w-8 text-primary mb-2" />
-            <CardTitle className="font-display">Active Learning</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Don't just read. Respond to prompts, complete exercises, and build meaningful, fun projects.</p>
-          </CardContent>
-        </Card>
-      </section>
-      {/* D. Calm Learning Principles */}
-      <section className="max-w-4xl mx-auto space-y-12">
+
+      {/* Two Pathways */}
+      <section className="pathways-section space-y-8 md:space-y-12">
         <div className="text-center space-y-4">
-          <h2 className="text-3xl font-display">Calm Learning Principles</h2>
-          <p className="text-muted-foreground text-lg">We designed Syllabind to be the antidote to information overload.</p>
-        </div>
-        
-        <div className="grid md:grid-cols-2 gap-x-12 gap-y-10">
-           {[
-             { title: "One syllabus at a time", desc: "Each learner can have only one active Syllabind. Finish it before you start another." },
-             { title: "Four weeks max", desc: "Long enough to go deep, short enough to actually finish. No endless courses." },
-             { title: "Weekly time caps", desc: "Respect your time. ~2h reading + ~2h exercises per week. Quality over quantity." },
-             { title: "No previewing ahead", desc: "Stay present. Future weeks unlock only when you reach them." },
-             { title: "Active > Passive", desc: "Don't just consume. Every few readings includes a prompt to apply what you learned." },
-             { title: "Trackable completion", desc: "A clear finish line. Earn your badge when all steps and submissions are done." }
-           ].map((item, i) => (
-             <div key={i} className="flex gap-4">
-               <div className="h-8 w-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-display font-medium shrink-0">
-                 {i + 1}
-               </div>
-               <div>
-                 <h3 className="font-medium text-lg mb-1">{item.title}</h3>
-                 <p className="text-muted-foreground leading-relaxed">{item.desc}</p>
-               </div>
-             </div>
-           ))}
-        </div>
-      </section>
-      {/* E. Split Section */}
-      <section className="grid md:grid-cols-2 gap-12 items-center bg-card rounded-2xl border p-8 md:p-12 shadow-sm">
-        <div className="space-y-6">
-          <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80">
-            Learners
-          </div>
-          <h3 className="text-3xl font-display">For overwhelmed professionals</h3>
-          <ul className="space-y-3">
-            {[
-              "Choose one structured syllabus instead of bookmarking 20 threads.",
-              "See exactly what to do this week, not the whole mountain.",
-              "Keep all your notes and submissions in one place."
-            ].map((item, i) => (
-              <li key={i} className="flex gap-3 items-start">
-                <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <span className="text-muted-foreground">{item}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="pt-2">
-            <Button size="lg" className="w-full sm:w-auto" onClick={handleWaitlistClick}>
-              Join waitlist
-              {waitlistUrl && <ExternalLink className="ml-2 h-4 w-4" />}
-            </Button>
-          </div>
-        </div>
-        <div className="space-y-6 border-t md:border-t-0 md:border-l border-border pt-8 md:pt-0 md:pl-12">
-           <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
-            Thought Leaders
-          </div>
-          <h3 className="text-3xl font-display">For those who want to teach</h3>
-          <ul className="space-y-3">
-            {[
-              "Dock your existing posts, videos, and resources into a linear syllabus.",
-              "Add context and prompts so learners take action.",
-              "See simple analytics: starts, completions, and drop-off."
-            ].map((item, i) => (
-              <li key={i} className="flex gap-3 items-start">
-                <CheckCircle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                <span className="text-muted-foreground">{item}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="pt-2">
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="w-full sm:w-auto"
-              onClick={() => {
-                document.getElementById('curate')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
-              Apply to curate
-            </Button>
-          </div>
-        </div>
-      </section>
-      {/* F. Testimonials */}
-      <section className="space-y-12">
-        <h2 className="text-3xl font-display text-center">What early learners say</h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            { quote: "Finally, I finished a course on AI instead of just bookmarking 50 threads about it.", author: "Sarah J.", role: "Product Manager" },
-            { quote: "The 'one at a time' rule is genius. It forced me to focus and actually do the work.", author: "David K.", role: "Developer" },
-            { quote: "I love that I can't jump ahead. It makes me enjoy the current week's readings more.", author: "Elena R.", role: "Designer" }
-          ].map((t, i) => (
-            <Card key={i} className="bg-muted/30 border-none shadow-none">
-              <CardContent className="pt-6 space-y-4">
-                <div className="text-primary text-4xl font-display leading-none opacity-20">"</div>
-                <p className="text-lg italic text-muted-foreground relative z-10 -mt-4 mb-4">
-                   {t.quote}
-                </p>
-                <div className="flex items-center gap-3 pt-4 border-t border-border/50">
-                   <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-                      {t.author.charAt(0)}
-                   </div>
-                   <div>
-                      <div className="font-medium text-sm">{t.author}</div>
-                      <div className="text-xs text-muted-foreground">{t.role}</div>
-                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-      {/* G. Curate Application */}
-      <section id="curate" className="max-w-xl mx-auto text-center space-y-8 bg-primary/5 rounded-3xl p-8 md:p-12">
-        <div className="space-y-4">
-          <h2 className="text-3xl font-display">Apply to Curate</h2>
-          <p className="text-muted-foreground">
-            We are looking for thoughtful curators to build high-quality, finishable learning paths. Tell us about the syllabus you want to bind.
+          <h2 className="text-3xl md:text-4xl font-display">Two ways to learn</h2>
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
+            Whether you want to chart your own course or learn from the best, Syllabind has a path for you.
           </p>
         </div>
 
-        {submitted ? (
-          <div className="bg-background p-6 rounded-lg border shadow-sm animate-in zoom-in duration-300">
-            <CheckCircle className="h-12 w-12 text-primary mx-auto mb-4" />
-            <h3 className="text-xl font-medium mb-2">Application Received</h3>
-            <p className="text-muted-foreground">Thanks for your interest in curating. We’ll review your application and be in touch soon.</p>
-            <Button className="mt-6" variant="outline" onClick={() => setSubmitted(false)}>Send another application</Button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {/* Self-directed */}
+          <div className="rounded-2xl border bg-card p-6 md:p-8 space-y-4">
+            <div className="text-3xl">🧭</div>
+            <h3 className="text-xl md:text-2xl font-display font-medium">Self-directed</h3>
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              Build your own Syllabind with AI curatorial assistance. Our tools generate a content arc and find meaningful resources online — then you edit, refine, and make it yours. It's the teach-you-how-to-fish method.
+            </p>
+            <ul className="space-y-2 pt-2">
+              {['AI-assisted content curation', 'Edit and refine your learning path', 'Learn by teaching yourself', 'Slack community & peer groups'].map(item => (
+                <li key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Check className="h-4 w-4 text-primary shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
-        ) : (
-          <form onSubmit={handleQuickSignup} className="space-y-6 text-left">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                required 
-                placeholder="you@example.com" 
-                className="bg-background"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-               <Label htmlFor="expertise">What is your area of expertise?</Label>
-               <Input id="expertise" placeholder="e.g. Behavioral Psychology, Sustainable Design..." className="bg-background" />
-            </div>
 
-            <div className="space-y-2">
-               <Label htmlFor="interest">Describe the syllabus you want to create</Label>
-               <Textarea id="interest" placeholder="What are the key goals and resources?" className="bg-background h-32" />
-            </div>
+          {/* Expert-directed */}
+          <div className="rounded-2xl border bg-card p-6 md:p-8 space-y-4">
+            <div className="text-3xl">🎓</div>
+            <h3 className="text-xl md:text-2xl font-display font-medium">Expert-directed</h3>
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              Academics and industry experts share their knowledge beyond the limited confines of their institutions — for fair pay. Access world-class guidance without the time or financial commitment of a full degree program.
+            </p>
+            <ul className="space-y-2 pt-2">
+              {['Curated by real academics and practitioners', 'Accessible without a degree program', 'Fair compensation for experts', 'Slack community & peer groups'].map(item => (
+                <li key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Check className="h-4 w-4 text-primary shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
 
-            <Button type="submit" size="lg" className="w-full bg-black text-white hover:bg-neutral-800">Submit Application</Button>
-          </form>
-        )}
+      {/* Section 1: Build your own */}
+      {buildCards.length > 0 && (
+        <section className="build-showcase space-y-12">
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl md:text-4xl font-display">Build your own Syllabind</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              See what others have created. Then build your own learning path.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {buildCards.map((syllabus, index) => (
+              <motion.div
+                key={syllabus.id}
+                className={twoRowClass(index)}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.4, delay: (index % 3) * 0.15, ease: 'easeOut' }}
+              >
+                <SyllabindCard syllabus={syllabus} />
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-lg rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all bg-black text-white hover:bg-neutral-800 border-none" onClick={handleWaitlistClick}>
+              <Plus className="mr-2 h-5 w-5" />
+              Create your own
+            </Button>
+            <Link href="/catalog" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 h-12 px-8 text-lg rounded-full">
+                Browse all syllabinds
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {/* Section 2: Expert-curated */}
+      {curatedCards.length > 0 && (
+        <section className="curated-showcase space-y-12">
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl md:text-4xl font-display">Expert-curated content</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Structured learning paths from experienced creators and thought leaders.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {curatedCards.map((syllabus, index) => (
+              <motion.div
+                key={syllabus.id}
+                className={twoRowClass(index)}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.4, delay: (index % 3) * 0.15, ease: 'easeOut' }}
+              >
+                <SyllabindCard syllabus={syllabus} />
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            {getPaidToTeachUrl && (
+              <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-lg rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all bg-black text-white hover:bg-neutral-800 border-none" onClick={handleGetPaidToTeachClick}>
+                💰 Get paid to teach
+              </Button>
+            )}
+            <Link href="/catalog" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 h-12 px-8 text-lg rounded-full">
+                Browse all syllabinds
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </section>
+      )}
+      {/* About */}
+      <section className="about-section space-y-6 max-w-3xl mx-auto text-center">
+        <h2 className="text-3xl md:text-4xl font-display">Why we built Syllabind</h2>
+        <div className="space-y-4 text-base md:text-lg text-muted-foreground leading-relaxed">
+          <p>
+            The internet made learning infinite — and overwhelming. We save hundreds of links but finish none. We juggle five courses and complete zero. The joy of learning got buried under the stress of collecting.
+          </p>
+          <p>
+            Syllabind is the antidote: short, structured, finishable learning paths curated by people who care. One syllabind at a time. Four weeks max. Real exercises, real progress, real completion.
+          </p>
+        </div>
+      </section>
+
+      {/* Comparison Chart */}
+      <section className="comparison-section space-y-8 md:space-y-12">
+        <div className="text-center space-y-4">
+          <h2 className="text-3xl md:text-4xl font-display">The Syllabind vision</h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Not another course platform. Here's how we're different.
+          </p>
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left py-4 pr-4 font-medium text-muted-foreground w-1/4" />
+                <th className="py-4 px-4 font-display font-medium text-lg">Syllabind</th>
+                <th className="py-4 px-4 font-medium text-muted-foreground">Degree programs</th>
+                <th className="py-4 px-4 font-medium text-muted-foreground">Bootcamps</th>
+                <th className="py-4 px-4 font-medium text-muted-foreground">Online courses</th>
+                <th className="py-4 px-4 font-medium text-muted-foreground">YouTube / blogs</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {[
+                { feature: 'Structured path', syllabind: true, degree: true, bootcamps: true, courses: true, free: false },
+                { feature: 'Finishable (1-4 weeks)', syllabind: true, degree: false, bootcamps: false, courses: false, free: false },
+                { feature: 'Curated by experts', syllabind: true, degree: true, bootcamps: true, courses: true, free: false },
+                { feature: 'Active exercises', syllabind: true, degree: true, bootcamps: true, courses: true, free: false },
+                { feature: 'Free to start', syllabind: true, degree: false, bootcamps: false, courses: false, free: true },
+                { feature: 'No video lectures', syllabind: true, degree: false, bootcamps: false, courses: false, free: false },
+                { feature: 'Open web resources', syllabind: true, degree: false, bootcamps: false, courses: false, free: true },
+                { feature: 'Creator-friendly', syllabind: true, degree: false, bootcamps: false, courses: false, free: true },
+              ].map(({ feature, syllabind, degree, bootcamps, courses, free }) => (
+                <tr key={feature}>
+                  <td className="py-3 pr-4 font-medium">{feature}</td>
+                  <td className="py-3 px-4 text-center">{syllabind ? <Check className="h-4 w-4 text-primary mx-auto" /> : <span className="text-muted-foreground">—</span>}</td>
+                  <td className="py-3 px-4 text-center">{degree ? <Check className="h-4 w-4 text-muted-foreground mx-auto" /> : <span className="text-muted-foreground">—</span>}</td>
+                  <td className="py-3 px-4 text-center">{bootcamps ? <Check className="h-4 w-4 text-muted-foreground mx-auto" /> : <span className="text-muted-foreground">—</span>}</td>
+                  <td className="py-3 px-4 text-center">{courses ? <Check className="h-4 w-4 text-muted-foreground mx-auto" /> : <span className="text-muted-foreground">—</span>}</td>
+                  <td className="py-3 px-4 text-center">{free ? <Check className="h-4 w-4 text-muted-foreground mx-auto" /> : <span className="text-muted-foreground">—</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile cards */}
+        <div className="md:hidden space-y-4">
+          {[
+            { name: 'Syllabind', highlight: true, features: ['Structured path', 'Finishable (1-4 weeks)', 'Curated by experts', 'Active exercises', 'Free to start', 'No video lectures', 'Open web resources', 'Creator-friendly'] },
+            { name: 'Degree programs', highlight: false, features: ['Structured path', 'Curated by experts', 'Active exercises'] },
+            { name: 'Bootcamps', highlight: false, features: ['Structured path', 'Curated by experts', 'Active exercises'] },
+            { name: 'Online courses', highlight: false, features: ['Structured path', 'Curated by experts', 'Active exercises'] },
+            { name: 'YouTube / blogs', highlight: false, features: ['Free to start', 'Open web resources', 'Creator-friendly'] },
+          ].map(({ name, highlight, features }) => (
+            <div key={name} className={`rounded-xl border p-5 space-y-3 ${highlight ? 'border-primary border-2' : ''}`}>
+              <h3 className={`font-display font-medium ${highlight ? 'text-lg' : 'text-base text-muted-foreground'}`}>{name}</h3>
+              <ul className="space-y-1.5">
+                {features.map(f => (
+                  <li key={f} className="flex items-center gap-2 text-sm">
+                    <Check className={`h-3.5 w-3.5 shrink-0 ${highlight ? 'text-primary' : 'text-muted-foreground'}`} />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Plans & Pricing */}
+      <section className="pricing-section space-y-12">
+        <div className="text-center space-y-4">
+          <h2 className="text-3xl md:text-4xl font-display">Plans & Pricing</h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Start for free. Upgrade when you're ready.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+          {/* Free */}
+          <div className="rounded-2xl border bg-card p-8 space-y-6">
+            <div>
+              <h3 className="text-2xl font-display font-medium">Free</h3>
+              <p className="text-muted-foreground mt-1">For learners getting started</p>
+            </div>
+            <div className="text-4xl font-display font-medium">
+              $0<span className="text-lg text-muted-foreground font-normal">/mo</span>
+            </div>
+            <ul className="space-y-3">
+              {['Enroll in syllabinds', 'Track your progress', 'Submit exercises'].map(item => (
+                <li key={item} className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-muted-foreground shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <Button variant="outline" size="lg" className="w-full rounded-full" onClick={handleWaitlistClick}>
+              Get started
+            </Button>
+          </div>
+
+          {/* Pro */}
+          <div className="rounded-2xl border-2 border-primary bg-card p-8 space-y-6 relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">Coming soon</span>
+            </div>
+            <div>
+              <h3 className="text-2xl font-display font-medium">Pro</h3>
+              <p className="text-muted-foreground mt-1">For creators and power learners</p>
+            </div>
+            <div className="text-4xl font-display font-medium">
+              TBD<span className="text-lg text-muted-foreground font-normal">/mo</span>
+            </div>
+            <ul className="space-y-3">
+              {['Everything in Free', 'Create unlimited syllabinds', 'Analytics & learner insights', 'Priority support'].map(item => (
+                <li key={item} className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-primary shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <Button size="lg" className="w-full rounded-full bg-black text-white hover:bg-neutral-800 border-none" onClick={handleWaitlistClick}>
+              Join waitlist
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="faq-section space-y-12 max-w-3xl mx-auto">
+        <div className="text-center space-y-4">
+          <h2 className="text-3xl md:text-4xl font-display">Frequently Asked Questions</h2>
+        </div>
+
+        <div className="divide-y">
+          {[
+            { q: 'What is a Syllabind?', a: 'A Syllabind is a curated, multi-week learning path with readings and exercises. Think of it as a college syllabus you can actually finish.' },
+            { q: 'Is Syllabind free?', a: 'Yes — learners can enroll in syllabinds, track progress, and submit exercises for free. A Pro plan for creators is coming soon.' },
+            { q: 'How long does a Syllabind take?', a: 'Most syllabinds are 1 to 4 weeks, designed for roughly 2-4 hours per week. Short enough to finish, long enough to go deep.' },
+            { q: 'Can I create my own Syllabind?', a: 'Absolutely. Sign up, switch to creator mode, and start building. You can curate readings from anywhere on the web and add your own exercises.' },
+            { q: 'How do creators get paid?', a: 'We are still finalizing creator compensation. Join the waitlist or reach out to learn more.' },
+          ].map(({ q, a }) => (
+            <details key={q} className="group py-5">
+              <summary className="flex items-center justify-between cursor-pointer list-none text-lg font-medium">
+                {q}
+                <Plus className="h-5 w-5 text-muted-foreground shrink-0 transition-transform group-open:rotate-45" />
+              </summary>
+              <p className="mt-3 text-muted-foreground leading-relaxed">{a}</p>
+            </details>
+          ))}
+        </div>
       </section>
     </div>
   );
