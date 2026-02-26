@@ -17,12 +17,14 @@ export default function AdminSettings() {
   const [bugReportUrl, setBugReportUrl] = useState('');
   const [termsUrl, setTermsUrl] = useState('');
   const [privacyUrl, setPrivacyUrl] = useState('');
+  const [getPaidToTeachUrl, setGetPaidToTeachUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [waitlistSaving, setWaitlistSaving] = useState(false);
   const [bugReportSaving, setBugReportSaving] = useState(false);
   const [termsSaving, setTermsSaving] = useState(false);
   const [privacySaving, setPrivacySaving] = useState(false);
+  const [getPaidToTeachSaving, setGetPaidToTeachSaving] = useState(false);
 
   // Redirect non-admin users
   useEffect(() => {
@@ -39,13 +41,15 @@ export default function AdminSettings() {
       fetch('/api/site-settings/bug_report_url').then(r => r.json()),
       fetch('/api/site-settings/terms_of_service_url').then(r => r.json()),
       fetch('/api/site-settings/privacy_policy_url').then(r => r.json()),
+      fetch('/api/site-settings/get_paid_to_teach_url').then(r => r.json()),
     ])
-      .then(([slackData, waitlistData, bugReportData, termsData, privacyData]) => {
+      .then(([slackData, waitlistData, bugReportData, termsData, privacyData, getPaidToTeachData]) => {
         setSlackUrl(slackData.value || '');
         setWaitlistUrl(waitlistData.value || '');
         setBugReportUrl(bugReportData.value || '');
         setTermsUrl(termsData.value || '');
         setPrivacyUrl(privacyData.value || '');
+        setGetPaidToTeachUrl(getPaidToTeachData.value || '');
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -141,6 +145,24 @@ export default function AdminSettings() {
     }
   };
 
+  const handleGetPaidToTeachSave = async () => {
+    setGetPaidToTeachSaving(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ key: 'get_paid_to_teach_url', value: getPaidToTeachUrl }),
+      });
+      if (!res.ok) throw new Error('Failed to save');
+      toast({ title: 'Settings saved', description: 'Get Paid to Teach URL has been updated.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
+    } finally {
+      setGetPaidToTeachSaving(false);
+    }
+  };
+
   if (!user?.isAdmin) return null;
 
   return (
@@ -209,6 +231,36 @@ export default function AdminSettings() {
               />
               <Button onClick={handleWaitlistSave} disabled={waitlistSaving}>
                 {waitlistSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Get Paid to Teach URL</CardTitle>
+          <CardDescription>
+            URL for the "Get paid to teach" button on the Marketing page hero section.
+            Leave empty to scroll to the Apply to Curate section instead.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading...
+            </div>
+          ) : (
+            <>
+              <Input
+                placeholder="https://example.com/teach"
+                value={getPaidToTeachUrl}
+                onChange={(e) => setGetPaidToTeachUrl(e.target.value)}
+              />
+              <Button onClick={handleGetPaidToTeachSave} disabled={getPaidToTeachSaving}>
+                {getPaidToTeachSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save
               </Button>
             </>

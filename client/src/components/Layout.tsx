@@ -28,6 +28,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [bugReportUrl, setBugReportUrl] = useState<string | null>(null);
   const [termsUrl, setTermsUrl] = useState<string | null>(null);
   const [privacyUrl, setPrivacyUrl] = useState<string | null>(null);
+  const [getPaidToTeachUrl, setGetPaidToTeachUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -42,10 +43,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
     Promise.all([
       fetch('/api/site-settings/terms_of_service_url').then(r => r.json()),
       fetch('/api/site-settings/privacy_policy_url').then(r => r.json()),
+      fetch('/api/site-settings/get_paid_to_teach_url').then(r => r.json()),
     ])
-      .then(([termsData, privacyData]) => {
+      .then(([termsData, privacyData, teachData]) => {
         setTermsUrl(termsData.value || null);
         setPrivacyUrl(privacyData.value || null);
+        setGetPaidToTeachUrl(teachData.value || null);
       })
       .catch(() => {});
   }, []);
@@ -235,20 +238,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-4">
                 {location !== '/login' && (
                   <>
-                    <Button 
-                      variant="ghost"
-                      onClick={() => {
-                        const element = document.getElementById('curate');
-                        if (element) {
-                          element.scrollIntoView({ behavior: 'smooth' });
-                        } else {
-                          window.location.href = '/welcome#curate';
-                        }
-                      }}
-                      className="hidden md:inline-flex"
-                    >
-                      Apply to Curate
-                    </Button>
+                    {getPaidToTeachUrl && (
+                      <Button
+                        variant="ghost"
+                        onClick={() => window.open(getPaidToTeachUrl, '_blank', 'noopener,noreferrer')}
+                        className="hidden md:inline-flex"
+                      >
+                        💰 Get paid to teach
+                      </Button>
+                    )}
                     <Link href="/login?mode=signup">
                       <Button>Sign up / Log in</Button>
                     </Link>

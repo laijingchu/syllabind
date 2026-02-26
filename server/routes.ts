@@ -275,11 +275,26 @@ export async function registerRoutes(
     if (req.query.catalog === 'true') {
       const visibility = req.query.visibility as string | undefined;
       const allowedVisibilities = ['public', 'unlisted', 'private'];
+      // Resolve creator filter — "@admin" expands to ADMIN_USERNAMES
+      let creator: string[] | undefined;
+      if (req.query.creator) {
+        const raw = (req.query.creator as string).split(',').filter(Boolean);
+        creator = raw.flatMap(c => {
+          if (c === '@admin') {
+            const admins = (process.env.ADMIN_USERNAMES || '').split(',').map(u => u.trim()).filter(Boolean);
+            return admins;
+          }
+          return [c];
+        });
+        if (creator.length === 0) creator = undefined;
+      }
+
       const result = await storage.searchCatalog({
         query: req.query.q as string | undefined,
         category: req.query.category ? (req.query.category as string).split(',').filter(Boolean) : undefined,
         level: req.query.level as string | undefined,
         visibility: visibility && allowedVisibilities.includes(visibility) ? visibility : 'public',
+        creator,
         sort: (req.query.sort as any) || 'newest',
         limit: Math.min(parseInt(req.query.limit as string) || 20, 50),
         offset: parseInt(req.query.offset as string) || 0,

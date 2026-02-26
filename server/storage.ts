@@ -29,6 +29,7 @@ export interface CatalogSearchParams {
   category?: string | string[]; // category slug(s)
   level?: string; // audience level
   visibility?: string; // 'public' | 'unlisted' | 'private' (default: 'public')
+  creator?: string[]; // filter by creator username(s)
   sort?: 'newest' | 'popular' | 'relevance';
   limit?: number;
   offset?: number;
@@ -919,6 +920,7 @@ export class DatabaseStorage implements IStorage {
       category,
       level,
       visibility = 'public',
+      creator,
       sort = 'newest',
       limit: resultLimit = 20,
       offset: resultOffset = 0
@@ -937,6 +939,10 @@ export class DatabaseStorage implements IStorage {
 
     if (level) {
       conditions.push(sql`${syllabinds.audienceLevel} = ${level}`);
+    }
+
+    if (creator && creator.length > 0) {
+      conditions.push(sql`${syllabinds.creatorId} IN ${creator}`);
     }
 
     // Full-text search with ILIKE fallback for stop-word-only queries (e.g. "how to")

@@ -12,10 +12,19 @@ const httpServer = createServer(app);
 
 const isProduction = process.env.NODE_ENV === "production";
 
+// Health check endpoint — must respond before any redirects for deployment healthchecks
+app.get("/__healthz", (_req, res) => {
+  res.status(200).send("ok");
+});
+
 // HTTPS redirect — in production, redirect HTTP requests to HTTPS
 // Replit's reverse proxy sets X-Forwarded-Proto to indicate the original protocol
 if (isProduction) {
   app.use((req, res, next) => {
+    // Skip redirect for internal health checks (no x-forwarded-proto means direct connection)
+    if (!req.headers["x-forwarded-proto"]) {
+      return next();
+    }
     if (req.headers["x-forwarded-proto"] !== "https") {
       return res.redirect(301, `https://${req.hostname}${req.originalUrl}`);
     }
