@@ -141,7 +141,7 @@ export default function Catalog() {
       <AnimatedPage className="max-w-6xl mx-auto space-y-8">
         <div className="text-center max-w-2xl mx-auto space-y-4">
           <h1 className="text-4xl font-display text-foreground">Pick a binder</h1>
-          <p className="text-lg text-muted-foreground">Featured binders are handcrafted by experts and vetted for quality. </p>
+          <p className="text-lg text-muted-foreground">Handcrafted by experts, vetted for quality. </p>
         </div>
 
         <BinderFilterBar

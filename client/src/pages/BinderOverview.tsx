@@ -411,7 +411,7 @@ export default function BinderOverview() {
               <Share2 className="h-4 w-4 mr-2" />
               Share with a Friend
             </Button>
-            {slackUrl && (
+            {slackUrl && binder?.status === 'published' && (
               <Button variant="outline" onClick={handleJoinSlack} className="gap-2">
                 <Hash className="h-4 w-4" />
                 Join Slack Community
