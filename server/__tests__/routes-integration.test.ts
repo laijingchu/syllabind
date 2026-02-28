@@ -3,7 +3,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { registerRoutes } from '../routes';
 import { storage } from '../storage';
-import { resetAllMocks, mockUser, mockCurator, mockProUser } from './setup/mocks';
+import { resetAllMocks, mockUser, mockAdmin, mockCurator, mockProUser, mockProCurator } from './setup/mocks';
 
 // Cast storage to jest mocks for type convenience
 const mockStorage = storage as unknown as Record<string, jest.Mock>;
@@ -625,11 +625,23 @@ describe('Routes Integration (real registerRoutes)', () => {
         id: 1, curatorId: mockCurator.username,
         title: 'T', description: 'D', audienceLevel: 'Beginner', durationWeeks: 4
       });
+      mockStorage.getGenerationInfo.mockResolvedValue({ generationCount: 0, lastGeneratedAt: null });
       mockStorage.updateBinder.mockResolvedValue(undefined);
       const res = await request(authed).post('/api/generate-binder').send({ binderId: 1 });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.websocketUrl).toContain('/ws/generate-binder');
+    });
+
+    it('returns 403 when non-Pro user generates binder with > 4 weeks', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({
+        id: 1, curatorId: mockCurator.username,
+        title: 'T', description: 'D', audienceLevel: 'Beginner', durationWeeks: 6
+      });
+      const res = await request(authed).post('/api/generate-binder').send({ binderId: 1 });
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Pro subscription required for binders longer than 4 weeks');
     });
 
     it('returns 409 when generation already in progress', async () => {
@@ -639,6 +651,7 @@ describe('Routes Integration (real registerRoutes)', () => {
         title: 'T', description: 'D', audienceLevel: 'Beginner', durationWeeks: 4,
         status: 'generating'
       });
+      mockStorage.getGenerationInfo.mockResolvedValue({ generationCount: 0, lastGeneratedAt: null });
       const res = await request(authed).post('/api/generate-binder').send({ binderId: 1 });
       expect(res.status).toBe(409);
       expect(res.body.error).toBe('Generation already in progress');
@@ -646,16 +659,23 @@ describe('Routes Integration (real registerRoutes)', () => {
   });
 
   describe('POST /api/regenerate-week', () => {
-    it('returns 400 for invalid weekIndex', async () => {
+    it('returns 403 for non-Pro curator', async () => {
       const authed = await createAuthedApp(mockCurator);
+      const res = await request(authed).post('/api/regenerate-week').send({ binderId: 1, weekIndex: 1 });
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Pro subscription required for week regeneration');
+    });
+
+    it('returns 400 for invalid weekIndex', async () => {
+      const authed = await createAuthedApp(mockProCurator);
       const res = await request(authed).post('/api/regenerate-week').send({ binderId: 1, weekIndex: 0 });
       expect(res.status).toBe(400);
     });
 
     it('returns websocket URL for valid request', async () => {
-      const authed = await createAuthedApp(mockCurator);
+      const authed = await createAuthedApp(mockProCurator);
       mockStorage.getBinder.mockResolvedValue({
-        id: 1, curatorId: mockCurator.username, durationWeeks: 4
+        id: 1, curatorId: mockProCurator.username, durationWeeks: 4
       });
       const res = await request(authed).post('/api/regenerate-week').send({ binderId: 1, weekIndex: 2 });
       expect(res.status).toBe(200);
@@ -663,9 +683,9 @@ describe('Routes Integration (real registerRoutes)', () => {
     });
 
     it('returns 400 when weekIndex exceeds duration', async () => {
-      const authed = await createAuthedApp(mockCurator);
+      const authed = await createAuthedApp(mockProCurator);
       mockStorage.getBinder.mockResolvedValue({
-        id: 1, curatorId: mockCurator.username, durationWeeks: 2
+        id: 1, curatorId: mockProCurator.username, durationWeeks: 2
       });
       const res = await request(authed).post('/api/regenerate-week').send({ binderId: 1, weekIndex: 5 });
       expect(res.status).toBe(400);
@@ -679,6 +699,126 @@ describe('Routes Integration (real registerRoutes)', () => {
     it('returns 401 when not authenticated', async () => {
       const res = await request(app).post('/api/upload');
       expect(res.status).toBe(401);
+    });
+  });
+
+  // ========== DEMO BINDERS ==========
+
+  describe('GET /api/demo-binders', () => {
+    it('returns demo binders (public route)', async () => {
+      mockStorage.getDemoBinders.mockResolvedValue([
+        {
+          id: 1, title: 'Demo', description: 'A demo binder', audienceLevel: 'Beginner',
+          durationWeeks: 2, status: 'published', visibility: 'public', curatorId: 'admin',
+          isDemo: true, createdAt: new Date(), updatedAt: new Date(),
+          weeks: [{ id: 1, binderId: 1, index: 1, title: 'W1', description: 'D1', steps: [] }]
+        }
+      ]);
+      const res = await request(app).get('/api/demo-binders');
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0].title).toBe('Demo');
+    });
+
+    it('returns empty array when no demo binders', async () => {
+      mockStorage.getDemoBinders.mockResolvedValue([]);
+      const res = await request(app).get('/api/demo-binders');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+  });
+
+  // ========== GENERATION INFO ==========
+
+  describe('GET /api/generation-info', () => {
+    it('returns 401 when not authenticated', async () => {
+      const res = await request(app).get('/api/generation-info');
+      expect(res.status).toBe(401);
+    });
+
+    it('returns generation info for free user', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getGenerationInfo.mockResolvedValue({ generationCount: 1, lastGeneratedAt: null });
+      const res = await request(authed).get('/api/generation-info');
+      expect(res.status).toBe(200);
+      expect(res.body.generationCount).toBe(1);
+      expect(res.body.generationLimit).toBe(2);
+      expect(res.body.remaining).toBe(1);
+      expect(res.body.isPro).toBe(false);
+    });
+
+    it('returns unlimited for pro user', async () => {
+      const authed = await createAuthedApp(mockProCurator);
+      const res = await request(authed).get('/api/generation-info');
+      expect(res.status).toBe(200);
+      expect(res.body.isPro).toBe(true);
+      expect(res.body.generationLimit).toBeNull();
+    });
+  });
+
+  // ========== GENERATION GUARDS ==========
+
+  describe('POST /api/generate-binder (generation limits)', () => {
+    it('blocks free user who has used 2 generations', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({
+        id: 1, curatorId: mockCurator.username,
+        title: 'T', description: 'D', audienceLevel: 'Beginner', durationWeeks: 4
+      });
+      mockStorage.getGenerationInfo.mockResolvedValue({ generationCount: 2, lastGeneratedAt: null });
+      const res = await request(authed).post('/api/generate-binder').send({ binderId: 1 });
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('GENERATION_LIMIT_REACHED');
+    });
+
+    it('blocks free user within cooldown period', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({
+        id: 1, curatorId: mockCurator.username,
+        title: 'T', description: 'D', audienceLevel: 'Beginner', durationWeeks: 4
+      });
+      mockStorage.getGenerationInfo.mockResolvedValue({
+        generationCount: 1,
+        lastGeneratedAt: new Date() // Just now = within cooldown
+      });
+      const res = await request(authed).post('/api/generate-binder').send({ binderId: 1 });
+      expect(res.status).toBe(429);
+      expect(res.body.error).toBe('GENERATION_COOLDOWN');
+    });
+
+    it('rejects binder with > 6 weeks (hard cap)', async () => {
+      const authed = await createAuthedApp(mockProCurator);
+      mockStorage.getBinder.mockResolvedValue({
+        id: 1, curatorId: mockProCurator.username,
+        title: 'T', description: 'D', audienceLevel: 'Beginner', durationWeeks: 8
+      });
+      const res = await request(authed).post('/api/generate-binder').send({ binderId: 1 });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Maximum binder duration is 6 weeks');
+    });
+  });
+
+  // ========== IS_DEMO TOGGLE ==========
+
+  describe('PUT /api/binders/:id (isDemo)', () => {
+    it('allows admin to set isDemo', async () => {
+      const authed = await createAuthedApp({ ...mockAdmin, isCurator: true });
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockAdmin.username });
+      mockStorage.updateBinder.mockResolvedValue({ id: 1, isDemo: true });
+      const res = await request(authed).put('/api/binders/1').send({ isDemo: true });
+      expect(res.status).toBe(200);
+      // Admin's isDemo should pass through to updateBinder
+      expect(mockStorage.updateBinder).toHaveBeenCalledWith(1, expect.objectContaining({ isDemo: true }));
+    });
+
+    it('strips isDemo from non-admin updates', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username });
+      mockStorage.updateBinder.mockResolvedValue({ id: 1, title: 'X' });
+      const res = await request(authed).put('/api/binders/1').send({ title: 'X', isDemo: true });
+      expect(res.status).toBe(200);
+      // Non-admin's isDemo should be stripped
+      expect(mockStorage.updateBinder).toHaveBeenCalledWith(1, expect.not.objectContaining({ isDemo: true }));
     });
   });
 });

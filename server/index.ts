@@ -172,7 +172,8 @@ app.use((req, res, next) => {
     if (url?.startsWith('/ws/generate-binder/')) {
       const urlObj = new URL(url, 'http://localhost');
       const useMock = urlObj.searchParams.get('mock') === 'true';
-      handleGenerateBinderWS(ws, binderId, useMock);
+      const isProUser = user.subscriptionStatus === 'pro' || user.isAdmin === true;
+      handleGenerateBinderWS(ws, binderId, useMock, isProUser, user.username);
     } else if (url?.startsWith('/ws/regenerate-week/')) {
       const urlObj = new URL(url, 'http://localhost');
       const pathParts = urlObj.pathname.split('/');

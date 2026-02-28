@@ -250,6 +250,9 @@ jest.mock('./server/storage', () => ({
     searchCatalog: jest.fn().mockResolvedValue({ binders: [], total: 0 }),
     refreshSearchVector: jest.fn().mockResolvedValue(undefined),
     deleteUser: jest.fn().mockResolvedValue(undefined),
+    incrementGenerationCount: jest.fn().mockResolvedValue(undefined),
+    getGenerationInfo: jest.fn().mockResolvedValue({ generationCount: 0, lastGeneratedAt: null }),
+    getDemoBinders: jest.fn().mockResolvedValue([]),
   },
   DatabaseStorage: jest.fn(),
 }));

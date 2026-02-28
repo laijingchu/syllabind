@@ -149,7 +149,7 @@ async function mockGenerateBinder(ws: WebSocket, binderId: number, durationWeeks
   console.log('[MockGenerate] Mock generation complete!');
 }
 
-export function handleGenerateBinderWS(ws: WebSocket, binderId: number, useMock?: boolean) {
+export function handleGenerateBinderWS(ws: WebSocket, binderId: number, useMock?: boolean, isProUser?: boolean, curatorUsername?: string) {
   const abortController = new AbortController();
 
   // When client disconnects (cancel or navigation), abort the generation
@@ -197,8 +197,18 @@ export function handleGenerateBinderWS(ws: WebSocket, binderId: number, useMock?
             mediaPreference
           },
           ws,
-          signal: abortController.signal
+          signal: abortController.signal,
+          isProUser
         });
+      }
+
+      // Track generation count for all users (gate only free users, track for analytics)
+      if (curatorUsername) {
+        try {
+          await storage.incrementGenerationCount(curatorUsername);
+        } catch (err) {
+          console.error('[Generate] Failed to increment generation count:', err);
+        }
       }
 
     } catch (error) {

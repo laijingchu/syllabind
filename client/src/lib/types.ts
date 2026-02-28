@@ -68,6 +68,7 @@ export interface Binder {
   visibility?: BinderVisibility;
   weeks: Week[];
   showSchedulingLink?: boolean;
+  isDemo?: boolean;
   mediaPreference?: 'auto' | 'yes' | 'no';
   curatorId: string; // Username (unique) instead of UUID
   curator?: CuratorProfile; // Populated when listing binders
@@ -145,6 +146,9 @@ export interface User {
   // Subscription
   stripeCustomerId?: string | null;
   subscriptionStatus?: 'free' | 'pro' | 'past_due';
+  // Generation tracking
+  generationCount?: number;
+  lastGeneratedAt?: string | null;
 }
 
 export interface SubscriptionLimits {

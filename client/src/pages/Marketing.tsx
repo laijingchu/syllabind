@@ -82,7 +82,7 @@ export default function Marketing() {
            </Button>
            {getPaidToTeachUrl && (
              <Button variant="outline" size="lg" className="w-full sm:w-auto h-12 px-8 text-lg rounded-full border-primary/20 hover:border-primary/50 text-primary" onClick={handleGetPaidToTeachClick}>
-               Get paid to teach
+               Give feedback
              </Button>
            )}
         </div>
@@ -202,7 +202,7 @@ export default function Marketing() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             {getPaidToTeachUrl && (
               <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-lg rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all bg-black text-white hover:bg-neutral-800 border-none" onClick={handleGetPaidToTeachClick}>
-                Get paid to teach
+                Give feedback
               </Button>
             )}
             <Link href="/catalog" className="w-full sm:w-auto">

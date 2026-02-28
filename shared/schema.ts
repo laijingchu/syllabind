@@ -55,6 +55,8 @@ export const users = pgTable("users", {
   authProvider: text("auth_provider").default('email'),
   stripeCustomerId: text("stripe_customer_id").unique(),
   subscriptionStatus: text("subscription_status").notNull().default('free'), // 'free' | 'pro' | 'past_due'
+  generationCount: integer("generation_count").notNull().default(0),
+  lastGeneratedAt: timestamp("last_generated_at"),
 });
 
 // Admin-managed categories for binder discovery
@@ -82,6 +84,7 @@ export const binders = pgTable("binders", {
   readerActive: integer("reader_active").default(0),
   readersCompleted: integer("readers_completed").default(0),
   showSchedulingLink: boolean("show_scheduling_link").default(true),
+  isDemo: boolean("is_demo").default(false),
   mediaPreference: text("media_preference").default('auto'), // 'auto', 'yes', 'no'
   searchVector: tsvector("search_vector"),
 }, (table) => [

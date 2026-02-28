@@ -244,7 +244,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         onClick={() => window.open(getPaidToTeachUrl, '_blank', 'noopener,noreferrer')}
                         className="hidden md:inline-flex"
                       >
-                        💰 Get paid to teach
+                        💰 Give feedback
                       </Button>
                     )}
                     <Link href="/login?mode=signup">

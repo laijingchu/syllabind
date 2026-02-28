@@ -271,6 +271,19 @@ export async function registerRoutes(
     res.json(tagList);
   });
 
+  // ========== DEMO & PREVIEW ROUTES ==========
+
+  // Get demo binders for guest experience (public, no auth)
+  app.get("/api/demo-binders", async (_req, res) => {
+    try {
+      const demoBinders = await storage.getDemoBinders();
+      res.json(demoBinders);
+    } catch (error) {
+      console.error("Failed to fetch demo binders:", error);
+      res.json([]);
+    }
+  });
+
   // ========== BINDER ROUTES ==========
 
   // List binders. When catalog=true, use server-side search with filters.
@@ -350,7 +363,13 @@ export async function registerRoutes(
       return res.status(403).json({ error: "Forbidden: Only curator can edit this binder" });
     }
 
-    const updated = await storage.updateBinder(id, req.body);
+    // Strip isDemo from non-admin updates
+    const updatePayload = { ...req.body };
+    if (!isAdmin) {
+      delete updatePayload.isDemo;
+    }
+
+    const updated = await storage.updateBinder(id, updatePayload);
 
     // Sync weeks and steps if provided
     const weeksData = req.body.weeks;
@@ -755,6 +774,39 @@ export async function registerRoutes(
     res.json(times);
   });
 
+  // ========== GENERATION INFO ==========
+
+  app.get("/api/generation-info", isAuthenticated, async (req, res) => {
+    const username = (req.user as any).username;
+    const user = req.user as any;
+    const userIsPro = user.subscriptionStatus === 'pro' || user.isAdmin === true;
+
+    if (userIsPro) {
+      return res.json({ generationCount: 0, generationLimit: null, remaining: null, cooldownRemaining: 0, isPro: true });
+    }
+
+    const genInfo = await storage.getGenerationInfo(username);
+    const limit = 2;
+    const remaining = Math.max(0, limit - genInfo.generationCount);
+
+    let cooldownRemaining = 0;
+    if (genInfo.lastGeneratedAt) {
+      const cooldownMs = 15 * 60 * 1000;
+      const elapsed = Date.now() - genInfo.lastGeneratedAt.getTime();
+      if (elapsed < cooldownMs) {
+        cooldownRemaining = Math.ceil((cooldownMs - elapsed) / 1000);
+      }
+    }
+
+    res.json({
+      generationCount: genInfo.generationCount,
+      generationLimit: limit,
+      remaining,
+      cooldownRemaining,
+      isPro: false,
+    });
+  });
+
   // ========== AI BINDER GENERATION ==========
 
   app.post("/api/generate-binder", isAuthenticated, async (req, res) => {
@@ -779,6 +831,33 @@ export async function registerRoutes(
 
     if (!binder.title || !binder.description || !binder.audienceLevel || !binder.durationWeeks) {
       return res.status(400).json({ error: "Complete basics fields before generating" });
+    }
+
+    // Universal hard cap: max 6 weeks
+    if (binder.durationWeeks > 6) {
+      return res.status(400).json({ error: "Maximum binder duration is 6 weeks" });
+    }
+
+    // Free-tier users cannot generate binders longer than 4 weeks
+    const userIsPro = user.subscriptionStatus === 'pro' || user.isAdmin === true;
+    if (!userIsPro && binder.durationWeeks > 4) {
+      return res.status(403).json({ error: "Pro subscription required for binders longer than 4 weeks" });
+    }
+
+    // Generation limits for non-Pro users
+    if (!userIsPro) {
+      const genInfo = await storage.getGenerationInfo(username);
+      if (genInfo.generationCount >= 2) {
+        return res.status(403).json({ error: "GENERATION_LIMIT_REACHED", message: "You've used all 2 free generations. Upgrade to Pro for unlimited." });
+      }
+      if (genInfo.lastGeneratedAt) {
+        const cooldownMs = 15 * 60 * 1000; // 15 minutes
+        const elapsed = Date.now() - genInfo.lastGeneratedAt.getTime();
+        if (elapsed < cooldownMs) {
+          const retryAfterSeconds = Math.ceil((cooldownMs - elapsed) / 1000);
+          return res.status(429).json({ error: "GENERATION_COOLDOWN", message: "Please wait before generating again.", retryAfterSeconds });
+        }
+      }
     }
 
     if (binder.status === 'generating') {
@@ -833,6 +912,12 @@ export async function registerRoutes(
 
     if (!user.isCurator && !user.isAdmin) {
       return res.status(403).json({ error: "Curator access required" });
+    }
+
+    // Week regeneration is a Pro-only feature
+    const userIsPro = user.subscriptionStatus === 'pro' || user.isAdmin === true;
+    if (!userIsPro) {
+      return res.status(403).json({ error: "Pro subscription required for week regeneration" });
     }
 
     const { binderId, weekIndex } = req.body;

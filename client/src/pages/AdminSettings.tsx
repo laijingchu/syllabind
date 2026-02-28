@@ -240,9 +240,9 @@ export default function AdminSettings() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Get Paid to Teach URL</CardTitle>
+          <CardTitle>Give Feedback URL</CardTitle>
           <CardDescription>
-            URL for the "Get paid to teach" button on the Marketing page hero section.
+            URL for the "Give feedback" button on the Marketing page hero section.
             Leave empty to scroll to the Apply to Curate section instead.
           </CardDescription>
         </CardHeader>

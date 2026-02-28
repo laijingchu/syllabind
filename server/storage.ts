@@ -136,6 +136,13 @@ export interface IStorage {
 
   // Search vector
   refreshSearchVector(binderId: number): Promise<void>;
+
+  // Generation tracking
+  incrementGenerationCount(username: string): Promise<void>;
+  getGenerationInfo(username: string): Promise<{ generationCount: number; lastGeneratedAt: Date | null }>;
+
+  // Demo binders
+  getDemoBinders(): Promise<BinderWithContent[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1042,6 +1049,34 @@ export class DatabaseStorage implements IStorage {
     }));
 
     return { binders: bindersList, total };
+  }
+
+  // Generation tracking
+  async incrementGenerationCount(username: string): Promise<void> {
+    await db.update(users)
+      .set({
+        generationCount: sql`${users.generationCount} + 1`,
+        lastGeneratedAt: new Date(),
+      })
+      .where(eq(users.username, username));
+  }
+
+  async getGenerationInfo(username: string): Promise<{ generationCount: number; lastGeneratedAt: Date | null }> {
+    const [user] = await db.select({
+      generationCount: users.generationCount,
+      lastGeneratedAt: users.lastGeneratedAt,
+    }).from(users).where(eq(users.username, username));
+    return {
+      generationCount: user?.generationCount ?? 0,
+      lastGeneratedAt: user?.lastGeneratedAt ?? null,
+    };
+  }
+
+  // Demo binders
+  async getDemoBinders(): Promise<BinderWithContent[]> {
+    const demoBinders = await db.select().from(binders).where(eq(binders.isDemo, true));
+    const results = await Promise.all(demoBinders.map(b => this.getBinderWithContent(b.id)));
+    return results.filter((b): b is BinderWithContent => b !== undefined);
   }
 
   // Refresh search vector for a binder (includes week content and tag names)

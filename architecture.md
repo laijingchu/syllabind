@@ -47,6 +47,9 @@ This table stores all user accounts, whether they're readers or curators. A sing
   // Subscription
   stripeCustomerId: string UNIQUE,              // Stripe customer ID
   subscriptionStatus: string DEFAULT 'free',    // 'free' | 'pro' | 'past_due'
+  // Generation tracking
+  generationCount: integer DEFAULT 0,           // Number of AI binder generations used
+  lastGeneratedAt: timestamp,                   // Last generation timestamp (for cooldown enforcement)
 }
 ```
 
@@ -68,7 +71,8 @@ Binders are the core learning content created by curators. The binder structure 
   readerActive: integer DEFAULT 0,   // Number of readers currently enrolled (in-progress)
   readersCompleted: integer DEFAULT 0, // Number of readers who completed the binder
   showSchedulingLink: boolean DEFAULT true, // Per-binder toggle for "Book a Call" button visibility
-  mediaPreference: text DEFAULT 'auto'   // Audio/video materials: 'auto', 'yes', 'no'
+  mediaPreference: text DEFAULT 'auto',   // Audio/video materials: 'auto', 'yes', 'no'
+  isDemo: boolean DEFAULT false,          // Admin-assignable demo content (shown to signed-out visitors)
 }
 ```
 
@@ -2243,7 +2247,7 @@ Multiple approaches were tried and abandoned:
 
 ### Generation Cost Reduction (~25-35%) (2026-02-22)
 
-**Problem:** Generating a 4-week binder cost ~$0.75-1.00 in Claude API usage. Sonnet must stay for generation (Haiku produced fake URLs) and batch size must stay at 2 (larger batches hit rate limits).
+**Problem:** Generating a 4-week binder cost ~$0.75-1.00 in Claude API usage. Sonnet must stay for generation (Haiku produced fake URLs). Batch size is now tier-dependent: free users get `BATCH_SIZE = 3` (fewer API calls, ~33% cost reduction), Pro/admin users keep `BATCH_SIZE = 2` (higher quality). `isProUser` flag is threaded from WebSocket auth through `handleGenerateBinderWS` → `generateBinder` → `GenerationContext`.
 
 **Changes:**
 1. **Reduced web search budget** (`claudeClient.ts`): `max_uses` 14 → 8 per batch (~4 searches/week). Prompt already says "~2-3 searches per week" — 14 was excessive.
@@ -2305,3 +2309,79 @@ The marketing page (`Marketing.tsx`) has 8 sections: Hero, Two Pathways, Build Y
 - FAQ grows past ~10-15 questions → own page
 - About adds team bios, press, or mission statement → own page
 - Curator and Reader audiences need separate funnels → separate landing pages
+
+### Free vs Pro Guardrails in Binder Editor (2026-02-28)
+
+Added free-tier guardrails to the Binder Editor to prevent abuse of AI generation features. Pro features are shown with a "Pro" badge and trigger an upgrade dialog when clicked by free-tier users (guest or signed-in non-Pro).
+
+**Free vs Pro Feature Matrix:**
+| Feature | Free | Pro |
+|---------|------|-----|
+| Duration | 1-4 weeks | 1-8 weeks |
+| Initial "Autogenerate with AI" | Free | Free |
+| "Regenerate with AI" (full re-gen) | Blocked | Allowed |
+| Per-week "Regenerate Week" | Blocked | Allowed |
+
+**Client-side (`BinderEditor.tsx`):**
+- `isFreeTier = isGuestMode || !isPro` determines gating
+- Duration dropdown shows Pro badge on weeks 5-8, triggers UpgradePrompt on selection
+- "Regenerate with AI" button shows Pro badge and triggers UpgradePrompt for free-tier
+- Per-week "Regenerate Week" buttons show Pro badge and trigger UpgradePrompt for free-tier
+- Uses existing `UpgradePrompt` component with `variant="pro-feature"`
+
+**Server-side (`server/routes.ts`):**
+- `POST /api/generate-binder`: returns 403 if non-Pro user's binder has > 4 weeks
+- `POST /api/regenerate-week`: returns 403 for non-Pro users (regeneration is Pro-only)
+
+### Anti-Abuse, Demo Experience & Generation Limits (2026-02-28)
+
+Three workstreams to manage AI generation costs (~$0.5-1 per generation) and convert signed-out visitors.
+
+#### A. Signed-Out Demo Experience
+
+**Demo Binders (`isDemo` flag):** Admins can mark any binder as demo content via a toggle in the Binder Editor. Demo binders are served via `GET /api/demo-binders` (public, no auth) as full `BinderWithContent[]` and displayed as clickable topic chips on the guest `/create` page.
+
+**Simulated Generation:** Clicking a demo chip triggers a simulated generation that mirrors the signed-in experience: progress bar with "Planning..." status, week-by-week skeleton placeholders (`GeneratingWeekPlaceholder`), and tab auto-switching. Demo week data populates into `formData.weeks` sequentially with staggered delays (~1.2s per week). The end state is the normal Binder editor section with all form fields populated (week titles, descriptions, steps with URLs/authors/media types/exercises). No separate preview UI — identical to the post-generation state for signed-in users.
+
+**Autogenerate in Guest Mode:** The main "Autogenerate with AI" button shows a waitlist popup dialog instead of making any API calls. The `POST /api/preview-outline` endpoint and `planOutlinePublic()` have been removed.
+
+**Storage:**
+- `getDemoBinders()`: Returns `BinderWithContent[]` — full binder data with weeks and steps via `getBinderWithContent()`.
+
+#### B. Free User Generation Limits
+
+**Schema additions to `users`:**
+- `generationCount` (integer, default 0) — total AI generations used
+- `lastGeneratedAt` (timestamp) — for cooldown enforcement
+
+**Limits (non-Pro users only):**
+- Max 2 free generations → 403 `GENERATION_LIMIT_REACHED`
+- 15-minute cooldown between generations → 429 `GENERATION_COOLDOWN` with `retryAfterSeconds`
+
+**Counter increment:** After successful WebSocket generation (in `server/websocket/generateBinder.ts`), `storage.incrementGenerationCount(curatorUsername)` is called for ALL users (including Pro) for analytics. Only free users are gated.
+
+**API:**
+- `GET /api/generation-info` (authenticated): Returns `{ generationCount, generationLimit, remaining, cooldownRemaining, isPro }`. Pro users get `generationLimit: null`.
+
+**Client display (`BinderEditor.tsx`):** Shows "X of 2 free generations remaining" near the generate button. Handles `GENERATION_LIMIT_REACHED` and `GENERATION_COOLDOWN` errors with appropriate toasts.
+
+**Storage methods:**
+- `incrementGenerationCount(username)`: Atomically increments count and sets `lastGeneratedAt = now()`
+- `getGenerationInfo(username)`: Returns `{ generationCount, lastGeneratedAt }`
+
+#### C. Duration Hard Cap (6 weeks)
+
+- Client: Duration selector options changed from `[1-8]` to `[1-6]`
+- Server: Universal hard cap `durationWeeks > 6` → 400 error (before Pro/free tier checks)
+- Free-tier limit unchanged: `durationWeeks > 4` → 403 for non-Pro users
+
+**Updated Free vs Pro Feature Matrix:**
+| Feature | Signed-Out | Free | Pro |
+|---------|-----------|------|-----|
+| Duration | N/A | 1-4 weeks | 1-6 weeks |
+| Demo preview (pre-built, full content) | Yes (0 cost) | N/A | N/A |
+| Autogenerate / Regenerate | Waitlist popup | 2 total, 15-min cooldown | Unlimited |
+| Regenerate full binder | N/A | Blocked | Allowed |
+| Per-week regeneration | N/A | Blocked | Allowed |
+
+**Migration:** `migrations/0009_add_generation_tracking.sql` adds `generation_count`, `last_generated_at` to users and `is_demo` to binders.

@@ -24,6 +24,8 @@ export const mockUser = {
   authProvider: 'email',
   stripeCustomerId: null,
   subscriptionStatus: 'free',
+  generationCount: 0,
+  lastGeneratedAt: null,
 };
 
 // Mock admin user (non-curator admin — tests admin bypass without curator flag)
@@ -50,6 +52,8 @@ export const mockAdmin = {
   authProvider: 'email',
   stripeCustomerId: null,
   subscriptionStatus: 'free',
+  generationCount: 0,
+  lastGeneratedAt: null,
 };
 
 // Mock curator user
@@ -76,6 +80,8 @@ export const mockCurator = {
   authProvider: 'email',
   stripeCustomerId: null,
   subscriptionStatus: 'free',
+  generationCount: 0,
+  lastGeneratedAt: null,
 };
 
 // Mock Pro user (curator with Pro subscription)
@@ -180,4 +186,7 @@ export const resetAllMocks = () => {
   if (mockStorage.searchCatalog) mockStorage.searchCatalog.mockResolvedValue({ binders: [], total: 0 });
   if (mockStorage.refreshSearchVector) mockStorage.refreshSearchVector.mockResolvedValue(undefined);
   if (mockStorage.deleteUser) mockStorage.deleteUser.mockResolvedValue(undefined);
+  if (mockStorage.incrementGenerationCount) mockStorage.incrementGenerationCount.mockResolvedValue(undefined);
+  if (mockStorage.getGenerationInfo) mockStorage.getGenerationInfo.mockResolvedValue({ generationCount: 0, lastGeneratedAt: null });
+  if (mockStorage.getDemoBinders) mockStorage.getDemoBinders.mockResolvedValue([]);
 };

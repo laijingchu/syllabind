@@ -3,11 +3,8 @@ import { useLocation } from 'wouter';
 import { BinderCard } from '@/components/BinderCard';
 import { AnimatedPage, AnimatedCard } from '@/components/ui/animated-container';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { BinderFilterBar } from '@/components/sections/BinderFilterBar';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles, ArrowRight } from 'lucide-react';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useAuth } from '@/hooks/use-auth';
 import type { Binder, Category } from '@/lib/types';
@@ -107,101 +104,108 @@ export default function Catalog() {
   const hasMore = binders.length < total;
 
   return (
-    <AnimatedPage className="max-w-6xl mx-auto space-y-8">
-      <div className="text-center max-w-2xl mx-auto space-y-4">
-        <h1 className="text-4xl font-display text-foreground">Pick a binder</h1>
-        <p className="text-lg text-muted-foreground">
-          Learn by reading on the topic. Complete the course with a meaningful project and connect with peers and course curators.
-        </p>
-      </div>
-
-      <BinderFilterBar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        {...(user ? {
-          visibility: selectedVisibility,
-          onVisibilityChange: setSelectedVisibility,
-          sortBy,
-          onSortChange: (v: string) => setSortBy(v as any),
-          sortOptions: [
-            { value: 'newest', label: 'Newest' },
-            { value: 'popular', label: 'Most Popular' },
-            ...(debouncedQuery ? [{ value: 'relevance', label: 'Relevance' }] : []),
-          ],
-        } : {})}
-        categories={categories}
-        selectedCategories={selectedCategories}
-        onCategoriesChange={setSelectedCategories}
-        resultCount={total}
-        isLoading={isLoading}
-      />
-
-      {/* Results grid */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AnimatedCard delay={0} className="h-full">
-              <Card className="create-binder-card group flex flex-col h-full border-dashed border-2 border-border/60 hover:border-primary/40 transition-colors">
-                <div className="flex flex-col justify-center flex-1 p-6 space-y-5">
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-display font-medium text-foreground">Create your own</h3>
-                    <p className="text-sm text-muted-foreground">Start with a topic and let AI build your binder</p>
-                  </div>
-                  <Input
-                    value={newBinderTitle}
-                    onChange={e => setNewBinderTitle(e.target.value)}
-                    placeholder="e.g. Intro to Systems Thinking"
-                    className="text-base"
-                    onKeyDown={e => e.key === 'Enter' && newBinderTitle.trim() && handleCreate()}
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={handleCreate}
-                    disabled={!newBinderTitle.trim()}
-                    className="gap-2 w-fit group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary group-focus-within:bg-primary group-focus-within:text-primary-foreground group-focus-within:border-primary transition-colors"
-                  >
-                    Create
-                    <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px] font-medium gap-1">
-                      <Sparkles className="h-3 w-3" />
-                      AI
-                    </Badge>
-                  </Button>
-                </div>
-              </Card>
-            </AnimatedCard>
-            {binders.length === 0 ? (
-              <div className="flex items-center justify-center col-span-full py-8">
-                <p className="text-muted-foreground">No other binders found. Try adjusting your search or filters.</p>
-              </div>
-            ) : binders.map((binder, index) => (
-              <AnimatedCard key={binder.id} delay={0.05 * Math.min(index + 1, 6)} className="h-full">
-                <BinderCard binder={binder} />
-              </AnimatedCard>
-            ))}
-          </div>
-
-          {/* Load more */}
-          {hasMore && (
-            <div className="flex justify-center pt-4">
+    <>
+      {/* Hero section - logged out only */}
+      {!user && (
+        <div className="hero-section flex flex-col items-center gap-5 max-w-xl mx-auto py-32">
+          <h1 className="font-display text-7xl text-foreground">Syllabind</h1>
+          <p className="text-lg text-muted-foreground">Create your own knowledge binder on any topic</p>
+          <div className="create-binder-bar group relative w-full flex items-center rounded-full border border-border/80 bg-background shadow-sm hover:shadow-md focus-within:shadow-md transition-shadow px-5 py-2">
+            <Sparkles className="h-4 w-4 text-muted-foreground/60 flex-shrink-0" />
+            <input
+              value={newBinderTitle}
+              onChange={e => setNewBinderTitle(e.target.value)}
+              placeholder="e.g. Intro to Systems Thinking"
+              className="flex-1 bg-transparent border-0 outline-none text-base px-3 py-1 placeholder:text-muted-foreground/50"
+              onKeyDown={e => e.key === 'Enter' && newBinderTitle.trim() && handleCreate()}
+            />
+            {newBinderTitle.trim() && (
               <Button
-                variant="outline"
-                onClick={() => fetchCatalog(true)}
-                disabled={isLoadingMore}
+                size="sm"
+                onClick={handleCreate}
+                className="rounded-full h-8 px-4 text-sm"
               >
-                {isLoadingMore ? (
-                  <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading...</>
-                ) : (
-                  'Load More'
-                )}
+                Create
               </Button>
-            </div>
-          )}
-        </>
+            )}
+          </div>
+          <a
+            href="/create"
+            onClick={e => { e.preventDefault(); setLocation('/create'); }}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+          >
+            See how it works <ArrowRight className="h-3.5 w-3.5" />
+          </a>
+        </div>
       )}
-    </AnimatedPage>
+
+      <AnimatedPage className="max-w-6xl mx-auto space-y-8">
+        <div className="text-center max-w-2xl mx-auto space-y-4">
+          <h1 className="text-4xl font-display text-foreground">Pick a binder</h1>
+          <p className="text-lg text-muted-foreground">
+            Learn by reading on the topic. Complete the course with a meaningful project and connect with peers and course curators.
+          </p>
+        </div>
+
+        <BinderFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          {...(user ? {
+            visibility: selectedVisibility,
+            onVisibilityChange: setSelectedVisibility,
+            sortBy,
+            onSortChange: (v: string) => setSortBy(v as any),
+            sortOptions: [
+              { value: 'newest', label: 'Newest' },
+              { value: 'popular', label: 'Most Popular' },
+              ...(debouncedQuery ? [{ value: 'relevance', label: 'Relevance' }] : []),
+            ],
+          } : {})}
+          categories={categories}
+          selectedCategories={selectedCategories}
+          onCategoriesChange={setSelectedCategories}
+          resultCount={total}
+          isLoading={isLoading}
+        />
+
+        {/* Results grid */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {binders.length === 0 ? (
+                <div className="flex items-center justify-center col-span-full py-8">
+                  <p className="text-muted-foreground">No other binders found. Try adjusting your search or filters.</p>
+                </div>
+              ) : binders.map((binder, index) => (
+                <AnimatedCard key={binder.id} delay={0.05 * Math.min(index + 1, 6)} className="h-full">
+                  <BinderCard binder={binder} />
+                </AnimatedCard>
+              ))}
+            </div>
+
+            {/* Load more */}
+            {hasMore && (
+              <div className="flex justify-center pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => fetchCatalog(true)}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? (
+                    <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading...</>
+                  ) : (
+                    'Load More'
+                  )}
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </AnimatedPage>
+    </>
   );
 }

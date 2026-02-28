@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, AlertTriangle, Users, ExternalLink, Wand2, Loader2, X, Pencil, ChevronDown, Globe, EyeOff, Lock, Eye } from 'lucide-react';
+import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, AlertTriangle, Users, ExternalLink, Wand2, Loader2, X, Pencil, ChevronDown, Globe, EyeOff, Lock, Eye, Crown } from 'lucide-react';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +22,14 @@ import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/toast';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -259,9 +268,11 @@ export default function BinderEditor() {
   const [location, setLocation] = useLocation();
   const isNew = location === '/curator/binder/new' || location.startsWith('/create');
   const isGuestMode = location.startsWith('/create');
-  const { createBinder, updateBinder, refreshBinders, getSubmissionsForStep, getReadersForBinder, user } = useStore();
+  const { createBinder, updateBinder, refreshBinders, getSubmissionsForStep, getReadersForBinder, user, isPro } = useStore();
+  const isFreeTier = isGuestMode || !isPro;
   const posthog = usePostHog();
   const [readers, setReaders] = useState<any[]>([]);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [binderTags, setBinderTags] = useState<Tag[]>([]);
@@ -271,18 +282,19 @@ export default function BinderEditor() {
 
   const initialTitle = isNew ? new URLSearchParams(window.location.search).get('title') || '' : '';
 
+  const defaultWeeks = isGuestMode ? 3 : 4;
   const [formData, setFormData] = useState<Binder>({
     id: generateTempId(),
     title: initialTitle,
     description: '',
     audienceLevel: 'Beginner',
-    durationWeeks: 4,
+    durationWeeks: defaultWeeks,
     status: 'draft',
     visibility: 'public',
     curatorId: user?.username || '',
     showSchedulingLink: true,
     mediaPreference: 'auto',
-    weeks: Array.from({ length: 4 }, (_, i) => ({
+    weeks: Array.from({ length: defaultWeeks }, (_, i) => ({
       id: generateTempId(),
       binderId: generateTempId(),
       index: i + 1,
@@ -317,6 +329,13 @@ export default function BinderEditor() {
   const isGeneratingRef = useRef(false); // Ref for ws.onclose (avoids stale closure)
   const regeneratingWeekRef = useRef<number | null>(null); // Ref for ws.onclose (avoids stale closure)
   const rateLimitRetryRef = useRef<ReturnType<typeof setInterval> | null>(null); // Track rate limit countdown
+
+  // Demo & generation info state
+  const [demoBinders, setDemoBinders] = useState<Array<{ id: number; title: string; description: string; audienceLevel: string; durationWeeks: number; weeks: Week[] }>>([]);
+  const [isDemoMode, setIsDemoMode] = useState(false); // True after user taps a demo pill
+  const [generationInfo, setGenerationInfo] = useState<{ generationCount: number; generationLimit: number | null; remaining: number | null; cooldownRemaining: number; isPro: boolean } | null>(null);
+  const [showWaitlist, setShowWaitlist] = useState(false);
+  const [waitlistUrl, setWaitlistUrl] = useState<string | null>(null);
 
   // Check if Binder already has content
   const hasBinderContent = formData.weeks.some(week =>
@@ -449,6 +468,33 @@ export default function BinderEditor() {
       .catch(() => {});
   }, []);
 
+  // Fetch demo binders in guest mode
+  useEffect(() => {
+    if (!isGuestMode) return;
+    fetch('/api/demo-binders')
+      .then(res => res.json())
+      .then(data => setDemoBinders(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, [isGuestMode]);
+
+  // Fetch waitlist URL in guest mode
+  useEffect(() => {
+    if (!isGuestMode) return;
+    fetch('/api/site-settings/waitlist_form_url')
+      .then(r => r.json())
+      .then(data => setWaitlistUrl(data.value || null))
+      .catch(() => {});
+  }, [isGuestMode]);
+
+  // Fetch generation info for authenticated users
+  useEffect(() => {
+    if (isGuestMode || !user) return;
+    fetch('/api/generation-info', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => setGenerationInfo(data))
+      .catch(() => {});
+  }, [user, isGuestMode]);
+
   // Fetch tags for this binder
   useEffect(() => {
     if (formData.id > 0) {
@@ -524,6 +570,15 @@ export default function BinderEditor() {
   // Adjust weeks array when duration changes - restore from database if available
   const handleDurationChange = (weeksStr: string) => {
     const count = parseInt(weeksStr);
+    // Guest mode: 4+ weeks requires signup
+    if (count > 3 && isGuestMode) {
+      setShowWaitlist(true);
+      return;
+    }
+    if (count > 4 && isFreeTier) {
+      setShowUpgrade(true);
+      return;
+    }
     const newWeeks = [...formData.weeks];
     if (count > newWeeks.length) {
       for (let i = newWeeks.length; i < count; i++) {
@@ -613,6 +668,101 @@ export default function BinderEditor() {
     }
   };
 
+  // Demo generation: simulate the full generation lifecycle using pre-built demo data
+  const handleDemoGenerate = (demo: { id: number; title: string; description: string; audienceLevel: string; durationWeeks: number; weeks: Week[] }) => {
+    setIsDemoMode(true);
+    const weekCount = Math.min(demo.durationWeeks || 6, 6);
+    const demoWeeks = (demo.weeks || []).slice(0, weekCount);
+
+    // Prefill form basics and initialize empty week slots
+    setFormData(prev => ({
+      ...prev,
+      title: demo.title || prev.title,
+      description: demo.description || prev.description,
+      audienceLevel: (demo.audienceLevel as any) || prev.audienceLevel,
+      durationWeeks: weekCount,
+      weeks: Array.from({ length: weekCount }, (_, i) => ({
+        id: generateTempId(),
+        binderId: prev.id,
+        index: i + 1,
+        steps: [] as Step[],
+        title: ''
+      })),
+    }));
+
+    // Start generation animation
+    setIsGenerating(true);
+    setGeneratingWeeks(new Set());
+    setCompletedWeeks(new Set());
+    setErroredWeeks(new Set());
+    setJustCompletedWeek(null);
+    setGenerationProgress({ currentWeek: 0, status: `Planning ${weekCount}-week course structure...` });
+    setActiveWeekTab('week-1');
+
+    // Phase 1: brief planning delay, then populate week titles
+    setTimeout(() => {
+      // Show all week titles/descriptions (like outline_planned event)
+      setFormData(prev => {
+        const newWeeks = [...prev.weeks];
+        demoWeeks.forEach((dw, i) => {
+          if (newWeeks[i]) {
+            newWeeks[i] = { ...newWeeks[i], title: dw.title || '', description: dw.description || '' };
+          }
+        });
+        return { ...prev, weeks: newWeeks };
+      });
+      setGenerationProgress(prev => ({ ...prev, status: 'Course outline ready — generating content...' }));
+
+      // Phase 2: simulate week-by-week content generation
+      demoWeeks.forEach((dw, i) => {
+        const weekIndex = i + 1;
+        const startDelay = 800 + i * 1200; // stagger: each week starts 1.2s after the previous
+        const endDelay = startDelay + 800;  // each week "generates" for 0.8s
+
+        // Week starts generating
+        setTimeout(() => {
+          setGeneratingWeeks(prev => new Set(Array.from(prev).concat(weekIndex)));
+          setGenerationProgress({ currentWeek: weekIndex, status: `Generating Week ${weekIndex}...` });
+          setActiveWeekTab(`week-${weekIndex}`);
+        }, startDelay);
+
+        // Week completes: populate steps into formData
+        setTimeout(() => {
+          setFormData(prev => {
+            const newWeeks = [...prev.weeks];
+            const idx = weekIndex - 1;
+            if (newWeeks[idx]) {
+              newWeeks[idx] = {
+                ...newWeeks[idx],
+                title: dw.title || newWeeks[idx].title,
+                description: dw.description || newWeeks[idx].description,
+                steps: dw.steps || [],
+              };
+            }
+            return { ...prev, weeks: newWeeks };
+          });
+
+          setGeneratingWeeks(prev => { const next = new Set(prev); next.delete(weekIndex); return next; });
+          setCompletedWeeks(prev => new Set(Array.from(prev).concat(weekIndex)));
+          setJustCompletedWeek(weekIndex);
+          setTimeout(() => setJustCompletedWeek(null), 600);
+
+          // Final week: finish generation
+          if (weekIndex === weekCount) {
+            setTimeout(() => {
+              setIsGenerating(false);
+              setGeneratingWeeks(new Set());
+              setCompletedWeeks(new Set());
+              setJustCompletedWeek(null);
+              setGenerationProgress({ currentWeek: 0, status: '' });
+              setActiveWeekTab('week-1');
+            }, 400);
+          }
+        }, endDelay);
+      });
+    }, 1200);
+  };
+
   // Cmd+click (Mac) or Ctrl+click (Windows) to use mock mode (test streaming without API calls)
   const handleAutogenerateClick = (e: React.MouseEvent) => {
     const useMock = e.metaKey || e.ctrlKey;
@@ -623,6 +773,18 @@ export default function BinderEditor() {
         description: "Please fill in title and description before autogenerating.",
         variant: "destructive"
       });
+      return;
+    }
+
+    // Guest mode: show waitlist popup instead of calling API
+    if (isGuestMode) {
+      setShowWaitlist(true);
+      return;
+    }
+
+    // Regeneration is a Pro feature
+    if (hasBinderContent && isFreeTier) {
+      setShowUpgrade(true);
       return;
     }
 
@@ -751,7 +913,24 @@ export default function BinderEditor() {
         body: JSON.stringify({ binderId: binderId })
       });
 
-      if (!response.ok) throw new Error('Failed to start generation');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        if (errorData.error === 'GENERATION_LIMIT_REACHED') {
+          toast({ title: "Generation Limit Reached", description: errorData.message || "Upgrade to Pro for unlimited generations.", variant: "destructive" });
+          setIsGenerating(false);
+          isGeneratingRef.current = false;
+          // Refresh generation info
+          fetch('/api/generation-info', { credentials: 'include' }).then(r => r.json()).then(setGenerationInfo).catch(() => {});
+          return;
+        }
+        if (errorData.error === 'GENERATION_COOLDOWN') {
+          toast({ title: "Cooldown Active", description: `Please wait ${Math.ceil((errorData.retryAfterSeconds || 900) / 60)} minutes before generating again.`, variant: "destructive" });
+          setIsGenerating(false);
+          isGeneratingRef.current = false;
+          return;
+        }
+        throw new Error(errorData.error || 'Failed to start generation');
+      }
 
       const { websocketUrl } = await response.json();
 
@@ -1555,7 +1734,16 @@ export default function BinderEditor() {
               </>
             )}
             <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-              {isSaving ? (
+              {isGuestMode ? (
+                isDemoMode ? (
+                  <span className="hidden sm:inline">Demo</span>
+                ) : (formData.title.trim() || formData.description.trim()) ? (
+                  <>
+                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                    <span className="hidden sm:inline">Progress not saved</span>
+                  </>
+                ) : null
+              ) : isSaving ? (
                 <>
                   <Loader2 className="h-3 w-3 animate-spin" />
                   <span className="hidden sm:inline">Saving...</span>
@@ -1578,7 +1766,9 @@ export default function BinderEditor() {
                 {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} <span className="hidden sm:inline">{isDeleting ? 'Deleting...' : 'Delete'}</span>
               </Button>
             )}
-            {formData.status === 'published' ? (
+            {isGuestMode ? (
+              <Button size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>Sign up</Button>
+            ) : formData.status === 'published' ? (
               <Button variant="secondary" size="sm" onClick={() => setShowUnpublishDialog(true)}>Unpublish</Button>
             ) : (
               <DropdownMenu>
@@ -1640,6 +1830,20 @@ export default function BinderEditor() {
               placeholder="e.g. Intro to Stoicism"
               className="text-base md:text-lg"
             />
+            {isGuestMode && demoBinders.length > 0 && !hasBinderContent && !isGenerating && (
+              <div className="demo-topic-chips flex flex-wrap items-center gap-2 pt-1">
+                <span className="text-xs text-muted-foreground">Try a demo:</span>
+                {demoBinders.map((demo) => (
+                  <button
+                    key={demo.id}
+                    onClick={() => handleDemoGenerate(demo)}
+                    className="text-xs px-2.5 py-1 rounded-full border border-primary/30 text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                  >
+                    {demo.title}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="space-y-2">
             <Label className="text-sm">Description</Label>
@@ -1674,14 +1878,22 @@ export default function BinderEditor() {
               >
                 <SelectTrigger className="text-base md:text-lg"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">1 Week</SelectItem>
-                  <SelectItem value="2">2 Weeks</SelectItem>
-                  <SelectItem value="3">3 Weeks</SelectItem>
-                  <SelectItem value="4">4 Weeks</SelectItem>
-                  <SelectItem value="5">5 Weeks</SelectItem>
-                  <SelectItem value="6">6 Weeks</SelectItem>
-                  <SelectItem value="7">7 Weeks</SelectItem>
-                  <SelectItem value="8">8 Weeks</SelectItem>
+                  {[1, 2, 3, 4, 5, 6].map(n => (
+                    <SelectItem key={n} value={n.toString()}>
+                      <span className="flex items-center gap-2">
+                        {n} {n === 1 ? 'Week' : 'Weeks'}
+                        {isGuestMode && n === 4 && (
+                          <Badge className="ml-1 bg-green-600 text-white text-[10px] py-0 px-1.5 leading-tight">Free Sign Up</Badge>
+                        )}
+                        {isGuestMode && n > 4 && (
+                          <Badge className="ml-1 bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                        )}
+                        {!isGuestMode && n > 4 && isFreeTier && (
+                          <Badge className="ml-1 bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                        )}
+                      </span>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -1780,6 +1992,9 @@ export default function BinderEditor() {
                   : hasBinderContent
                     ? 'Regenerate with AI'
                     : 'Autogenerate with AI'}
+                {hasBinderContent && isFreeTier && (
+                  <Badge className="ml-1 bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                )}
               </Button>
               {/* Scheduling link toggle -- only shown when curator has a scheduling URL */}
               {user?.schedulingUrl && (
@@ -1814,7 +2029,38 @@ export default function BinderEditor() {
                   </Link>
                 </div>
               )}
+              {/* Admin-only: Mark as Demo toggle */}
+              {user?.isAdmin && !isNew && formData.id > 0 && (
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="is-demo"
+                    checked={formData.isDemo ?? false}
+                    onCheckedChange={(checked) => {
+                      const val = checked as boolean;
+                      setFormData(prev => ({ ...prev, isDemo: val }));
+                      fetch(`/api/binders/${formData.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ isDemo: val }),
+                      }).catch(() => {});
+                    }}
+                  />
+                  <label htmlFor="is-demo" className="text-sm font-medium leading-none cursor-pointer select-none whitespace-nowrap">
+                    Demo binder
+                  </label>
+                </div>
+              )}
             </div>
+            {/* Generation info for authenticated free users */}
+            {!isGuestMode && generationInfo && !generationInfo.isPro && (
+              <p className="text-xs text-muted-foreground">
+                {generationInfo.remaining !== null && generationInfo.remaining > 0
+                  ? `${generationInfo.remaining} of ${generationInfo.generationLimit} free generation${generationInfo.remaining === 1 ? '' : 's'} remaining`
+                  : "You've used all free generations. Upgrade to Pro for unlimited."}
+                {generationInfo.cooldownRemaining > 0 && ` (${Math.ceil(generationInfo.cooldownRemaining / 60)} min cooldown)`}
+              </p>
+            )}
             {isGenerating && (
               <Card className="mt-4 border-primary/20 bg-primary/5">
                 <CardContent className="p-4">
@@ -1865,6 +2111,7 @@ export default function BinderEditor() {
         </CardContent>
       </Card>
 
+      {/* Binder weeks */}
       <div className="space-y-4">
         <h2 className="text-lg sm:text-xl font-medium">Binder</h2>
         <Tabs value={activeWeekTab} onValueChange={setActiveWeekTab} className="w-full">
@@ -1958,6 +2205,10 @@ export default function BinderEditor() {
                              variant="secondary"
                              size="sm"
                              onClick={(e) => {
+                               if (isFreeTier) {
+                                 setShowUpgrade(true);
+                                 return;
+                               }
                                const useMock = e.metaKey || e.ctrlKey;
                                const hasWeekContent = week.steps.length > 0 || week.title || week.description;
                                if (hasWeekContent) {
@@ -1973,6 +2224,9 @@ export default function BinderEditor() {
                              {regeneratingWeekIndex === week.index
                                ? 'Regenerating...'
                                : 'Regenerate Week'}
+                             {isFreeTier && (
+                               <Badge className="ml-1 bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                             )}
                            </Button>
                          </div>
                        )}
@@ -2167,6 +2421,37 @@ export default function BinderEditor() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <UpgradePrompt open={showUpgrade} onOpenChange={setShowUpgrade} variant="pro-feature" />
+
+      {/* Waitlist popup for guest mode */}
+      <Dialog open={showWaitlist} onOpenChange={setShowWaitlist}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Join the Waitlist</DialogTitle>
+            <DialogDescription>
+              Sign up to get 2 free AI-generated binders with readings, exercises, and curated resources.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setShowWaitlist(false)}>
+              Maybe Later
+            </Button>
+            <Button
+              onClick={() => {
+                if (waitlistUrl) {
+                  window.open(waitlistUrl, '_blank');
+                } else {
+                  setLocation(`/login?mode=signup`);
+                }
+                setShowWaitlist(false);
+              }}
+            >
+              Join Waitlist
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

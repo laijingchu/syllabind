@@ -427,6 +427,7 @@ interface GenerationContext {
   };
   ws: WebSocket;
   signal?: AbortSignal;
+  isProUser?: boolean;
 }
 
 export async function generateBinder(context: GenerationContext): Promise<void> {
@@ -474,7 +475,7 @@ export async function generateBinder(context: GenerationContext): Promise<void> 
   console.log(`[Generate] Outline planned:\n${outlineString}`);
 
   // === Phase 2: Generate content in batches ===
-  const BATCH_SIZE = 2;
+  const BATCH_SIZE = context.isProUser ? 2 : 3;
   let weekIndex = 1;
 
   while (weekIndex <= basics.durationWeeks) {
