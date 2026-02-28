@@ -481,7 +481,7 @@ export default function BinderOverview() {
                 )}
 
                 {/* Pro CTAs */}
-                {curator.schedulingUrl && binder?.showSchedulingLink !== false && (
+                {curator.schedulingUrl && binder?.showSchedulingLink !== false && binder?.status === 'published' && (
                   <div className="flex flex-wrap gap-3 pt-2">
                     <Button variant="outline" size="sm" onClick={handleBookCall} className="gap-2">
                       <CalendarDays className="h-4 w-4" />
