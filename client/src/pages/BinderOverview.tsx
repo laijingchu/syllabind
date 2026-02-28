@@ -385,6 +385,14 @@ export default function BinderOverview() {
           </p>
         </div>
       )}
+      {binder.status === 'pending_review' && isCuratorViewing && (
+        <div className="pending-review-banner mb-6 bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded-lg flex items-center gap-3">
+          <AlertTriangle className="h-5 w-5 shrink-0" />
+          <p className="text-sm font-medium">
+            This binder is pending admin review and is not yet visible to readers.
+          </p>
+        </div>
+      )}
       {binder.visibility === 'unlisted' && (
         <div className="unlisted-banner mb-6 bg-muted border border-border text-muted-foreground px-4 py-3 rounded-lg flex items-center gap-3">
           <LinkIcon className="h-5 w-5 shrink-0" />
