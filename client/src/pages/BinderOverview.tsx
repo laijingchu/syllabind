@@ -796,6 +796,43 @@ export default function BinderOverview() {
                 </p>
               )}
             </div>
+          ) : isGuestPreview ? (
+            <div className="curator-card border rounded-xl p-6 bg-card shadow-sm space-y-5">
+              <h3 className="font-medium text-lg border-b pb-3">Meet the Curator</h3>
+              <div className="curator-info flex items-start gap-4">
+                <Avatar className="h-14 w-14 border-2 border-border shrink-0">
+                  <AvatarFallback className="text-lg bg-muted">
+                    <UserIcon className="h-6 w-6 text-muted-foreground" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="space-y-1 min-w-0">
+                  <h3 className="font-medium">Your Name</h3>
+                  <p className="text-xs text-muted-foreground">Your Title</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                This is where your bio appears. Highlight your expertise and what makes you the right guide for this topic. Once your binder is published, you can add a scheduling link so readers can book paid 1:1 sessions with you.
+              </p>
+
+              <div className="flex flex-col gap-2">
+                <Button variant="outline" size="sm" className="w-full gap-2" disabled>
+                  <CalendarDays className="h-4 w-4" />
+                  1:1 Office Hour
+                  <Badge className="bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                </Button>
+
+                <Button variant="outline" size="sm" className="w-full gap-2" disabled>
+                  <Hash className="h-4 w-4" />
+                  Join Slack Community
+                  <Badge className="bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                </Button>
+
+                <Button variant="outline" size="sm" className="w-full gap-2" disabled>
+                  <Share2 className="h-4 w-4" />
+                  Share with a Friend
+                </Button>
+              </div>
+            </div>
           ) : (
             <div className="curator-card border rounded-xl p-6 bg-card shadow-sm">
               <p className="text-sm text-muted-foreground text-center py-4">Loading curator info...</p>

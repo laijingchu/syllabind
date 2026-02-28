@@ -1839,7 +1839,6 @@ export default function BinderEditor() {
             )}
             {isGuestMode && hasBinderContent && !isGenerating && (
               <Button
-                variant="outline"
                 size="sm"
                 className="gap-1.5"
                 onClick={() => {
@@ -1851,7 +1850,7 @@ export default function BinderEditor() {
               </Button>
             )}
             {isGuestMode ? (
-              <Button size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>Sign up</Button>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>Sign up</Button>
             ) : formData.status === 'published' ? (
               <Button variant="secondary" size="sm" onClick={() => setShowUnpublishDialog(true)}>Unpublish</Button>
             ) : formData.status === 'pending_review' && !user?.isAdmin ? (
@@ -2092,7 +2091,7 @@ export default function BinderEditor() {
                     ? 'Regenerate with AI'
                     : 'Autogenerate with AI'}
                 {hasBinderContent && isFreeTier && (
-                  <Badge className="ml-1 bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                  <Badge className="ml-1 bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Free</Badge>
                 )}
               </Button>
               {/* Scheduling link toggle -- only shown when curator has a scheduling URL */}
@@ -2437,7 +2436,6 @@ export default function BinderEditor() {
             <RefreshCw className="h-3.5 w-3.5" /> Start Over
           </Button>
           <Button
-            variant="outline"
             size="sm"
             className="gap-1.5"
             onClick={() => {
@@ -2447,7 +2445,7 @@ export default function BinderEditor() {
           >
             <Eye className="h-4 w-4" /> Preview
           </Button>
-          <Button size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>
             Sign up
           </Button>
         </div>

@@ -225,7 +225,8 @@ export class DatabaseStorage implements IStorage {
         twitter: row.curatorTwitter,
         threads: row.curatorThreads,
         website: row.curatorWebsite,
-        schedulingUrl: row.curatorSchedulingUrl,
+        // Only expose scheduling URL for published binders
+        schedulingUrl: row.binder.status === 'published' ? row.curatorSchedulingUrl : null,
       } : undefined,
     }));
   }
@@ -871,7 +872,7 @@ export class DatabaseStorage implements IStorage {
       { name: 'Technology', slug: 'technology', description: 'Software engineering, AI, data science, and emerging tech', displayOrder: 2 },
       { name: 'Business', slug: 'business', description: 'Strategy, entrepreneurship, management, and leadership', displayOrder: 3 },
       { name: 'Science', slug: 'science', description: 'Natural sciences, research methods, and scientific thinking', displayOrder: 4 },
-      { name: 'Arts & Humanities', slug: 'arts-humanities', description: 'Literature, history, art, music, and cultural studies', displayOrder: 5 },
+      { name: 'Arts & Culture', slug: 'arts-culture', description: 'Literature, history, art, music, and cultural studies', displayOrder: 5 },
       { name: 'Social Sciences', slug: 'social-sciences', description: 'Psychology, sociology, economics, and political science', displayOrder: 6 },
       { name: 'Health & Wellness', slug: 'health-wellness', description: 'Physical health, mental well-being, and lifestyle habits', displayOrder: 7 },
       { name: 'Personal Development', slug: 'personal-development', description: 'Productivity, communication, habits, and self-improvement', displayOrder: 8 },
@@ -1051,7 +1052,8 @@ export class DatabaseStorage implements IStorage {
           twitter: row.curatorTwitter,
           threads: row.curatorThreads,
           website: row.curatorWebsite,
-          schedulingUrl: row.curatorSchedulingUrl,
+          // Only expose scheduling URL for published binders
+          schedulingUrl: row.binder.status === 'published' ? row.curatorSchedulingUrl : null,
         } : undefined,
       };
     }));

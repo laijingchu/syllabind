@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 
@@ -25,6 +26,11 @@ async function logout(): Promise<void> {
 }
 
 export function useAuth() {
+  // Separate state so the loading overlay persists through the full page
+  // navigation. useMutation's isPending resets to false as soon as onSuccess
+  // fires, but window.location.href still needs time to load the new page.
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ["/api/auth/me"],
     queryFn: fetchUser,
@@ -34,11 +40,15 @@ export function useAuth() {
 
   const logoutMutation = useMutation({
     mutationFn: logout,
+    onMutate: () => {
+      setIsLoggingOut(true);
+    },
     onSuccess: () => {
-      // Navigate first — window.location.href triggers a full page reload
-      // which clears all React state. Setting query data to null before
-      // navigating causes a re-render with null user that can blank the page.
+      // Keep isLoggingOut true — the full page reload will unmount everything.
       window.location.href = "/welcome";
+    },
+    onError: () => {
+      setIsLoggingOut(false);
     },
   });
 
@@ -47,6 +57,6 @@ export function useAuth() {
     isLoading,
     isAuthenticated: !!user,
     logout: logoutMutation.mutate,
-    isLoggingOut: logoutMutation.isPending,
+    isLoggingOut,
   };
 }
