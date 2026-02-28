@@ -256,6 +256,61 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
+  // ========== ADMIN REVIEW QUEUE ==========
+
+  // Get pending review queue (admin only)
+  app.get("/api/admin/review-queue", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
+    if (!user.isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    const queue = await storage.getBindersByStatus('pending_review');
+    res.json(queue);
+  });
+
+  // Approve a binder (admin only)
+  app.post("/api/admin/binders/:id/approve", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
+    if (!user.isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    const id = parseInt(req.params.id);
+    const binder = await storage.getBinder(id);
+    if (!binder) return res.status(404).json({ message: "Binder not found" });
+    if (binder.status !== 'pending_review') {
+      return res.status(400).json({ error: "Binder is not pending review" });
+    }
+    const updated = await storage.updateBinder(id, {
+      status: 'published',
+      reviewNote: req.body?.note || null,
+    });
+    res.json(updated);
+  });
+
+  // Reject a binder (admin only)
+  app.post("/api/admin/binders/:id/reject", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
+    if (!user.isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    const id = parseInt(req.params.id);
+    const binder = await storage.getBinder(id);
+    if (!binder) return res.status(404).json({ message: "Binder not found" });
+    if (binder.status !== 'pending_review') {
+      return res.status(400).json({ error: "Binder is not pending review" });
+    }
+    const { reason } = req.body;
+    if (!reason || typeof reason !== 'string') {
+      return res.status(400).json({ error: "reason is required" });
+    }
+    const updated = await storage.updateBinder(id, {
+      status: 'draft',
+      reviewNote: reason,
+      submittedAt: null,
+    });
+    res.json(updated);
+  });
+
   // ========== CATEGORY & TAG ROUTES ==========
 
   // List all categories (public)
@@ -522,7 +577,7 @@ export async function registerRoutes(
     res.json(resultTags);
   });
 
-  // Publish/unpublish binder
+  // Publish/unpublish binder (role-aware: admins publish directly, curators submit for review)
   app.post("/api/binders/:id/publish", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     const username = (req.user as any).username;
@@ -534,11 +589,39 @@ export async function registerRoutes(
       return res.status(403).json({ error: "Not binder owner" });
     }
 
-    const newStatus = binder.status === 'published' ? 'draft' : 'published';
-    // Accept visibility in request body; default to existing or 'public'
     const visibility = req.body?.visibility || binder.visibility || 'public';
-    const updated = await storage.updateBinder(id, { status: newStatus, visibility });
-    res.json(updated);
+
+    if (isAdmin) {
+      // Admin: direct toggle (draft/pending_review ↔ published)
+      const newStatus = binder.status === 'published' ? 'draft' : 'published';
+      const updated = await storage.updateBinder(id, { status: newStatus, visibility });
+      return res.json(updated);
+    }
+
+    // Non-admin curator
+    if (binder.status === 'draft') {
+      // Submit for review
+      const updated = await storage.updateBinder(id, {
+        status: 'pending_review',
+        visibility,
+        submittedAt: new Date(),
+        reviewNote: null,
+      });
+      return res.json(updated);
+    } else if (binder.status === 'pending_review') {
+      // Withdraw submission
+      const updated = await storage.updateBinder(id, {
+        status: 'draft',
+        submittedAt: null,
+      });
+      return res.json(updated);
+    } else if (binder.status === 'published') {
+      // Unpublish
+      const updated = await storage.updateBinder(id, { status: 'draft' });
+      return res.json(updated);
+    }
+
+    res.json(binder);
   });
 
   // Enrollment API

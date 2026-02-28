@@ -337,9 +337,9 @@ export default function BinderEditor() {
   const [showWaitlist, setShowWaitlist] = useState(false);
   const [waitlistUrl, setWaitlistUrl] = useState<string | null>(null);
 
-  // Check if Binder already has content
+  // Check if Binder already has content (treat '<p></p>' as empty — TipTap's default)
   const hasBinderContent = formData.weeks.some(week =>
-    week.steps.length > 0 || week.title || week.description
+    week.steps.length > 0 || week.title || (week.description && week.description !== '<p></p>')
   );
 
   // Fetch full binder with weeks and steps when editing
@@ -699,7 +699,7 @@ export default function BinderEditor() {
     setGenerationProgress({ currentWeek: 0, status: `Planning ${weekCount}-week course structure...` });
     setActiveWeekTab('week-1');
 
-    // Phase 1: brief planning delay, then populate week titles
+    // Phase 1: planning delay, then populate week titles
     setTimeout(() => {
       // Show all week titles/descriptions (like outline_planned event)
       setFormData(prev => {
@@ -716,8 +716,8 @@ export default function BinderEditor() {
       // Phase 2: simulate week-by-week content generation
       demoWeeks.forEach((dw, i) => {
         const weekIndex = i + 1;
-        const startDelay = 800 + i * 1200; // stagger: each week starts 1.2s after the previous
-        const endDelay = startDelay + 800;  // each week "generates" for 0.8s
+        const startDelay = 1200 + i * 2000; // stagger: each week starts 2s after the previous
+        const endDelay = startDelay + 1500;  // each week "generates" for 1.5s
 
         // Week starts generating
         setTimeout(() => {
@@ -760,7 +760,7 @@ export default function BinderEditor() {
           }
         }, endDelay);
       });
-    }, 1200);
+    }, 1800);
   };
 
   // Cmd+click (Mac) or Ctrl+click (Windows) to use mock mode (test streaming without API calls)
@@ -776,9 +776,9 @@ export default function BinderEditor() {
       return;
     }
 
-    // Guest mode: redirect to signup with topic preserved
+    // Guest mode: show waitlist/signup popup
     if (isGuestMode) {
-      requireAuth();
+      setShowWaitlist(true);
       return;
     }
 
@@ -1586,7 +1586,6 @@ export default function BinderEditor() {
 
   const handleSave = async (statusOverride?: 'draft' | 'published', visibilityOverride?: string) => {
     if (requireAuth()) return;
-    // Update formData immediately so autosave doesn't race with stale values
     const overrides: Record<string, any> = {};
     if (statusOverride) overrides.status = statusOverride;
     if (visibilityOverride) overrides.visibility = visibilityOverride;
@@ -1607,16 +1606,34 @@ export default function BinderEditor() {
         posthog?.capture('binder_published', { binder_id: dataToSave.id, title: dataToSave.title });
       }
 
-      const message = statusOverride === 'published'
-        ? "Binder published successfully!"
-        : statusOverride === 'draft' && formData.status === 'published'
-          ? "Binder has been unpublished."
-          : "Your changes have been saved successfully.";
+      const isSubmitForReview = statusOverride === 'published' && !user?.isAdmin;
+      const isWithdraw = statusOverride === 'draft' && formData.status === 'pending_review';
+      const isUnpublish = statusOverride === 'draft' && formData.status === 'published';
+
+      const message = isSubmitForReview
+        ? "Submitted for review!"
+        : statusOverride === 'published'
+          ? "Binder published successfully!"
+          : isWithdraw
+            ? "Submission withdrawn."
+            : isUnpublish
+              ? "Binder has been unpublished."
+              : "Your changes have been saved successfully.";
+
+      const toastTitle = isSubmitForReview
+        ? "Submitted for Review"
+        : statusOverride === 'published'
+          ? "Binder Published"
+          : isWithdraw
+            ? "Submission Withdrawn"
+            : isUnpublish
+              ? "Binder Unpublished"
+              : "Binder saved";
 
       toast({
-        title: statusOverride === 'published' ? "Binder Published" : statusOverride === 'draft' && formData.status === 'published' ? "Binder Unpublished" : "Binder saved",
+        title: toastTitle,
         description: message,
-        ...(statusOverride === 'published' && dataToSave.id > 0 && {
+        ...(statusOverride === 'published' && user?.isAdmin && dataToSave.id > 0 && {
           action: (
             <ToastAction altText="View binder" onClick={() => setLocation(`/binder/${dataToSave.id}`)}>
               View Binder
@@ -1630,7 +1647,7 @@ export default function BinderEditor() {
     } catch (err) {
       // Revert status on failure
       if (statusOverride) {
-        setFormData(prev => ({ ...prev, status: statusOverride === 'published' ? 'draft' : 'published' }));
+        setFormData(prev => ({ ...prev, status: formData.status }));
       }
       toast({
         title: "Save failed",
@@ -1813,11 +1830,38 @@ export default function BinderEditor() {
               <Button size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>Sign up</Button>
             ) : formData.status === 'published' ? (
               <Button variant="secondary" size="sm" onClick={() => setShowUnpublishDialog(true)}>Unpublish</Button>
-            ) : (
+            ) : formData.status === 'pending_review' && !user?.isAdmin ? (
+              <>
+                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Pending Review</Badge>
+                <Button variant="secondary" size="sm" onClick={() => handleSave('draft')}>Withdraw</Button>
+              </>
+            ) : user?.isAdmin ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" className="gap-1.5">
                     Publish <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuItem onClick={() => handleSave('published', 'public')}>
+                    <Globe className="h-4 w-4 mr-2" /> Public
+                    <span className="ml-auto text-xs text-muted-foreground">Catalog</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleSave('published', 'unlisted')}>
+                    <EyeOff className="h-4 w-4 mr-2" /> Unlisted
+                    <span className="ml-auto text-xs text-muted-foreground">Link only</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleSave('published', 'private')}>
+                    <Lock className="h-4 w-4 mr-2" /> Private
+                    <span className="ml-auto text-xs text-muted-foreground">Only you</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" className="gap-1.5">
+                    Submit for Review <ChevronDown className="h-3.5 w-3.5 opacity-60" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
@@ -1852,6 +1896,16 @@ export default function BinderEditor() {
             )}
          </div>
       </div>
+
+      {formData.reviewNote && formData.status === 'draft' && (
+        <div className="review-feedback-banner flex items-start gap-3 p-4 rounded-lg border border-amber-200 bg-amber-50 text-amber-900">
+          <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-medium text-sm">Feedback from admin review</p>
+            <p className="text-sm mt-1">{formData.reviewNote}</p>
+          </div>
+        </div>
+      )}
 
       {isLoadingContent ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3">
@@ -2120,16 +2174,16 @@ export default function BinderEditor() {
                         </span>
                         {generationProgress.currentWeek > 0 && (
                           <span className="text-xs text-muted-foreground">
-                            {Math.round((completedWeeks.size / formData.durationWeeks) * 100)}%
+                            {Math.round(10 + ((completedWeeks.size + 0.5 * generatingWeeks.size) / formData.durationWeeks) * 90)}%
                           </span>
                         )}
                       </div>
                       <Progress
                         value={generationProgress.currentWeek === 0
                           ? 5
-                          : (completedWeeks.size / formData.durationWeeks) * 100}
+                          : 10 + ((completedWeeks.size + 0.5 * generatingWeeks.size) / formData.durationWeeks) * 90}
                         className="h-2 bg-secondary"
-                        indicatorClassName="bg-foreground"
+                        indicatorClassName="bg-foreground transition-all duration-500"
                       />
                     </div>
                   </div>
@@ -2485,7 +2539,9 @@ export default function BinderEditor() {
                 if (waitlistUrl) {
                   window.open(waitlistUrl, '_blank');
                 } else {
-                  setLocation(`/login?mode=signup`);
+                  const titleParam = formData.title?.trim() ? `?title=${encodeURIComponent(formData.title.trim())}` : '';
+                  const redirect = encodeURIComponent(`/curator/binder/new${titleParam}`);
+                  setLocation(`/login?mode=signup&redirect=${redirect}`);
                 }
                 setShowWaitlist(false);
               }}

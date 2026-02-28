@@ -141,6 +141,9 @@ export interface IStorage {
   incrementGenerationCount(username: string): Promise<void>;
   getGenerationInfo(username: string): Promise<{ generationCount: number; lastGeneratedAt: Date | null }>;
 
+  // Binder review queue
+  getBindersByStatus(status: string): Promise<any[]>;
+
   // Demo binders
   getDemoBinders(): Promise<BinderWithContent[]>;
 }
@@ -1070,6 +1073,30 @@ export class DatabaseStorage implements IStorage {
       generationCount: user?.generationCount ?? 0,
       lastGeneratedAt: user?.lastGeneratedAt ?? null,
     };
+  }
+
+  // Binder review queue
+  async getBindersByStatus(status: string): Promise<any[]> {
+    const rows = await db
+      .select({
+        binder: binders,
+        curatorName: users.name,
+        curatorUsername: users.username,
+        curatorAvatarUrl: users.avatarUrl,
+      })
+      .from(binders)
+      .leftJoin(users, eq(binders.curatorId, users.username))
+      .where(eq(binders.status, status))
+      .orderBy(asc(binders.submittedAt));
+
+    return rows.map(row => ({
+      ...row.binder,
+      curator: row.curatorUsername ? {
+        name: row.curatorName,
+        username: row.curatorUsername,
+        avatarUrl: row.curatorAvatarUrl,
+      } : undefined,
+    }));
   }
 
   // Demo binders

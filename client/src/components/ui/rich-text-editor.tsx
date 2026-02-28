@@ -106,8 +106,9 @@ export function RichTextEditor({ value, onChange, placeholder, className, isSavi
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
       if (!value || value === '<p></p>') {
-        // Value cleared (e.g. form reset) — clear editor content
-        editor.commands.clearContent();
+        // Value cleared (e.g. form reset) — clear without firing onUpdate
+        // to avoid setting parent state to '<p></p>' (which looks "truthy")
+        editor.commands.clearContent(false);
       } else if (editor.getText() === '') {
         // Editor is empty but value has content — set it
         editor.commands.setContent(value);

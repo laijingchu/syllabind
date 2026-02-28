@@ -1,6 +1,6 @@
 export type AudienceLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 export type StepType = 'reading' | 'exercise';
-export type BinderStatus = 'draft' | 'published' | 'generating';
+export type BinderStatus = 'draft' | 'pending_review' | 'published' | 'generating';
 export type BinderVisibility = 'public' | 'unlisted' | 'private';
 
 export interface Category {
@@ -77,6 +77,8 @@ export interface Binder {
   tags?: Tag[];
   createdAt?: string | Date | null;
   updatedAt?: string | Date | null;
+  submittedAt?: string | Date | null;
+  reviewNote?: string | null;
 }
 
 export interface Enrollment {

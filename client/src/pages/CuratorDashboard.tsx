@@ -82,6 +82,8 @@ export default function CuratorDashboard() {
     if (selectedVisibility) {
       if (selectedVisibility === 'draft') {
         result = result.filter(s => s.status === 'draft');
+      } else if (selectedVisibility === 'pending_review') {
+        result = result.filter(s => s.status === 'pending_review');
       } else {
         result = result.filter(s => s.status === 'published' && s.visibility === selectedVisibility);
       }
@@ -196,9 +198,28 @@ export default function CuratorDashboard() {
       });
       if (!res.ok) throw new Error('Failed to publish');
       await refreshBinders();
-      toast({ title: "Binder Published", description: `Published as ${visibility}.` });
+      if (isAdmin) {
+        toast({ title: "Binder Published", description: `Published as ${visibility}.` });
+      } else {
+        toast({ title: "Submitted for Review", description: "Your binder has been submitted for admin review." });
+      }
     } catch {
       toast({ title: "Publish failed", description: "Something went wrong.", variant: "destructive" });
+    }
+  };
+
+  const handleWithdraw = async (id: number) => {
+    try {
+      const res = await fetch(`/api/binders/${id}/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to withdraw');
+      await refreshBinders();
+      toast({ title: "Submission Withdrawn", description: "Moved back to draft." });
+    } catch {
+      toast({ title: "Withdraw failed", description: "Something went wrong.", variant: "destructive" });
     }
   };
 
@@ -252,6 +273,7 @@ export default function CuratorDashboard() {
         visibilityOptions={[
           { value: '', label: 'All' },
           { value: 'draft', label: 'Draft' },
+          { value: 'pending_review', label: 'Pending Review' },
           { value: 'public', label: 'Public' },
           { value: 'unlisted', label: 'Unlisted' },
           { value: 'private', label: 'Private' },
@@ -380,6 +402,10 @@ export default function CuratorDashboard() {
                             Published
                           </Badge>
                         )
+                      ) : binder.status === 'pending_review' ? (
+                        <Badge variant="outline" className="shrink-0 bg-amber-50 text-amber-700 border-amber-200">
+                          Pending Review
+                        </Badge>
                       ) : (
                         <Badge variant="secondary" className="shrink-0">
                           Draft
@@ -396,6 +422,11 @@ export default function CuratorDashboard() {
                       {pluralize(binder.durationWeeks, 'week')} • {binder.audienceLevel}
                       <span className="hidden sm:inline"> • Updated {binder.updatedAt ? formatDistanceToNow(new Date(binder.updatedAt), { addSuffix: true }) : 'recently'}</span>
                     </div>
+                    {binder.reviewNote && binder.status === 'draft' && (
+                      <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 mt-1">
+                        Review feedback: {binder.reviewNote}
+                      </div>
+                    )}
                     {/* Mobile reader count */}
                     <div className="text-xs text-muted-foreground sm:hidden md:hidden">
                       {pluralize(readerCounts[binder.id]?.total || 0, 'Reader')} • {pluralize(readerCounts[binder.id]?.active || 0, 'Active')}
@@ -412,11 +443,15 @@ export default function CuratorDashboard() {
                     <Button variant="secondary" size="sm" className="h-8 px-3" onClick={() => handleUnpublish(binder.id)}>
                       Unpublish
                     </Button>
+                  ) : binder.status === 'pending_review' && !isAdmin ? (
+                    <Button variant="secondary" size="sm" className="h-8 px-3" onClick={() => handleWithdraw(binder.id)}>
+                      Withdraw
+                    </Button>
                   ) : (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button size="sm" className="h-8 px-2 sm:px-3 gap-1.5">
-                          Publish <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                          {isAdmin ? 'Publish' : 'Submit for Review'} <ChevronDown className="h-3.5 w-3.5 opacity-60" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-52">

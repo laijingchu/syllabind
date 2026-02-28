@@ -75,12 +75,14 @@ export const binders = pgTable("binders", {
   description: text("description").notNull(),
   audienceLevel: text("audience_level").notNull(), // 'Beginner', 'Intermediate', 'Advanced'
   durationWeeks: integer("duration_weeks").notNull(),
-  status: text("status").notNull().default('draft'), // 'draft', 'published'
+  status: text("status").notNull().default('draft'), // 'draft', 'pending_review', 'published'
   visibility: text("visibility").notNull().default('public'), // 'public', 'unlisted', 'private'
   curatorId: text("curator_id").references(() => users.username, { onDelete: 'set null', onUpdate: 'cascade' }),
   categoryId: integer("category_id").references(() => categories.id, { onDelete: 'set null' }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  submittedAt: timestamp("submitted_at"),
+  reviewNote: text("review_note"),
   readerActive: integer("reader_active").default(0),
   readersCompleted: integer("readers_completed").default(0),
   showSchedulingLink: boolean("show_scheduling_link").default(true),
@@ -274,6 +276,8 @@ export const insertBinderSchema = createInsertSchema(binders).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  submittedAt: true,
+  reviewNote: true,
   readerActive: true,
   readersCompleted: true
 });
