@@ -105,9 +105,13 @@ export function RichTextEditor({ value, onChange, placeholder, className, isSavi
 
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
-       if (editor.getText() === '' && value) {
-         editor.commands.setContent(value);
-       }
+      if (!value || value === '<p></p>') {
+        // Value cleared (e.g. form reset) — clear editor content
+        editor.commands.clearContent();
+      } else if (editor.getText() === '') {
+        // Editor is empty but value has content — set it
+        editor.commands.setContent(value);
+      }
     }
   }, [value, editor]);
 
@@ -147,7 +151,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, isSavi
 
   return (
     <div className="group relative mb-9">
-      {editor && <EditorBubbleMenu editor={editor} />}
+      {editor && !editor.isEmpty && <EditorBubbleMenu editor={editor} />}
       <div className="relative">
         <EditorContent editor={editor} className="[&_.ProseMirror]:min-h-[120px]" />
       </div>

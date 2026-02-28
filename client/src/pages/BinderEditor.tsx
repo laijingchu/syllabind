@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, AlertTriangle, Users, ExternalLink, Wand2, Loader2, X, Pencil, ChevronDown, Globe, EyeOff, Lock, Eye, Crown } from 'lucide-react';
+import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, AlertTriangle, Users, ExternalLink, Wand2, Loader2, X, Pencil, ChevronDown, Globe, EyeOff, Lock, Eye, Crown, RefreshCw } from 'lucide-react';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
 import {
   DropdownMenu,
@@ -776,9 +776,9 @@ export default function BinderEditor() {
       return;
     }
 
-    // Guest mode: show waitlist popup instead of calling API
+    // Guest mode: redirect to signup with topic preserved
     if (isGuestMode) {
-      setShowWaitlist(true);
+      requireAuth();
       return;
     }
 
@@ -831,6 +831,31 @@ export default function BinderEditor() {
         .then(updated => setFormData(updated))
         .catch(() => {});
     }
+  };
+
+  // Reset form to initial state (guest mode "Start Over")
+  const handleFormReset = () => {
+    setFormData({
+      id: generateTempId(),
+      title: '',
+      description: '',
+      audienceLevel: 'Beginner',
+      durationWeeks: defaultWeeks,
+      status: 'draft',
+      visibility: 'public',
+      curatorId: '',
+      showSchedulingLink: true,
+      mediaPreference: 'auto',
+      weeks: Array.from({ length: defaultWeeks }, (_, i) => ({
+        id: generateTempId(),
+        binderId: generateTempId(),
+        index: i + 1,
+        steps: [] as Step[],
+        title: ''
+      })),
+    });
+    setIsDemoMode(false);
+    setActiveWeekTab('week-1');
   };
 
   // Redirect guest users to sign up, preserving their title
@@ -1764,6 +1789,24 @@ export default function BinderEditor() {
                 className="gap-1.5 border-destructive text-destructive hover:bg-destructive/10"
               >
                 {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} <span className="hidden sm:inline">{isDeleting ? 'Deleting...' : 'Delete'}</span>
+              </Button>
+            )}
+            {isGuestMode && hasBinderContent && !isGenerating && (
+              <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={handleFormReset}>
+                <RefreshCw className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Start Over</span>
+              </Button>
+            )}
+            {isGuestMode && hasBinderContent && !isGenerating && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => {
+                  sessionStorage.setItem('guestBinderPreview', JSON.stringify(formData));
+                  setLocation('/create/preview');
+                }}
+              >
+                <Eye className="h-4 w-4" /> <span className="hidden sm:inline">Preview</span>
               </Button>
             )}
             {isGuestMode ? (

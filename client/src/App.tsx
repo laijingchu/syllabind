@@ -68,6 +68,7 @@ function Router() {
         <Route path="/binder/:id/completed" component={() => <ProtectedRoute component={Completion} />} />
         <Route path="/profile" component={() => <ProtectedRoute component={Profile} />} />
 
+        <Route path="/create/preview" component={BinderOverview} />
         <Route path="/create" component={BinderEditor} />
         <Route path="/curator" component={() => <ProtectedRoute component={CuratorDashboard} />} />
         <Route path="/curator/binder/new" component={() => <ProtectedRoute component={BinderEditor} />} />

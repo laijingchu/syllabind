@@ -23,7 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle, AlertTriangle, Share2, X, CalendarDays, Crown, Hash } from 'lucide-react';
+import { Clock, BarChart, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle, AlertTriangle, Share2, X, CalendarDays, Crown, Hash, Eye, ArrowLeft } from 'lucide-react';
 import { ShareDialog } from '@/components/ShareDialog';
 import { useState, useEffect } from 'react';
 import { cn, pluralize } from '@/lib/utils';
@@ -34,6 +34,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function BinderOverview() {
   const [match, params] = useRoute('/binder/:id');
+  const [guestPreviewMatch] = useRoute('/create/preview');
   const { getBinderById, enrollInBinder, enrollment, getExerciseText, getReadersForBinder, updateEnrollmentShareProfile, isPro } = useStore();
   const [location, setLocation] = useLocation();
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
@@ -49,6 +50,7 @@ export default function BinderOverview() {
   const [existingEnrollment, setExistingEnrollment] = useState<{ id: number; currentWeekIndex: number; status: string } | null>(null);
   const [localCompletedStepIds, setLocalCompletedStepIds] = useState<number[]>([]);
 
+  const isGuestPreview = !!guestPreviewMatch;
   const binderId = match && params?.id ? parseInt(params.id) : undefined;
   const { user: currentUser, completedStepIds: storeCompletedStepIds, refreshSubscriptionLimits } = useStore();
   const { toast } = useToast();
@@ -66,8 +68,32 @@ export default function BinderOverview() {
     }
   }, []);
 
+  // Guest preview: load binder from sessionStorage
+  useEffect(() => {
+    if (isGuestPreview) {
+      try {
+        const raw = sessionStorage.getItem('guestBinderPreview');
+        if (raw) {
+          const data = JSON.parse(raw);
+          setBinder({
+            ...data,
+            id: data.id || -1,
+            status: 'draft',
+            weeks: (data.weeks || []).map((w: any) => ({
+              ...w,
+              steps: (w.steps || []).map((s: any) => ({ ...s })),
+            })),
+          });
+        }
+      } catch {
+        setBinder(undefined);
+      }
+    }
+  }, [isGuestPreview]);
+
   // Fetch full binder with weeks and steps
   useEffect(() => {
+    if (isGuestPreview) return; // Skip API fetch in guest preview
     if (binderId) {
       fetch(`/api/binders/${binderId}`, {
         credentials: 'include'
@@ -82,20 +108,22 @@ export default function BinderOverview() {
           setBinder(undefined);
         });
     }
-  }, [binderId]);
+  }, [binderId, isGuestPreview]);
 
   // Fetch readers asynchronously
   useEffect(() => {
+    if (isGuestPreview) return;
     if (binderId) {
       getReadersForBinder(binderId).then(({ classmates, totalEnrolled }) => {
         setReaders(classmates);
         setTotalEnrolled(totalEnrolled);
       });
     }
-  }, [binderId]);
+  }, [binderId, isGuestPreview]);
 
   // Fetch current enrollment for this binder (if any)
   useEffect(() => {
+    if (isGuestPreview) return;
     if (binderId && currentUser) {
       fetch(`/api/enrollments`, { credentials: 'include' })
         .then(res => res.ok ? res.json() : [])
@@ -126,6 +154,7 @@ export default function BinderOverview() {
 
   // Fetch curator profile
   useEffect(() => {
+    if (isGuestPreview) return;
     if (binder?.curatorId) {
       fetch(`/api/users/${binder.curatorId}`, {
         credentials: 'include'
@@ -138,17 +167,18 @@ export default function BinderOverview() {
 
   // Fetch Slack community URL from site settings
   useEffect(() => {
+    if (isGuestPreview) return;
     fetch('/api/site-settings/slack_community_url')
       .then(res => res.json())
       .then(data => setSlackUrl(data.value || null))
       .catch(() => {});
-  }, []);
+  }, [isGuestPreview]);
 
   if (!binder) return <div className="text-center py-20">Loading...</div>;
 
-  // Private binder: non-curator sees 404
+  // Private binder: non-curator sees 404 (skip for guest preview)
   const isCuratorViewing = currentUser?.username === binder.curatorId;
-  if (binder.visibility === 'private' && !isCuratorViewing) {
+  if (!isGuestPreview && binder.visibility === 'private' && !isCuratorViewing) {
     return (
       <AnimatedPage className="max-w-2xl mx-auto text-center py-20 space-y-4">
         <h1 className="text-2xl font-display">Binder not found</h1>
@@ -333,7 +363,21 @@ export default function BinderOverview() {
 
   return (
     <AnimatedPage className="max-w-4xl mx-auto">
-      {isPreview && (
+      {isGuestPreview && (
+        <div className="preview-banner mb-6 bg-primary/5 border border-primary/20 text-foreground px-4 py-3 rounded-lg flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Eye className="h-5 w-5 shrink-0 text-primary" />
+            <p className="text-sm font-medium">
+              Demo Preview: This is how your binder would look to readers.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setLocation('/create')} className="shrink-0 gap-1.5">
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to Editor
+          </Button>
+        </div>
+      )}
+      {isPreview && !isGuestPreview && (
         <div className="preview-banner mb-6 bg-muted border border-border text-muted-foreground px-4 py-3 rounded-lg flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 shrink-0" />
           <p className="text-sm font-medium">
@@ -692,6 +736,24 @@ export default function BinderOverview() {
 
         <div className="enrollment-sidebar sticky top-24">
           <div className="enrollment-card border rounded-xl p-6 bg-card shadow-sm space-y-6">
+            {isGuestPreview ? (
+              <>
+                <div className="enrollment-cta space-y-2">
+                  <h3 className="font-medium text-lg">Like what you see?</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Sign up to create your own binder with AI-generated readings and exercises.
+                  </p>
+                </div>
+                <Button size="lg" className="w-full" onClick={() => setLocation('/login?mode=signup')}>
+                  Sign up to Start
+                </Button>
+                <Button variant="outline" className="w-full" onClick={() => setLocation('/create')}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Editor
+                </Button>
+              </>
+            ) : (
+              <>
             <div className="enrollment-cta space-y-2">
               <h3 className="font-medium text-lg">
                 {isCompleted ? "Binder Completed" : isActive ? "Continue Learning" : "Ready to start?"}
@@ -738,6 +800,8 @@ export default function BinderOverview() {
                     </label>
                  </div>
                </div>
+            )}
+              </>
             )}
 
           </div>

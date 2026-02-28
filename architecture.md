@@ -2343,7 +2343,11 @@ Three workstreams to manage AI generation costs (~$0.5-1 per generation) and con
 
 **Simulated Generation:** Clicking a demo chip triggers a simulated generation that mirrors the signed-in experience: progress bar with "Planning..." status, week-by-week skeleton placeholders (`GeneratingWeekPlaceholder`), and tab auto-switching. Demo week data populates into `formData.weeks` sequentially with staggered delays (~1.2s per week). The end state is the normal Binder editor section with all form fields populated (week titles, descriptions, steps with URLs/authors/media types/exercises). No separate preview UI — identical to the post-generation state for signed-in users.
 
-**Autogenerate in Guest Mode:** The main "Autogenerate with AI" button shows a waitlist popup dialog instead of making any API calls. The `POST /api/preview-outline` endpoint and `planOutlinePublic()` have been removed.
+**Guest Preview (`/create/preview`):** After a demo generation completes, a "Preview" button appears in the editor header. Clicking it stores `formData` in `sessionStorage` under `guestBinderPreview` and navigates to `/create/preview`. The `BinderOverview` component detects this route, reads binder data from sessionStorage (skipping all API fetches), and renders a read-only preview with a "Demo Preview" banner and "Back to Editor" / "Sign up to Start" CTAs.
+
+**Form Reset ("Start Over"):** A "Start Over" ghost button appears in the header when `isGuestMode && hasBinderContent && !isGenerating`. It resets `formData` to empty defaults, clears `isDemoMode`, and returns to `week-1` — causing demo topic chips to reappear so the user can try another demo.
+
+**Autogenerate in Guest Mode:** The "Autogenerate with AI" button calls `requireAuth()` which redirects to `/login?mode=signup&redirect=/curator/binder/new?title=...`, preserving the user's typed topic. After signup, they land on the authenticated editor with their title pre-filled and can generate immediately. The waitlist popup is retained for the "Sign up" header button and duration > 3 weeks selector.
 
 **Storage:**
 - `getDemoBinders()`: Returns `BinderWithContent[]` — full binder data with weeks and steps via `getBinderWithContent()`.
@@ -2379,8 +2383,8 @@ Three workstreams to manage AI generation costs (~$0.5-1 per generation) and con
 | Feature | Signed-Out | Free | Pro |
 |---------|-----------|------|-----|
 | Duration | N/A | 1-4 weeks | 1-6 weeks |
-| Demo preview (pre-built, full content) | Yes (0 cost) | N/A | N/A |
-| Autogenerate / Regenerate | Waitlist popup | 2 total, 15-min cooldown | Unlimited |
+| Demo preview (pre-built, full content) | Yes (0 cost) + guest preview | N/A | N/A |
+| Autogenerate / Regenerate | Signup redirect (topic preserved) | 2 total, 15-min cooldown | Unlimited |
 | Regenerate full binder | N/A | Blocked | Allowed |
 | Per-week regeneration | N/A | Blocked | Allowed |
 
