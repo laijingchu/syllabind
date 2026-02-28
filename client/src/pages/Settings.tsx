@@ -245,7 +245,7 @@ export default function Settings() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will permanently delete your account, all your syllabinds, enrollments, and progress.
+                  This will permanently delete your account, all your binders, enrollments, and progress.
                   This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>

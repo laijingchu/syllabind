@@ -12,7 +12,7 @@ const tsvector = customType<{ data: string }>({
 
 /**
  * SCHEMA NOTE:
- * - Foreign keys for creator_id and student_id reference users.username (unique)
+ * - Foreign keys for curator_id and reader_id reference users.username (unique)
  * - Other user references use users.id (UUID)
  * - Fully normalized schema: Only sessions.sess uses JSONB (required by express-session)
  * - Step completion tracking uses completed_steps junction table
@@ -42,7 +42,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   name: text("name"),
   avatarUrl: text("avatar_url"),
-  isCreator: boolean("is_creator").default(false),
+  isCurator: boolean("is_curator").default(false),
   bio: text("bio"),
   expertise: text("expertise"),
   linkedin: text("linkedin"),
@@ -57,7 +57,7 @@ export const users = pgTable("users", {
   subscriptionStatus: text("subscription_status").notNull().default('free'), // 'free' | 'pro' | 'past_due'
 });
 
-// Admin-managed categories for syllabind discovery
+// Admin-managed categories for binder discovery
 export const categories = pgTable("categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
@@ -67,7 +67,7 @@ export const categories = pgTable("categories", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const syllabinds = pgTable("syllabi", {
+export const binders = pgTable("binders", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
@@ -75,48 +75,48 @@ export const syllabinds = pgTable("syllabi", {
   durationWeeks: integer("duration_weeks").notNull(),
   status: text("status").notNull().default('draft'), // 'draft', 'published'
   visibility: text("visibility").notNull().default('public'), // 'public', 'unlisted', 'private'
-  creatorId: text("creator_id").references(() => users.username, { onDelete: 'set null', onUpdate: 'cascade' }),
+  curatorId: text("curator_id").references(() => users.username, { onDelete: 'set null', onUpdate: 'cascade' }),
   categoryId: integer("category_id").references(() => categories.id, { onDelete: 'set null' }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-  studentActive: integer("student_active").default(0),
-  studentsCompleted: integer("students_completed").default(0),
+  readerActive: integer("reader_active").default(0),
+  readersCompleted: integer("readers_completed").default(0),
   showSchedulingLink: boolean("show_scheduling_link").default(true),
   mediaPreference: text("media_preference").default('auto'), // 'auto', 'yes', 'no'
   searchVector: tsvector("search_vector"),
 }, (table) => [
-  index("syllabi_creator_id_idx").on(table.creatorId),
-  index("syllabi_status_idx").on(table.status),
-  index("syllabi_status_visibility_idx").on(table.status, table.visibility),
-  index("syllabi_category_id_idx").on(table.categoryId),
+  index("binders_curator_id_idx").on(table.curatorId),
+  index("binders_status_idx").on(table.status),
+  index("binders_status_visibility_idx").on(table.status, table.visibility),
+  index("binders_category_id_idx").on(table.categoryId),
 ]);
 
 export const enrollments = pgTable("enrollments", {
   id: serial("id").primaryKey(),
-  studentId: text("student_id").references(() => users.username, { onDelete: 'cascade', onUpdate: 'cascade' }),
-  syllabusId: integer("syllabus_id").references(() => syllabinds.id, { onDelete: 'cascade' }),
+  readerId: text("reader_id").references(() => users.username, { onDelete: 'cascade', onUpdate: 'cascade' }),
+  binderId: integer("binder_id").references(() => binders.id, { onDelete: 'cascade' }),
   status: text("status").notNull().default('in-progress'), // 'in-progress', 'completed', 'dropped'
   currentWeekIndex: integer("current_week_index").default(1),
   shareProfile: boolean("share_profile").default(false),
   joinedAt: timestamp("joined_at").defaultNow(),
 }, (table) => [
-  uniqueIndex("enrollments_student_syllabus_idx").on(table.studentId, table.syllabusId),
-  index("enrollments_student_id_idx").on(table.studentId),
-  index("enrollments_syllabus_id_idx").on(table.syllabusId),
+  uniqueIndex("enrollments_reader_binder_idx").on(table.readerId, table.binderId),
+  index("enrollments_reader_id_idx").on(table.readerId),
+  index("enrollments_binder_id_idx").on(table.binderId),
 ]);
 
-// Normalized tables for syllabus content
+// Normalized tables for binder content
 export const weeks = pgTable("weeks", {
   id: serial("id").primaryKey(),
-  syllabusId: integer("syllabus_id")
-    .references(() => syllabinds.id, { onDelete: 'cascade' })
+  binderId: integer("binder_id")
+    .references(() => binders.id, { onDelete: 'cascade' })
     .notNull(),
   index: integer("index").notNull(), // 1, 2, 3, 4...
   title: text("title"),
   description: text("description"),
 }, (table) => [
-  index("weeks_syllabus_id_idx").on(table.syllabusId),
-  uniqueIndex("weeks_syllabus_id_index_idx").on(table.syllabusId, table.index),
+  index("weeks_binder_id_idx").on(table.binderId),
+  uniqueIndex("weeks_binder_id_index_idx").on(table.binderId, table.index),
 ]);
 
 export const steps = pgTable("steps", {
@@ -149,7 +149,7 @@ export const submissions = pgTable("submissions", {
   answer: text("answer").notNull(),
   isShared: boolean("is_shared").default(false).notNull(),
   submittedAt: timestamp("submitted_at").defaultNow().notNull(),
-  // Creator feedback fields
+  // Curator feedback fields
   feedback: text("feedback"),
   grade: text("grade"),
   rubricUrl: text("rubric_url"),
@@ -173,14 +173,14 @@ export const completedSteps = pgTable("completed_steps", {
   pk: primaryKey({ columns: [table.enrollmentId, table.stepId] })
 }));
 
-// Cohorts for grouping learners
+// Cohorts for grouping readers
 export const cohorts = pgTable("cohorts", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  syllabusId: integer("syllabus_id")
-    .references(() => syllabinds.id, { onDelete: 'cascade' })
+  binderId: integer("binder_id")
+    .references(() => binders.id, { onDelete: 'cascade' })
     .notNull(),
-  creatorId: text("creator_id")
+  curatorId: text("curator_id")
     .references(() => users.username, { onDelete: 'set null', onUpdate: 'cascade' }),
   description: text("description"),
   isActive: boolean("is_active").default(true).notNull(),
@@ -192,13 +192,13 @@ export const cohortMembers = pgTable("cohort_members", {
   cohortId: integer("cohort_id")
     .references(() => cohorts.id, { onDelete: 'cascade' })
     .notNull(),
-  studentId: text("student_id")
+  readerId: text("reader_id")
     .references(() => users.username, { onDelete: 'cascade', onUpdate: 'cascade' })
     .notNull(),
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
   role: text("role").default('member').notNull(),
 }, (table) => ({
-  pk: primaryKey({ columns: [table.cohortId, table.studentId] })
+  pk: primaryKey({ columns: [table.cohortId, table.readerId] })
 }));
 
 // Subscription audit trail
@@ -223,7 +223,7 @@ export const waitlist = pgTable("waitlist", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
-  role: text("role").notNull(), // 'learner' | 'creator' | 'both'
+  role: text("role").notNull(), // 'reader' | 'curator' | 'both'
   occupation: text("occupation").notNull(),
   occupationDetail: text("occupation_detail"),
   topicInterest: text("topic_interest"),
@@ -246,7 +246,7 @@ export const siteSettings = pgTable("site_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Free-form tags for syllabind discovery
+// Free-form tags for binder discovery
 export const tags = pgTable("tags", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -254,25 +254,25 @@ export const tags = pgTable("tags", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Junction table: syllabind <-> tags (many-to-many)
-export const syllabindTags = pgTable("syllabind_tags", {
-  syllabusId: integer("syllabus_id")
-    .references(() => syllabinds.id, { onDelete: 'cascade' })
+// Junction table: binder <-> tags (many-to-many)
+export const binderTags = pgTable("binder_tags", {
+  binderId: integer("binder_id")
+    .references(() => binders.id, { onDelete: 'cascade' })
     .notNull(),
   tagId: integer("tag_id")
     .references(() => tags.id, { onDelete: 'cascade' })
     .notNull(),
 }, (table) => ({
-  pk: primaryKey({ columns: [table.syllabusId, table.tagId] }),
+  pk: primaryKey({ columns: [table.binderId, table.tagId] }),
 }));
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
-export const insertSyllabusSchema = createInsertSchema(syllabinds).omit({
+export const insertBinderSchema = createInsertSchema(binders).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  studentActive: true,
-  studentsCompleted: true
+  readerActive: true,
+  readersCompleted: true
 });
 export const insertEnrollmentSchema = createInsertSchema(enrollments).omit({ id: true, joinedAt: true });
 export const insertWeekSchema = createInsertSchema(weeks).omit({ id: true });
@@ -296,12 +296,12 @@ export const insertWaitlistSchema = createInsertSchema(waitlist).omit({ id: true
 export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({ id: true, updatedAt: true });
 export const insertCategorySchema = createInsertSchema(categories).omit({ id: true, createdAt: true });
 export const insertTagSchema = createInsertSchema(tags).omit({ id: true, createdAt: true });
-export const insertSyllabindTagSchema = createInsertSchema(syllabindTags);
+export const insertBinderTagSchema = createInsertSchema(binderTags);
 
 export type User = typeof users.$inferSelect & { isAdmin?: boolean };
 export type InsertUser = z.infer<typeof insertUserSchema>;
-export type Syllabus = typeof syllabinds.$inferSelect;
-export type InsertSyllabus = z.infer<typeof insertSyllabusSchema>;
+export type Binder = typeof binders.$inferSelect;
+export type InsertBinder = z.infer<typeof insertBinderSchema>;
 export type Enrollment = typeof enrollments.$inferSelect;
 export type InsertEnrollment = z.infer<typeof insertEnrollmentSchema>;
 export type Week = typeof weeks.$inferSelect;
@@ -326,8 +326,8 @@ export type Category = typeof categories.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Tag = typeof tags.$inferSelect;
 export type InsertTag = z.infer<typeof insertTagSchema>;
-export type SyllabindTag = typeof syllabindTags.$inferSelect;
-export type InsertSyllabindTag = z.infer<typeof insertSyllabindTagSchema>;
+export type BinderTag = typeof binderTags.$inferSelect;
+export type InsertBinderTag = z.infer<typeof insertBinderTagSchema>;
 
 // Password validation
 export const passwordSchema = z.string()

@@ -17,7 +17,7 @@ describe('Completion Routes', () => {
       const enrollmentId = parseInt(req.params.enrollmentId);
       const stepId = parseInt(req.params.stepId);
       const enrollment = await mockStorage.getEnrollmentById(enrollmentId);
-      if (!enrollment || enrollment.studentId !== (req.user as any).username) {
+      if (!enrollment || enrollment.readerId !== (req.user as any).username) {
         return res.status(403).json({ error: 'Not authorized' });
       }
       const completion = await mockStorage.markStepCompleted(enrollmentId, stepId);
@@ -29,7 +29,7 @@ describe('Completion Routes', () => {
       const enrollmentId = parseInt(req.params.enrollmentId);
       const stepId = parseInt(req.params.stepId);
       const enrollment = await mockStorage.getEnrollmentById(enrollmentId);
-      if (!enrollment || enrollment.studentId !== (req.user as any).username) {
+      if (!enrollment || enrollment.readerId !== (req.user as any).username) {
         return res.status(403).json({ error: 'Not authorized' });
       }
       await mockStorage.markStepIncomplete(enrollmentId, stepId);
@@ -41,7 +41,7 @@ describe('Completion Routes', () => {
       const enrollmentId = parseInt(req.params.enrollmentId);
       const username = (req.user as any).username;
       const enrollment = await mockStorage.getEnrollmentById(enrollmentId);
-      if (!enrollment || enrollment.studentId !== username) {
+      if (!enrollment || enrollment.readerId !== username) {
         return res.status(403).json({ error: 'Not authorized' });
       }
       const completedStepIds = await mockStorage.getCompletedSteps(enrollmentId);
@@ -66,7 +66,7 @@ describe('Completion Routes', () => {
 
   describe('POST /api/enrollments/:enrollmentId/steps/:stepId/complete', () => {
     it('should mark step as complete', async () => {
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: 'testuser' });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: 'testuser' });
       const completion = { enrollmentId: 1, stepId: 5, completedAt: new Date().toISOString() };
       mockStorage.markStepCompleted.mockResolvedValue(completion);
 
@@ -79,7 +79,7 @@ describe('Completion Routes', () => {
     });
 
     it('should return 403 when not enrollment owner', async () => {
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: 'otheruser' });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: 'otheruser' });
 
       await request(authedApp)
         .post('/api/enrollments/1/steps/5/complete')
@@ -97,7 +97,7 @@ describe('Completion Routes', () => {
 
   describe('DELETE /api/enrollments/:enrollmentId/steps/:stepId/complete', () => {
     it('should mark step as incomplete', async () => {
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: 'testuser' });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: 'testuser' });
 
       const res = await request(authedApp)
         .delete('/api/enrollments/1/steps/5/complete')
@@ -108,7 +108,7 @@ describe('Completion Routes', () => {
     });
 
     it('should return 403 when not enrollment owner', async () => {
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: 'otheruser' });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: 'otheruser' });
 
       await request(authedApp)
         .delete('/api/enrollments/1/steps/5/complete')
@@ -118,7 +118,7 @@ describe('Completion Routes', () => {
 
   describe('GET /api/enrollments/:enrollmentId/completed-steps', () => {
     it('should return completed step IDs', async () => {
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: 'testuser' });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: 'testuser' });
       mockStorage.getCompletedSteps.mockResolvedValue([1, 3, 5]);
 
       const res = await request(authedApp)
@@ -129,7 +129,7 @@ describe('Completion Routes', () => {
     });
 
     it('should return 403 when not enrollment owner', async () => {
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: 'otheruser' });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: 'otheruser' });
 
       await request(authedApp)
         .get('/api/enrollments/1/completed-steps')

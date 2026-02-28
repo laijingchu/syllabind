@@ -10,7 +10,7 @@ import { ArrowLeft, Save } from 'lucide-react';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { toast } from '@/hooks/use-toast';
 
-export default function CreatorProfile() {
+export default function CuratorProfile() {
   const { user, updateUser } = useStore();
   const [, setLocation] = useLocation();
   const [formData, setFormData] = useState({
@@ -62,9 +62,9 @@ export default function CreatorProfile() {
     updateUser(formData);
     toast({
       title: "Profile updated",
-      description: "Your creator profile has been saved successfully."
+      description: "Your curator profile has been saved successfully."
     });
-    setLocation('/creator');
+    setLocation('/curator');
   };
 
   if (!user) return null;
@@ -72,12 +72,12 @@ export default function CreatorProfile() {
   return (
     <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center gap-4">
-        <Link href="/creator">
+        <Link href="/curator">
           <Button variant="ghost" size="icon" className="rounded-full">
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <h1 className="text-3xl font-display">Creator Profile</h1>
+        <h1 className="text-3xl font-display">Curator Profile</h1>
       </div>
 
       <div className="grid gap-8">
@@ -109,7 +109,7 @@ export default function CreatorProfile() {
 
               <div className="space-y-2">
                 <Label htmlFor="expertise">Expertise / Headline</Label>
-                <Input 
+                <Input
                   id="expertise"
                   value={formData.expertise}
                   onChange={e => setFormData({ ...formData, expertise: e.target.value })}
@@ -119,12 +119,12 @@ export default function CreatorProfile() {
 
               <div className="space-y-2">
                 <Label htmlFor="bio">Bio</Label>
-                <Textarea 
+                <Textarea
                   id="bio"
                   className="min-h-[120px] leading-relaxed"
                   value={formData.bio}
                   onChange={e => setFormData({ ...formData, bio: e.target.value })}
-                  placeholder="Tell learners about your background and teaching style..."
+                  placeholder="Tell readers about your background and teaching style..."
                 />
               </div>
             </div>

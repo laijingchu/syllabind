@@ -71,66 +71,66 @@ describe('DatabaseStorage (real class, mocked db)', () => {
     });
   });
 
-  // --- Syllabus operations ---
+  // --- Binder operations ---
 
-  describe('getSyllabus', () => {
+  describe('getBinder', () => {
     it('returns undefined when not found', async () => {
-      const result = await storage.getSyllabus(999);
+      const result = await storage.getBinder(999);
       expect(result).toBeUndefined();
     });
   });
 
-  describe('listSyllabinds', () => {
+  describe('listBinders', () => {
     it('returns empty array', async () => {
-      const result = await storage.listSyllabinds();
+      const result = await storage.listBinders();
       expect(result).toEqual([]);
     });
   });
 
-  describe('listPublishedSyllabinds', () => {
+  describe('listPublishedBinders', () => {
     it('returns empty array', async () => {
-      const result = await storage.listPublishedSyllabinds();
+      const result = await storage.listPublishedBinders();
       expect(result).toEqual([]);
     });
   });
 
-  describe('getSyllabindsByCreator', () => {
+  describe('getBindersByCurator', () => {
     it('returns empty array', async () => {
-      const result = await storage.getSyllabindsByCreator('creator');
+      const result = await storage.getBindersByCurator('curator');
       expect(result).toEqual([]);
     });
   });
 
-  describe('createSyllabus', () => {
+  describe('createBinder', () => {
     it('calls db.insert', async () => {
-      const result = await storage.createSyllabus({
+      const result = await storage.createBinder({
         title: 'Test', description: 'D', audienceLevel: 'Beginner', durationWeeks: 4
       } as any);
       expect(result).toBeUndefined();
     });
   });
 
-  describe('updateSyllabus', () => {
+  describe('updateBinder', () => {
     it('calls db.update with updatedAt', async () => {
-      const result = await storage.updateSyllabus(1, { title: 'Updated' });
+      const result = await storage.updateBinder(1, { title: 'Updated' });
       expect(result).toBeUndefined();
     });
   });
 
-  describe('deleteSyllabus', () => {
+  describe('deleteBinder', () => {
     it('calls db.delete', async () => {
-      await storage.deleteSyllabus(1);
+      await storage.deleteBinder(1);
       // No throw = success
     });
   });
 
-  describe('batchDeleteSyllabinds', () => {
+  describe('batchDeleteBinders', () => {
     it('does nothing for empty array', async () => {
-      await storage.batchDeleteSyllabinds([]);
+      await storage.batchDeleteBinders([]);
     });
 
     it('calls db.delete for non-empty array', async () => {
-      await storage.batchDeleteSyllabinds([1, 2]);
+      await storage.batchDeleteBinders([1, 2]);
     });
   });
 
@@ -160,18 +160,18 @@ describe('DatabaseStorage (real class, mocked db)', () => {
   describe('createEnrollment', () => {
     it('calls db.insert', async () => {
       const result = await storage.createEnrollment({
-        studentId: 'user', syllabusId: 1, status: 'in-progress'
+        readerId: 'user', binderId: 1, status: 'in-progress'
       } as any);
       expect(result).toBeUndefined();
     });
   });
 
   describe('dropActiveEnrollments', () => {
-    it('handles call without exceptSyllabusId', async () => {
+    it('handles call without exceptBinderId', async () => {
       await storage.dropActiveEnrollments('user');
     });
 
-    it('handles call with exceptSyllabusId', async () => {
+    it('handles call with exceptBinderId', async () => {
       await storage.dropActiveEnrollments('user', 5);
     });
   });
@@ -216,14 +216,14 @@ describe('DatabaseStorage (real class, mocked db)', () => {
 
   describe('createWeek', () => {
     it('calls db.insert', async () => {
-      const result = await storage.createWeek({ syllabusId: 1, index: 1 } as any);
+      const result = await storage.createWeek({ binderId: 1, index: 1 } as any);
       expect(result).toBeUndefined();
     });
   });
 
-  describe('getWeeksBySyllabusId', () => {
+  describe('getWeeksByBinderId', () => {
     it('returns empty array', async () => {
-      const result = await storage.getWeeksBySyllabusId(1);
+      const result = await storage.getWeeksByBinderId(1);
       expect(result).toEqual([]);
     });
   });
@@ -275,9 +275,9 @@ describe('DatabaseStorage (real class, mocked db)', () => {
     });
   });
 
-  describe('deleteWeeksBySyllabusId', () => {
+  describe('deleteWeeksByBinderId', () => {
     it('calls db.delete', async () => {
-      await storage.deleteWeeksBySyllabusId(1);
+      await storage.deleteWeeksByBinderId(1);
     });
   });
 
@@ -313,7 +313,7 @@ describe('DatabaseStorage (real class, mocked db)', () => {
     });
   });
 
-  // --- Learner operations ---
+  // --- Reader operations ---
 
   describe('updateEnrollmentShareProfile', () => {
     it('calls db.update', async () => {
@@ -341,33 +341,33 @@ describe('DatabaseStorage (real class, mocked db)', () => {
 
   // --- Complex methods ---
 
-  describe('getSyllabusWithContent', () => {
-    it('returns undefined when syllabus not found', async () => {
-      const result = await storage.getSyllabusWithContent(999);
+  describe('getBinderWithContent', () => {
+    it('returns undefined when binder not found', async () => {
+      const result = await storage.getBinderWithContent(999);
       expect(result).toBeUndefined();
     });
   });
 
-  describe('getLearnersBySyllabusId', () => {
+  describe('getReadersByBinderId', () => {
     it('returns empty array when no enrollments', async () => {
-      const result = await storage.getLearnersBySyllabusId(1);
+      const result = await storage.getReadersByBinderId(1);
       expect(result).toEqual([]);
     });
   });
 
-  describe('getClassmatesBySyllabusId', () => {
+  describe('getClassmatesByBinderId', () => {
     it('returns empty classmates with 0 total', async () => {
-      const result = await storage.getClassmatesBySyllabusId(1);
+      const result = await storage.getClassmatesByBinderId(1);
       expect(result.classmates).toEqual([]);
       expect(result.totalEnrolled).toBe(0);
     });
   });
 
-  describe('getSyllabusAnalytics', () => {
+  describe('getBinderAnalytics', () => {
     it('returns zero stats when no enrollments', async () => {
-      const result = await storage.getSyllabusAnalytics(1);
-      expect(result.learnersStarted).toBe(0);
-      expect(result.learnersCompleted).toBe(0);
+      const result = await storage.getBinderAnalytics(1);
+      expect(result.readersStarted).toBe(0);
+      expect(result.readersCompleted).toBe(0);
       expect(result.completionRate).toBe(0);
       expect(result.averageProgress).toBe(0);
       expect(result.weekReach).toEqual([]);

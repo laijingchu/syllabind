@@ -28,7 +28,7 @@ export function registerAuthRoutes(app: Express): void {
         replitId: replitUserId as string,
         username: (replitUserName as string) || `user_${replitUserId}`,
         name: (replitUserName as string) || "Replit User",
-        isCreator: (replitUserRoles as string || "").includes("admin"), // Basic mapping
+        isCurator: (replitUserRoles as string || "").includes("admin"), // Basic mapping
       });
 
       res.json(user);

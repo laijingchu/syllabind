@@ -5,52 +5,52 @@ import { Progress } from '@/components/ui/progress';
 import { Award, ArrowRight, ArrowLeft, AlertCircle, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
-import { Syllabus } from '@/lib/types';
+import { Binder } from '@/lib/types';
 
 export default function Completion() {
-  const [match, params] = useRoute('/syllabind/:id/completed');
-  const { enrollment, completeActiveSyllabus, user: currentUser } = useStore();
+  const [match, params] = useRoute('/binder/:id/completed');
+  const { enrollment, completeActiveBinder, user: currentUser } = useStore();
   const completedRef = useRef(false);
 
-  const syllabusId = params?.id ? parseInt(params.id) : undefined;
+  const binderId = params?.id ? parseInt(params.id) : undefined;
 
-  const [syllabus, setSyllabus] = useState<Syllabus | undefined>(undefined);
+  const [binder, setBinder] = useState<Binder | undefined>(undefined);
   const [completedStepIds, setCompletedStepIds] = useState<number[]>([]);
   const [localEnrollmentId, setLocalEnrollmentId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch full syllabus with weeks and steps
+  // Fetch full binder with weeks and steps
   useEffect(() => {
-    if (syllabusId) {
+    if (binderId) {
       setLoading(true);
-      fetch(`/api/syllabinds/${syllabusId}`, { credentials: 'include' })
+      fetch(`/api/binders/${binderId}`, { credentials: 'include' })
         .then(res => {
-          if (!res.ok) throw new Error(`Failed to fetch syllabus: ${res.status}`);
+          if (!res.ok) throw new Error(`Failed to fetch binder: ${res.status}`);
           return res.json();
         })
-        .then(data => setSyllabus(data))
+        .then(data => setBinder(data))
         .catch(err => {
-          console.error('Failed to fetch syllabus:', err);
-          setSyllabus(undefined);
+          console.error('Failed to fetch binder:', err);
+          setBinder(undefined);
         })
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
-  }, [syllabusId]);
+  }, [binderId]);
 
-  // Fetch enrollment for this specific syllabus
+  // Fetch enrollment for this specific binder
   useEffect(() => {
-    if (syllabusId && currentUser) {
+    if (binderId && currentUser) {
       fetch('/api/enrollments', { credentials: 'include' })
         .then(res => res.ok ? res.json() : [])
         .then((data: any[]) => {
-          const match = data.find((e: any) => e.syllabusId === syllabusId);
+          const match = data.find((e: any) => e.binderId === binderId);
           if (match) setLocalEnrollmentId(match.id);
         })
         .catch(() => {});
     }
-  }, [syllabusId, currentUser]);
+  }, [binderId, currentUser]);
 
   // Fetch completed steps for this enrollment
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function Completion() {
   }, [localEnrollmentId]);
 
   // Compute overall progress
-  const allStepIds = syllabus?.weeks?.flatMap(w => w.steps.map(s => s.id)) || [];
+  const allStepIds = binder?.weeks?.flatMap(w => w.steps.map(s => s.id)) || [];
   const completedCount = allStepIds.filter(id => completedStepIds.includes(id)).length;
   const progress = allStepIds.length > 0 ? Math.round((completedCount / allStepIds.length) * 100) : 0;
   const isComplete = progress === 100;
@@ -73,13 +73,13 @@ export default function Completion() {
     if (
       !completedRef.current &&
       isComplete &&
-      syllabusId &&
-      enrollment?.activeSyllabusId === syllabusId
+      binderId &&
+      enrollment?.activeBinderId === binderId
     ) {
       completedRef.current = true;
-      completeActiveSyllabus();
+      completeActiveBinder();
     }
-  }, [isComplete, syllabusId, enrollment?.activeSyllabusId]);
+  }, [isComplete, binderId, enrollment?.activeBinderId]);
 
   useEffect(() => {
     if (!isComplete) return;
@@ -114,7 +114,7 @@ export default function Completion() {
     );
   }
 
-  if (!syllabus) return <div>Not found</div>;
+  if (!binder) return <div>Not found</div>;
 
   // Incomplete state — missing assignments
   if (!isComplete) {
@@ -129,7 +129,7 @@ export default function Completion() {
         <div className="space-y-4">
           <h1 className="text-3xl md:text-4xl font-display text-foreground">Almost There!</h1>
           <p className="text-lg text-muted-foreground max-w-md mx-auto">
-            You have {remaining} incomplete {remaining === 1 ? 'assignment' : 'assignments'} remaining in <strong>{syllabus.title}</strong>. Complete all steps to finish the Syllabind and earn your certificate.
+            You have {remaining} incomplete {remaining === 1 ? 'assignment' : 'assignments'} remaining in <strong>{binder.title}</strong>. Complete all steps to finish the Binder and earn your certificate.
           </p>
         </div>
 
@@ -142,14 +142,14 @@ export default function Completion() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <Link href={`/syllabind/${syllabus.id}/week/${syllabus.durationWeeks}`}>
+          <Link href={`/binder/${binder.id}/week/${binder.durationWeeks}`}>
             <Button variant="outline" className="w-full sm:w-auto">
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Last Week
             </Button>
           </Link>
-          <Link href={`/syllabind/${syllabus.id}`}>
+          <Link href={`/binder/${binder.id}`}>
             <Button className="w-full sm:w-auto">
-              Return to Syllabind Overview
+              Return to Binder Overview
             </Button>
           </Link>
         </div>
@@ -165,17 +165,17 @@ export default function Completion() {
            <Award className="h-16 w-16 text-primary" />
         </div>
         <div className="absolute -bottom-2 -right-2 bg-background p-2 rounded-full border shadow-sm">
-           <span className="text-2xl">🎓</span>
+           <span className="text-2xl">&#x1F393;</span>
         </div>
       </div>
 
       <div className="space-y-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 fill-mode-backwards">
         <h1 className="text-4xl md:text-5xl font-display text-foreground">Congratulations!</h1>
         <p className="text-xl text-muted-foreground">
-          You've completed the <strong>{syllabus.title}</strong> Syllabind.
+          You've completed the <strong>{binder.title}</strong> Binder.
         </p>
         <p className="text-muted-foreground max-w-md mx-auto">
-          You showed up for {syllabus.durationWeeks} weeks and did the work. Take a moment to appreciate your focus.
+          You showed up for {binder.durationWeeks} weeks and did the work. Take a moment to appreciate your focus.
         </p>
       </div>
 

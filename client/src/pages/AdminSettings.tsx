@@ -184,7 +184,7 @@ export default function AdminSettings() {
         <CardHeader>
           <CardTitle>Slack Community</CardTitle>
           <CardDescription>
-            The Slack invite URL shown to Pro users on syllabind overview pages.
+            The Slack invite URL shown to Pro users on binder overview pages.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Syllabind is a full-stack learning platform that connects creators who build curated multi-week syllabinds with learners who want structured educational experiences.
+Syllabind is a full-stack learning platform that connects curators who build curated multi-week binders with readers who want structured educational experiences.
 
 **Tech Stack:**
 - Frontend: React 19 + TypeScript + Vite
@@ -16,15 +16,15 @@ Syllabind is a full-stack learning platform that connects creators who build cur
 
 ## Data Model
 
-The data model uses a fully normalized relational schema. Users can create syllabinds, and other users can enroll in them. Progress tracking is handled through the `completed_steps` junction table (normalized from a previous JSONB design).
+The data model uses a fully normalized relational schema. Users can create binders, and other users can enroll in them. Progress tracking is handled through the `completed_steps` junction table (normalized from a previous JSONB design).
 
 ### Database Schema
 
-The database schema defines the structure of data stored in PostgreSQL. Each table represents a core entity in the system: users who interact with the platform, syllabinds that contain the learning content, enrollments that track learner progress, and sessions that manage authentication state.
+The database schema defines the structure of data stored in PostgreSQL. Each table represents a core entity in the system: users who interact with the platform, binders that contain the learning content, enrollments that track reader progress, and sessions that manage authentication state.
 
 #### Users Table
 
-This table stores all user accounts, whether they're learners or creators. A single user can switch between both roles using the `isCreator` flag. Social links and profile information support creator profiles that showcase their expertise.
+This table stores all user accounts, whether they're readers or curators. A single user can switch between both roles using the `isCurator` flag. Social links and profile information support curator profiles that showcase their expertise.
 
 ```typescript
 {
@@ -33,7 +33,7 @@ This table stores all user accounts, whether they're learners or creators. A sin
   username: string UNIQUE,
   name: string,
   avatarUrl: string,
-  isCreator: boolean DEFAULT false,  // Role flag
+  isCurator: boolean DEFAULT false,  // Role flag
   bio: string,
   expertise: string,
   profileTitle: string,                          // LinkedIn-style headline (e.g. "Product Designer at Acme")
@@ -42,7 +42,7 @@ This table stores all user accounts, whether they're learners or creators. A sin
   website: string,
   twitter: string,
   threads: string,
-  schedulingUrl: string,                        // Calendly/Cal.com link (shown to Pro learners)
+  schedulingUrl: string,                        // Calendly/Cal.com link (shown to Pro readers)
   shareProfile: boolean DEFAULT true,
   // Subscription
   stripeCustomerId: string UNIQUE,              // Stripe customer ID
@@ -50,9 +50,9 @@ This table stores all user accounts, whether they're learners or creators. A sin
 }
 ```
 
-#### Syllabinds Table (DB: `syllabi`)
+#### Binders Table (DB: `binders`)
 
-Syllabinds are the core learning content created by creators. The Syllabind structure (weeks and steps) is stored in normalized `weeks` and `steps` tables. Each syllabind can be saved as a draft or published to make it visible in the catalog. The table tracks engagement metrics including active and completed student counts. **Note:** `creatorId` references `users.username` (unique) instead of UUID for better logging and readability.
+Binders are the core learning content created by curators. The binder structure (weeks and steps) is stored in normalized `weeks` and `steps` tables. Each binder can be saved as a draft or published to make it visible in the catalog. The table tracks engagement metrics including active and completed reader counts. **Note:** `curatorId` references `users.username` (unique) instead of UUID for better logging and readability.
 
 ```typescript
 {
@@ -62,28 +62,28 @@ Syllabinds are the core learning content created by creators. The Syllabind stru
   audienceLevel: text NOT NULL,      // 'Beginner', 'Intermediate', 'Advanced'
   durationWeeks: integer NOT NULL,
   status: text DEFAULT 'draft' NOT NULL, // 'draft', 'published'
-  creatorId: text FK(users.username) ON UPDATE CASCADE ON DELETE SET NULL,
+  curatorId: text FK(users.username) ON UPDATE CASCADE ON DELETE SET NULL,
   createdAt: timestamp DEFAULT now(),
   updatedAt: timestamp DEFAULT now(), // Last modification timestamp
-  studentActive: integer DEFAULT 0,   // Number of students currently enrolled (in-progress)
-  studentsCompleted: integer DEFAULT 0, // Number of students who completed the syllabind
-  showSchedulingLink: boolean DEFAULT true, // Per-syllabind toggle for "Book a Call" button visibility
+  readerActive: integer DEFAULT 0,   // Number of readers currently enrolled (in-progress)
+  readersCompleted: integer DEFAULT 0, // Number of readers who completed the binder
+  showSchedulingLink: boolean DEFAULT true, // Per-binder toggle for "Book a Call" button visibility
   mediaPreference: text DEFAULT 'auto'   // Audio/video materials: 'auto', 'yes', 'no'
 }
 ```
 
 **Indexes:**
-- `syllabi_creator_id_idx` - Creator dashboard: lookup syllabinds by creator
-- `syllabi_status_idx` - Catalog page: filter published syllabinds
+- `binders_curator_id_idx` - Curator dashboard: lookup binders by curator
+- `binders_status_idx` - Catalog page: filter published binders
 
 #### Weeks Table
 
-This table stores the weekly structure of each syllabind. Each syllabind can have multiple weeks, and each week can contain multiple steps (readings and exercises). Weeks are ordered by their index number, allowing creators to structure their Syllabind chronologically.
+This table stores the weekly structure of each binder. Each binder can have multiple weeks, and each week can contain multiple steps (readings and exercises). Weeks are ordered by their index number, allowing curators to structure their binder chronologically.
 
 ```typescript
 {
   id: serial PRIMARY KEY,
-  syllabusId: integer FK(syllabi.id) ON DELETE CASCADE NOT NULL,
+  binderId: integer FK(binders.id) ON DELETE CASCADE NOT NULL,
   index: integer NOT NULL,               // 1-based week number (1, 2, 3, 4...)
   title: text,                           // Optional week title (e.g., "Foundations")
   description: text                      // Optional weekly summary or objectives
@@ -91,16 +91,16 @@ This table stores the weekly structure of each syllabind. Each syllabind can hav
 ```
 
 **Key Features:**
-- Cascade delete: When a syllabind is deleted, all its weeks are automatically removed
+- Cascade delete: When a binder is deleted, all its weeks are automatically removed
 - Index-based ordering: Weeks are numbered sequentially for easy navigation
 - Optional metadata: Titles and descriptions provide context for each week
 
 **Indexes:**
-- `weeks_syllabus_id_idx` - Every syllabind view joins weeks by syllabus_id
+- `weeks_binder_id_idx` - Every binder view joins weeks by binder_id
 
 #### Steps Table
 
-This table stores individual learning activities (readings and exercises) within each week. Steps are ordered by their position within the week, creating a structured learning path. Each step includes metadata like estimated time, author information, and media type to help learners plan their time.
+This table stores individual learning activities (readings and exercises) within each week. Steps are ordered by their position within the week, creating a structured learning path. Each step includes metadata like estimated time, author information, and media type to help readers plan their time.
 
 ```typescript
 {
@@ -130,24 +130,24 @@ This table stores individual learning activities (readings and exercises) within
 - Position-based ordering: Steps are numbered sequentially within each week
 - Type differentiation: Readings link to external content, exercises require user input
 - Rich metadata: Author, date, and media type provide context for readings
-- Time estimation: Helps learners plan their schedule
+- Time estimation: Helps readers plan their schedule
 
 **Step Types:**
 - **Reading:** External content (articles, videos, podcasts, books) with URL and metadata
-- **Exercise:** Practice activities with prompts that learners respond to via submissions
+- **Exercise:** Practice activities with prompts that readers respond to via submissions
 
 **Indexes:**
-- `steps_week_id_idx` - Every syllabind view joins steps by week_id
+- `steps_week_id_idx` - Every binder view joins steps by week_id
 
 #### Enrollments Table
 
-This table tracks which learners (students) are enrolled in which syllabinds and their progress through the Syllabind. Each enrollment records the current week index. Step completion is tracked in a separate `completed_steps` junction table for efficient querying and analytics. **Note:** `studentId` references `users.username` (unique) instead of UUID for better logging and readability.
+This table tracks which readers are enrolled in which binders and their progress through the binder. Each enrollment records the current week index. Step completion is tracked in a separate `completed_steps` junction table for efficient querying and analytics. **Note:** `readerId` references `users.username` (unique) instead of UUID for better logging and readability.
 
 ```typescript
 {
   id: serial PRIMARY KEY,
-  studentId: text FK(users.username) ON UPDATE CASCADE ON DELETE CASCADE,
-  syllabusId: integer FK(syllabi.id),
+  readerId: text FK(users.username) ON UPDATE CASCADE ON DELETE CASCADE,
+  binderId: integer FK(binders.id),
   status: text('in-progress', 'completed', 'dropped') DEFAULT 'in-progress',
   currentWeekIndex: integer DEFAULT 1,
   shareProfile: boolean DEFAULT false,   // Per-enrollment classmates visibility
@@ -156,18 +156,18 @@ This table tracks which learners (students) are enrolled in which syllabinds and
 ```
 
 **Enrollment Status Values:**
-- `in-progress`: User is actively working on this syllabind (only one per user)
-- `completed`: User finished all content in this syllabind
-- `dropped`: User switched to a different syllabind (automatically set when enrolling in new syllabind)
+- `in-progress`: User is actively working on this binder (only one per user)
+- `completed`: User finished all content in this binder
+- `dropped`: User switched to a different binder (automatically set when enrolling in new binder)
 
 **Indexes:**
-- `enrollments_student_syllabus_idx` (UNIQUE) - Enforces one enrollment per student per syllabind + fast lookup
-- `enrollments_student_id_idx` - Learner dashboard: lookup enrollments by student
-- `enrollments_syllabus_id_idx` - Analytics, classmates, and learner lists by syllabind
+- `enrollments_reader_binder_idx` (UNIQUE) - Enforces one enrollment per reader per binder + fast lookup
+- `enrollments_reader_id_idx` - Reader dashboard: lookup enrollments by reader
+- `enrollments_binder_id_idx` - Analytics, classmates, and reader lists by binder
 
 #### Completed Steps Table
 
-This junction table tracks which steps each student has completed. It replaces the previous JSONB array approach with a fully normalized structure, enabling efficient queries and analytics. The composite primary key ensures each step can only be marked complete once per enrollment.
+This junction table tracks which steps each reader has completed. It replaces the previous JSONB array approach with a fully normalized structure, enabling efficient queries and analytics. The composite primary key ensures each step can only be marked complete once per enrollment.
 
 ```typescript
 {
@@ -179,20 +179,20 @@ This junction table tracks which steps each student has completed. It replaces t
 ```
 
 **Indexes:**
-- `completed_steps_enrollment_idx` - Fast lookup of all steps completed by a student
-- `completed_steps_step_idx` - Fast lookup of all students who completed a specific step
+- `completed_steps_enrollment_idx` - Fast lookup of all steps completed by a reader
+- `completed_steps_step_idx` - Fast lookup of all readers who completed a specific step
 - `completed_steps_completed_at_idx` - Time-based analytics queries
 
 #### Cohorts Table
 
-This table enables grouping learners into cohorts for social learning and collaborative study. Multiple cohorts can exist for a single syllabind (e.g., different semesters, study groups). Cohorts are optional - students can study independently without joining a cohort. **Note:** `syllabusId` FK establishes that cohorts belong to syllabinds (one syllabind → many cohorts), NOT the other way around.
+This table enables grouping readers into cohorts for social learning and collaborative study. Multiple cohorts can exist for a single binder (e.g., different semesters, study groups). Cohorts are optional - readers can study independently without joining a cohort. **Note:** `binderId` FK establishes that cohorts belong to binders (one binder → many cohorts), NOT the other way around.
 
 ```typescript
 {
   id: serial PRIMARY KEY,
   name: text NOT NULL,
-  syllabusId: integer FK(syllabi.id) ON DELETE CASCADE NOT NULL,
-  creatorId: text FK(users.username) ON UPDATE CASCADE ON DELETE SET NULL,
+  binderId: integer FK(binders.id) ON DELETE CASCADE NOT NULL,
+  curatorId: text FK(users.username) ON UPDATE CASCADE ON DELETE SET NULL,
   description: text,
   isActive: boolean DEFAULT true NOT NULL,
   createdAt: timestamp DEFAULT now() NOT NULL
@@ -200,44 +200,44 @@ This table enables grouping learners into cohorts for social learning and collab
 ```
 
 **Key Features:**
-- `syllabusId`: Foreign key to syllabinds table (DB: `syllabi`) - one syllabind can have many cohorts
-- `creatorId`: Optional owner of the cohort (typically the syllabind creator)
+- `binderId`: Foreign key to binders table (DB: `binders`) - one binder can have many cohorts
+- `curatorId`: Optional owner of the cohort (typically the binder curator)
 - `isActive`: Allows archiving old cohorts without deletion
 - `description`: Optional context (e.g., "Fall 2024 semester", "Weekend study group")
 
 **Indexes:**
-- `cohorts_syllabus_idx` - Fast lookup of all cohorts for a syllabind
-- `cohorts_creator_idx` - Fast lookup of cohorts created by a user
+- `cohorts_binder_idx` - Fast lookup of all cohorts for a binder
+- `cohorts_curator_idx` - Fast lookup of cohorts created by a user
 - `cohorts_active_idx` - Partial index on active cohorts only
 
 #### Cohort Members Table
 
-This junction table tracks which students belong to which cohorts. The composite primary key ensures each student can only be a member of a cohort once. Students can belong to multiple cohorts for different syllabinds, and cohort membership is independent from enrollment (students can be enrolled without being in any cohort).
+This junction table tracks which readers belong to which cohorts. The composite primary key ensures each reader can only be a member of a cohort once. Readers can belong to multiple cohorts for different binders, and cohort membership is independent from enrollment (readers can be enrolled without being in any cohort).
 
 ```typescript
 {
   cohortId: integer FK(cohorts.id) ON DELETE CASCADE NOT NULL,
-  studentId: text FK(users.username) ON UPDATE CASCADE ON DELETE CASCADE NOT NULL,
+  readerId: text FK(users.username) ON UPDATE CASCADE ON DELETE CASCADE NOT NULL,
   joinedAt: timestamp DEFAULT now() NOT NULL,
   role: text DEFAULT 'member' NOT NULL,
-  PRIMARY KEY (cohortId, studentId)
+  PRIMARY KEY (cohortId, readerId)
 }
 ```
 
 **Key Features:**
-- Composite primary key: (cohortId, studentId) prevents duplicate membership
+- Composite primary key: (cohortId, readerId) prevents duplicate membership
 - `role`: Supports future features like cohort moderators ('member', 'moderator', etc.)
-- `joinedAt`: Tracks when student joined the cohort
+- `joinedAt`: Tracks when reader joined the cohort
 - Cascade deletes: Removing a cohort or user automatically cleans up memberships
 
 **Indexes:**
-- `cohort_members_student_idx` - Fast lookup of all cohorts a student belongs to
+- `cohort_members_reader_idx` - Fast lookup of all cohorts a reader belongs to
 - `cohort_members_role_idx` - Fast filtering by member role
 
 **Relationship to Enrollments:**
-- Enrollments track individual progress (studentId, syllabusId, currentWeekIndex)
-- Cohort members track social grouping (cohortId, studentId)
-- These are separate: students can be enrolled without being in a cohort
+- Enrollments track individual progress (readerId, binderId, currentWeekIndex)
+- Cohort members track social grouping (cohortId, readerId)
+- These are separate: readers can be enrolled without being in a cohort
 - Queries can JOIN both to show cohort members' progress
 
 #### Subscriptions Table
@@ -310,7 +310,7 @@ This table is required by Replit Auth and Express-session to store active user s
       "username": "string",          // Username (unique)
       "name": "string",              // Display name
       "avatarUrl": "string",         // Profile picture URL
-      "isCreator": boolean,          // Creator role flag
+      "isCurator": boolean,          // Curator role flag
 
       // OAuth tokens and claims (added by Replit Auth)
       "claims": {                    // OIDC ID token claims
@@ -347,7 +347,7 @@ These TypeScript interfaces define the shape of data used throughout the client 
 
 #### Core Learning Types
 
-The core learning types define the Syllabind structure. A syllabind contains multiple weeks, each week contains multiple steps, and each step is either a reading (with a URL to external content) or an exercise (with a prompt for learners to respond to).
+The core learning types define the binder structure. A binder contains multiple weeks, each week contains multiple steps, and each step is either a reading (with a URL to external content) or an exercise (with a prompt for readers to respond to).
 
 
 ```typescript
@@ -368,14 +368,14 @@ interface Step {
 
 interface Week {
   id: number;                        // Primary key (serial)
-  syllabusId: number;                // Foreign key to syllabinds
+  binderId: number;                  // Foreign key to binders
   index: number;                     // 1-based week number
   title?: string;
   description?: string;
   steps: Step[];
 }
 
-interface Syllabus {
+interface Binder {
   id: number;                        // Changed from string to number (serial)
   title: string;
   description: string;
@@ -383,13 +383,13 @@ interface Syllabus {
   durationWeeks: number;
   status: 'draft' | 'published';
   weeks: Week[];
-  creatorId: string;                 // Username (unique) instead of UUID
+  curatorId: string;                 // Username (unique) instead of UUID
 }
 ```
 
 #### User & Progress Types
 
-User and enrollment models represent the people using the platform and their learning progress. The User interface maps to the database users table, while the Enrollment interface represents a learner's current state within a syllabind, tracking which week they're on and which steps they've completed.
+User and enrollment models represent the people using the platform and their learning progress. The User interface maps to the database users table, while the Enrollment interface represents a reader's current state within a binder, tracking which week they're on and which steps they've completed.
 
 ```typescript
 interface User {
@@ -397,7 +397,7 @@ interface User {
   username: string;                  // Unique username (used for foreign keys)
   name: string;
   email?: string;
-  isCreator: boolean;
+  isCurator: boolean;
   bio?: string;
   expertise?: string;
   avatarUrl?: string;
@@ -411,17 +411,17 @@ interface User {
 
 interface Enrollment {
   id?: number;                       // Enrollment ID
-  activeSyllabusId: number | null;   // Changed from string to number
+  activeBinderId: number | null;     // Changed from string to number
   currentWeekIndex: number;          // 1-based
   completedStepIds: number[];        // Changed from string[] to number[]
-  completedSyllabusIds: number[];    // Changed from string[] to number[]
+  completedBinderIds: number[];      // Changed from string[] to number[]
   shareProfile?: boolean;            // Per-enrollment classmates visibility
 }
 ```
 
 #### Creator Feature Types
 
-These types support creator-specific features like reviewing learner submissions, organizing learners into cohorts (groups), and tracking individual learner profiles. Submissions allow creators to see learner work and provide feedback with grades and rubrics. *(Note: `syllabusId` field names are retained for DB compatibility.)*
+These types support curator-specific features like reviewing reader submissions, organizing readers into cohorts (groups), and tracking individual reader profiles. Submissions allow curators to see reader work and provide feedback with grades and rubrics. *(Note: `binderId` field names are used for DB compatibility.)*
 
 ```typescript
 interface Submission {
@@ -437,11 +437,11 @@ interface Submission {
 interface Cohort {
   id: string;
   name: string;
-  syllabusId: string;
-  learnerIds: string[];
+  binderId: string;
+  readerIds: string[];
 }
 
-interface LearnerProfile {
+interface ReaderProfile {
   user: User;
   status: 'in-progress' | 'completed';
   joinedDate: string;
@@ -453,50 +453,50 @@ interface LearnerProfile {
 
 ## UI Architecture
 
-The UI is built as a single-page application (SPA) using React with client-side routing. Pages are organized into three categories: public pages anyone can access, authenticated learner pages, and creator-only pages that require the creator flag. The application uses a component-based architecture with reusable UI primitives.
+The UI is built as a single-page application (SPA) using React with client-side routing. Pages are organized into three categories: public pages anyone can access, authenticated reader pages, and curator-only pages that require the curator flag. The application uses a component-based architecture with reusable UI primitives.
 
 ### Page Structure
 
-The application has 15 main pages organized by access level. Public pages handle marketing and browsing, learner pages provide the learning experience with progress tracking, and creator pages offer content management and analytics tools.
+The application has 15 main pages organized by access level. Public pages handle marketing and browsing, reader pages provide the learning experience with progress tracking, and curator pages offer content management and analytics tools.
 
 
 
 #### Public Pages
 
-These pages are accessible without authentication, allowing visitors to learn about the platform and browse available syllabinds before signing up.
+These pages are accessible without authentication, allowing visitors to learn about the platform and browse available binders before signing up.
 
 | Route | Component | Purpose |
 |-------|-----------|---------|
-| `/welcome` | `Marketing.tsx` | Landing page with hero + real syllabind card showcase |
+| `/welcome` | `Marketing.tsx` | Landing page with hero + real binder card showcase |
 | `/login` | `Login.tsx` | Authentication entry (signup/login modes) |
-| `/catalog` | `Catalog.tsx` | Browse all published syllabinds |
-| `/syllabind/:id` | `SyllabindOverview.tsx` | Syllabind detail with week breakdown |
+| `/catalog` | `Catalog.tsx` | Browse all published binders |
+| `/binder/:id` | `BinderOverview.tsx` | Binder detail with week breakdown |
 
-#### Learner Pages (Auth Required)
+#### Reader Pages (Auth Required)
 
-These pages provide the core learning experience. Learners see their dashboard, work through weekly content step-by-step, and manage their profile. These pages require users to be logged in.
+These pages provide the core learning experience. Readers see their dashboard, work through weekly content step-by-step, and manage their profile. These pages require users to be logged in.
 
 | Route | Component | Purpose |
 |-------|-----------|---------|
-| `/` | `Dashboard.tsx` | Home - active syllabind progress or catalog |
-| `/syllabind/:id/week/:index` | `WeekView.tsx` | Main learning interface with readings & exercises |
-| `/syllabind/:id/completed` | `Completion.tsx` | Celebration screen post-completion |
+| `/` | `Dashboard.tsx` | Home - active binder progress or catalog |
+| `/binder/:id/week/:index` | `WeekView.tsx` | Main learning interface with readings & exercises |
+| `/binder/:id/completed` | `Completion.tsx` | Celebration screen post-completion |
 | `/profile` | `Profile.tsx` | Edit bio, social links, preferences |
 | `/settings` | `Settings.tsx` | Change password, delete account |
 | `/billing` | `Billing.tsx` | Subscription management, upgrade/manage billing |
 
-#### Creator Pages (Auth + Creator Flag Required)
+#### Curator Pages (Auth + Curator Flag Required)
 
-These pages are only accessible to users who have enabled creator mode. They provide tools for building syllabinds, tracking learner progress, managing cohorts, and providing feedback on submissions.
+These pages are only accessible to users who have enabled curator mode. They provide tools for building binders, tracking reader progress, managing cohorts, and providing feedback on submissions.
 
 | Route | Component | Purpose |
 |-------|-----------|---------|
-| `/creator` | `CreatorDashboard.tsx` | List of created syllabinds with management |
-| `/creator/syllabind/new` | `SyllabindEditor.tsx` | Build new syllabind (WYSIWYG editor) |
-| `/creator/syllabind/:id/edit` | `SyllabindEditor.tsx` | Edit existing syllabind (auto-save) |
-| `/creator/syllabind/:id/analytics` | `SyllabindAnalytics.tsx` | Learner progress visualization |
-| `/creator/syllabind/:id/learners` | `SyllabindLearners.tsx` | Learner list, cohorts, submissions |
-| `/creator/profile` | `CreatorProfile.tsx` | Creator bio, expertise, social links |
+| `/curator` | `CuratorDashboard.tsx` | List of created binders with management |
+| `/curator/binder/new` | `BinderEditor.tsx` | Build new binder (WYSIWYG editor) |
+| `/curator/binder/:id/edit` | `BinderEditor.tsx` | Edit existing binder (auto-save) |
+| `/curator/binder/:id/analytics` | `BinderAnalytics.tsx` | Reader progress visualization |
+| `/curator/binder/:id/readers` | `BinderReaders.tsx` | Reader list, cohorts, submissions |
+| `/curator/profile` | `CuratorProfile.tsx` | Curator bio, expertise, social links |
 | `/admin` | `AdminSettings.tsx` | Admin-only: configure Slack URL and site settings |
 
 ---
@@ -511,13 +511,13 @@ These components are specific to Syllabind's functionality and compose the UI pr
 
 
 - **`Layout.tsx`**: Main application header
-  - Navigation links (Dashboard/Catalog/Syllabind Builder)
+  - Navigation links (Dashboard/Catalog/Curator Studio)
   - User avatar dropdown (Profile, Creator Mode toggle, Logout)
   - Conditional rendering based on auth state
 
-- **`SyllabindCard.tsx`**: Reusable syllabind preview card
+- **`BinderCard.tsx`**: Reusable binder preview card
   - Displays title, description, level, duration
-  - Creator avatar with name; hover tooltip shows bio, expertise, and social links (same pattern as classmates)
+  - Curator avatar with name; hover tooltip shows bio, expertise, and social links (same pattern as classmates)
   - CTA button (Enroll/Resume/View)
 
 - **`AvatarUpload.tsx`**: Profile picture upload component
@@ -626,7 +626,7 @@ Small helper components that provide supporting functionality for other componen
 
 ### State Management
 
-The application uses React Context API for global state management, providing a centralized store that all components can access. This store holds user authentication state, the current user's enrollment data, available syllabinds, and methods to modify this state. React Query complements this by handling server data fetching and caching.
+The application uses React Context API for global state management, providing a centralized store that all components can access. This store holds user authentication state, the current user's enrollment data, available binders, and methods to modify this state. React Query complements this by handling server data fetching and caching.
 
 #### Context Store (`client/src/lib/store.tsx`)
 
@@ -637,11 +637,11 @@ The Context Store is the central state management solution. It provides a single
 {
   user: User | null;
   isAuthenticated: boolean;
-  syllabinds: Syllabus[];              // Fetched from /api/syllabinds
+  binders: Binder[];                   // Fetched from /api/binders
   enrollment: Enrollment | null;       // Fetched from /api/enrollments
   completedStepIds: number[];          // Fetched from /api/enrollments/:id/completed-steps
   submissions: Submission[];           // Fetched from /api/enrollments/:id/submissions
-  syllabindsLoading: boolean;          // Loading state for syllabinds
+  bindersLoading: boolean;             // Loading state for binders
   enrollmentLoading: boolean;          // Loading state for enrollments
 }
 ```
@@ -651,39 +651,39 @@ The Context Store is the central state management solution. It provides a single
 All methods now make real API calls to the backend. The store provides methods organized by functionality.
 
 **Data Fetching:**
-- `refreshSyllabinds()` - Fetch syllabinds from `/api/syllabinds`
+- `refreshBinders()` - Fetch binders from `/api/binders`
 - `refreshEnrollments()` - Fetch enrollments from `/api/enrollments`
 
 **Authentication:**
-- `toggleCreatorMode()` - POST to `/api/users/me/toggle-creator`
+- `toggleCuratorMode()` - POST to `/api/users/me/toggle-curator`
 - `updateUser(updates)` - PUT to `/api/users/me`
 
-**Learner Actions:**
-- `enrollInSyllabind(syllabusId, shareProfile?)` - POST to `/api/enrollments` (accepts optional shareProfile)
+**Reader Actions:**
+- `enrollInBinder(binderId, shareProfile?)` - POST to `/api/enrollments` (accepts optional shareProfile)
 - `markStepComplete(stepId)` - POST to `/api/enrollments/:id/steps/:id/complete`
 - `markStepIncomplete(stepId)` - DELETE to `/api/enrollments/:id/steps/:id/complete`
 - `saveExercise(stepId, answer, isShared)` - POST to `/api/submissions`
-- `completeActiveSyllabind()` - PUT to `/api/enrollments/:id` with status: 'completed'
+- `completeActiveBinder()` - PUT to `/api/enrollments/:id` with status: 'completed'
 
-**Creator Actions:**
-- `createSyllabind(syllabus)` - POST to `/api/syllabinds`
-- `updateSyllabind(syllabus)` - PUT to `/api/syllabinds/:id`
-- `getLearnersForSyllabind(syllabusId)` - GET from `/api/syllabinds/:id/classmates` (public, filters by enrollment shareProfile)
+**Curator Actions:**
+- `createBinder(binder)` - POST to `/api/binders`
+- `updateBinder(binder)` - PUT to `/api/binders/:id`
+- `getReadersForBinder(binderId)` - GET from `/api/binders/:id/classmates` (public, filters by enrollment shareProfile)
 - `updateEnrollmentShareProfile(enrollmentId, shareProfile)` - PATCH to `/api/enrollments/:id/share-profile`
 
 **Query Methods:**
-- `getActiveSyllabind()` - Get current enrolled syllabind from local state
-- `getSyllabindById(id)` - Get syllabind from local state (basic metadata only, no weeks/steps)
+- `getActiveBinder()` - Get current enrolled binder from local state
+- `getBinderById(id)` - Get binder from local state (basic metadata only, no weeks/steps)
 - `isStepCompleted(stepId)` - Check step completion in local state
-- `getProgressForWeek(syllabusId, weekIndex)` - Calculate week progress
-- `getOverallProgress(syllabusId)` - Calculate total progress
+- `getProgressForWeek(binderId, weekIndex)` - Calculate week progress
+- `getOverallProgress(binderId)` - Calculate total progress
 - `getSubmission(stepId)` - Get submission from local state
 
 **Important Data Loading Patterns:**
-- The cached `syllabinds` list from `/api/syllabinds` contains only basic metadata (no weeks/steps)
-- Pages that need full Syllabind (weeks/steps) must fetch directly from `/api/syllabinds/:id`
-- `SyllabindOverview` and `SyllabindEditor` both fetch full content via direct API calls
-- This prevents loading heavy Syllabind data for catalog browsing
+- The cached `binders` list from `/api/binders` contains only basic metadata (no weeks/steps)
+- Pages that need full binder data (weeks/steps) must fetch directly from `/api/binders/:id`
+- `BinderOverview` and `BinderEditor` both fetch full content via direct API calls
+- This prevents loading heavy binder data for catalog browsing
 
 #### React Query
 
@@ -717,7 +717,7 @@ GET    /api/users/:username         - Get user profile (public)
 PUT    /api/users/me                - Update own profile (auth)
 PUT    /api/users/me/password       - Change password (auth, email only)
 DELETE /api/users/me                - Delete account (auth, password for email)
-POST   /api/users/me/toggle-creator - Toggle creator mode (auth)
+POST   /api/users/me/toggle-curator - Toggle curator mode (auth)
 ```
 
 ### Site Settings Endpoints
@@ -732,34 +732,34 @@ GET    /api/site-settings/:key       - Get a site setting value
 PUT    /api/admin/settings           - Upsert a site setting { key, value }
 ```
 
-### Syllabind Endpoints
+### Binder Endpoints
 
 **Public:**
 ```
-GET    /api/syllabinds      - List published syllabinds
-GET    /api/syllabinds/:id  - Get syllabind with content
+GET    /api/binders      - List published binders
+GET    /api/binders/:id  - Get binder with content
 ```
 
-**Protected (Auth + Creator + Ownership):**
+**Protected (Auth + Curator + Ownership):**
 ```
-POST   /api/syllabinds             - Create syllabind (with weeks/steps)
-PUT    /api/syllabinds/:id         - Update syllabind (syncs weeks/steps)
-DELETE /api/syllabinds/:id         - Delete syllabind
-POST   /api/syllabinds/:id/publish - Publish/unpublish syllabind
-GET    /api/creator/syllabinds     - Get creator's syllabinds (including drafts)
-GET    /api/syllabinds/:id/learners    - Get all learners for syllabind (creator only)
+POST   /api/binders             - Create binder (with weeks/steps)
+PUT    /api/binders/:id         - Update binder (syncs weeks/steps)
+DELETE /api/binders/:id         - Delete binder
+POST   /api/binders/:id/publish - Publish/unpublish binder
+GET    /api/curator/binders     - Get curator's binders (including drafts)
+GET    /api/binders/:id/readers     - Get all readers for binder (curator only)
 ```
 
 **Public (Auth Required):**
 ```
-GET    /api/syllabinds/:id/classmates  - Get classmates who opted in (shareProfile=true)
+GET    /api/binders/:id/classmates  - Get classmates who opted in (shareProfile=true)
 ```
 
 ### Enrollment Endpoints (Auth Required)
 
 ```
 GET    /api/enrollments     - Get user's enrollments
-POST   /api/enrollments     - Enroll in syllabind
+POST   /api/enrollments     - Enroll in binder
 PUT    /api/enrollments/:id              - Update enrollment progress
 PATCH  /api/enrollments/:id/share-profile - Toggle enrollment shareProfile
 ```
@@ -777,18 +777,18 @@ GET    /api/enrollments/:eId/completed-steps     - Get completed steps
 ```
 POST   /api/submissions                - Create submission
 GET    /api/enrollments/:id/submissions - Get enrollment submissions
-PUT    /api/submissions/:id/feedback    - Provide feedback (creator only)
+PUT    /api/submissions/:id/feedback    - Provide feedback (curator only)
 ```
 
 ### Analytics Endpoints (Auth + Creator + Ownership)
 
 ```
-GET    /api/syllabinds/:id/analytics                  - Comprehensive analytics dashboard
-GET    /api/syllabinds/:id/analytics/completion-rates - Step completion rates
-GET    /api/syllabinds/:id/analytics/completion-times - Average completion times
+GET    /api/binders/:id/analytics                  - Comprehensive analytics dashboard
+GET    /api/binders/:id/analytics/completion-rates - Step completion rates
+GET    /api/binders/:id/analytics/completion-times - Average completion times
 ```
 
-**Comprehensive Analytics Response (`/api/syllabinds/:id/analytics`):**
+**Comprehensive Analytics Response (`/api/binders/:id/analytics`):**
 ```typescript
 {
   learnersStarted: number;           // Total enrollments
@@ -798,9 +798,9 @@ GET    /api/syllabinds/:id/analytics/completion-times - Average completion times
   weekReach: Array<{                 // Learner reach per week
     week: string;                    // "Week 1", "Week 2", etc.
     weekIndex: number;
-    percentage: number;              // % of learners who reached this week
-    learnerCount: number;
-    learnerNames: string[];          // Names of learners who reached this week
+    percentage: number;              // % of readers who reached this week
+    readerCount: number;
+    readerNames: string[];           // Names of readers who reached this week
   }>;
   stepDropoff: Array<{               // Step-level dropoff data
     stepId: number;
@@ -821,7 +821,7 @@ GET    /api/syllabinds/:id/analytics/completion-times - Average completion times
 
 ```
 GET    /api/subscription/status    - Get user's subscription status (free/pro)
-GET    /api/subscription/limits    - Get syllabind creation limits and enrollment gating
+GET    /api/subscription/limits    - Get binder creation limits and enrollment gating
 POST   /api/create-checkout-session - Create Stripe Checkout session (redirect URL)
 POST   /api/create-portal-session   - Create Stripe Customer Portal session
 POST   /api/webhook                 - Stripe webhook handler (signature verified)
@@ -830,10 +830,10 @@ POST   /api/webhook                 - Stripe webhook handler (signature verified
 **Subscription Limits Response:**
 ```typescript
 {
-  syllabindCount: number;        // Creator's current syllabind count
-  syllabindLimit: number | null; // null = unlimited (Pro), 2 for free
-  canCreateMore: boolean;        // Whether creator can make more syllabinds
-  canEnroll: boolean;            // Whether learner can enroll (Pro only)
+  binderCount: number;           // Curator's current binder count
+  binderLimit: number | null;    // null = unlimited (Pro), 2 for free
+  canCreateMore: boolean;        // Whether curator can make more binders
+  canEnroll: boolean;            // Whether reader can enroll (Pro only)
   isPro: boolean;
 }
 ```
@@ -849,31 +849,31 @@ POST   /api/webhook                 - Stripe webhook handler (signature verified
 
 ## Key Features
 
-The application provides distinct experiences for learners and creators. Learners get a structured, guided learning path with progress tracking, while creators get tools to build content, monitor engagement, and provide feedback. The UI/UX layer adds polish through animations, responsive design, and thoughtful feedback.
+The application provides distinct experiences for readers and curators. Readers get a structured, guided learning path with progress tracking, while curators get tools to build content, monitor engagement, and provide feedback. The UI/UX layer adds polish through animations, responsive design, and thoughtful feedback.
 
-### Learner Experience
+### Reader Experience
 
-The learner journey focuses on structured, progressive learning. Learners browse a catalog of syllabinds, enroll in ones that interest them, and work through content week by week. The system tracks their progress and celebrates milestones to maintain engagement.
+The reader journey focuses on structured, progressive learning. Readers browse a catalog of binders, enroll in ones that interest them, and work through content week by week. The system tracks their progress and celebrates milestones to maintain engagement.
 
 
-- **Browse & Enroll**: Discover published syllabinds in catalog
+- **Browse & Enroll**: Discover published binders in catalog
 - **Week-by-week Progress**: Structured learning path with locked weeks
 - **Step Tracking**: Mark readings/exercises as complete
 - **Exercise Submission**: Submit URLs or text answers
-- **Profile Sharing**: Per-enrollment opt-in to appear in classmates list (independent per syllabind)
+- **Profile Sharing**: Per-enrollment opt-in to appear in classmates list (independent per binder)
 - **Completion Celebration**: Confetti animation + completion badge
 
-### Creator Experience
+### Curator Experience
 
-Creators get a full content management system for building and managing syllabinds. The experience emphasizes ease of use (auto-save, drag-and-drop), insight into learner progress (analytics), and tools for providing personalized feedback.
+Curators get a full content management system for building and managing binders. The experience emphasizes ease of use (auto-save, drag-and-drop), insight into reader progress (analytics), and tools for providing personalized feedback.
 
-- **Rich Editor**: TipTap-powered syllabind builder with drag-and-drop
+- **Rich Editor**: TipTap-powered binder builder with drag-and-drop
 - **Auto-save**: Drafts save automatically
 - **Publish Control**: Draft vs. Published status
 - **Analytics Dashboard**: Learner progress visualization with charts
-- **Cohort Management**: Group learners into cohorts
+- **Cohort Management**: Group readers into cohorts
 - **Feedback System**: Grade submissions with rubrics
-- **Creator Profile**: Showcase expertise and social links
+- **Curator Profile**: Showcase expertise and social links
 
 ### UI/UX Features
 
@@ -918,9 +918,9 @@ Located in `/server/auth/index.ts`, this middleware:
 ### Authorization Layers
 
 1. **Authentication** - `isAuthenticated` middleware (401 if not logged in)
-2. **Creator Check** - Verifies `req.user.isCreator === true` (403 if not creator)
+2. **Curator Check** - Verifies `req.user.isCurator === true` (403 if not curator)
 3. **Ownership Check** - Verifies user owns the resource (403 if not owner)
-4. **Admin Bypass** - Admins skip ownership and creator checks (see below)
+4. **Admin Bypass** - Admins skip ownership and curator checks (see below)
 
 ### Admin Access
 
@@ -931,9 +931,9 @@ Admin status is controlled by the `ADMIN_USERNAMES` environment variable (comma-
 - `isAuthenticated` middleware and `authenticateWebSocket` inject `isAdmin: boolean` into the user object
 - Email auth endpoints (`/api/auth/register`, `/api/auth/login`, `/api/auth/me`) include `isAdmin` in responses
 - All ownership checks in `server/routes.ts` add `&& !isAdmin` to allow admin bypass
-- All creator-required checks allow admin access (`!user.isCreator && !user.isAdmin`)
-- `GET /api/creator/syllabinds?all=true` returns all syllabinds site-wide (admin only)
-- Frontend `CreatorDashboard` shows "My Syllabinds / All Syllabinds" toggle for admin users
+- All curator-required checks allow admin access (`!user.isCurator && !user.isAdmin`)
+- `GET /api/curator/binders?all=true` returns all binders site-wide (admin only)
+- Frontend `CuratorDashboard` shows "My Binders / All Binders" toggle for admin users
 - `User` type in `client/src/lib/types.ts` includes optional `isAdmin` field
 
 ### Security Middleware
@@ -967,7 +967,7 @@ The global Express error handler in `server/index.ts` logs errors server-side an
 
 ### Protected Routes
 
-All routes except public catalog/syllabind viewing require authentication. Creator-only routes additionally check `isCreator` flag. Resource modification routes verify ownership (username matching). Admin users bypass both creator and ownership checks.
+All routes except public catalog/binder viewing require authentication. Curator-only routes additionally check `isCurator` flag. Resource modification routes verify ownership (username matching). Admin users bypass both curator and ownership checks.
 
 ### Auth Routes
 
@@ -991,7 +991,7 @@ The codebase is organized into three main directories: `client` (React frontend)
 │   ├── pages/                - 15 page components (~3,200 lines)
 │   ├── components/
 │   │   ├── Layout.tsx        - Main header + footer (legal links)
-│   │   ├── SyllabindCard.tsx  - Syllabind preview
+│   │   ├── BinderCard.tsx     - Binder preview
 │   │   ├── UpgradePrompt.tsx - Pro subscription upgrade dialog (with legal links)
 │   │   ├── AvatarUpload.tsx  - Image uploader
 │   │   └── ui/               - 50+ UI primitives (~5,950 lines)
@@ -1058,17 +1058,17 @@ PostHog is integrated as the product analytics platform. See `docs/POSTHOG_ANALY
 
 **Setup:** `PostHogProvider` wraps the app in `client/src/main.tsx`, configured via `VITE_POSTHOG_KEY` and `VITE_POSTHOG_HOST` environment variables.
 
-**User Identification:** Users are identified on login (`posthog.identify`) and reset on logout (`posthog.reset`) in `client/src/lib/store.tsx`. Properties sent: `email`, `name`, `is_creator`.
+**User Identification:** Users are identified on login (`posthog.identify`) and reset on logout (`posthog.reset`) in `client/src/lib/store.tsx`. Properties sent: `email`, `name`, `is_curator`.
 
 **Custom Events:**
 
 | Event | Trigger | Properties |
 |-------|---------|------------|
-| `enrolled_in_syllabind` | Learner enrolls | `syllabind_id` |
-| `step_completed` | Learner completes a step | `step_id`, `syllabind_id` |
-| `syllabind_completed` | Learner finishes all steps | `syllabind_id` |
-| `exercise_submitted` | Learner submits an exercise | `step_id`, `syllabind_id` |
-| `syllabind_published` | Creator publishes | `syllabind_id`, `title` |
+| `enrolled_in_binder` | Reader enrolls | `binder_id` |
+| `step_completed` | Reader completes a step | `step_id`, `binder_id` |
+| `binder_completed` | Reader finishes all steps | `binder_id` |
+| `exercise_submitted` | Reader submits an exercise | `step_id`, `binder_id` |
+| `binder_published` | Curator publishes | `binder_id`, `title` |
 | `link_shared` | User copies share link | `url`, `type` (optional) |
 
 ---
@@ -1083,28 +1083,28 @@ PostHog is integrated as the product analytics platform. See `docs/POSTHOG_ANALY
 
 **Changes Made:**
 
-1. **Syllabi Table (DB):**
-   - Changed `creator_id` column type from `varchar(UUID)` to `text`
+1. **Binders Table (DB):**
+   - Changed `curator_id` column type from `varchar(UUID)` to `text`
    - Updated existing data: converted UUIDs to usernames
-   - Replaced foreign key constraint: `syllabi_creator_id_users_id_fk` → `syllabi_creator_id_users_username_fk`
+   - Replaced foreign key constraint: `binders_curator_id_users_id_fk` → `binders_curator_id_users_username_fk`
    - Added cascading behavior: `ON UPDATE CASCADE ON DELETE SET NULL`
 
 2. **Enrollments Table:**
-   - Renamed column: `user_id` → `student_id` (better semantic clarity)
-   - Changed `student_id` column type from `varchar(UUID)` to `text`
+   - Renamed column: `user_id` → `reader_id` (better semantic clarity)
+   - Changed `reader_id` column type from `varchar(UUID)` to `text`
    - Updated existing data: converted UUIDs to usernames
-   - Replaced foreign key constraint: `enrollments_user_id_users_id_fk` → `enrollments_student_id_users_username_fk`
+   - Replaced foreign key constraint: `enrollments_user_id_users_id_fk` → `enrollments_reader_id_users_username_fk`
    - Added cascading behavior: `ON UPDATE CASCADE ON DELETE CASCADE`
 
 **Benefits:**
 - **Improved Logging:** Database logs now show readable usernames instead of UUIDs
 - **Better Debugging:** Easier to trace user actions and identify records
 - **Data Integrity:** Cascade updates automatically update foreign keys when username changes
-- **Semantic Clarity:** `student_id` better represents the learner role in enrollments
+- **Semantic Clarity:** `reader_id` better represents the reader role in enrollments
 
 **Application Code Updates:**
 - Updated `shared/schema.ts` to reflect new column types and foreign key references
-- Updated `server/storage.ts` to use `studentId` instead of `userId` in enrollment methods
+- Updated `server/storage.ts` to use `readerId` instead of `userId` in enrollment methods
 - Updated `server/routes.ts` to use `username` for authorization checks and enrollment creation
 - Updated `client/src/lib/types.ts` to add `username` field to User interface
 
@@ -1117,14 +1117,14 @@ psql "$DATABASE_URL" -f migrations/manual_username_migration.sql
 
 **Migration:** `server/migrate-jsonb-to-normalized.ts`
 
-**Objective:** Migrate syllabind content from JSONB storage to normalized relational tables for better query performance and data integrity.
+**Objective:** Migrate binder content from JSONB storage to normalized relational tables for better query performance and data integrity.
 
 **Changes Made:**
-- Created `weeks` table with foreign key to `syllabi.id`
+- Created `weeks` table with foreign key to `binders.id`
 - Created `steps` table with foreign key to `weeks.id`
-- Migrated all existing syllabind content from `syllabi.content` JSONB field to normalized tables
+- Migrated all existing binder content from `binders.content` JSONB field to normalized tables
 - Step IDs changed from string UUIDs to integer serial primary keys
-- Removed `content` JSONB field from `syllabi` table (2026-01-26)
+- Removed `content` JSONB field from `binders` table (2026-01-26)
 
 ### Completion Tracking Normalization (2026-01-26)
 
@@ -1147,8 +1147,8 @@ psql "$DATABASE_URL" -f migrations/manual_username_migration.sql
    - `POST /api/enrollments/:id/steps/:stepId/complete` - Mark step complete
    - `DELETE /api/enrollments/:id/steps/:stepId/complete` - Unmark step
    - `GET /api/enrollments/:id/completed-steps` - Get completed steps
-   - `GET /api/syllabinds/:id/analytics/completion-rates` - Step completion analytics
-   - `GET /api/syllabinds/:id/analytics/completion-times` - Average completion times
+   - `GET /api/binders/:id/analytics/completion-rates` - Step completion analytics
+   - `GET /api/binders/:id/analytics/completion-times` - Average completion times
 
 **Benefits:**
 - **Efficient Queries:** Direct lookups instead of JSONB array scans
@@ -1170,8 +1170,8 @@ psql "$DATABASE_URL" -f migrations/manual_username_migration.sql
 **Objective:** Add indexes to all tables based on actual query patterns in `storage.ts` to eliminate sequential scans on foreign key columns and frequently-filtered columns.
 
 **Changes Made:**
-1. **10 new indexes across 6 tables** — sessions, syllabi, enrollments, weeks, steps, submissions
-2. **Unique index on enrollments** — `(student_id, syllabus_id)` enforces one-enrollment-per-student-per-syllabind business rule at the database level
+1. **10 new indexes across 6 tables** — sessions, binders, enrollments, weeks, steps, submissions
+2. **Unique index on enrollments** — `(reader_id, binder_id)` enforces one-enrollment-per-reader-per-binder business rule at the database level
 3. **Tables already indexed** (no changes): completed_steps (0001), cohorts/cohort_members (0002), users (unique constraints)
 
 **Last Updated:** 2026-02-09
@@ -1228,25 +1228,25 @@ psql "$DATABASE_URL" -f migrations/manual_username_migration.sql
 
 ### Single Active Enrollment (2026-01-28)
 
-Implemented single-active-syllabind behavior for learners:
+Implemented single-active-binder behavior for readers:
 - Users can only have one `in-progress` enrollment at a time
-- When enrolling in a new syllabind, previous in-progress enrollments are automatically marked as `dropped`
-- Dropped enrollments are excluded from analytics, learner lists, and classmate lists
-- Re-enrolling in a previously dropped syllabind reactivates that enrollment
+- When enrolling in a new binder, previous in-progress enrollments are automatically marked as `dropped`
+- Dropped enrollments are excluded from analytics, reader lists, and classmate lists
+- Re-enrolling in a previously dropped binder reactivates that enrollment
 - Completed enrollments are preserved and not affected by switching
 
 ### Real-Time Analytics Dashboard (2026-01-28)
 
-Added comprehensive analytics endpoint that provides real data for the Creator Analytics page:
-- **Learner Metrics:** Total enrollments, completions, and completion rate
-- **Progress Tracking:** Average progress percentage across all learners
-- **Week Reach Chart:** Shows what percentage of learners reached each week
+Added comprehensive analytics endpoint that provides real data for the Curator Analytics page:
+- **Reader Metrics:** Total enrollments, completions, and completion rate
+- **Progress Tracking:** Average progress percentage across all readers
+- **Week Reach Chart:** Shows what percentage of readers reached each week
 - **Dropout Analysis:** Identifies the step with highest dropoff rate
-- **Friction Points:** Lists top steps where learners stop progressing
+- **Friction Points:** Lists top steps where readers stop progressing
 
 ### AI Token Optimization (2026-02-03)
 
-Reduced token consumption for AI-powered Syllabind generation:
+Reduced token consumption for AI-powered binder generation:
 
 **Model Selection (Hybrid):**
 - **Haiku** (`claude-haiku-4-5-20251001` / `CLAUDE_MODEL`): Planning (`planCurriculum`) — simple structured output, cost-efficient
@@ -1270,9 +1270,9 @@ Reduced token consumption for AI-powered Syllabind generation:
 - `server/utils/syllabindGenerator.ts` - Prompt caching via `system` parameter, trimmed prompts, exponential backoff with jitter
 - `server/utils/requestQueue.ts` - In-memory sliding window rate limiter (40 RPM)
 
-### Syllabind Generation Structure (2026-02-03)
+### Binder Generation Structure (2026-02-03)
 
-Enforced strict structure for AI-generated Syllabinds:
+Enforced strict structure for AI-generated binders:
 
 **Duration Limits:**
 - Maximum weeks increased from 4 to 8
@@ -1335,7 +1335,7 @@ Optimized API usage for Anthropic Tier 1 (50 RPM) to prevent 429 rate limit erro
 
 ### Generation Streaming Visual Effect (2026-02-03)
 
-Enhanced visual feedback during AI Syllabind generation to make progress more obvious:
+Enhanced visual feedback during AI binder generation to make progress more obvious:
 
 **New State Tracking:**
 - `generatingWeeks: Set<number>` - Tracks which weeks are currently being generated
@@ -1360,17 +1360,17 @@ Enhanced visual feedback during AI Syllabind generation to make progress more ob
 - `client/src/pages/SyllabindEditor.tsx` - Added state tracking, updated WebSocket handlers, enhanced UI
 - `client/src/components/GeneratingWeekPlaceholder.tsx` - New skeleton placeholder component
 
-### Syllabind Regeneration Safety (2026-02-03)
+### Binder Regeneration Safety (2026-02-03)
 
-Added safeguards when regenerating AI Syllabind after content already exists:
+Added safeguards when regenerating AI binder after content already exists:
 
 **User Experience:**
-- Button text changes from "Autogenerate Syllabind with AI" to "Regenerate Syllabind with AI" when content exists
+- Button text changes from "Autogenerate Binder with AI" to "Regenerate Binder with AI" when content exists
 - Confirmation dialog appears before regenerating, warning that existing content will be replaced
 - Dialog explains: "All current weeks, steps, and descriptions will be deleted"
 
 **Database Cleanup:**
-- New `deleteWeeksBySyllabusId(syllabusId)` method in storage layer
+- New `deleteWeeksByBinderId(binderId)` method in storage layer
 - WebSocket handler deletes existing weeks/steps before generating new ones
 - Steps are automatically deleted via CASCADE when weeks are deleted
 - Prevents orphaned data accumulation from repeated regenerations
@@ -1494,7 +1494,7 @@ Refined the generation streaming effect so that step cards appear one-by-one as 
 
 ### AI creationDate Field Population Fix (2026-02-03)
 
-**Problem:** AI-generated syllabinds rarely included `creationDate` values for reading steps because:
+**Problem:** AI-generated binders rarely included `creationDate` values for reading steps because:
 1. The `creationDate` field had no description in the tool schema telling Claude what it's for or what format to use
 2. The prompt said "publication dates" but the field was named `creationDate` (terminology mismatch)
 3. The prompt instruction was too weak ("Include author names and publication dates when available")
@@ -1526,17 +1526,17 @@ Added ability to regenerate a single week's content while preserving other weeks
 
 **Part 2: Regenerate Week Button**
 
-**Architecture:** Mirrors the full syllabind regeneration flow but scoped to a single week:
-- Frontend POSTs to `/api/regenerate-week` with `syllabusId`, `weekIndex`, `model`
-- Backend returns WebSocket URL: `/ws/regenerate-week/{syllabusId}/{weekIndex}?model=...`
+**Architecture:** Mirrors the full binder regeneration flow but scoped to a single week:
+- Frontend POSTs to `/api/regenerate-week` with `binderId`, `weekIndex`, `model`
+- Backend returns WebSocket URL: `/ws/regenerate-week/{binderId}/{weekIndex}?model=...`
 - WebSocket handler deletes only that week's steps and regenerates content
 - Sends same events: `week_started`, `week_info`, `step_completed`, `week_completed`, `week_regeneration_complete`
 
 **New API Endpoints:**
 ```
-DELETE /api/steps/:id          - Delete a step (creator only)
+DELETE /api/steps/:id          - Delete a step (curator only)
 POST   /api/regenerate-week    - Start week regeneration
-WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
+WebSocket /ws/regenerate-week/:binderId/:weekIndex - Stream regeneration
 ```
 
 **UI Changes:**
@@ -1556,18 +1556,18 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 
 ### Backend Test Suite Expansion (2026-02-09)
 
-**Problem:** Test coverage only included ~37% of server features: basic storage operations, auth workflow, a subset of syllabind routes, and markdownToHtml utility. ~25 API routes and 2 utility modules had zero test coverage.
+**Problem:** Test coverage only included ~37% of server features: basic storage operations, auth workflow, a subset of binder routes, and markdownToHtml utility. ~25 API routes and 2 utility modules had zero test coverage.
 
 **Solution:** Added 10 new test files covering all untested API routes and utility modules, expanding from 4 to 14 test suites (41 → 151 tests).
 
 **New Test Files:**
-- `server/__tests__/user-routes.test.ts` - GET/PUT user profiles, toggle-creator (9 tests)
-- `server/__tests__/creator-routes.test.ts` - Creator syllabinds, delete, batch-delete, publish, classmates, step delete (17 tests)
+- `server/__tests__/user-routes.test.ts` - GET/PUT user profiles, toggle-curator (9 tests)
+- `server/__tests__/curator-routes.test.ts` - Curator binders, delete, batch-delete, publish, classmates, step delete (17 tests)
 - `server/__tests__/enrollment-routes.test.ts` - CRUD enrollments, share-profile toggle (13 tests)
 - `server/__tests__/completion-routes.test.ts` - Step complete/incomplete, completed-steps list (7 tests)
 - `server/__tests__/submission-routes.test.ts` - Create submissions, feedback with ownership chain (8 tests)
 - `server/__tests__/analytics-routes.test.ts` - Analytics, completion rates, completion times (7 tests)
-- `server/__tests__/ai-generation-routes.test.ts` - Generate syllabind, regenerate week with validation (14 tests)
+- `server/__tests__/ai-generation-routes.test.ts` - Generate binder, regenerate week with validation (14 tests)
 - `server/__tests__/rateLimitCheck.test.ts` - Rate limit status checking, 429/529 handling (6 tests)
 - `server/__tests__/claudeClient.test.ts` - Model selection, executeToolCall dispatch (10 tests)
 
@@ -1604,7 +1604,7 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 
 ### WebSocket Authentication & Authorization (2026-02-09)
 
-**Problem:** WebSocket endpoints (`/ws/generate-syllabind/`, `/ws/regenerate-week/`) bypassed Express middleware entirely, allowing unauthenticated users to connect and perform destructive operations on any syllabind by guessing integer IDs.
+**Problem:** WebSocket endpoints (`/ws/generate-binder/`, `/ws/regenerate-week/`) bypassed Express middleware entirely, allowing unauthenticated users to connect and perform destructive operations on any binder by guessing integer IDs.
 
 **Solution:**
 
@@ -1615,8 +1615,8 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 
 2. **Connection-Level Auth + Ownership** (`server/index.ts`):
    - All WebSocket connections now authenticate via session cookie (close code 4401 if unauthenticated)
-   - Ownership verified: `syllabind.creatorId === user.username` (close code 4403 if not owner)
-   - Syllabind existence checked (close code 4404 if not found)
+   - Ownership verified: `binder.curatorId === user.username` (close code 4403 if not owner)
+   - Binder existence checked (close code 4404 if not found)
 
 **Files Modified:**
 - `server/auth/index.ts` - Added `authenticateWebSocket()`, extracted session secret
@@ -1625,7 +1625,7 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 
 ### Fix AI Autogenerate Button Not Working (2026-02-15)
 
-**Problem:** The "Autogenerate with AI" button got stuck at "Starting generation..." with a spinner that never stopped. The POST to `/api/generate-syllabind` succeeded, but the WebSocket connection never delivered messages.
+**Problem:** The "Autogenerate with AI" button got stuck at "Starting generation..." with a spinner that never stopped. The POST to `/api/generate-binder` succeeded, but the WebSocket connection never delivered messages.
 
 **Root cause chain:**
 1. `authenticateWebSocket()` in `server/auth/index.ts` called `db.execute()` which returns a `pg.QueryResult` object (has `.rows` property), but the code cast it as `any[]` and tried to access `result[0].sess` — this threw `TypeError: Cannot read properties of undefined`
@@ -1644,7 +1644,7 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
    - Shows meaningful error toast based on close code (4401→auth, 4403→forbidden, 4404→not found)
 
 3. **Server sends error messages before closing WebSocket** (`server/index.ts`):
-   - All early-close paths (auth failure, missing syllabusId, not found, forbidden, invalid weekIndex) now send a JSON error message via `ws.send()` before `ws.close()`
+   - All early-close paths (auth failure, missing binderId, not found, forbidden, invalid weekIndex) now send a JSON error message via `ws.send()` before `ws.close()`
    - Error messages use the standard `{ type: 'error', data: { message: '...' } }` format
 
 4. **Reverted `max_tokens` to 8192** (`server/utils/syllabindGenerator.ts`):
@@ -1662,21 +1662,21 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 
 1. **Dashboard.tsx — New welcome screen for users with no enrollments:**
    - Replaced the `<Catalog />` early-return with a two-card welcome screen
-   - "Build your own course" card (Wand2 icon + AI badge) → links to `/creator/syllabind/new`
+   - "Build your own course" card (Wand2 icon + AI badge) → links to `/curator/binder/new`
    - "Choose from existing courses" card (BookOpen icon) → links to `/catalog`
    - Uses AnimatedPage/AnimatedCard for entrance animations
 
-2. **Layout.tsx — Syllabind Builder always visible:**
-   - Removed `user?.isCreator` conditional from both desktop and mobile nav
-   - "Syllabind Builder" link now shows for all authenticated users
+2. **Layout.tsx — Curator Studio always visible:**
+   - Removed `user?.isCurator` conditional from both desktop and mobile nav
+   - "Curator Studio" link now shows for all authenticated users
 
-3. **Layout.tsx — Removed creator/learner toggle:**
-   - Removed "Switch to Learner" / "Switch to Creator" dropdown menu item
-   - Removed `toggleCreatorMode` and `PenTool` imports
+3. **Layout.tsx — Removed curator/reader toggle:**
+   - Removed "Switch to Reader" / "Switch to Curator" dropdown menu item
+   - Removed `toggleCuratorMode` and `PenTool` imports
 
 4. **Login.tsx — Removed role selection from signup:**
    - Removed "I am primarily a..." radio group from signup form
-   - Removed `role` state and `isCreator: role === 'creator'` from request body
+   - Removed `role` state and `isCurator: role === 'curator'` from request body
    - Removed `RadioGroup`/`RadioGroupItem` imports
 
 **Files Modified:**
@@ -1684,9 +1684,9 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 - `client/src/components/Layout.tsx` - Unconditional nav, removed toggle
 - `client/src/pages/Login.tsx` - Removed role picker
 
-### Fix Completed Syllabinds Not Showing on Dashboard (2026-02-15)
+### Fix Completed Binders Not Showing on Dashboard (2026-02-15)
 
-**Problem:** The "Completed Journeys" section on the Dashboard never displayed any syllabinds because `completedSyllabusIds` was always `[]` (hardcoded with a `// TODO` comment). Users who completed syllabinds couldn't see them on their dashboard.
+**Problem:** The "Completed Journeys" section on the Dashboard never displayed any binders because `completedBinderIds` was always `[]` (hardcoded with a `// TODO` comment). Users who completed binders couldn't see them on their dashboard.
 
 **Root cause:** `refreshEnrollments()` in `store.tsx` only tracked the active in-progress enrollment and never extracted completed enrollment data from the API response.
 
@@ -1694,25 +1694,25 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 
 1. **`store.tsx` - `refreshEnrollments()`:** Extract `completedSyllabusIds` from enrollments with `status: 'completed'`. Only use in-progress enrollment for active (removed fallback to completed/dropped enrollments).
 
-2. **`store.tsx` - `completeActiveSyllabind()`:** When a syllabind is completed, add its ID to `completedSyllabusIds` and clear `activeSyllabusId` so the user isn't shown a completed syllabind as "Current Focus".
+2. **`store.tsx` - `completeActiveBinder()`:** When a binder is completed, add its ID to `completedBinderIds` and clear `activeBinderId` so the user isn't shown a completed binder as "Current Focus".
 
-3. **`Dashboard.tsx` - Welcome screen guard:** Added `completedSyllabinds.length === 0` check so users with completed syllabinds (but no active enrollment) see the dashboard with "Completed Journeys" instead of the first-time welcome screen.
+3. **`Dashboard.tsx` - Welcome screen guard:** Added `completedBinders.length === 0` check so users with completed binders (but no active enrollment) see the dashboard with "Completed Journeys" instead of the first-time welcome screen.
 
 **Files Modified:**
 - `client/src/lib/store.tsx` - Fixed `refreshEnrollments()` and `completeActiveSyllabus()`
 - `client/src/pages/Dashboard.tsx` - Updated welcome screen guard
 
-### Ensure Completed Syllabinds Always Show on Dashboard (2026-02-15)
+### Ensure Completed Binders Always Show on Dashboard (2026-02-15)
 
-**Problem:** Completed syllabinds only appeared in the "Completed Journeys" section if the enrollment had been explicitly marked as `completed` via a debug dropdown. There was no proper UX flow to transition a 100%-complete syllabus into the completed state, so the Completed Journeys section was effectively empty for most users.
+**Problem:** Completed binders only appeared in the "Completed Journeys" section if the enrollment had been explicitly marked as `completed` via a debug dropdown. There was no proper UX flow to transition a 100%-complete binder into the completed state, so the Completed Journeys section was effectively empty for most users.
 
 **Fixes:**
 
-1. **`Completion.tsx` - Auto-complete enrollment:** When the user visits the completion/certificate page, the enrollment is automatically marked as `completed` via `completeActiveSyllabus()`. Uses a ref to prevent duplicate calls.
+1. **`Completion.tsx` - Auto-complete enrollment:** When the user visits the completion/certificate page, the enrollment is automatically marked as `completed` via `completeActiveBinder()`. Uses a ref to prevent duplicate calls.
 
-2. **`Dashboard.tsx` - "Mark Complete" button:** Added an explicit "Mark Complete" button on the active syllabus card when progress is 100%, allowing users to finalize completion directly from the Dashboard.
+2. **`Dashboard.tsx` - "Mark Complete" button:** Added an explicit "Mark Complete" button on the active binder card when progress is 100%, allowing users to finalize completion directly from the Dashboard.
 
-3. **`Dashboard.tsx` - Loading state:** Added enrollment/syllabinds loading check before rendering to prevent the welcome screen from flashing while data loads.
+3. **`Dashboard.tsx` - Loading state:** Added enrollment/binders loading check before rendering to prevent the welcome screen from flashing while data loads.
 
 **Files Modified:**
 - `client/src/pages/Completion.tsx` - Auto-complete enrollment on mount
@@ -1720,7 +1720,7 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 
 ### Fix Weeks Array Not Expanding During Regeneration (2026-02-16)
 
-**Problem:** When regenerating a syllabind with more weeks than previously existed (e.g., going from 1 week to 3), the `formData.weeks` array only had slots for the original weeks. All WebSocket handlers used `if (newWeeks[weekIdx])` guards that silently skipped data for weeks beyond the array length. This caused new week tabs to not appear during generation and steps/metadata for new weeks to be silently dropped.
+**Problem:** When regenerating a binder with more weeks than previously existed (e.g., going from 1 week to 3), the `formData.weeks` array only had slots for the original weeks. All WebSocket handlers used `if (newWeeks[weekIdx])` guards that silently skipped data for weeks beyond the array length. This caused new week tabs to not appear during generation and steps/metadata for new weeks to be silently dropped.
 
 **Root Cause:** `handleAutogenerate()` never resized `formData.weeks` to match `formData.durationWeeks` before starting generation.
 
@@ -1739,7 +1739,7 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 
 ### Rate Limit Retry and Generation Cancellation (2026-02-16)
 
-**Problem:** During AI syllabind generation, 429 rate limit errors caused silent failures — the Anthropic SDK's built-in retry (`maxRetries: 2`) waited silently, leaving the user seeing generation "stuck" with no feedback. When retries were exhausted mid-generation, partial data was left behind. Additionally, users had no way to cancel a running generation.
+**Problem:** During AI binder generation, 429 rate limit errors caused silent failures — the Anthropic SDK's built-in retry (`maxRetries: 2`) waited silently, leaving the user seeing generation "stuck" with no feedback. When retries were exhausted mid-generation, partial data was left behind. Additionally, users had no way to cancel a running generation.
 
 **Solution:**
 
@@ -1757,16 +1757,16 @@ WebSocket /ws/regenerate-week/:syllabusId/:weekIndex - Stream regeneration
 
 3. **Cancel generation button** (client + server):
    - **Client:** WebSocket stored in `useRef` for persistence across renders. Cancel button added to generation progress card. On click: closes WebSocket, resets all generation state, shows confirmation toast.
-   - **Server:** `handleGenerateSyllabindWS` and `handleRegenerateWeekWS` listen for `ws.on('close')` and trigger an `AbortController`. The abort signal is passed to generator functions and Anthropic API calls (`signal` parameter). Before each API call, the signal is checked — if aborted, generation stops cleanly. On cancellation, syllabus status is set back to `'draft'`.
+   - **Server:** `handleGenerateBinderWS` and `handleRegenerateWeekWS` listen for `ws.on('close')` and trigger an `AbortController`. The abort signal is passed to generator functions and Anthropic API calls (`signal` parameter). Before each API call, the signal is checked — if aborted, generation stops cleanly. On cancellation, binder status is set back to `'draft'`.
 
 **Files Modified:**
 - `server/utils/syllabindGenerator.ts` - `maxRetries: 0`, `createMessageWithRateLimitRetry()`, abort signal checks in generation loops
 - `server/websocket/generateSyllabind.ts` - AbortController wired to `ws.on('close')`, signal passed to generators, safe ws.close() checks
 - `client/src/pages/SyllabindEditor.tsx` - `generationWsRef`, `handleCancelGeneration()`, `rate_limit_wait` handler, cancel button UI
 
-### Hybrid Single-Call Syllabind Generation (2026-02-16)
+### Hybrid Single-Call Binder Generation (2026-02-16)
 
-**Problem:** Generating a 4-week syllabind required 4+ API calls (one per week), increasing latency and rate limit exposure.
+**Problem:** Generating a 4-week binder required 4+ API calls (one per week), increasing latency and rate limit exposure.
 
 **Solution:** Hybrid approach that asks Claude to generate all weeks in one call, with automatic fallback to per-week if the response is truncated.
 
@@ -1814,11 +1814,11 @@ The existing while loop (`while weekIndex <= durationWeeks`) provides natural fa
 
 **Changes:**
 
-1. **Batched generation** (`server/utils/syllabindGenerator.ts`): `generateSyllabind` now processes weeks in batches of 2. Each batch starts a fresh conversation with its own system prompt and search budget, preventing context bloat from accumulated search results. An 8-week syllabind = 4 batches.
+1. **Batched generation** (`server/utils/binderGenerator.ts`): `generateBinder` now processes weeks in batches of 2. Each batch starts a fresh conversation with its own system prompt and search budget, preventing context bloat from accumulated search results. An 8-week binder = 4 batches.
 2. **Simplified search budget** (`server/utils/claudeClient.ts`): Replaced static `SYLLABIND_GENERATION_TOOLS` with `getGenerationTools()` returning 10 searches per batch (~5/week). No dynamic scaling needed since batches are always 1-2 weeks.
 2. **Added field descriptions to tool schema** (`server/utils/claudeClient.ts`): `url`, `note`, and `promptText` properties now have descriptions emphasizing they are required and URLs must come from search results
 3. **Strengthened system prompts** (`server/utils/syllabindGenerator.ts`): Both `generateSyllabind` and `regenerateWeek` prompts now explicitly require every reading to have a URL and note, every exercise to have promptText
-4. **Server-side URL validation** (NEW `server/utils/validateUrl.ts`): Lightweight HEAD-request checker with 5s timeout. Invalid URLs are stripped (set to null) rather than blocking the step — the reading is saved with its metadata and the creator can add a working URL later
+4. **Server-side URL validation** (NEW `server/utils/validateUrl.ts`): Lightweight HEAD-request checker with 5s timeout. Invalid URLs are stripped (set to null) rather than blocking the step — the reading is saved with its metadata and the curator can add a working URL later
 5. **URL validation integrated** (`server/utils/syllabindGenerator.ts`): Both `generateSyllabind` and `regenerateWeek` validate reading URLs before saving to database. Warnings logged for stripped URLs.
 
 **Files:**
@@ -1847,7 +1847,7 @@ After each 2-week batch completes, readings without URLs are collected. If any e
 **Part 2: Rate Limit UX**
 
 - Server: `MAX_RETRIES` increased from 5 to 10; max backoff cap from 16s to 60s
-- Client: `rate_limit_wait` messages show friendly copy ("Lots of creators are building right now — please hold on!")
+- Client: `rate_limit_wait` messages show friendly copy ("Lots of curators are building right now — please hold on!")
 - Client: When all retries exhausted (`generation_error` with `isRateLimit: true`), progress card shows countdown and auto-retries after cooldown instead of showing red toast and killing progress
 - Cancel button works during rate limit countdown via `rateLimitRetryRef`
 
@@ -1893,7 +1893,7 @@ After each 2-week batch completes, readings without URLs are collected. If any e
 
 **Problem:**
 1. Claude fabricates placeholder YouTube URLs like `?v=example` that pass HEAD/GET (YouTube returns 200 for any `watch?v=` URL)
-2. Claude returns creator profile/channel pages (e.g. `youtube.com/@creator`, `open.spotify.com/show/xxx`) instead of specific videos/episodes — these also pass HEAD/GET since the pages exist
+2. Claude returns profile/channel pages (e.g. `youtube.com/@channel`, `open.spotify.com/show/xxx`) instead of specific videos/episodes — these also pass HEAD/GET since the pages exist
 
 **Fixes:**
 
@@ -1928,7 +1928,7 @@ After each 2-week batch completes, readings without URLs are collected. If any e
 ### Two-Phase Generation — Coherent Curriculum (2026-02-16)
 
 **Problem:**
-When generating 8-week syllabinds, weekly topics were random and duplicated (e.g., "Foundations of AI Evaluation" appearing 3 times). Root cause: weeks are generated in batches of 2, each batch starting a fresh conversation with no knowledge of other batches. For 8 weeks = 4 independent batches independently picking similar topics.
+When generating 8-week binders, weekly topics were random and duplicated (e.g., "Foundations of AI Evaluation" appearing 3 times). Root cause: weeks are generated in batches of 2, each batch starting a fresh conversation with no knowledge of other batches. For 8 weeks = 4 independent batches independently picking similar topics.
 
 Additionally, regenerating a single week was replacing the title and summary, when users expected only the readings/exercises to change.
 
@@ -1976,9 +1976,9 @@ Additionally, regenerating a single week was replacing the title and summary, wh
 
 3. **Stronger prompts**: Both generation and regeneration prompts now explicitly require `estimatedMinutes` on every step and `creationDate` on every reading (with "if unknown, use best estimate").
 
-4. **Final URL sweep**: After all batches complete, `generateSyllabind()` now queries all weeks/steps from the DB and collects any readings still missing URLs across the entire syllabind. Runs one final `repairMissingUrls()` pass for cross-batch coverage.
+4. **Final URL sweep**: After all batches complete, `generateBinder()` now queries all weeks/steps from the DB and collects any readings still missing URLs across the entire binder. Runs one final `repairMissingUrls()` pass for cross-batch coverage.
 
-5. **Learner page filtering**: WeekView and SyllabindOverview hide readings without URLs from learners. Step counts and time estimates only include visible steps. Week locking/progression logic excludes URL-less readings.
+5. **Reader page filtering**: WeekView and BinderOverview hide readings without URLs from readers. Step counts and time estimates only include visible steps. Week locking/progression logic excludes URL-less readings.
 
 **Files Modified:**
 - `server/utils/claudeClient.ts` — creationDate description changed to YYYY-MM-DD
@@ -2026,21 +2026,21 @@ Added real AI text improvement to the RichTextEditor's "Improve writing" button 
 
 ### Duplicate Weeks Prevention (2026-02-17)
 
-**Problem:** Concurrent generation requests on the same syllabind (e.g., double-clicking "Generate") created duplicate week rows (same `syllabusId` + `index`). The `getSyllabusWithContent` query returned all duplicates, causing the SyllabindOverview accordion to show 12 weeks instead of 6.
+**Problem:** Concurrent generation requests on the same binder (e.g., double-clicking "Generate") created duplicate week rows (same `binderId` + `index`). The `getBinderWithContent` query returned all duplicates, causing the BinderOverview accordion to show 12 weeks instead of 6.
 
-**Root cause:** No unique constraint on `weeks(syllabus_id, index)` and no guard against triggering generation while one is already in progress.
+**Root cause:** No unique constraint on `weeks(binder_id, index)` and no guard against triggering generation while one is already in progress.
 
 **Fixes:**
-1. **Concurrent generation guard** — `POST /api/generate-syllabind` now returns 409 if syllabind status is already `'generating'`
-2. **Week deduplication** — `getSyllabusWithContent` deduplicates weeks by index, keeping only the highest-ID week per index (most recent generation)
-3. **Unique constraint** — Added `uniqueIndex("weeks_syllabus_id_index_idx")` on `(syllabusId, index)` in schema + migration to clean up existing duplicates
+1. **Concurrent generation guard** — `POST /api/generate-binder` now returns 409 if binder status is already `'generating'`
+2. **Week deduplication** — `getBinderWithContent` deduplicates weeks by index, keeping only the highest-ID week per index (most recent generation)
+3. **Unique constraint** — Added `uniqueIndex("weeks_binder_id_index_idx")` on `(binderId, index)` in schema + migration to clean up existing duplicates
 
 **Migration:** `migrations/0004_deduplicate_weeks_unique_constraint.sql` — deletes duplicate weeks (keeping latest), then adds unique index.
 
 **Files Modified:**
 - `server/routes.ts` — Added 409 guard for concurrent generation
 - `server/storage.ts` — Deduplicate weeks by index in `getSyllabusWithContent`
-- `shared/schema.ts` — Added unique index on `weeks(syllabus_id, index)`
+- `shared/schema.ts` — Added unique index on `weeks(binder_id, index)`
 - `migrations/0004_deduplicate_weeks_unique_constraint.sql` — New migration
 
 ### PostHog Analytics Integration (2026-02-17)
@@ -2055,18 +2055,18 @@ Added real AI text improvement to the RichTextEditor's "Improve writing" button 
 
 **Files Modified:**
 - `client/src/main.tsx` — PostHogProvider setup
-- `client/src/lib/store.tsx` — User identification + 4 custom events (enroll, step complete, syllabind complete, exercise submit)
+- `client/src/lib/store.tsx` — User identification + 4 custom events (enroll, step complete, binder complete, exercise submit)
 - `client/src/pages/SyllabindEditor.tsx` — `syllabind_published` and draft `link_shared` events
 - `client/src/components/ShareDialog.tsx` — `link_shared` event
 
 ### Bug Fixes: WeekView Loading Flash, Exercise Submit, Button Copy (2026-02-17)
 
 **Issues Fixed:**
-1. **"Not Found" flash on page load** — WeekView showed "Not found" briefly before syllabus data loaded. Added a `loading` state that shows a spinner during fetch, only showing "Not found" after loading completes with no data.
+1. **"Not Found" flash on page load** — WeekView showed "Not found" briefly before binder data loaded. Added a `loading` state that shows a spinner during fetch, only showing "Not found" after loading completes with no data.
 2. **Exercise submit didn't update UI** — `handleExerciseSubmit` called `saveExercise` (which updates store state) but never updated `localCompletedStepIds`. Since local state takes priority when non-empty, the step appeared incomplete after submission. Fixed by syncing local state after successful save.
 3. **Button copy** — Changed exercise submit button from "Save & Complete" to "Submit".
 
-**Defensive improvement:** `markStepComplete`, `markStepIncomplete`, and `saveExercise` in the store now accept an optional `enrollmentId` parameter, falling back to `enrollment?.id`. WeekView passes its locally-fetched `localEnrollmentId` so operations work correctly even when the global store enrollment doesn't match the viewed syllabind.
+**Defensive improvement:** `markStepComplete`, `markStepIncomplete`, and `saveExercise` in the store now accept an optional `enrollmentId` parameter, falling back to `enrollment?.id`. WeekView passes its locally-fetched `localEnrollmentId` so operations work correctly even when the global store enrollment doesn't match the viewed binder.
 
 **Files Modified:**
 - `client/src/pages/WeekView.tsx` — Loading state, local state sync fix, error toast, enrollmentId pass-through, button copy, exercise checkbox edit, submit loading spinner
@@ -2074,14 +2074,14 @@ Added real AI text improvement to the RichTextEditor's "Improve writing" button 
 
 ### Completion Page: Incomplete Assignments Guard (2026-02-17)
 
-**Issue:** Navigating to `/syllabind/:id/completed` with missing steps showed "not found" (store's catalog list lacks full week/step data) and auto-completed the enrollment regardless.
+**Issue:** Navigating to `/binder/:id/completed` with missing steps showed "not found" (store's catalog list lacks full week/step data) and auto-completed the enrollment regardless.
 
-**Fix:** Rewrote `Completion.tsx` to fetch full syllabus data and completed steps independently (same pattern as WeekView). The page now computes overall progress and conditionally renders:
+**Fix:** Rewrote `Completion.tsx` to fetch full binder data and completed steps independently (same pattern as WeekView). The page now computes overall progress and conditionally renders:
 
-- **Incomplete state (progress < 100%):** Amber warning icon, "Almost There!" heading, remaining assignment count, progress bar with step count, and CTAs for "Back to Last Week" and "Return to Syllabind Overview"
+- **Incomplete state (progress < 100%):** Amber warning icon, "Almost There!" heading, remaining assignment count, progress bar with step count, and CTAs for "Back to Last Week" and "Return to Binder Overview"
 - **Complete state (100%):** Original celebration with confetti, award icon, congratulations message. Enrollment is only marked as completed in this state.
 
-**Also fixed in WeekView:** `isLastWeek` previously compared `weekIndex` to `syllabus.durationWeeks` (a metadata field), which could be stale or mismatched with actual week data. Changed to compute `maxWeekIndex` from the actual weeks array. Additionally, if the user navigates to a non-existent week (past the last one), WeekView now redirects to the completion page instead of showing "Not found."
+**Also fixed in WeekView:** `isLastWeek` previously compared `weekIndex` to `binder.durationWeeks` (a metadata field), which could be stale or mismatched with actual week data. Changed to compute `maxWeekIndex` from the actual weeks array. Additionally, if the user navigates to a non-existent week (past the last one), WeekView now redirects to the completion page instead of showing "Not found."
 
 **Files Modified:**
 - `client/src/pages/Completion.tsx` — Full rewrite with data fetching, progress computation, and incomplete/complete conditional rendering
@@ -2104,53 +2104,53 @@ Also added a "Go to Week N" mobile button for past accessible but incomplete wee
 
 ### Fix: 0-Based Week Index Normalization (2026-02-17)
 
-**Issue:** Some syllabinds (e.g. AI-generated ones) stored week indices starting at 0 instead of 1. This caused cascading issues: Week 1 appeared locked, Dashboard's "Continue" button navigated to the wrong week, WeekView's prev/next navigation broke, and "Not found" appeared for non-existent weeks.
+**Issue:** Some binders (e.g. AI-generated ones) stored week indices starting at 0 instead of 1. This caused cascading issues: Week 1 appeared locked, Dashboard's "Continue" button navigated to the wrong week, WeekView's prev/next navigation broke, and "Not found" appeared for non-existent weeks.
 
-**Fix (API normalization):** The `GET /api/syllabinds/:id` endpoint now normalizes week indices to 1-based after fetching from the database. Weeks are sorted by their original index and re-indexed as 1, 2, 3, etc. This fixes all frontend consumers at once.
+**Fix (API normalization):** The `GET /api/binders/:id` endpoint now normalizes week indices to 1-based after fetching from the database. Weeks are sorted by their original index and re-indexed as 1, 2, 3, etc. This fixes all frontend consumers at once.
 
 **Fix (data-driven navigation in WeekView):** Replaced all hardcoded `weekIndex - 1` / `weekIndex + 1` arithmetic with actual prev/next week lookups from the sorted weeks array. `isLastWeek` is now `nextWeek === null`. Locking checks use `prevWeek` data. Navigation links use `prevWeek.index` / `nextWeek.index`.
 
 **Files Modified:**
-- `server/routes.ts` — Week index normalization in GET `/api/syllabinds/:id`
+- `server/routes.ts` — Week index normalization in GET `/api/binders/:id`
 - `client/src/pages/WeekView.tsx` — Data-driven prev/next week navigation
 
 ---
 
 ### Weeks/Steps Persistence Fix (2026-02-19)
 
-**Problem:** The create and update syllabind routes discarded nested weeks/steps data. `POST /api/syllabinds` only created the base syllabind row via `insertSyllabusSchema` (which strips unknown fields). `PUT /api/syllabinds/:id` explicitly filtered out the `weeks` property in `storage.updateSyllabus()`. This meant the editor could save metadata (title, description, status) but all content (weeks and steps) was never persisted. Preview and overview pages showed empty syllabinds.
+**Problem:** The create and update binder routes discarded nested weeks/steps data. `POST /api/binders` only created the base binder row via `insertBinderSchema` (which strips unknown fields). `PUT /api/binders/:id` explicitly filtered out the `weeks` property in `storage.updateBinder()`. This meant the editor could save metadata (title, description, status) but all content (weeks and steps) was never persisted. Preview and overview pages showed empty binders.
 
 **Solution:**
-1. Added `saveWeeksAndSteps(syllabusId, weeksData)` method to storage — deletes existing weeks (steps cascade), then bulk-inserts new weeks and steps
-2. Updated `POST /api/syllabinds` to call `saveWeeksAndSteps` after creating the syllabind when `weeks` data is present
-3. Updated `PUT /api/syllabinds/:id` to call `saveWeeksAndSteps` after updating metadata when `weeks` data is present
+1. Added `saveWeeksAndSteps(binderId, weeksData)` method to storage — deletes existing weeks (steps cascade), then bulk-inserts new weeks and steps
+2. Updated `POST /api/binders` to call `saveWeeksAndSteps` after creating the binder when `weeks` data is present
+3. Updated `PUT /api/binders/:id` to call `saveWeeksAndSteps` after updating metadata when `weeks` data is present
 
 **Files Modified:**
 - `server/storage.ts` — Added `saveWeeksAndSteps` to IStorage interface and DatabaseStorage implementation
-- `server/routes.ts` — Updated POST and PUT syllabind routes to persist weeks/steps
+- `server/routes.ts` — Updated POST and PUT binder routes to persist weeks/steps
 
 ### Stripe Pro Subscription System (2026-02-19)
 
 **Feature:** Added a $9.99/mo "Syllabind Pro" subscription using Stripe Checkout (redirect flow). Two gating rules:
-- **Creators:** Free tier limited to 2 syllabinds; Pro unlocks unlimited creation
+- **Curators:** Free tier limited to 2 binders; Pro unlocks unlimited creation
 - **Learners:** All enrollments require a Pro subscription
 
 **Backend:**
 - Added `stripeCustomerId` and `subscriptionStatus` columns to `users` table
 - Added `subscriptions` table for audit trail (mirrors Stripe subscription lifecycle)
 - Stripe client helper with lazy-init singleton (`server/lib/stripe.ts`)
-- 5 new storage methods: `getUserByStripeCustomerId`, `getSubscriptionByStripeId`, `upsertSubscription`, `updateSubscriptionByStripeId`, `countSyllabindsByCreator`
+- 5 new storage methods: `getUserByStripeCustomerId`, `getSubscriptionByStripeId`, `upsertSubscription`, `updateSubscriptionByStripeId`, `countBindersByCurator`
 - Payment routes (`server/routes/stripe.ts`): subscription status, limits, checkout session, portal session
 - Webhook handler (`server/routes/webhook.ts`): handles 5 Stripe event types with signature verification
-- Gating in `POST /api/syllabinds` (creator limit) and `POST /api/enrollments` (Pro required)
+- Gating in `POST /api/binders` (curator limit) and `POST /api/enrollments` (Pro required)
 
 **Frontend:**
-- `UpgradePrompt` dialog component with two variants (`creator-limit`, `enrollment-gate`)
+- `UpgradePrompt` dialog component with two variants (`curator-limit`, `enrollment-gate`)
 - `returnTo` parameter support — users return to where they were after payment
 - Subscription status in store with `isPro`, `subscriptionLimits`, `refreshSubscriptionLimits()`
 - Profile page subscription card with "Manage Billing" (Pro) or upgrade CTA (free)
-- CreatorDashboard gating at syllabind creation limit
-- SyllabindOverview enrollment gating with upgrade prompt
+- CuratorDashboard gating at binder creation limit
+- BinderOverview enrollment gating with upgrade prompt
 
 **Files Created:**
 - `server/lib/stripe.ts` — Stripe client singleton
@@ -2186,7 +2186,7 @@ Also added a "Go to Week N" mobile button for past accessible but incomplete wee
 **Fixes:**
 1. Added `mediaPreference: 'auto'` to initial formData state to prevent undefined-related issues
 2. After generation completes, preserve `mediaPreference` from local state when refetching: `updated.mediaPreference || prev.mediaPreference || 'auto'`
-3. Strengthened generation prompts — "Yes" mode now uses `IMPORTANT:` prefix, specifies search strategies ("topic YouTube", "topic podcast episode"), and labels it "a hard requirement from the creator"
+3. Strengthened generation prompts — "Yes" mode now uses `IMPORTANT:` prefix, specifies search strategies ("topic YouTube", "topic podcast episode"), and labels it "a hard requirement from the curator"
 4. Added server-side logging of `mediaPreference` value when generation starts
 
 **Files Modified:**
@@ -2196,7 +2196,7 @@ Also added a "Go to Week N" mobile button for past accessible but incomplete wee
 
 ### Media Preference: API Limitation Acknowledged (2026-02-22)
 
-**Problem:** Despite `media_preference: 'yes'`, Claude (Sonnet 4.5) cannot reliably produce working YouTube/podcast URLs. It pulls video titles from training data (knows creators like "Coach Michelle Hong") but fabricates URLs with fake video IDs instead of extracting them from web search results. oEmbed validation correctly catches the fakes → URL stripped → reading saved with mediaType but no URL.
+**Problem:** Despite `media_preference: 'yes'`, Claude (Sonnet 4.5) cannot reliably produce working YouTube/podcast URLs. It pulls video titles from training data but fabricates URLs with fake video IDs instead of extracting them from web search results. oEmbed validation correctly catches the fakes → URL stripped → reading saved with mediaType but no URL.
 
 Multiple approaches were tried and abandoned:
 1. **Stronger prompt wording** — Listing specific platforms, URL patterns, "MUST"/"CRITICAL" language. Claude ignores it.
@@ -2243,7 +2243,7 @@ Multiple approaches were tried and abandoned:
 
 ### Generation Cost Reduction (~25-35%) (2026-02-22)
 
-**Problem:** Generating a 4-week syllabind cost ~$0.75-1.00 in Claude API usage. Sonnet must stay for generation (Haiku produced fake URLs) and batch size must stay at 2 (larger batches hit rate limits).
+**Problem:** Generating a 4-week binder cost ~$0.75-1.00 in Claude API usage. Sonnet must stay for generation (Haiku produced fake URLs) and batch size must stay at 2 (larger batches hit rate limits).
 
 **Changes:**
 1. **Reduced web search budget** (`claudeClient.ts`): `max_uses` 14 → 8 per batch (~4 searches/week). Prompt already says "~2-3 searches per week" — 14 was excessive.
@@ -2304,4 +2304,4 @@ The marketing page (`Marketing.tsx`) has 8 sections: Hero, Two Pathways, Build Y
 - Pricing needs real tiers, feature matrix, or enterprise plans → own page
 - FAQ grows past ~10-15 questions → own page
 - About adds team bios, press, or mission statement → own page
-- Creator and Learner audiences need separate funnels → separate landing pages
+- Curator and Reader audiences need separate funnels → separate landing pages

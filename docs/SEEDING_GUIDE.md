@@ -1,4 +1,4 @@
-# 🌱 Database Seeding Guide
+# Database Seeding Guide
 
 ## Overview
 
@@ -12,30 +12,30 @@ npm run db:seed
 
 ## What Gets Created
 
-### 👥 Users (6 total)
+### Users (6 total)
 
-#### Creator Account
+#### Curator Account
 - **Username**: `janesmith`
 - **Email**: `jane@example.com`
 - **Password**: `password123`
-- **Role**: Creator
+- **Role**: Curator
 - **Bio**: "Educator and systems thinker. Building learning paths for the curious."
 
-#### Learner Accounts
+#### Reader Accounts
 1. **alexlearner** - Currently learning Digital Minimalism (Week 2)
 2. **sarahchen** - Completed Digital Minimalism
 3. **marcusj** - Just started Digital Minimalism (Week 1)
 4. **emilyd** - Currently learning Systems Thinking (Week 1)
 5. **davidw** - Completed Systems Thinking
 
-All learner accounts use password: `password123`
+All reader accounts use password: `password123`
 
-### 📚 Syllabi (2 total)
+### Binders (2 total)
 
 #### 1. Digital Minimalism
 - **Duration**: 4 weeks
 - **Level**: Beginner
-- **Creator**: janesmith
+- **Curator**: janesmith
 - **Status**: Published
 - **Description**: "Reclaim your attention and focus in a noisy world. A 4-week structured guide to reducing digital clutter."
 
@@ -58,7 +58,7 @@ All learner accounts use password: `password123`
 #### 2. Systems Thinking 101
 - **Duration**: 2 weeks
 - **Level**: Intermediate
-- **Creator**: janesmith
+- **Curator**: janesmith
 - **Status**: Published
 - **Description**: "Learn to see the world in loops and connections. Understand feedback loops, stocks, and flows."
 
@@ -68,10 +68,10 @@ All learner accounts use password: `password123`
 **Week 2: Feedback Loops**
 - (Empty for demo purposes)
 
-### 📋 Enrollments (5 total)
+### Enrollments (5 total)
 
-| User | Syllabus | Status | Current Week | Progress |
-|------|----------|--------|--------------|----------|
+| User | Binder | Status | Current Week | Progress |
+|------|--------|--------|--------------|----------|
 | alexlearner | Digital Minimalism | In Progress | Week 2 | 3 steps completed |
 | sarahchen | Digital Minimalism | Completed | Week 4 | All 8 steps completed |
 | marcusj | Digital Minimalism | In Progress | Week 1 | 1 step completed |
@@ -106,7 +106,7 @@ The seed script is idempotent-safe if your database is empty, but will error if 
 
 ## Testing Workflows
 
-### As a Learner
+### As a Reader
 
 1. **Login as alexlearner**
    - Email: `alex@example.com`
@@ -123,35 +123,35 @@ The seed script is idempotent-safe if your database is empty, but will error if 
    - Password: `password123`
    - See: Just started Digital Minimalism, Week 1
 
-### As a Creator
+### As a Curator
 
 1. **Login as janesmith**
    - Email: `jane@example.com`
    - Password: `password123`
-   - Access creator dashboard
-   - See: 2 published syllabi
-   - View: Learners enrolled in each syllabus
-   - Create: New syllabi and manage existing ones
+   - Access curator dashboard
+   - See: 2 published binders
+   - View: Readers enrolled in each binder
+   - Create: New binders and manage existing ones
 
 ### Test Creating New Content
 
 1. Login as `janesmith`
-2. Go to Creator Dashboard
-3. Create a new syllabus
+2. Go to Curator Dashboard
+3. Create a new binder
 4. Add weeks and steps
 5. Publish it
-6. Switch to a learner account
-7. Enroll in the new syllabus
+6. Switch to a reader account
+7. Enroll in the new binder
 
 ### Test Enrollment Flow
 
-1. Create a new learner account (register)
+1. Create a new reader account (register)
 2. Browse catalog
 3. Enroll in "Digital Minimalism"
 4. Complete steps in Week 1
 5. Progress to Week 2
 6. Submit exercises
-7. Complete entire syllabus
+7. Complete entire binder
 
 ## Customization
 
@@ -165,28 +165,28 @@ const [newUser] = await db.insert(users).values({
   email: "your@example.com",
   password: await hashPassword("password123"),
   name: "Your Name",
-  isCreator: false,
+  isCurator: false,
   shareProfile: true,
 }).returning();
 ```
 
-### Add More Syllabi
+### Add More Binders
 ```typescript
-const [newSyllabus] = await db.insert(syllabi).values({
-  title: "Your Syllabus Title",
+const [newBinder] = await db.insert(binders).values({
+  title: "Your Binder Title",
   description: "Description here",
   audienceLevel: "Beginner",
   durationWeeks: 3,
   status: "published",
-  creatorId: creator.username,
+  curatorId: curator.username,
 }).returning();
 ```
 
 ### Add More Enrollments
 ```typescript
 const [enrollment] = await db.insert(enrollments).values({
-  studentId: learner.username,
-  syllabusId: syllabus.id,
+  readerId: reader.username,
+  binderId: binder.id,
   status: "in-progress",
   currentWeekIndex: 1,
   joinedAt: new Date(),
@@ -233,7 +233,7 @@ DELETE FROM submissions;
 DELETE FROM enrollments;
 DELETE FROM steps;
 DELETE FROM weeks;
-DELETE FROM syllabi;
+DELETE FROM binders;
 DELETE FROM users WHERE username != 'your_real_account';  # Keep your account
 ```
 
@@ -244,32 +244,32 @@ DELETE FROM completed_steps;
 DELETE FROM submissions;
 DELETE FROM enrollments;
 
--- Clear just syllabi and related data
+-- Clear just binders and related data
 DELETE FROM steps;
 DELETE FROM weeks;
-DELETE FROM syllabi;
+DELETE FROM binders;
 ```
 
 ## Next Steps
 
 After seeding:
 
-1. ✅ Start the dev server: `npm run dev`
-2. ✅ Open http://localhost:5000
-3. ✅ Login with any test account
-4. ✅ Explore the app with real data
-5. ✅ Test enrollment flow
-6. ✅ Test creator features
-7. ✅ Test step completion
-8. ✅ Test exercise submissions
+1. Start the dev server: `npm run dev`
+2. Open http://localhost:5000
+3. Login with any test account
+4. Explore the app with real data
+5. Test enrollment flow
+6. Test curator features
+7. Test step completion
+8. Test exercise submissions
 
 ## Production Considerations
 
-**⚠️ NEVER run this seed script in production!**
+**Never run this seed script in production!**
 
 This script is for development only. In production:
 - Users register through the signup flow
-- Creators create their own content
+- Curators create their own content
 - Enrollments happen organically
 - Use proper user onboarding flows
 
@@ -283,14 +283,12 @@ For production seeding (if needed):
 ## Summary
 
 The seed script provides:
-- ✅ 1 creator account (janesmith)
-- ✅ 5 learner accounts (various progress states)
-- ✅ 2 complete syllabi with weeks and steps
-- ✅ 5 enrollments (mix of in-progress and completed)
-- ✅ Realistic step completion data
-- ✅ Ready-to-test authentication
-- ✅ Full catalog and dashboard experience
+- 1 curator account (janesmith)
+- 5 reader accounts (various progress states)
+- 2 complete binders with weeks and steps
+- 5 enrollments (mix of in-progress and completed)
+- Realistic step completion data
+- Ready-to-test authentication
+- Full catalog and dashboard experience
 
 **Default Password for All Accounts**: `password123`
-
-Happy testing! 🚀

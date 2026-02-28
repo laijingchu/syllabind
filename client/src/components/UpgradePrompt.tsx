@@ -15,7 +15,7 @@ import { useState, useEffect } from 'react';
 interface UpgradePromptProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  variant: 'creator-limit' | 'enrollment-gate' | 'pro-feature';
+  variant: 'curator-limit' | 'enrollment-gate' | 'pro-feature';
   returnTo?: string;
 }
 
@@ -52,7 +52,7 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo }: Upgrade
     }
   };
 
-  const title = variant === 'creator-limit'
+  const title = variant === 'curator-limit'
     ? 'Upgrade to Syllabind Pro'
     : variant === 'pro-feature'
     ? 'Unlock Pro Features'
@@ -75,10 +75,10 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo }: Upgrade
         <div className="border rounded-lg p-4 bg-muted/30 space-y-2">
           <p className="font-medium text-sm">Syllabind Pro includes:</p>
           <ul className="text-sm text-muted-foreground space-y-1">
-            <li>- Unlimited syllabind creation</li>
-            <li>- Enroll in any syllabind</li>
+            <li>- Unlimited binder creation</li>
+            <li>- Enroll in any binder</li>
             <li>- Full progress tracking</li>
-            <li>- Book calls with creators</li>
+            <li>- Book calls with curators</li>
             <li>- Join the Syllabind Slack community</li>
           </ul>
         </div>

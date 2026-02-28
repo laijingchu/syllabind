@@ -6,7 +6,7 @@
  */
 import {
   insertUserSchema,
-  insertSyllabusSchema,
+  insertBinderSchema,
   insertEnrollmentSchema,
   insertWeekSchema,
   insertStepSchema,
@@ -16,7 +16,7 @@ import {
   insertCohortMemberSchema,
   insertCategorySchema,
   insertTagSchema,
-  insertSyllabindTagSchema,
+  insertBinderTagSchema,
 } from '@shared/schema';
 
 describe('Schema Validation', () => {
@@ -41,7 +41,7 @@ describe('Schema Validation', () => {
       const result = insertUserSchema.safeParse({
         username: 'testuser',
         bio: 'A bio',
-        isCreator: true,
+        isCurator: true,
         linkedin: 'linkedin',
         website: 'https://example.com',
       });
@@ -49,10 +49,10 @@ describe('Schema Validation', () => {
     });
   });
 
-  describe('insertSyllabusSchema', () => {
-    it('accepts valid syllabus data', () => {
-      const result = insertSyllabusSchema.safeParse({
-        title: 'Test Syllabus',
+  describe('insertBinderSchema', () => {
+    it('accepts valid binder data', () => {
+      const result = insertBinderSchema.safeParse({
+        title: 'Test Binder',
         description: 'A description',
         audienceLevel: 'Beginner',
         durationWeeks: 4,
@@ -61,7 +61,7 @@ describe('Schema Validation', () => {
     });
 
     it('requires title', () => {
-      const result = insertSyllabusSchema.safeParse({
+      const result = insertBinderSchema.safeParse({
         description: 'A description',
         audienceLevel: 'Beginner',
         durationWeeks: 4,
@@ -70,7 +70,7 @@ describe('Schema Validation', () => {
     });
 
     it('requires description', () => {
-      const result = insertSyllabusSchema.safeParse({
+      const result = insertBinderSchema.safeParse({
         title: 'Title',
         audienceLevel: 'Beginner',
         durationWeeks: 4,
@@ -79,7 +79,7 @@ describe('Schema Validation', () => {
     });
 
     it('requires audienceLevel', () => {
-      const result = insertSyllabusSchema.safeParse({
+      const result = insertBinderSchema.safeParse({
         title: 'Title',
         description: 'Desc',
         durationWeeks: 4,
@@ -88,7 +88,7 @@ describe('Schema Validation', () => {
     });
 
     it('requires durationWeeks', () => {
-      const result = insertSyllabusSchema.safeParse({
+      const result = insertBinderSchema.safeParse({
         title: 'Title',
         description: 'Desc',
         audienceLevel: 'Beginner',
@@ -96,13 +96,13 @@ describe('Schema Validation', () => {
       expect(result.success).toBe(false);
     });
 
-    it('accepts optional creatorId', () => {
-      const result = insertSyllabusSchema.safeParse({
+    it('accepts optional curatorId', () => {
+      const result = insertBinderSchema.safeParse({
         title: 'Test',
         description: 'Desc',
         audienceLevel: 'Advanced',
         durationWeeks: 8,
-        creatorId: 'creator123',
+        curatorId: 'curator123',
       });
       expect(result.success).toBe(true);
     });
@@ -111,8 +111,8 @@ describe('Schema Validation', () => {
   describe('insertEnrollmentSchema', () => {
     it('accepts valid enrollment data', () => {
       const result = insertEnrollmentSchema.safeParse({
-        studentId: 'user123',
-        syllabusId: 1,
+        readerId: 'user123',
+        binderId: 1,
         status: 'in-progress',
       });
       expect(result.success).toBe(true);
@@ -129,14 +129,14 @@ describe('Schema Validation', () => {
   describe('insertWeekSchema', () => {
     it('accepts valid week data', () => {
       const result = insertWeekSchema.safeParse({
-        syllabusId: 1,
+        binderId: 1,
         index: 1,
         title: 'Week 1',
       });
       expect(result.success).toBe(true);
     });
 
-    it('requires syllabusId', () => {
+    it('requires binderId', () => {
       const result = insertWeekSchema.safeParse({
         index: 1,
       });
@@ -145,7 +145,7 @@ describe('Schema Validation', () => {
 
     it('requires index', () => {
       const result = insertWeekSchema.safeParse({
-        syllabusId: 1,
+        binderId: 1,
       });
       expect(result.success).toBe(false);
     });
@@ -253,19 +253,19 @@ describe('Schema Validation', () => {
     it('accepts valid cohort data', () => {
       const result = insertCohortSchema.safeParse({
         name: 'Cohort 1',
-        syllabusId: 1,
+        binderId: 1,
       });
       expect(result.success).toBe(true);
     });
 
     it('requires name', () => {
       const result = insertCohortSchema.safeParse({
-        syllabusId: 1,
+        binderId: 1,
       });
       expect(result.success).toBe(false);
     });
 
-    it('requires syllabusId', () => {
+    it('requires binderId', () => {
       const result = insertCohortSchema.safeParse({
         name: 'Cohort',
       });
@@ -277,7 +277,7 @@ describe('Schema Validation', () => {
     it('accepts valid cohort member data', () => {
       const result = insertCohortMemberSchema.safeParse({
         cohortId: 1,
-        studentId: 'user123',
+        readerId: 'user123',
       });
       expect(result.success).toBe(true);
     });
@@ -341,25 +341,25 @@ describe('Schema Validation', () => {
     });
   });
 
-  describe('insertSyllabindTagSchema', () => {
-    it('accepts valid syllabind tag data', () => {
-      const result = insertSyllabindTagSchema.safeParse({
-        syllabusId: 1,
+  describe('insertBinderTagSchema', () => {
+    it('accepts valid binder tag data', () => {
+      const result = insertBinderTagSchema.safeParse({
+        binderId: 1,
         tagId: 2,
       });
       expect(result.success).toBe(true);
     });
 
-    it('requires syllabusId', () => {
-      const result = insertSyllabindTagSchema.safeParse({
+    it('requires binderId', () => {
+      const result = insertBinderTagSchema.safeParse({
         tagId: 2,
       });
       expect(result.success).toBe(false);
     });
 
     it('requires tagId', () => {
-      const result = insertSyllabindTagSchema.safeParse({
-        syllabusId: 1,
+      const result = insertBinderTagSchema.safeParse({
+        binderId: 1,
       });
       expect(result.success).toBe(false);
     });

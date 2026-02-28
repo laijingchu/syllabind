@@ -4,66 +4,66 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { PlayCircle, CheckCircle2, Award, Wand2, BookOpen } from 'lucide-react';
-import { SyllabindCard } from '@/components/SyllabindCard';
+import { BinderCard } from '@/components/BinderCard';
 import { pluralize } from '@/lib/utils';
 import { useState, useEffect } from 'react';
-import { Syllabus } from '@/lib/types';
+import { Binder } from '@/lib/types';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { AnimatedCard, AnimatedPage } from '@/components/ui/animated-container';
 
 export default function Dashboard() {
-  const { enrollment, getActiveSyllabus, syllabinds, getSyllabusById, completedStepIds, enrollmentLoading, syllabindsLoading, completeActiveSyllabus } = useStore();
-  const activeSyllabusMetadata = getActiveSyllabus();
-  const [activeSyllabus, setActiveSyllabus] = useState<Syllabus | undefined>(undefined);
+  const { enrollment, getActiveBinder, binders, getBinderById, completedStepIds, enrollmentLoading, bindersLoading, completeActiveBinder } = useStore();
+  const activeBinderMetadata = getActiveBinder();
+  const [activeBinder, setActiveBinder] = useState<Binder | undefined>(undefined);
 
-  // Fetch full syllabus data with weeks and steps
+  // Fetch full binder data with weeks and steps
   useEffect(() => {
-    if (activeSyllabusMetadata?.id) {
-      fetch(`/api/syllabinds/${activeSyllabusMetadata.id}`, {
+    if (activeBinderMetadata?.id) {
+      fetch(`/api/binders/${activeBinderMetadata.id}`, {
         credentials: 'include'
       })
         .then(res => {
-          if (!res.ok) throw new Error(`Failed to fetch syllabus: ${res.status}`);
+          if (!res.ok) throw new Error(`Failed to fetch binder: ${res.status}`);
           return res.json();
         })
-        .then(data => setActiveSyllabus(data))
+        .then(data => setActiveBinder(data))
         .catch(err => {
-          console.error('Failed to fetch full syllabus:', err);
-          setActiveSyllabus(undefined);
+          console.error('Failed to fetch full binder:', err);
+          setActiveBinder(undefined);
         });
     } else {
-      setActiveSyllabus(undefined);
+      setActiveBinder(undefined);
     }
-  }, [activeSyllabusMetadata?.id]);
+  }, [activeBinderMetadata?.id]);
 
   // Local helper to compute overall progress
-  const getOverallProgress = (syllabusId: number) => {
-    const syllabus = syllabusId === activeSyllabus?.id ? activeSyllabus : getSyllabusById(syllabusId);
-    if (!syllabus || !syllabus.weeks) return 0;
+  const getOverallProgress = (binderId: number) => {
+    const binder = binderId === activeBinder?.id ? activeBinder : getBinderById(binderId);
+    if (!binder || !binder.weeks) return 0;
 
-    const allStepIds = syllabus.weeks.flatMap(week => week.steps.map(step => step.id));
+    const allStepIds = binder.weeks.flatMap(week => week.steps.map(step => step.id));
     if (allStepIds.length === 0) return 0;
 
     const completedCount = allStepIds.filter(id => completedStepIds.includes(id)).length;
     return Math.round((completedCount / allStepIds.length) * 100);
   };
 
-  // Filter completed syllabinds
-  const completedSyllabinds = (enrollment?.completedSyllabusIds || [])
-    .map(id => getSyllabusById(id))
+  // Filter completed binders
+  const completedBinders = (enrollment?.completedBinderIds || [])
+    .map(id => getBinderById(id))
     .filter((s): s is typeof s & {} => !!s); // Type guard
 
-  const isCompleted = activeSyllabus && getOverallProgress(activeSyllabus.id) === 100;
+  const isCompleted = activeBinder && getOverallProgress(activeBinder.id) === 100;
 
-  const allCompleted = syllabinds.length > 0 && syllabinds.every(s => enrollment?.completedSyllabusIds?.includes(s.id));
+  const allCompleted = binders.length > 0 && binders.every(s => enrollment?.completedBinderIds?.includes(s.id));
 
   // Wait for enrollment data before deciding what to show
-  if (enrollmentLoading || syllabindsLoading) {
+  if (enrollmentLoading || bindersLoading) {
     return <div className="max-w-4xl mx-auto py-20 text-center text-muted-foreground">Loading...</div>;
   }
 
-  // If no active syllabus and no completed syllabinds, show first-time welcome
-  if (!activeSyllabusMetadata && !allCompleted && completedSyllabinds.length === 0) {
+  // If no active binder and no completed binders, show first-time welcome
+  if (!activeBinderMetadata && !allCompleted && completedBinders.length === 0) {
     return (
       <AnimatedPage className="max-w-3xl mx-auto py-12 space-y-10">
         <header className="text-center space-y-3">
@@ -73,7 +73,7 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <AnimatedCard delay={0.1}>
-            <Link href="/creator/syllabind/new">
+            <Link href="/curator/binder/new">
               <Card className="welcome-card group cursor-pointer border-2 hover:border-primary/50 hover:shadow-lg transition-all duration-300 h-full">
                 <CardContent className="flex flex-col items-center justify-center py-12 px-6 text-center space-y-4">
                   <div className="relative inline-block">
@@ -86,7 +86,7 @@ export default function Dashboard() {
                   </div>
                   <div className="space-y-1">
                     <h3 className="text-xl font-display font-medium">Build your own course</h3>
-                    <p className="text-sm text-muted-foreground">Learn anything! Create a multi-week syllabus with AI assistance.</p>
+                    <p className="text-sm text-muted-foreground">Learn anything! Create a multi-week binder with AI assistance.</p>
                   </div>
                 </CardContent>
               </Card>
@@ -102,7 +102,7 @@ export default function Dashboard() {
                   </div>
                   <div className="space-y-1">
                     <h3 className="text-xl font-display font-medium">Choose from existing courses</h3>
-                    <p className="text-sm text-muted-foreground">Browse curated syllabinds from our community of creators</p>
+                    <p className="text-sm text-muted-foreground">Browse curated binders from our community of curators</p>
                   </div>
                 </CardContent>
               </Card>
@@ -113,15 +113,15 @@ export default function Dashboard() {
     );
   }
 
-  // Wait for full syllabus data to load
-  if (activeSyllabusMetadata && !activeSyllabus) {
+  // Wait for full binder data to load
+  if (activeBinderMetadata && !activeBinder) {
     return <div className="max-w-4xl mx-auto py-20 text-center">Loading...</div>;
   }
 
-  const suggestedSyllabinds = syllabinds
+  const suggestedBinders = binders
     .filter(s =>
-      (!activeSyllabus || s.id !== activeSyllabus.id) &&
-      !enrollment?.completedSyllabusIds?.includes(s.id)
+      (!activeBinder || s.id !== activeBinder.id) &&
+      !enrollment?.completedBinderIds?.includes(s.id)
     )
     .slice(0, 3);
 
@@ -150,13 +150,13 @@ export default function Dashboard() {
                   <Award className="h-8 w-8 text-primary" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-xl font-medium">All Syllabinds Completed</h3>
-                  <p className="text-muted-foreground max-w-sm mx-auto">You've mastered every topic in our catalog. Amazing work! You will receive an email notification when new syllabinds become available.</p>
+                  <h3 className="text-xl font-medium">All Binders Completed</h3>
+                  <p className="text-muted-foreground max-w-sm mx-auto">You've mastered every topic in our catalog. Amazing work! You will receive an email notification when new binders become available.</p>
                 </div>
               </CardContent>
             </Card>
           </AnimatedCard>
-        ) : activeSyllabus ? (
+        ) : activeBinder ? (
           <>
           <AnimatedCard delay={0.1}>
             <div className="relative rounded-xl border bg-card text-card-foreground shadow-sm">
@@ -164,7 +164,7 @@ export default function Dashboard() {
                <div className="absolute top-0 right-0 p-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             </div>
 
-            {getOverallProgress(activeSyllabus.id) === 100 && (
+            {getOverallProgress(activeBinder.id) === 100 && (
               <div className="absolute -top-6 -right-6 h-28 w-28 text-foreground rounded-full flex items-center justify-center shadow-xl border-4 border-background transform rotate-12 z-20 animate-in zoom-in duration-500 bg-[#ffffff]">
                 <div className="text-center -ml-1 mt-2">
                   <Award className="h-8 w-8 mx-auto mb-1" />
@@ -172,23 +172,23 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
-            
+
             <div className="p-8 relative z-10">
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
                 <div className="space-y-2">
                   <div className="text-sm font-medium text-primary uppercase tracking-wider">
-                    {getOverallProgress(activeSyllabus.id) === 100 ? 'Completed' : 'In Progress'}
+                    {getOverallProgress(activeBinder.id) === 100 ? 'Completed' : 'In Progress'}
                   </div>
-                  <h2 className="text-3xl font-display">{activeSyllabus.title}</h2>
+                  <h2 className="text-3xl font-display">{activeBinder.title}</h2>
                   <div
                     className="text-muted-foreground max-w-xl prose dark:prose-invert prose-p:my-0"
-                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeSyllabus.description) }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeBinder.description) }}
                   />
                 </div>
-                
-                {getOverallProgress(activeSyllabus.id) < 100 && (
+
+                {getOverallProgress(activeBinder.id) < 100 && (
                    <div className="flex flex-col items-end gap-2 min-w-[140px]">
-                      <span className="text-2xl font-mono font-medium">{getOverallProgress(activeSyllabus.id)}%</span>
+                      <span className="text-2xl font-mono font-medium">{getOverallProgress(activeBinder.id)}%</span>
                       <span className="text-xs text-muted-foreground">Total Completion</span>
                    </div>
                 )}
@@ -196,15 +196,15 @@ export default function Dashboard() {
 
               <div className="space-y-6">
                 <div className="space-y-2">
-                  {getOverallProgress(activeSyllabus.id) < 100 && (
+                  {getOverallProgress(activeBinder.id) < 100 && (
                     <div className="flex justify-between text-sm">
-                      <span className="font-medium">{pluralize(enrollment?.currentWeekIndex || 1, 'Week')} of {activeSyllabus.durationWeeks}</span>
+                      <span className="font-medium">{pluralize(enrollment?.currentWeekIndex || 1, 'Week')} of {activeBinder.durationWeeks}</span>
                     </div>
                   )}
-                  <Progress value={getOverallProgress(activeSyllabus.id)} className="h-2" />
+                  <Progress value={getOverallProgress(activeBinder.id)} className="h-2" />
                 </div>
-                
-                {getOverallProgress(activeSyllabus.id) === 100 ? (
+
+                {getOverallProgress(activeBinder.id) === 100 ? (
                   <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2">
                     <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4">
                       <div className="flex items-center gap-4">
@@ -212,19 +212,19 @@ export default function Dashboard() {
                           <Award className="h-6 w-6" />
                         </div>
                         <div>
-                          <h3 className="font-medium text-primary">Syllabind Completed!</h3>
+                          <h3 className="font-medium text-primary">Binder Completed!</h3>
                           <p className="text-xs text-muted-foreground">You've earned the completion badge.</p>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 w-full sm:w-auto sm:ml-auto">
-                        <Button size="sm" onClick={completeActiveSyllabus} className="w-full sm:w-auto">
+                        <Button size="sm" onClick={completeActiveBinder} className="w-full sm:w-auto">
                           <CheckCircle2 className="mr-1.5 h-4 w-4" />
                           Mark Complete
                         </Button>
-                        <Link href={`/syllabind/${activeSyllabus.id}`} className="w-full sm:w-auto">
-                          <Button variant="outline" size="sm" className="w-full sm:w-auto">View Syllabind</Button>
+                        <Link href={`/binder/${activeBinder.id}`} className="w-full sm:w-auto">
+                          <Button variant="outline" size="sm" className="w-full sm:w-auto">View Binder</Button>
                         </Link>
-                        <Link href={`/syllabind/${activeSyllabus.id}/completed`} className="w-full sm:w-auto">
+                        <Link href={`/binder/${activeBinder.id}/completed`} className="w-full sm:w-auto">
                           <Button variant="outline" size="sm" className="w-full sm:w-auto">View Certificate</Button>
                         </Link>
                       </div>
@@ -232,15 +232,15 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <Link href={`/syllabind/${activeSyllabus.id}/week/${enrollment?.currentWeekIndex || 1}`}>
+                    <Link href={`/binder/${activeBinder.id}/week/${enrollment?.currentWeekIndex || 1}`}>
                       <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/20">
                         <PlayCircle className="mr-2 h-5 w-5" />
                         Continue to Week {enrollment?.currentWeekIndex || 1}
                       </Button>
                     </Link>
-                    <Link href={`/syllabind/${activeSyllabus.id}`}>
+                    <Link href={`/binder/${activeBinder.id}`}>
                       <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                        View Syllabind
+                        View Binder
                       </Button>
                     </Link>
                   </div>
@@ -250,7 +250,7 @@ export default function Dashboard() {
           </div>
           </AnimatedCard>
 
-          {isCompleted && suggestedSyllabinds.length > 0 && (
+          {isCompleted && suggestedBinders.length > 0 && (
             <AnimatedCard delay={0.2}>
               <div className="space-y-4 pt-4">
                 <div className="flex justify-between items-center">
@@ -258,8 +258,8 @@ export default function Dashboard() {
                   <Link href="/catalog" className="text-sm text-primary hover:underline">Browse Catalog &rarr;</Link>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {suggestedSyllabinds.map(syllabus => (
-                    <SyllabindCard key={syllabus.id} syllabus={syllabus} className="h-full text-left" />
+                  {suggestedBinders.map(binder => (
+                    <BinderCard key={binder.id} binder={binder} className="h-full text-left" />
                   ))}
                 </div>
               </div>
@@ -274,14 +274,14 @@ export default function Dashboard() {
                   <BookOpenIcon className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-xl font-medium">You are not currently enrolled in any syllabind</h3>
+                  <h3 className="text-xl font-medium">You are not currently enrolled in any binder</h3>
                   <p className="text-muted-foreground max-w-sm mx-auto">Browse the catalog to find your next topic, or create your own!</p>
                 </div>
                 <div className="flex gap-3">
                   <Link href="/catalog">
                     <Button>Browse Catalog</Button>
                   </Link>
-                  <Link href="/creator">
+                  <Link href="/curator">
                     <Button variant="outline">Build your own course</Button>
                   </Link>
                 </div>
@@ -290,16 +290,16 @@ export default function Dashboard() {
           </AnimatedCard>
         )}
       </section>
-      {completedSyllabinds.length > 0 && (
+      {completedBinders.length > 0 && (
         <AnimatedCard delay={0.2}>
           <section className="space-y-6">
             <header>
               <h2 className="text-2xl font-display text-foreground mb-2">Completed Journeys</h2>
-              <p className="text-muted-foreground">You have successfully completed {pluralize(completedSyllabinds.length, 'syllabind')}!</p>
+              <p className="text-muted-foreground">You have successfully completed {pluralize(completedBinders.length, 'binder')}!</p>
             </header>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {completedSyllabinds.map(s => (
-                 <Link key={s.id} href={`/syllabind/${s.id}`}>
+              {completedBinders.map(s => (
+                 <Link key={s.id} href={`/binder/${s.id}`}>
                    <div className="flex items-center gap-4 p-4 border rounded-lg bg-card/50 hover:bg-muted/50 transition-colors cursor-pointer group">
                       <div className="bg-primary/10 p-3 rounded-full text-primary">
                         <Award className="h-6 w-6" />

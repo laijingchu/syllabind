@@ -1,10 +1,10 @@
 import request from 'supertest';
 import express from 'express';
-import { resetAllMocks, mockStorage, mockCreator, mockUser } from './setup/mocks';
+import { resetAllMocks, mockStorage, mockCurator, mockUser } from './setup/mocks';
 
 describe('AI Generation Routes', () => {
-  let creatorApp: express.Express;
-  let learnerApp: express.Express;
+  let curatorApp: express.Express;
+  let readerApp: express.Express;
 
   function registerRoutes(a: express.Express) {
     const authMiddleware = (req: any, res: any, next: any) => {
@@ -12,40 +12,40 @@ describe('AI Generation Routes', () => {
       next();
     };
 
-    // POST /api/generate-syllabind
-    a.post('/api/generate-syllabind', authMiddleware, async (req, res) => {
+    // POST /api/generate-binder
+    a.post('/api/generate-binder', authMiddleware, async (req, res) => {
       const username = (req.user as any).username;
       const user = req.user as any;
 
-      if (!user.isCreator) {
-        return res.status(403).json({ error: 'Creator access required' });
+      if (!user.isCurator) {
+        return res.status(403).json({ error: 'Curator access required' });
       }
 
-      const { syllabusId } = req.body;
+      const { binderId } = req.body;
 
-      if (!syllabusId || typeof syllabusId !== 'number') {
-        return res.status(400).json({ error: 'Valid syllabusId required' });
+      if (!binderId || typeof binderId !== 'number') {
+        return res.status(400).json({ error: 'Valid binderId required' });
       }
 
-      const syllabus = await mockStorage.getSyllabus(syllabusId);
-      if (!syllabus || syllabus.creatorId !== username) {
-        return res.status(403).json({ error: 'Not your syllabus' });
+      const binder = await mockStorage.getBinder(binderId);
+      if (!binder || binder.curatorId !== username) {
+        return res.status(403).json({ error: 'Not your binder' });
       }
 
-      if (!syllabus.title || !syllabus.description || !syllabus.audienceLevel || !syllabus.durationWeeks) {
+      if (!binder.title || !binder.description || !binder.audienceLevel || !binder.durationWeeks) {
         return res.status(400).json({ error: 'Complete basics fields before generating' });
       }
 
-      if (syllabus.status === 'generating') {
+      if (binder.status === 'generating') {
         return res.status(409).json({ error: 'Generation already in progress' });
       }
 
-      await mockStorage.updateSyllabus(syllabusId, { status: 'generating' });
+      await mockStorage.updateBinder(binderId, { status: 'generating' });
 
       res.json({
         success: true,
-        syllabusId,
-        websocketUrl: `/ws/generate-syllabind/${syllabusId}`
+        binderId,
+        websocketUrl: `/ws/generate-binder/${binderId}`
       });
     });
 
@@ -54,59 +54,59 @@ describe('AI Generation Routes', () => {
       const username = (req.user as any).username;
       const user = req.user as any;
 
-      if (!user.isCreator) {
-        return res.status(403).json({ error: 'Creator access required' });
+      if (!user.isCurator) {
+        return res.status(403).json({ error: 'Curator access required' });
       }
 
-      const { syllabusId, weekIndex } = req.body;
+      const { binderId, weekIndex } = req.body;
 
-      if (!syllabusId || typeof syllabusId !== 'number') {
-        return res.status(400).json({ error: 'Valid syllabusId required' });
+      if (!binderId || typeof binderId !== 'number') {
+        return res.status(400).json({ error: 'Valid binderId required' });
       }
 
       if (!weekIndex || typeof weekIndex !== 'number' || weekIndex < 1) {
         return res.status(400).json({ error: 'Valid weekIndex required' });
       }
 
-      const syllabus = await mockStorage.getSyllabus(syllabusId);
-      if (!syllabus || syllabus.creatorId !== username) {
-        return res.status(403).json({ error: 'Not your syllabus' });
+      const binder = await mockStorage.getBinder(binderId);
+      if (!binder || binder.curatorId !== username) {
+        return res.status(403).json({ error: 'Not your binder' });
       }
 
-      if (weekIndex > (syllabus.durationWeeks || 0)) {
-        return res.status(400).json({ error: 'weekIndex exceeds syllabus duration' });
+      if (weekIndex > (binder.durationWeeks || 0)) {
+        return res.status(400).json({ error: 'weekIndex exceeds binder duration' });
       }
 
       res.json({
         success: true,
-        syllabusId,
+        binderId,
         weekIndex,
-        websocketUrl: `/ws/regenerate-week/${syllabusId}/${weekIndex}`
+        websocketUrl: `/ws/regenerate-week/${binderId}/${weekIndex}`
       });
     });
   }
 
   beforeAll(() => {
-    creatorApp = express();
-    creatorApp.use(express.json());
-    creatorApp.use((req, _res, next) => { req.user = mockCreator; next(); });
-    registerRoutes(creatorApp);
+    curatorApp = express();
+    curatorApp.use(express.json());
+    curatorApp.use((req, _res, next) => { req.user = mockCurator; next(); });
+    registerRoutes(curatorApp);
 
-    learnerApp = express();
-    learnerApp.use(express.json());
-    learnerApp.use((req, _res, next) => { req.user = mockUser; next(); });
-    registerRoutes(learnerApp);
+    readerApp = express();
+    readerApp.use(express.json());
+    readerApp.use((req, _res, next) => { req.user = mockUser; next(); });
+    registerRoutes(readerApp);
   });
 
   beforeEach(() => {
     resetAllMocks();
   });
 
-  describe('POST /api/generate-syllabind', () => {
-    const completeSyllabus = {
+  describe('POST /api/generate-binder', () => {
+    const completeBinder = {
       id: 1,
-      creatorId: 'testcreator',
-      title: 'Test Syllabus',
+      curatorId: 'testcurator',
+      title: 'Test Binder',
       description: 'A test',
       audienceLevel: 'Beginner',
       durationWeeks: 4,
@@ -114,69 +114,69 @@ describe('AI Generation Routes', () => {
     };
 
     it('should return websocket URL for valid request', async () => {
-      mockStorage.getSyllabus.mockResolvedValue(completeSyllabus);
+      mockStorage.getBinder.mockResolvedValue(completeBinder);
 
-      const res = await request(creatorApp)
-        .post('/api/generate-syllabind')
-        .send({ syllabusId: 1 })
+      const res = await request(curatorApp)
+        .post('/api/generate-binder')
+        .send({ binderId: 1 })
         .expect(200);
 
       expect(res.body.success).toBe(true);
-      expect(res.body.websocketUrl).toBe('/ws/generate-syllabind/1');
-      expect(mockStorage.updateSyllabus).toHaveBeenCalledWith(1, { status: 'generating' });
+      expect(res.body.websocketUrl).toBe('/ws/generate-binder/1');
+      expect(mockStorage.updateBinder).toHaveBeenCalledWith(1, { status: 'generating' });
     });
 
-    it('should return 403 for non-creator', async () => {
-      await request(learnerApp)
-        .post('/api/generate-syllabind')
-        .send({ syllabusId: 1 })
+    it('should return 403 for non-curator', async () => {
+      await request(readerApp)
+        .post('/api/generate-binder')
+        .send({ binderId: 1 })
         .expect(403);
     });
 
-    it('should return 400 for missing syllabusId', async () => {
-      await request(creatorApp)
-        .post('/api/generate-syllabind')
+    it('should return 400 for missing binderId', async () => {
+      await request(curatorApp)
+        .post('/api/generate-binder')
         .send({})
         .expect(400);
     });
 
-    it('should return 400 for non-numeric syllabusId', async () => {
-      await request(creatorApp)
-        .post('/api/generate-syllabind')
-        .send({ syllabusId: 'abc' })
+    it('should return 400 for non-numeric binderId', async () => {
+      await request(curatorApp)
+        .post('/api/generate-binder')
+        .send({ binderId: 'abc' })
         .expect(400);
     });
 
-    it('should return 403 when syllabus not owned by user', async () => {
-      mockStorage.getSyllabus.mockResolvedValue({ ...completeSyllabus, creatorId: 'othercreator' });
+    it('should return 403 when binder not owned by user', async () => {
+      mockStorage.getBinder.mockResolvedValue({ ...completeBinder, curatorId: 'othercreator' });
 
-      await request(creatorApp)
-        .post('/api/generate-syllabind')
-        .send({ syllabusId: 1 })
+      await request(curatorApp)
+        .post('/api/generate-binder')
+        .send({ binderId: 1 })
         .expect(403);
     });
 
     it('should return 400 when basics fields incomplete', async () => {
-      mockStorage.getSyllabus.mockResolvedValue({
-        ...completeSyllabus,
+      mockStorage.getBinder.mockResolvedValue({
+        ...completeBinder,
         description: null
       });
 
-      await request(creatorApp)
-        .post('/api/generate-syllabind')
-        .send({ syllabusId: 1 })
+      await request(curatorApp)
+        .post('/api/generate-binder')
+        .send({ binderId: 1 })
         .expect(400);
     });
 
     it('should return 409 when generation already in progress', async () => {
-      mockStorage.getSyllabus.mockResolvedValue({
-        ...completeSyllabus,
+      mockStorage.getBinder.mockResolvedValue({
+        ...completeBinder,
         status: 'generating'
       });
 
-      const res = await request(creatorApp)
-        .post('/api/generate-syllabind')
-        .send({ syllabusId: 1 })
+      const res = await request(curatorApp)
+        .post('/api/generate-binder')
+        .send({ binderId: 1 })
         .expect(409);
 
       expect(res.body.error).toBe('Generation already in progress');
@@ -184,9 +184,9 @@ describe('AI Generation Routes', () => {
   });
 
   describe('POST /api/regenerate-week', () => {
-    const syllabus = {
+    const binder = {
       id: 1,
-      creatorId: 'testcreator',
+      curatorId: 'testcurator',
       title: 'Test',
       description: 'Test',
       audienceLevel: 'Beginner',
@@ -194,11 +194,11 @@ describe('AI Generation Routes', () => {
     };
 
     it('should return websocket URL for valid request', async () => {
-      mockStorage.getSyllabus.mockResolvedValue(syllabus);
+      mockStorage.getBinder.mockResolvedValue(binder);
 
-      const res = await request(creatorApp)
+      const res = await request(curatorApp)
         .post('/api/regenerate-week')
-        .send({ syllabusId: 1, weekIndex: 2 })
+        .send({ binderId: 1, weekIndex: 2 })
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -206,49 +206,49 @@ describe('AI Generation Routes', () => {
       expect(res.body.websocketUrl).toBe('/ws/regenerate-week/1/2');
     });
 
-    it('should return 403 for non-creator', async () => {
-      await request(learnerApp)
+    it('should return 403 for non-curator', async () => {
+      await request(readerApp)
         .post('/api/regenerate-week')
-        .send({ syllabusId: 1, weekIndex: 1 })
+        .send({ binderId: 1, weekIndex: 1 })
         .expect(403);
     });
 
-    it('should return 400 for missing syllabusId', async () => {
-      await request(creatorApp)
+    it('should return 400 for missing binderId', async () => {
+      await request(curatorApp)
         .post('/api/regenerate-week')
         .send({ weekIndex: 1 })
         .expect(400);
     });
 
     it('should return 400 for missing weekIndex', async () => {
-      await request(creatorApp)
+      await request(curatorApp)
         .post('/api/regenerate-week')
-        .send({ syllabusId: 1 })
+        .send({ binderId: 1 })
         .expect(400);
     });
 
     it('should return 400 for weekIndex < 1', async () => {
-      await request(creatorApp)
+      await request(curatorApp)
         .post('/api/regenerate-week')
-        .send({ syllabusId: 1, weekIndex: 0 })
+        .send({ binderId: 1, weekIndex: 0 })
         .expect(400);
     });
 
     it('should return 400 when weekIndex exceeds duration', async () => {
-      mockStorage.getSyllabus.mockResolvedValue(syllabus);
+      mockStorage.getBinder.mockResolvedValue(binder);
 
-      await request(creatorApp)
+      await request(curatorApp)
         .post('/api/regenerate-week')
-        .send({ syllabusId: 1, weekIndex: 5 })
+        .send({ binderId: 1, weekIndex: 5 })
         .expect(400);
     });
 
-    it('should return 403 when syllabus not owned', async () => {
-      mockStorage.getSyllabus.mockResolvedValue({ ...syllabus, creatorId: 'othercreator' });
+    it('should return 403 when binder not owned', async () => {
+      mockStorage.getBinder.mockResolvedValue({ ...binder, curatorId: 'othercreator' });
 
-      await request(creatorApp)
+      await request(curatorApp)
         .post('/api/regenerate-week')
-        .send({ syllabusId: 1, weekIndex: 1 })
+        .send({ binderId: 1, weekIndex: 1 })
         .expect(403);
     });
   });

@@ -1,14 +1,14 @@
 /**
  * Data Migration Script: JSONB to Normalized Tables
  *
- * This script migrates existing syllabus data from the JSONB `content` column
+ * This script migrates existing binder data from the JSONB `content` column
  * to the new normalized `weeks` and `steps` tables.
  *
  * Run with: tsx server/migrate-jsonb-to-normalized.ts
  */
 
 import { db } from './db';
-import { syllabinds, weeks, steps } from '../shared/schema';
+import { binders, weeks, steps } from '../shared/schema';
 import { eq } from 'drizzle-orm';
 
 interface JSONBStep {
@@ -31,7 +31,7 @@ interface JSONBWeek {
   steps: JSONBStep[];
 }
 
-interface SyllabusContent {
+interface BinderContent {
   weeks: JSONBWeek[];
 }
 
@@ -39,20 +39,20 @@ async function migrateData() {
   console.log('🚀 Starting JSONB to Normalized migration...\n');
 
   try {
-    // Fetch all syllabinds with JSONB content
-    const allSyllabinds = await db.select().from(syllabinds);
-    console.log(`📚 Found ${allSyllabinds.length} syllabinds to migrate\n`);
+    // Fetch all binders with JSONB content
+    const allBinders = await db.select().from(binders);
+    console.log(`📚 Found ${allBinders.length} binders to migrate\n`);
 
     let totalWeeksMigrated = 0;
     let totalStepsMigrated = 0;
     const stepIdMapping: Record<string, number> = {}; // old string ID -> new integer ID
 
-    for (const syllabus of allSyllabinds) {
-      console.log(`\n📖 Migrating syllabus: "${syllabus.title}" (ID: ${syllabus.id})`);
+    for (const binder of allBinders) {
+      console.log(`\n📖 Migrating binder: "${binder.title}" (ID: ${binder.id})`);
 
       // NOTE: This migration script has already been run. The 'content' field was removed from the schema.
       // This script is kept for reference only and should not be run again.
-      const content = (syllabus as any).content as unknown as SyllabusContent;
+      const content = (binder as any).content as unknown as BinderContent;
 
       if (!content || !content.weeks || !Array.isArray(content.weeks)) {
         console.log(`  ⚠️  Skipping - no valid weeks data`);
@@ -64,7 +64,7 @@ async function migrateData() {
       for (const weekData of content.weeks) {
         // Insert week
         const [insertedWeek] = await db.insert(weeks).values({
-          syllabusId: syllabus.id,
+          binderId: binder.id,
           index: weekData.index,
           title: weekData.title || null,
           description: weekData.description || null,
@@ -108,7 +108,7 @@ async function migrateData() {
     }
 
     console.log(`\n\n✨ Migration Summary:`);
-    console.log(`   📚 Syllabinds processed: ${allSyllabinds.length}`);
+    console.log(`   📚 Binders processed: ${allBinders.length}`);
     console.log(`   📅 Weeks migrated: ${totalWeeksMigrated}`);
     console.log(`   📝 Steps migrated: ${totalStepsMigrated}`);
     console.log(`\n✅ Migration completed successfully!`);

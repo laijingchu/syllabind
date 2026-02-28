@@ -24,24 +24,24 @@ describe('Enrollment Routes', () => {
       const username = (req.user as any).username;
       const { shareProfile, ...enrollmentBody } = req.body;
 
-      if (!enrollmentBody.syllabusId) {
-        return res.status(400).json({ message: 'syllabusId is required' });
+      if (!enrollmentBody.binderId) {
+        return res.status(400).json({ message: 'binderId is required' });
       }
 
-      const existing = await mockStorage.getEnrollment(username, enrollmentBody.syllabusId);
+      const existing = await mockStorage.getEnrollment(username, enrollmentBody.binderId);
       if (existing) {
         if (existing.status === 'dropped') {
-          await mockStorage.dropActiveEnrollments(username, enrollmentBody.syllabusId);
+          await mockStorage.dropActiveEnrollments(username, enrollmentBody.binderId);
           const reactivated = await mockStorage.updateEnrollment(existing.id, { status: 'in-progress' });
           return res.json(reactivated);
         }
-        return res.status(409).json({ message: 'Already enrolled in this syllabus' });
+        return res.status(409).json({ message: 'Already enrolled in this binder' });
       }
 
       await mockStorage.dropActiveEnrollments(username);
       const enrollment = await mockStorage.createEnrollment({
         ...enrollmentBody,
-        studentId: username,
+        readerId: username,
         shareProfile: shareProfile === true
       });
       res.json(enrollment);
@@ -53,7 +53,7 @@ describe('Enrollment Routes', () => {
       const username = (req.user as any).username;
       const enrollment = await mockStorage.getEnrollmentById(id);
       if (!enrollment) return res.status(404).json({ message: 'Enrollment not found' });
-      if (enrollment.studentId !== username) {
+      if (enrollment.readerId !== username) {
         return res.status(403).json({ error: 'Not your enrollment' });
       }
       const updated = await mockStorage.updateEnrollment(id, req.body);
@@ -66,7 +66,7 @@ describe('Enrollment Routes', () => {
       const username = (req.user as any).username;
       const enrollment = await mockStorage.getEnrollmentById(id);
       if (!enrollment) return res.status(404).json({ message: 'Enrollment not found' });
-      if (enrollment.studentId !== username) {
+      if (enrollment.readerId !== username) {
         return res.status(403).json({ error: 'Not your enrollment' });
       }
       const { shareProfile } = req.body;
@@ -95,7 +95,7 @@ describe('Enrollment Routes', () => {
 
   describe('GET /api/enrollments', () => {
     it('should return user enrollments', async () => {
-      const enrollments = [{ id: 1, studentId: 'testuser', syllabusId: 1 }];
+      const enrollments = [{ id: 1, readerId: 'testuser', binderId: 1 }];
       mockStorage.getUserEnrollments.mockResolvedValue(enrollments);
 
       const res = await request(authedApp).get('/api/enrollments').expect(200);
@@ -111,11 +111,11 @@ describe('Enrollment Routes', () => {
   describe('POST /api/enrollments', () => {
     it('should create new enrollment', async () => {
       mockStorage.getEnrollment.mockResolvedValue(null);
-      mockStorage.createEnrollment.mockResolvedValue({ id: 1, studentId: 'testuser', syllabusId: 1 });
+      mockStorage.createEnrollment.mockResolvedValue({ id: 1, readerId: 'testuser', binderId: 1 });
 
       const res = await request(authedApp)
         .post('/api/enrollments')
-        .send({ syllabusId: 1 })
+        .send({ binderId: 1 })
         .expect(200);
 
       expect(mockStorage.dropActiveEnrollments).toHaveBeenCalledWith('testuser');
@@ -124,12 +124,12 @@ describe('Enrollment Routes', () => {
     });
 
     it('should reactivate dropped enrollment', async () => {
-      mockStorage.getEnrollment.mockResolvedValue({ id: 5, status: 'dropped', studentId: 'testuser' });
+      mockStorage.getEnrollment.mockResolvedValue({ id: 5, status: 'dropped', readerId: 'testuser' });
       mockStorage.updateEnrollment.mockResolvedValue({ id: 5, status: 'in-progress' });
 
       const res = await request(authedApp)
         .post('/api/enrollments')
-        .send({ syllabusId: 1 })
+        .send({ binderId: 1 })
         .expect(200);
 
       expect(mockStorage.dropActiveEnrollments).toHaveBeenCalledWith('testuser', 1);
@@ -138,18 +138,18 @@ describe('Enrollment Routes', () => {
     });
 
     it('should return 409 for active duplicate enrollment', async () => {
-      mockStorage.getEnrollment.mockResolvedValue({ id: 5, status: 'in-progress', studentId: 'testuser' });
+      mockStorage.getEnrollment.mockResolvedValue({ id: 5, status: 'in-progress', readerId: 'testuser' });
 
       await request(authedApp)
         .post('/api/enrollments')
-        .send({ syllabusId: 1 })
+        .send({ binderId: 1 })
         .expect(409);
     });
   });
 
   describe('PUT /api/enrollments/:id', () => {
     it('should update enrollment when owner', async () => {
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: 'testuser' });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: 'testuser' });
       mockStorage.updateEnrollment.mockResolvedValue({ id: 1, currentWeekIndex: 2 });
 
       const res = await request(authedApp)
@@ -166,14 +166,14 @@ describe('Enrollment Routes', () => {
     });
 
     it('should return 403 when not owner', async () => {
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: 'otheruser' });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: 'otheruser' });
       await request(authedApp).put('/api/enrollments/1').send({}).expect(403);
     });
   });
 
   describe('PATCH /api/enrollments/:id/share-profile', () => {
     it('should toggle share profile', async () => {
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: 'testuser' });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: 'testuser' });
       mockStorage.updateEnrollmentShareProfile.mockResolvedValue({ id: 1, shareProfile: true });
 
       const res = await request(authedApp)
@@ -185,7 +185,7 @@ describe('Enrollment Routes', () => {
     });
 
     it('should return 400 for non-boolean shareProfile', async () => {
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: 'testuser' });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: 'testuser' });
 
       await request(authedApp)
         .patch('/api/enrollments/1/share-profile')
@@ -202,7 +202,7 @@ describe('Enrollment Routes', () => {
     });
 
     it('should return 403 when not owner', async () => {
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: 'otheruser' });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: 'otheruser' });
       await request(authedApp)
         .patch('/api/enrollments/1/share-profile')
         .send({ shareProfile: true })

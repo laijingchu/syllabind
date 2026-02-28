@@ -1,6 +1,6 @@
 /**
  * CSV Import Script
- * Imports syllabus data from CSV files into the database.
+ * Imports binder data from CSV files into the database.
  *
  * Usage:
  *   Development: tsx server/import-csv.ts
@@ -11,13 +11,13 @@ import { parse } from 'csv-parse/sync';
 import fs from 'fs';
 import path from 'path';
 import { db } from './db';
-import { users, syllabinds, weeks, steps } from '../shared/schema';
+import { users, binders, weeks, steps } from '../shared/schema';
 import { eq } from 'drizzle-orm';
 
 const CREATOR_EMAIL = 'laijing.chu@gmail.com';
 const CSV_DIR = './data/01-28';
 
-interface CsvSyllabus {
+interface CsvBinder {
   id: string;
   title: string;
   description: string;
@@ -27,7 +27,7 @@ interface CsvSyllabus {
 
 interface CsvWeek {
   id: string;
-  syllabusId: string;
+  binderId: string;
   index: string;
   title: string;
   description: string;
@@ -51,24 +51,24 @@ interface CsvStep {
 async function importData() {
   console.log('🌱 Starting CSV import...\n');
 
-  // 1. Find creator by email
-  console.log(`Looking up creator: ${CREATOR_EMAIL}`);
-  const [creator] = await db.select().from(users).where(eq(users.email, CREATOR_EMAIL));
+  // 1. Find curator by email
+  console.log(`Looking up curator: ${CREATOR_EMAIL}`);
+  const [curator] = await db.select().from(users).where(eq(users.email, CREATOR_EMAIL));
 
-  if (!creator) {
-    console.error(`❌ Creator not found with email: ${CREATOR_EMAIL}`);
+  if (!curator) {
+    console.error(`❌ Curator not found with email: ${CREATOR_EMAIL}`);
     console.error('Please ensure this user exists in the database before running the import.');
     process.exit(1);
   }
-  console.log(`✓ Found creator: ${creator.username} (${creator.name || 'no name'})\n`);
+  console.log(`✓ Found curator: ${curator.username} (${curator.name || 'no name'})\n`);
 
   // 2. Parse CSV files
   console.log('Parsing CSV files...');
 
-  const syllabindsCsv = parse(
-    fs.readFileSync(path.join(CSV_DIR, 'syllabi.csv'), 'utf-8'),
+  const bindersCsv = parse(
+    fs.readFileSync(path.join(CSV_DIR, 'binders.csv'), 'utf-8'),
     { columns: true, skip_empty_lines: true }
-  ) as CsvSyllabus[];
+  ) as CsvBinder[];
 
   const weeksCsv = parse(
     fs.readFileSync(path.join(CSV_DIR, 'weeks.csv'), 'utf-8'),
@@ -80,35 +80,35 @@ async function importData() {
     { columns: true, skip_empty_lines: true }
   ) as CsvStep[];
 
-  console.log(`✓ Parsed ${syllabindsCsv.length} syllabinds`);
+  console.log(`✓ Parsed ${bindersCsv.length} binders`);
   console.log(`✓ Parsed ${weeksCsv.length} weeks`);
   console.log(`✓ Parsed ${stepsCsv.length} steps\n`);
 
-  // 3. Calculate durationWeeks for each syllabus
-  const weekCountBySyllabus = new Map<string, number>();
+  // 3. Calculate durationWeeks for each binder
+  const weekCountByBinder = new Map<string, number>();
   for (const week of weeksCsv) {
-    const current = weekCountBySyllabus.get(week.syllabusId) || 0;
-    weekCountBySyllabus.set(week.syllabusId, current + 1);
+    const current = weekCountByBinder.get(week.binderId) || 0;
+    weekCountByBinder.set(week.binderId, current + 1);
   }
 
-  // 4. Insert syllabinds and track ID mapping
-  console.log('Inserting syllabinds...');
-  const syllabusIdMap = new Map<string, number>(); // CSV ID -> DB ID
+  // 4. Insert binders and track ID mapping
+  console.log('Inserting binders...');
+  const binderIdMap = new Map<string, number>(); // CSV ID -> DB ID
 
-  for (const csvSyllabus of syllabindsCsv) {
-    const durationWeeks = weekCountBySyllabus.get(csvSyllabus.id) || 0;
+  for (const csvBinder of bindersCsv) {
+    const durationWeeks = weekCountByBinder.get(csvBinder.id) || 0;
 
-    const [inserted] = await db.insert(syllabinds).values({
-      title: csvSyllabus.title,
-      description: csvSyllabus.description,
-      audienceLevel: csvSyllabus.level || 'Beginner',
+    const [inserted] = await db.insert(binders).values({
+      title: csvBinder.title,
+      description: csvBinder.description,
+      audienceLevel: csvBinder.level || 'Beginner',
       durationWeeks,
-      status: csvSyllabus.status || 'draft',
-      creatorId: creator.username,
+      status: csvBinder.status || 'draft',
+      curatorId: curator.username,
     }).returning();
 
-    syllabusIdMap.set(csvSyllabus.id, inserted.id);
-    console.log(`  ✓ ${inserted.id}: ${csvSyllabus.title} (${durationWeeks} weeks)`);
+    binderIdMap.set(csvBinder.id, inserted.id);
+    console.log(`  ✓ ${inserted.id}: ${csvBinder.title} (${durationWeeks} weeks)`);
   }
   console.log();
 
@@ -117,14 +117,14 @@ async function importData() {
   const weekIdMap = new Map<string, number>(); // CSV ID -> DB ID
 
   for (const csvWeek of weeksCsv) {
-    const dbSyllabusId = syllabusIdMap.get(csvWeek.syllabusId);
-    if (!dbSyllabusId) {
-      console.warn(`  ⚠ Skipping week ${csvWeek.id}: syllabus ${csvWeek.syllabusId} not found`);
+    const dbBinderId = binderIdMap.get(csvWeek.binderId);
+    if (!dbBinderId) {
+      console.warn(`  ⚠ Skipping week ${csvWeek.id}: binder ${csvWeek.binderId} not found`);
       continue;
     }
 
     const [inserted] = await db.insert(weeks).values({
-      syllabusId: dbSyllabusId,
+      binderId: dbBinderId,
       index: parseInt(csvWeek.index, 10),
       title: csvWeek.title || null,
       description: csvWeek.description || null,
@@ -166,8 +166,8 @@ async function importData() {
   console.log('═══════════════════════════════════');
   console.log('Import Complete!');
   console.log('═══════════════════════════════════');
-  console.log(`Creator: ${creator.username} (${CREATOR_EMAIL})`);
-  console.log(`Syllabinds: ${syllabusIdMap.size}`);
+  console.log(`Curator: ${curator.username} (${CREATOR_EMAIL})`);
+  console.log(`Binders: ${binderIdMap.size}`);
   console.log(`Weeks:   ${weekIdMap.size}`);
   console.log(`Steps:   ${stepCount}`);
   console.log('═══════════════════════════════════');

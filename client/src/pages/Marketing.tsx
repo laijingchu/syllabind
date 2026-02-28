@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import { ExternalLink, ArrowRight, Plus, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { SyllabindCard } from '@/components/SyllabindCard';
-import type { Syllabus } from '@/lib/types';
+import { BinderCard } from '@/components/BinderCard';
+import type { Binder } from '@/lib/types';
 
 // Responsive two-row visibility for 1/2/3-column grid
 // Mobile (1 col): show 2, md (2 cols): show 4, lg (3 cols): show 6
@@ -31,19 +31,19 @@ export default function Marketing() {
       .catch(() => {});
   }, []);
 
-  // Fetch syllabinds for showcase sections
-  const [buildCards, setBuildCards] = useState<Syllabus[]>([]);
-  const [curatedCards, setCuratedCards] = useState<Syllabus[]>([]);
+  // Fetch binders for showcase sections
+  const [buildCards, setBuildCards] = useState<Binder[]>([]);
+  const [curatedCards, setCuratedCards] = useState<Binder[]>([]);
   useEffect(() => {
-    // Section 1: unlisted syllabinds from admin account
-    fetch('/api/syllabinds?catalog=true&visibility=unlisted&creator=@admin&sort=newest&limit=6')
+    // Section 1: unlisted binders from admin account
+    fetch('/api/binders?catalog=true&visibility=unlisted&creator=@admin&sort=newest&limit=6')
       .then(res => res.json())
-      .then(data => setBuildCards((data.syllabinds || []).slice(0, 6)))
+      .then(data => setBuildCards((data.binders || []).slice(0, 6)))
       .catch(() => {});
-    // Section 2: public syllabinds from all creators
-    fetch('/api/syllabinds?catalog=true&visibility=public&sort=newest&limit=6')
+    // Section 2: public binders from all curators
+    fetch('/api/binders?catalog=true&visibility=public&sort=newest&limit=6')
       .then(res => res.json())
-      .then(data => setCuratedCards((data.syllabinds || []).slice(0, 6)))
+      .then(data => setCuratedCards((data.binders || []).slice(0, 6)))
       .catch(() => {});
   }, []);
 
@@ -82,7 +82,7 @@ export default function Marketing() {
            </Button>
            {getPaidToTeachUrl && (
              <Button variant="outline" size="lg" className="w-full sm:w-auto h-12 px-8 text-lg rounded-full border-primary/20 hover:border-primary/50 text-primary" onClick={handleGetPaidToTeachClick}>
-               💰 Get paid to teach
+               Get paid to teach
              </Button>
            )}
         </div>
@@ -100,10 +100,10 @@ export default function Marketing() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {/* Self-directed */}
           <div className="rounded-2xl border bg-card p-6 md:p-8 space-y-4">
-            <div className="text-3xl">🧭</div>
+            <div className="text-3xl">&#x1F9ED;</div>
             <h3 className="text-xl md:text-2xl font-display font-medium">Self-directed</h3>
             <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-              Build your own Syllabind with AI curatorial assistance. Our tools generate a content arc and find meaningful resources online — then you edit, refine, and make it yours. It's the teach-you-how-to-fish method.
+              Build your own Binder with AI curatorial assistance. Our tools generate a content arc and find meaningful resources online — then you edit, refine, and make it yours. It's the teach-you-how-to-fish method.
             </p>
             <ul className="space-y-2 pt-2">
               {['AI-assisted content curation', 'Edit and refine your learning path', 'Learn by teaching yourself', 'Slack community & peer groups'].map(item => (
@@ -117,7 +117,7 @@ export default function Marketing() {
 
           {/* Expert-directed */}
           <div className="rounded-2xl border bg-card p-6 md:p-8 space-y-4">
-            <div className="text-3xl">🎓</div>
+            <div className="text-3xl">&#x1F393;</div>
             <h3 className="text-xl md:text-2xl font-display font-medium">Expert-directed</h3>
             <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
               Academics and industry experts share their knowledge beyond the limited confines of their institutions — for fair pay. Access world-class guidance without the time or financial commitment of a full degree program.
@@ -138,23 +138,23 @@ export default function Marketing() {
       {buildCards.length > 0 && (
         <section className="build-showcase space-y-12">
           <div className="text-center space-y-4">
-            <h2 className="text-3xl md:text-4xl font-display">Build your own Syllabind</h2>
+            <h2 className="text-3xl md:text-4xl font-display">Build your own Binder</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               See what others have created. Then build your own learning path.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {buildCards.map((syllabus, index) => (
+            {buildCards.map((binder, index) => (
               <motion.div
-                key={syllabus.id}
+                key={binder.id}
                 className={twoRowClass(index)}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.4, delay: (index % 3) * 0.15, ease: 'easeOut' }}
               >
-                <SyllabindCard syllabus={syllabus} />
+                <BinderCard binder={binder} />
               </motion.div>
             ))}
           </div>
@@ -166,7 +166,7 @@ export default function Marketing() {
             </Button>
             <Link href="/catalog" className="w-full sm:w-auto">
               <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 h-12 px-8 text-lg rounded-full">
-                Browse all syllabinds
+                Browse all binders
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
@@ -180,21 +180,21 @@ export default function Marketing() {
           <div className="text-center space-y-4">
             <h2 className="text-3xl md:text-4xl font-display">Expert-curated content</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Structured learning paths from experienced creators and thought leaders.
+              Structured learning paths from experienced curators and thought leaders.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {curatedCards.map((syllabus, index) => (
+            {curatedCards.map((binder, index) => (
               <motion.div
-                key={syllabus.id}
+                key={binder.id}
                 className={twoRowClass(index)}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.4, delay: (index % 3) * 0.15, ease: 'easeOut' }}
               >
-                <SyllabindCard syllabus={syllabus} />
+                <BinderCard binder={binder} />
               </motion.div>
             ))}
           </div>
@@ -202,12 +202,12 @@ export default function Marketing() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             {getPaidToTeachUrl && (
               <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-lg rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all bg-black text-white hover:bg-neutral-800 border-none" onClick={handleGetPaidToTeachClick}>
-                💰 Get paid to teach
+                Get paid to teach
               </Button>
             )}
             <Link href="/catalog" className="w-full sm:w-auto">
               <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 h-12 px-8 text-lg rounded-full">
-                Browse all syllabinds
+                Browse all binders
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
@@ -222,7 +222,7 @@ export default function Marketing() {
             The internet made learning infinite — and overwhelming. We save hundreds of links but finish none. We juggle five courses and complete zero. The joy of learning got buried under the stress of collecting.
           </p>
           <p>
-            Syllabind is the antidote: short, structured, finishable learning paths curated by people who care. One syllabind at a time. Four weeks max. Real exercises, real progress, real completion.
+            Syllabind is the antidote: short, structured, finishable learning paths curated by people who care. One binder at a time. Four weeks max. Real exercises, real progress, real completion.
           </p>
         </div>
       </section>
@@ -251,18 +251,18 @@ export default function Marketing() {
             </thead>
             <tbody className="divide-y">
               {[
-                { feature: 'Structured path', syllabind: true, degree: true, bootcamps: true, courses: true, free: false },
-                { feature: 'Finishable (1-4 weeks)', syllabind: true, degree: false, bootcamps: false, courses: false, free: false },
-                { feature: 'Curated by experts', syllabind: true, degree: true, bootcamps: true, courses: true, free: false },
-                { feature: 'Active exercises', syllabind: true, degree: true, bootcamps: true, courses: true, free: false },
-                { feature: 'Free to start', syllabind: true, degree: false, bootcamps: false, courses: false, free: true },
-                { feature: 'No video lectures', syllabind: true, degree: false, bootcamps: false, courses: false, free: false },
-                { feature: 'Open web resources', syllabind: true, degree: false, bootcamps: false, courses: false, free: true },
-                { feature: 'Creator-friendly', syllabind: true, degree: false, bootcamps: false, courses: false, free: true },
-              ].map(({ feature, syllabind, degree, bootcamps, courses, free }) => (
+                { feature: 'Structured path', binder: true, degree: true, bootcamps: true, courses: true, free: false },
+                { feature: 'Finishable (1-4 weeks)', binder: true, degree: false, bootcamps: false, courses: false, free: false },
+                { feature: 'Curated by experts', binder: true, degree: true, bootcamps: true, courses: true, free: false },
+                { feature: 'Active exercises', binder: true, degree: true, bootcamps: true, courses: true, free: false },
+                { feature: 'Free to start', binder: true, degree: false, bootcamps: false, courses: false, free: true },
+                { feature: 'No video lectures', binder: true, degree: false, bootcamps: false, courses: false, free: false },
+                { feature: 'Open web resources', binder: true, degree: false, bootcamps: false, courses: false, free: true },
+                { feature: 'Curator-friendly', binder: true, degree: false, bootcamps: false, courses: false, free: true },
+              ].map(({ feature, binder, degree, bootcamps, courses, free }) => (
                 <tr key={feature}>
                   <td className="py-3 pr-4 font-medium">{feature}</td>
-                  <td className="py-3 px-4 text-center">{syllabind ? <Check className="h-4 w-4 text-primary mx-auto" /> : <span className="text-muted-foreground">—</span>}</td>
+                  <td className="py-3 px-4 text-center">{binder ? <Check className="h-4 w-4 text-primary mx-auto" /> : <span className="text-muted-foreground">—</span>}</td>
                   <td className="py-3 px-4 text-center">{degree ? <Check className="h-4 w-4 text-muted-foreground mx-auto" /> : <span className="text-muted-foreground">—</span>}</td>
                   <td className="py-3 px-4 text-center">{bootcamps ? <Check className="h-4 w-4 text-muted-foreground mx-auto" /> : <span className="text-muted-foreground">—</span>}</td>
                   <td className="py-3 px-4 text-center">{courses ? <Check className="h-4 w-4 text-muted-foreground mx-auto" /> : <span className="text-muted-foreground">—</span>}</td>
@@ -276,11 +276,11 @@ export default function Marketing() {
         {/* Mobile cards */}
         <div className="md:hidden space-y-4">
           {[
-            { name: 'Syllabind', highlight: true, features: ['Structured path', 'Finishable (1-4 weeks)', 'Curated by experts', 'Active exercises', 'Free to start', 'No video lectures', 'Open web resources', 'Creator-friendly'] },
+            { name: 'Syllabind', highlight: true, features: ['Structured path', 'Finishable (1-4 weeks)', 'Curated by experts', 'Active exercises', 'Free to start', 'No video lectures', 'Open web resources', 'Curator-friendly'] },
             { name: 'Degree programs', highlight: false, features: ['Structured path', 'Curated by experts', 'Active exercises'] },
             { name: 'Bootcamps', highlight: false, features: ['Structured path', 'Curated by experts', 'Active exercises'] },
             { name: 'Online courses', highlight: false, features: ['Structured path', 'Curated by experts', 'Active exercises'] },
-            { name: 'YouTube / blogs', highlight: false, features: ['Free to start', 'Open web resources', 'Creator-friendly'] },
+            { name: 'YouTube / blogs', highlight: false, features: ['Free to start', 'Open web resources', 'Curator-friendly'] },
           ].map(({ name, highlight, features }) => (
             <div key={name} className={`rounded-xl border p-5 space-y-3 ${highlight ? 'border-primary border-2' : ''}`}>
               <h3 className={`font-display font-medium ${highlight ? 'text-lg' : 'text-base text-muted-foreground'}`}>{name}</h3>
@@ -311,13 +311,13 @@ export default function Marketing() {
           <div className="rounded-2xl border bg-card p-8 space-y-6">
             <div>
               <h3 className="text-2xl font-display font-medium">Free</h3>
-              <p className="text-muted-foreground mt-1">For learners getting started</p>
+              <p className="text-muted-foreground mt-1">For readers getting started</p>
             </div>
             <div className="text-4xl font-display font-medium">
               $0<span className="text-lg text-muted-foreground font-normal">/mo</span>
             </div>
             <ul className="space-y-3">
-              {['Enroll in syllabinds', 'Track your progress', 'Submit exercises'].map(item => (
+              {['Enroll in binders', 'Track your progress', 'Submit exercises'].map(item => (
                 <li key={item} className="flex items-center gap-2 text-sm">
                   <Check className="h-4 w-4 text-muted-foreground shrink-0" />
                   {item}
@@ -336,13 +336,13 @@ export default function Marketing() {
             </div>
             <div>
               <h3 className="text-2xl font-display font-medium">Pro</h3>
-              <p className="text-muted-foreground mt-1">For creators and power learners</p>
+              <p className="text-muted-foreground mt-1">For curators and power readers</p>
             </div>
             <div className="text-4xl font-display font-medium">
               TBD<span className="text-lg text-muted-foreground font-normal">/mo</span>
             </div>
             <ul className="space-y-3">
-              {['Everything in Free', 'Create unlimited syllabinds', 'Analytics & learner insights', 'Priority support'].map(item => (
+              {['Everything in Free', 'Create unlimited binders', 'Analytics & reader insights', 'Priority support'].map(item => (
                 <li key={item} className="flex items-center gap-2 text-sm">
                   <Check className="h-4 w-4 text-primary shrink-0" />
                   {item}
@@ -364,11 +364,11 @@ export default function Marketing() {
 
         <div className="divide-y">
           {[
-            { q: 'What is a Syllabind?', a: 'A Syllabind is a curated, multi-week learning path with readings and exercises. Think of it as a college syllabus you can actually finish.' },
-            { q: 'Is Syllabind free?', a: 'Yes — learners can enroll in syllabinds, track progress, and submit exercises for free. A Pro plan for creators is coming soon.' },
-            { q: 'How long does a Syllabind take?', a: 'Most syllabinds are 1 to 4 weeks, designed for roughly 2-4 hours per week. Short enough to finish, long enough to go deep.' },
-            { q: 'Can I create my own Syllabind?', a: 'Absolutely. Sign up, switch to creator mode, and start building. You can curate readings from anywhere on the web and add your own exercises.' },
-            { q: 'How do creators get paid?', a: 'We are still finalizing creator compensation. Join the waitlist or reach out to learn more.' },
+            { q: 'What is a Binder?', a: 'A Binder is a curated, multi-week learning path with readings and exercises. Think of it as a structured course you can actually finish.' },
+            { q: 'Is Syllabind free?', a: 'Yes — readers can enroll in binders, track progress, and submit exercises for free. A Pro plan for curators is coming soon.' },
+            { q: 'How long does a Binder take?', a: 'Most binders are 1 to 4 weeks, designed for roughly 2-4 hours per week. Short enough to finish, long enough to go deep.' },
+            { q: 'Can I create my own Binder?', a: 'Absolutely. Sign up, switch to curator mode, and start building. You can curate readings from anywhere on the web and add your own exercises.' },
+            { q: 'How do curators get paid?', a: 'We are still finalizing curator compensation. Join the waitlist or reach out to learn more.' },
           ].map(({ q, a }) => (
             <details key={q} className="group py-5">
               <summary className="flex items-center justify-between cursor-pointer list-none text-lg font-medium">

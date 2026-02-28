@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { setupCustomAuth, isAuthenticated } from "./auth";
 import { isAdminUser } from "./auth/admin";
 import {
-  insertSyllabusSchema,
+  insertBinderSchema,
   insertEnrollmentSchema,
   insertUserSchema,
   insertSubmissionSchema,
@@ -58,6 +58,9 @@ export async function registerRoutes(
 ): Promise<Server> {
   // Set up custom authentication
   setupCustomAuth(app);
+
+  // Ensure default categories exist (idempotent — no-op if already populated)
+  await storage.initializeDefaultCategories();
 
   // Register Stripe payment and webhook routes
   await registerStripeRoutes(app);
@@ -117,13 +120,13 @@ export async function registerRoutes(
     res.json(userWithoutPassword);
   });
 
-  // Toggle creator mode
-  app.post("/api/users/me/toggle-creator", isAuthenticated, async (req, res) => {
+  // Toggle curator mode
+  app.post("/api/users/me/toggle-curator", isAuthenticated, async (req, res) => {
     const userId = (req.user as any).id;
     const user = await storage.getUser(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const updated = await storage.updateUser(userId, { isCreator: !user.isCreator });
+    const updated = await storage.updateUser(userId, { isCurator: !user.isCurator });
     const { password, ...userWithoutPassword } = updated;
     res.json(userWithoutPassword);
   });
@@ -268,25 +271,25 @@ export async function registerRoutes(
     res.json(tagList);
   });
 
-  // ========== SYLLABIND ROUTES ==========
+  // ========== BINDER ROUTES ==========
 
-  // List syllabinds. When catalog=true, use server-side search with filters.
-  app.get("/api/syllabinds", async (req, res) => {
+  // List binders. When catalog=true, use server-side search with filters.
+  app.get("/api/binders", async (req, res) => {
     if (req.query.catalog === 'true') {
       const visibility = req.query.visibility as string | undefined;
       const allowedVisibilities = ['public', 'unlisted', 'private'];
-      // Resolve creator filter — "@admin" expands to ADMIN_USERNAMES
-      let creator: string[] | undefined;
-      if (req.query.creator) {
-        const raw = (req.query.creator as string).split(',').filter(Boolean);
-        creator = raw.flatMap(c => {
+      // Resolve curator filter — "@admin" expands to ADMIN_USERNAMES
+      let curator: string[] | undefined;
+      if (req.query.curator) {
+        const raw = (req.query.curator as string).split(',').filter(Boolean);
+        curator = raw.flatMap(c => {
           if (c === '@admin') {
             const admins = (process.env.ADMIN_USERNAMES || '').split(',').map(u => u.trim()).filter(Boolean);
             return admins;
           }
           return [c];
         });
-        if (creator.length === 0) creator = undefined;
+        if (curator.length === 0) curator = undefined;
       }
 
       const result = await storage.searchCatalog({
@@ -294,60 +297,60 @@ export async function registerRoutes(
         category: req.query.category ? (req.query.category as string).split(',').filter(Boolean) : undefined,
         level: req.query.level as string | undefined,
         visibility: visibility && allowedVisibilities.includes(visibility) ? visibility : 'public',
-        creator,
+        curator,
         sort: (req.query.sort as any) || 'newest',
         limit: Math.min(parseInt(req.query.limit as string) || 20, 50),
         offset: parseInt(req.query.offset as string) || 0,
       });
       return res.json(result);
     }
-    const syllabinds = await storage.listSyllabinds();
-    res.json(syllabinds);
+    const binders = await storage.listBinders();
+    res.json(binders);
   });
 
-  app.get("/api/syllabinds/:id", async (req, res) => {
+  app.get("/api/binders/:id", async (req, res) => {
     const id = parseInt(req.params.id);
-    const syllabus = await storage.getSyllabusWithContent(id);
-    if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
+    const binder = await storage.getBinderWithContent(id);
+    if (!binder) return res.status(404).json({ message: "Binder not found" });
 
-    // Visibility enforcement: private syllabinds only visible to creator
+    // Visibility enforcement: private binders only visible to curator
     const currentUsername = (req.user as any)?.username;
     const isPreview = req.query.preview === 'true';
-    if (syllabus.visibility === 'private' && syllabus.creatorId !== currentUsername) {
-      return res.status(404).json({ message: "Syllabind not found" });
+    if (binder.visibility === 'private' && binder.curatorId !== currentUsername) {
+      return res.status(404).json({ message: "Binder not found" });
     }
     // Unlisted: accessible by link (no catalog filtering needed here)
 
-    // Normalize week indices to 1-based (some syllabinds have 0-based indices)
-    if (syllabus.weeks?.length > 0) {
-      const sorted = [...syllabus.weeks].sort((a, b) => a.index - b.index);
+    // Normalize week indices to 1-based (some binders have 0-based indices)
+    if (binder.weeks?.length > 0) {
+      const sorted = [...binder.weeks].sort((a, b) => a.index - b.index);
       sorted.forEach((week, i) => { week.index = i + 1; });
-      syllabus.weeks = sorted;
+      binder.weeks = sorted;
     }
 
     // Attach tags and category
-    const syllabindTags = await storage.getTagsBySyllabindId(id);
+    const binderTagsResult = await storage.getTagsByBinderId(id);
     const categoryList = await storage.listCategories();
-    const category = (syllabus as any).categoryId
-      ? categoryList.find(c => c.id === (syllabus as any).categoryId) || null
+    const category = (binder as any).categoryId
+      ? categoryList.find(c => c.id === (binder as any).categoryId) || null
       : null;
 
-    res.json({ ...syllabus, tags: syllabindTags, category });
+    res.json({ ...binder, tags: binderTagsResult, category });
   });
 
-  app.put("/api/syllabinds/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/binders/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     const username = (req.user as any).username;
 
-    // Authorization: only creator (or admin) can edit
-    const syllabus = await storage.getSyllabus(id);
-    if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
+    // Authorization: only curator (or admin) can edit
+    const binder = await storage.getBinder(id);
+    if (!binder) return res.status(404).json({ message: "Binder not found" });
     const isAdmin = (req.user as any).isAdmin === true;
-    if (syllabus.creatorId !== username && !isAdmin) {
-      return res.status(403).json({ error: "Forbidden: Only creator can edit this syllabind" });
+    if (binder.curatorId !== username && !isAdmin) {
+      return res.status(403).json({ error: "Forbidden: Only curator can edit this binder" });
     }
 
-    const updated = await storage.updateSyllabus(id, req.body);
+    const updated = await storage.updateBinder(id, req.body);
 
     // Sync weeks and steps if provided
     const weeksData = req.body.weeks;
@@ -359,24 +362,24 @@ export async function registerRoutes(
     res.json(updated);
   });
 
-  app.delete("/api/syllabinds/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/binders/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     const username = (req.user as any).username;
 
-    // Authorization: only creator (or admin) can delete
-    const syllabus = await storage.getSyllabus(id);
-    if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
+    // Authorization: only curator (or admin) can delete
+    const binder = await storage.getBinder(id);
+    if (!binder) return res.status(404).json({ message: "Binder not found" });
     const isAdmin = (req.user as any).isAdmin === true;
-    if (syllabus.creatorId !== username && !isAdmin) {
-      return res.status(403).json({ error: "Forbidden: Only creator can delete this syllabind" });
+    if (binder.curatorId !== username && !isAdmin) {
+      return res.status(403).json({ error: "Forbidden: Only curator can delete this binder" });
     }
 
-    await storage.deleteSyllabus(id);
+    await storage.deleteBinder(id);
     res.json({ success: true });
   });
 
-  // Batch delete syllabinds
-  app.post("/api/syllabinds/batch-delete", isAuthenticated, async (req, res) => {
+  // Batch delete binders
+  app.post("/api/binders/batch-delete", isAuthenticated, async (req, res) => {
     const username = (req.user as any).username;
     const { ids } = req.body;
 
@@ -384,108 +387,108 @@ export async function registerRoutes(
       return res.status(400).json({ message: "Invalid request: ids must be a non-empty array" });
     }
 
-    // Authorization: verify all syllabinds belong to the user (or user is admin)
+    // Authorization: verify all binders belong to the user (or user is admin)
     const isAdmin = (req.user as any).isAdmin === true;
-    const syllabinds = await Promise.all(
-      ids.map(id => storage.getSyllabus(parseInt(id)))
+    const binders = await Promise.all(
+      ids.map(id => storage.getBinder(parseInt(id)))
     );
 
-    for (const syllabus of syllabinds) {
-      if (!syllabus) {
-        return res.status(404).json({ message: "One or more syllabinds not found" });
+    for (const binder of binders) {
+      if (!binder) {
+        return res.status(404).json({ message: "One or more binders not found" });
       }
-      if (syllabus.creatorId !== username && !isAdmin) {
-        return res.status(403).json({ error: "Forbidden: You can only delete your own syllabinds" });
+      if (binder.curatorId !== username && !isAdmin) {
+        return res.status(403).json({ error: "Forbidden: You can only delete your own binders" });
       }
     }
 
-    await storage.batchDeleteSyllabinds(ids.map(id => parseInt(id)));
+    await storage.batchDeleteBinders(ids.map(id => parseInt(id)));
     res.json({ success: true, count: ids.length });
   });
 
-  app.post("/api/syllabinds", isAuthenticated, async (req, res) => {
+  app.post("/api/binders", isAuthenticated, async (req, res) => {
     const username = (req.user as any).username;
     const user = req.user as any;
 
-    // Check if user is a creator (or admin)
-    if (!user.isCreator && !user.isAdmin) {
-      return res.status(403).json({ error: "Creator access required" });
+    // Check if user is a curator (or admin)
+    if (!user.isCurator && !user.isAdmin) {
+      return res.status(403).json({ error: "Curator access required" });
     }
 
-    // Pro gate: free creators limited to 2 syllabinds (admins bypass)
+    // Pro gate: free curators limited to 2 binders (admins bypass)
     if (user.subscriptionStatus !== 'pro' && !user.isAdmin) {
-      const count = await storage.countSyllabindsByCreator(username);
+      const count = await storage.countBindersByCurator(username);
       if (count >= 2) {
-        return res.status(403).json({ error: "SUBSCRIPTION_REQUIRED", message: "Free plan limited to 2 syllabinds. Upgrade to Pro for unlimited." });
+        return res.status(403).json({ error: "SUBSCRIPTION_REQUIRED", message: "Free plan limited to 2 binders. Upgrade to Pro for unlimited." });
       }
     }
 
-    const parsed = insertSyllabusSchema.safeParse({ ...req.body, creatorId: username });
+    const parsed = insertBinderSchema.safeParse({ ...req.body, curatorId: username });
     if (!parsed.success) return res.status(400).json(parsed.error);
-    const syllabus = await storage.createSyllabus(parsed.data);
+    const binder = await storage.createBinder(parsed.data);
 
     // Save weeks and steps if provided
     const weeksData = req.body.weeks;
     if (Array.isArray(weeksData) && weeksData.length > 0) {
-      const savedWeeks = await storage.saveWeeksAndSteps(syllabus.id, weeksData);
-      return res.json({ ...syllabus, weeks: savedWeeks });
+      const savedWeeks = await storage.saveWeeksAndSteps(binder.id, weeksData);
+      return res.json({ ...binder, weeks: savedWeeks });
     }
 
-    res.json(syllabus);
+    res.json(binder);
   });
 
-  // Get creator's syllabinds (including drafts)
-  // Admin can pass ?all=true to list all syllabinds site-wide
-  app.get("/api/creator/syllabinds", isAuthenticated, async (req, res) => {
+  // Get curator's binders (including drafts)
+  // Admin can pass ?all=true to list all binders site-wide
+  app.get("/api/curator/binders", isAuthenticated, async (req, res) => {
     const username = (req.user as any).username;
     const user = req.user as any;
 
-    if (!user.isCreator && !user.isAdmin) {
-      return res.status(403).json({ error: "Creator access required" });
+    if (!user.isCurator && !user.isAdmin) {
+      return res.status(403).json({ error: "Curator access required" });
     }
 
     if (user.isAdmin && req.query.all === 'true') {
-      const syllabinds = await storage.listSyllabinds();
-      return res.json(syllabinds);
+      const binders = await storage.listBinders();
+      return res.json(binders);
     }
 
-    const syllabinds = await storage.getSyllabindsByCreator(username);
-    res.json(syllabinds);
+    const binders = await storage.getBindersByCurator(username);
+    res.json(binders);
   });
 
-  // Get learners for a syllabind (creator only)
-  app.get("/api/syllabinds/:id/learners", isAuthenticated, async (req, res) => {
-    const syllabusId = parseInt(req.params.id);
+  // Get readers for a binder (curator only)
+  app.get("/api/binders/:id/readers", isAuthenticated, async (req, res) => {
+    const binderId = parseInt(req.params.id);
     const username = (req.user as any).username;
 
-    const syllabus = await storage.getSyllabus(syllabusId);
-    if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
+    const binder = await storage.getBinder(binderId);
+    if (!binder) return res.status(404).json({ message: "Binder not found" });
     const isAdmin = (req.user as any).isAdmin === true;
-    if (syllabus.creatorId !== username && !isAdmin) {
-      return res.status(403).json({ error: "Not syllabind owner" });
+    if (binder.curatorId !== username && !isAdmin) {
+      return res.status(403).json({ error: "Not binder owner" });
     }
 
-    const learners = await storage.getLearnersBySyllabusId(syllabusId);
-    res.json(learners);
+    const readers = await storage.getReadersByBinderId(binderId);
+    res.json(readers);
   });
 
-  // Get classmates for a syllabind (public -- only shows users who opted in)
-  app.get("/api/syllabinds/:id/classmates", async (req, res) => {
-    const syllabusId = parseInt(req.params.id);
-    const classmates = await storage.getClassmatesBySyllabusId(syllabusId);
+  // Get classmates for a binder (public -- only shows users who opted in)
+  app.get("/api/binders/:id/classmates", async (req, res) => {
+    const binderId = parseInt(req.params.id);
+    const classmates = await storage.getClassmatesByBinderId(binderId);
     res.json(classmates);
   });
 
-  // Set tags for a syllabind (creator only)
-  app.put("/api/syllabinds/:id/tags", isAuthenticated, async (req, res) => {
+  // Set tags for a binder (curator only)
+  app.put("/api/binders/:id/tags", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     const username = (req.user as any).username;
 
-    const syllabus = await storage.getSyllabus(id);
-    if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
+    const binder = await storage.getBinder(id);
+    if (!binder) return res.status(404).json({ message: "Binder not found" });
     const isAdmin = (req.user as any).isAdmin === true;
-    if (syllabus.creatorId !== username && !isAdmin) {
-      return res.status(403).json({ error: "Not syllabind owner" });
+    if (binder.curatorId !== username && !isAdmin) {
+      return res.status(403).json({ error: "Not binder owner" });
     }
 
     const { tags: tagNames } = req.body;
@@ -496,26 +499,26 @@ export async function registerRoutes(
       return res.status(400).json({ error: "Maximum 5 tags allowed" });
     }
 
-    const resultTags = await storage.setSyllabindTags(id, tagNames);
+    const resultTags = await storage.setBinderTags(id, tagNames);
     res.json(resultTags);
   });
 
-  // Publish/unpublish syllabind
-  app.post("/api/syllabinds/:id/publish", isAuthenticated, async (req, res) => {
+  // Publish/unpublish binder
+  app.post("/api/binders/:id/publish", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     const username = (req.user as any).username;
 
-    const syllabus = await storage.getSyllabus(id);
-    if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
+    const binder = await storage.getBinder(id);
+    if (!binder) return res.status(404).json({ message: "Binder not found" });
     const isAdmin = (req.user as any).isAdmin === true;
-    if (syllabus.creatorId !== username && !isAdmin) {
-      return res.status(403).json({ error: "Not syllabind owner" });
+    if (binder.curatorId !== username && !isAdmin) {
+      return res.status(403).json({ error: "Not binder owner" });
     }
 
-    const newStatus = syllabus.status === 'published' ? 'draft' : 'published';
+    const newStatus = binder.status === 'published' ? 'draft' : 'published';
     // Accept visibility in request body; default to existing or 'public'
-    const visibility = req.body?.visibility || syllabus.visibility || 'public';
-    const updated = await storage.updateSyllabus(id, { status: newStatus, visibility });
+    const visibility = req.body?.visibility || binder.visibility || 'public';
+    const updated = await storage.updateBinder(id, { status: newStatus, visibility });
     res.json(updated);
   });
 
@@ -532,38 +535,38 @@ export async function registerRoutes(
 
     // Pro gate: enrollment requires Pro subscription (admins bypass)
     if (user.subscriptionStatus !== 'pro' && !user.isAdmin) {
-      return res.status(403).json({ error: "SUBSCRIPTION_REQUIRED", message: "Pro subscription required to enroll in syllabinds." });
+      return res.status(403).json({ error: "SUBSCRIPTION_REQUIRED", message: "Pro subscription required to enroll in binders." });
     }
 
-    // Block enrollment on private syllabinds for non-creators
-    if (req.body.syllabusId) {
-      const targetSyllabus = await storage.getSyllabus(parseInt(req.body.syllabusId));
-      if (targetSyllabus?.visibility === 'private' && targetSyllabus.creatorId !== username) {
-        return res.status(404).json({ message: "Syllabind not found" });
+    // Block enrollment on private binders for non-curators
+    if (req.body.binderId) {
+      const targetBinder = await storage.getBinder(parseInt(req.body.binderId));
+      if (targetBinder?.visibility === 'private' && targetBinder.curatorId !== username) {
+        return res.status(404).json({ message: "Binder not found" });
       }
     }
 
     const { shareProfile, ...enrollmentBody } = req.body;
     const parsed = insertEnrollmentSchema.safeParse({
       ...enrollmentBody,
-      studentId: username,
+      readerId: username,
       shareProfile: shareProfile === true
     });
     if (!parsed.success) return res.status(400).json(parsed.error);
 
-    // Check if already enrolled in this specific syllabus
-    const existing = await storage.getEnrollment(username, parsed.data.syllabusId!);
+    // Check if already enrolled in this specific binder
+    const existing = await storage.getEnrollment(username, parsed.data.binderId!);
     if (existing) {
       // If previously dropped, reactivate the enrollment
       if (existing.status === 'dropped') {
-        await storage.dropActiveEnrollments(username, parsed.data.syllabusId!);
+        await storage.dropActiveEnrollments(username, parsed.data.binderId!);
         const reactivated = await storage.updateEnrollment(existing.id, { status: 'in-progress' });
         return res.json(reactivated);
       }
-      return res.status(409).json({ message: "Already enrolled in this syllabind" });
+      return res.status(409).json({ message: "Already enrolled in this binder" });
     }
 
-    // Drop any other in-progress enrollments (user can only have one active syllabus)
+    // Drop any other in-progress enrollments (user can only have one active binder)
     await storage.dropActiveEnrollments(username);
 
     const enrollment = await storage.createEnrollment(parsed.data);
@@ -577,7 +580,7 @@ export async function registerRoutes(
 
     const enrollment = await storage.getEnrollmentById(id);
     if (!enrollment) return res.status(404).json({ message: "Enrollment not found" });
-    if (enrollment.studentId !== username) {
+    if (enrollment.readerId !== username) {
       return res.status(403).json({ error: "Not your enrollment" });
     }
 
@@ -592,7 +595,7 @@ export async function registerRoutes(
 
     const enrollment = await storage.getEnrollmentById(id);
     if (!enrollment) return res.status(404).json({ message: "Enrollment not found" });
-    if (enrollment.studentId !== username) {
+    if (enrollment.readerId !== username) {
       return res.status(403).json({ error: "Not your enrollment" });
     }
 
@@ -624,25 +627,25 @@ export async function registerRoutes(
     const { feedback, grade, rubricUrl } = req.body;
     const username = (req.user as any).username;
 
-    // Get submission and verify creator owns the syllabind
+    // Get submission and verify curator owns the binder
     const submission = await storage.getSubmission(id);
     if (!submission) return res.status(404).json({ message: "Submission not found" });
 
     const enrollment = await storage.getEnrollmentById(submission.enrollmentId);
     if (!enrollment) return res.status(404).json({ message: "Enrollment not found" });
 
-    const syllabus = await storage.getSyllabus(enrollment.syllabusId!);
-    if (!syllabus) return res.status(404).json({ message: "Syllabind not found" });
+    const binder = await storage.getBinder(enrollment.binderId!);
+    if (!binder) return res.status(404).json({ message: "Binder not found" });
     const isAdmin = (req.user as any).isAdmin === true;
-    if (syllabus.creatorId !== username && !isAdmin) {
-      return res.status(403).json({ error: "Not syllabind owner" });
+    if (binder.curatorId !== username && !isAdmin) {
+      return res.status(403).json({ error: "Not binder owner" });
     }
 
     const updated = await storage.updateSubmissionFeedback(id, feedback, grade, rubricUrl);
     res.json(updated);
   });
 
-  // Delete a step (creator only)
+  // Delete a step (curator only)
   app.delete("/api/steps/:id", isAuthenticated, async (req, res) => {
     const stepId = parseInt(req.params.id);
     const username = (req.user as any).username;
@@ -653,10 +656,10 @@ export async function registerRoutes(
     const week = await storage.getWeek(step.weekId);
     if (!week) return res.status(404).json({ message: "Week not found" });
 
-    const syllabus = await storage.getSyllabus(week.syllabusId);
+    const binder = await storage.getBinder(week.binderId);
     const isAdmin = (req.user as any).isAdmin === true;
-    if (!syllabus || (syllabus.creatorId !== username && !isAdmin)) {
-      return res.status(403).json({ error: "Not syllabind owner" });
+    if (!binder || (binder.curatorId !== username && !isAdmin)) {
+      return res.status(403).json({ error: "Not binder owner" });
     }
 
     await storage.deleteStep(stepId);
@@ -670,7 +673,7 @@ export async function registerRoutes(
 
     // Verify enrollment belongs to user
     const enrollment = await storage.getEnrollmentById(enrollmentId);
-    if (!enrollment || enrollment.studentId !== (req.user as any).username) {
+    if (!enrollment || enrollment.readerId !== (req.user as any).username) {
       return res.status(403).json({ error: "Not authorized" });
     }
 
@@ -684,7 +687,7 @@ export async function registerRoutes(
 
     // Verify enrollment belongs to user
     const enrollment = await storage.getEnrollmentById(enrollmentId);
-    if (!enrollment || enrollment.studentId !== (req.user as any).username) {
+    if (!enrollment || enrollment.readerId !== (req.user as any).username) {
       return res.status(403).json({ error: "Not authorized" });
     }
 
@@ -698,7 +701,7 @@ export async function registerRoutes(
 
     // Verify enrollment belongs to user
     const enrollment = await storage.getEnrollmentById(enrollmentId);
-    if (!enrollment || enrollment.studentId !== username) {
+    if (!enrollment || enrollment.readerId !== username) {
       return res.status(403).json({ error: "Not authorized" });
     }
 
@@ -706,88 +709,88 @@ export async function registerRoutes(
     res.json(completedStepIds);
   });
 
-  // Analytics API (creator only)
-  app.get("/api/syllabinds/:id/analytics", isAuthenticated, async (req, res) => {
-    const syllabusId = parseInt(req.params.id);
+  // Analytics API (curator only)
+  app.get("/api/binders/:id/analytics", isAuthenticated, async (req, res) => {
+    const binderId = parseInt(req.params.id);
     const username = (req.user as any).username;
 
-    // Verify user is creator (or admin)
-    const syllabus = await storage.getSyllabus(syllabusId);
+    // Verify user is curator (or admin)
+    const binder = await storage.getBinder(binderId);
     const isAdmin = (req.user as any).isAdmin === true;
-    if (!syllabus || (syllabus.creatorId !== username && !isAdmin)) {
-      return res.status(403).json({ error: "Only creator can view analytics" });
+    if (!binder || (binder.curatorId !== username && !isAdmin)) {
+      return res.status(403).json({ error: "Only curator can view analytics" });
     }
 
-    const analytics = await storage.getSyllabusAnalytics(syllabusId);
+    const analytics = await storage.getBinderAnalytics(binderId);
     res.json(analytics);
   });
 
-  app.get("/api/syllabinds/:id/analytics/completion-rates", isAuthenticated, async (req, res) => {
-    const syllabusId = parseInt(req.params.id);
+  app.get("/api/binders/:id/analytics/completion-rates", isAuthenticated, async (req, res) => {
+    const binderId = parseInt(req.params.id);
     const username = (req.user as any).username;
 
-    // Verify user is creator (or admin)
-    const syllabus = await storage.getSyllabus(syllabusId);
+    // Verify user is curator (or admin)
+    const binder = await storage.getBinder(binderId);
     const isAdmin = (req.user as any).isAdmin === true;
-    if (!syllabus || (syllabus.creatorId !== username && !isAdmin)) {
-      return res.status(403).json({ error: "Only creator can view analytics" });
+    if (!binder || (binder.curatorId !== username && !isAdmin)) {
+      return res.status(403).json({ error: "Only curator can view analytics" });
     }
 
-    const rates = await storage.getStepCompletionRates(syllabusId);
+    const rates = await storage.getStepCompletionRates(binderId);
     res.json(rates);
   });
 
-  app.get("/api/syllabinds/:id/analytics/completion-times", isAuthenticated, async (req, res) => {
-    const syllabusId = parseInt(req.params.id);
+  app.get("/api/binders/:id/analytics/completion-times", isAuthenticated, async (req, res) => {
+    const binderId = parseInt(req.params.id);
     const username = (req.user as any).username;
 
-    // Verify user is creator (or admin)
-    const syllabus = await storage.getSyllabus(syllabusId);
+    // Verify user is curator (or admin)
+    const binder = await storage.getBinder(binderId);
     const isAdmin = (req.user as any).isAdmin === true;
-    if (!syllabus || (syllabus.creatorId !== username && !isAdmin)) {
-      return res.status(403).json({ error: "Only creator can view analytics" });
+    if (!binder || (binder.curatorId !== username && !isAdmin)) {
+      return res.status(403).json({ error: "Only curator can view analytics" });
     }
 
-    const times = await storage.getAverageCompletionTimes(syllabusId);
+    const times = await storage.getAverageCompletionTimes(binderId);
     res.json(times);
   });
 
-  // ========== AI SYLLABIND GENERATION ==========
+  // ========== AI BINDER GENERATION ==========
 
-  app.post("/api/generate-syllabind", isAuthenticated, async (req, res) => {
+  app.post("/api/generate-binder", isAuthenticated, async (req, res) => {
     const username = (req.user as any).username;
     const user = req.user as any;
 
-    if (!user.isCreator && !user.isAdmin) {
-      return res.status(403).json({ error: "Creator access required" });
+    if (!user.isCurator && !user.isAdmin) {
+      return res.status(403).json({ error: "Curator access required" });
     }
 
-    const { syllabusId } = req.body;
+    const { binderId } = req.body;
 
-    if (!syllabusId || typeof syllabusId !== 'number') {
-      return res.status(400).json({ error: "Valid syllabusId required" });
+    if (!binderId || typeof binderId !== 'number') {
+      return res.status(400).json({ error: "Valid binderId required" });
     }
 
-    const syllabus = await storage.getSyllabus(syllabusId);
+    const binder = await storage.getBinder(binderId);
     const isAdmin = (req.user as any).isAdmin === true;
-    if (!syllabus || (syllabus.creatorId !== username && !isAdmin)) {
-      return res.status(403).json({ error: "Not your syllabind" });
+    if (!binder || (binder.curatorId !== username && !isAdmin)) {
+      return res.status(403).json({ error: "Not your binder" });
     }
 
-    if (!syllabus.title || !syllabus.description || !syllabus.audienceLevel || !syllabus.durationWeeks) {
+    if (!binder.title || !binder.description || !binder.audienceLevel || !binder.durationWeeks) {
       return res.status(400).json({ error: "Complete basics fields before generating" });
     }
 
-    if (syllabus.status === 'generating') {
+    if (binder.status === 'generating') {
       return res.status(409).json({ error: "Generation already in progress" });
     }
 
-    await storage.updateSyllabus(syllabusId, { status: 'generating' });
+    await storage.updateBinder(binderId, { status: 'generating' });
 
     res.json({
       success: true,
-      syllabusId,
-      websocketUrl: `/ws/generate-syllabind/${syllabusId}`
+      binderId,
+      websocketUrl: `/ws/generate-binder/${binderId}`
     });
   });
 
@@ -828,35 +831,35 @@ export async function registerRoutes(
     const username = (req.user as any).username;
     const user = req.user as any;
 
-    if (!user.isCreator && !user.isAdmin) {
-      return res.status(403).json({ error: "Creator access required" });
+    if (!user.isCurator && !user.isAdmin) {
+      return res.status(403).json({ error: "Curator access required" });
     }
 
-    const { syllabusId, weekIndex } = req.body;
+    const { binderId, weekIndex } = req.body;
 
-    if (!syllabusId || typeof syllabusId !== 'number') {
-      return res.status(400).json({ error: "Valid syllabusId required" });
+    if (!binderId || typeof binderId !== 'number') {
+      return res.status(400).json({ error: "Valid binderId required" });
     }
 
     if (!weekIndex || typeof weekIndex !== 'number' || weekIndex < 1) {
       return res.status(400).json({ error: "Valid weekIndex required" });
     }
 
-    const syllabus = await storage.getSyllabus(syllabusId);
+    const binder = await storage.getBinder(binderId);
     const isAdmin = (req.user as any).isAdmin === true;
-    if (!syllabus || (syllabus.creatorId !== username && !isAdmin)) {
-      return res.status(403).json({ error: "Not your syllabind" });
+    if (!binder || (binder.curatorId !== username && !isAdmin)) {
+      return res.status(403).json({ error: "Not your binder" });
     }
 
-    if (weekIndex > (syllabus.durationWeeks || 0)) {
-      return res.status(400).json({ error: "weekIndex exceeds syllabus duration" });
+    if (weekIndex > (binder.durationWeeks || 0)) {
+      return res.status(400).json({ error: "weekIndex exceeds binder duration" });
     }
 
     res.json({
       success: true,
-      syllabusId,
+      binderId,
       weekIndex,
-      websocketUrl: `/ws/regenerate-week/${syllabusId}/${weekIndex}`
+      websocketUrl: `/ws/regenerate-week/${binderId}/${weekIndex}`
     });
   });
 

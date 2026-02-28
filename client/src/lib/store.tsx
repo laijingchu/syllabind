@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePostHog } from '@posthog/react';
 import { useAuth } from '@/hooks/use-auth';
-import { Syllabus, Enrollment, LearnerProfile, Submission, SubscriptionLimits } from './types';
+import { Binder, Enrollment, ReaderProfile, Submission, SubscriptionLimits } from './types';
 
 interface StoreContextType {
   user: any;
@@ -11,38 +11,38 @@ interface StoreContextType {
   isLoading: boolean;
 
   // Data
-  syllabinds: Syllabus[];
+  binders: Binder[];
   enrollment: Enrollment | null;
   completedStepIds: number[];
 
   // Loading states
-  syllabindsLoading: boolean;
+  bindersLoading: boolean;
   enrollmentLoading: boolean;
 
   // Actions
-  toggleCreatorMode: () => Promise<void>;
-  completeActiveSyllabus: () => Promise<void>;
+  toggleCuratorMode: () => Promise<void>;
+  completeActiveBinder: () => Promise<void>;
   updateEnrollment: (updates: Partial<Enrollment>) => void;
   completeStep: (stepId: number) => Promise<void>;
   markStepComplete: (stepId: number, enrollmentId?: number) => Promise<void>;
   markStepIncomplete: (stepId: number, enrollmentId?: number) => Promise<void>;
   saveExercise: (stepId: number, answer: string, isShared: boolean, enrollmentId?: number) => Promise<void>;
   getSubmission: (stepId: number) => Submission | undefined;
-  getActiveSyllabus: () => Syllabus | undefined;
-  getSyllabusById: (id: number) => Syllabus | undefined;
-  getOverallProgress: (syllabusId: number) => number;
-  enrollInSyllabus: (syllabusId: number, shareProfile?: boolean) => Promise<void>;
+  getActiveBinder: () => Binder | undefined;
+  getBinderById: (id: number) => Binder | undefined;
+  getOverallProgress: (binderId: number) => number;
+  enrollInBinder: (binderId: number, shareProfile?: boolean) => Promise<void>;
   isStepCompleted: (stepId: number) => boolean;
   getExerciseText: (stepId: number) => string | null;
-  getLearnersForSyllabus: (syllabusId: number) => Promise<{ classmates: LearnerProfile[]; totalEnrolled: number }>;
+  getReadersForBinder: (binderId: number) => Promise<{ classmates: ReaderProfile[]; totalEnrolled: number }>;
   updateEnrollmentShareProfile: (enrollmentId: number, shareProfile: boolean) => Promise<void>;
   updateUser: (updates: any) => Promise<void>;
-  getProgressForWeek: (syllabusId: number, weekIndex: number) => number;
-  createSyllabus: (syllabus: any) => Promise<Syllabus>;
-  updateSyllabus: (syllabus: Syllabus) => Promise<void>;
-  batchDeleteSyllabinds: (ids: number[]) => Promise<void>;
+  getProgressForWeek: (binderId: number, weekIndex: number) => number;
+  createBinder: (binder: any) => Promise<Binder>;
+  updateBinder: (binder: Binder) => Promise<void>;
+  batchDeleteBinders: (ids: number[]) => Promise<void>;
   getSubmissionsForStep: (stepId: number) => Record<string, Submission>;
-  refreshSyllabinds: () => Promise<void>;
+  refreshBinders: () => Promise<void>;
   refreshEnrollments: () => Promise<void>;
 
   // Subscription
@@ -57,19 +57,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, logout, isLoading } = useAuth();
   const queryClient = useQueryClient();
   const posthog = usePostHog();
-  const [syllabinds, setSyllabinds] = useState<Syllabus[]>([]);
+  const [binders, setBinders] = useState<Binder[]>([]);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [completedStepIds, setCompletedStepIds] = useState<number[]>([]);
-  const [syllabindsLoading, setSyllabindsLoading] = useState(false);
+  const [bindersLoading, setBindersLoading] = useState(false);
   const [enrollmentLoading, setEnrollmentLoading] = useState(false);
   const [subscriptionLimits, setSubscriptionLimits] = useState<SubscriptionLimits | null>(null);
 
   const isPro = user?.subscriptionStatus === 'pro' || user?.isAdmin === true;
 
-  // Fetch syllabinds on mount
+  // Fetch binders on mount
   useEffect(() => {
-    refreshSyllabinds();
+    refreshBinders();
   }, []);
 
   // Identify user in PostHog on login, reset on logout
@@ -78,7 +78,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       posthog.identify(user.username, {
         email: user.email,
         name: user.name,
-        is_creator: user.isCreator,
+        is_curator: user.isCurator,
       });
     } else if (!isAuthenticated && posthog) {
       posthog.reset();
@@ -117,18 +117,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, [enrollment?.id]);
 
-  const refreshSyllabinds = async () => {
-    setSyllabindsLoading(true);
+  const refreshBinders = async () => {
+    setBindersLoading(true);
     try {
-      const res = await fetch('/api/syllabinds');
+      const res = await fetch('/api/binders');
       if (res.ok) {
         const data = await res.json();
-        setSyllabinds(data);
+        setBinders(data);
       }
     } catch (err) {
-      console.error('Failed to fetch syllabinds:', err);
+      console.error('Failed to fetch binders:', err);
     } finally {
-      setSyllabindsLoading(false);
+      setBindersLoading(false);
     }
   };
 
@@ -140,20 +140,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       });
       if (res.ok) {
         const data = await res.json();
-        // Extract completed syllabus IDs from all completed enrollments
-        const completedSyllabusIds = data
+        // Extract completed binder IDs from all completed enrollments
+        const completedBinderIds = data
           .filter((e: any) => e.status === 'completed')
-          .map((e: any) => e.syllabusId);
+          .map((e: any) => e.binderId);
 
         // Use only in-progress enrollment as active (don't fall back to completed)
         const activeEnrollment = data.find((e: any) => e.status === 'in-progress') || null;
         // Transform backend enrollment to match frontend Enrollment type
         setEnrollment({
           id: activeEnrollment?.id,
-          activeSyllabusId: activeEnrollment?.syllabusId || null,
+          activeBinderId: activeEnrollment?.binderId || null,
           currentWeekIndex: activeEnrollment?.currentWeekIndex || 1,
           completedStepIds: [], // Will be loaded separately
-          completedSyllabusIds
+          completedBinderIds
         });
       }
     } catch (err) {
@@ -184,34 +184,34 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, isLoading]);
 
-  const toggleCreatorMode = async () => {
+  const toggleCuratorMode = async () => {
     try {
-      const res = await fetch('/api/users/me/toggle-creator', {
+      const res = await fetch('/api/users/me/toggle-curator', {
         method: 'POST',
         credentials: 'include'
       });
-      if (!res.ok) throw new Error('Failed to toggle creator mode');
+      if (!res.ok) throw new Error('Failed to toggle curator mode');
 
       // Reload the page to refresh auth state
       window.location.reload();
     } catch (err) {
-      console.error('Failed to toggle creator mode:', err);
+      console.error('Failed to toggle curator mode:', err);
       throw err;
     }
   };
 
-  const enrollInSyllabus = async (syllabusId: number, shareProfile?: boolean) => {
+  const enrollInBinder = async (binderId: number, shareProfile?: boolean) => {
     try {
       const res = await fetch('/api/enrollments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ syllabusId, shareProfile: shareProfile === true })
+        body: JSON.stringify({ binderId, shareProfile: shareProfile === true })
       });
 
       if (!res.ok) {
         if (res.status === 409) {
-          throw new Error('Already enrolled in this syllabus');
+          throw new Error('Already enrolled in this binder');
         }
         throw new Error('Failed to enroll');
       }
@@ -219,12 +219,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const newEnrollment = await res.json();
       setEnrollment(prev => ({
         id: newEnrollment.id,
-        activeSyllabusId: newEnrollment.syllabusId,
+        activeBinderId: newEnrollment.binderId,
         currentWeekIndex: newEnrollment.currentWeekIndex || 1,
         completedStepIds: [],
-        completedSyllabusIds: prev?.completedSyllabusIds || []
+        completedBinderIds: prev?.completedBinderIds || []
       }));
-      posthog?.capture('enrolled_in_syllabind', { syllabind_id: syllabusId });
+      posthog?.capture('enrolled_in_binder', { binder_id: binderId });
     } catch (err) {
       console.error('Failed to enroll:', err);
       throw err;
@@ -248,7 +248,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (prev.includes(stepId)) return prev;
         return [...prev, stepId];
       });
-      posthog?.capture('step_completed', { step_id: stepId, syllabind_id: enrollment?.activeSyllabusId });
+      posthog?.capture('step_completed', { step_id: stepId, binder_id: enrollment?.activeBinderId });
     } catch (err) {
       console.error('Failed to mark step complete:', err);
       throw err;
@@ -277,7 +277,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const completeStep = markStepComplete;
 
-  const completeActiveSyllabus = async () => {
+  const completeActiveBinder = async () => {
     if (!enrollment?.id) return;
 
     try {
@@ -288,20 +288,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ status: 'completed' })
       });
 
-      if (!res.ok) throw new Error('Failed to complete syllabus');
+      if (!res.ok) throw new Error('Failed to complete binder');
 
       // Add to completed list and clear active enrollment
-      posthog?.capture('syllabind_completed', { syllabind_id: enrollment.activeSyllabusId });
-      const completedId = enrollment.activeSyllabusId;
+      posthog?.capture('binder_completed', { binder_id: enrollment.activeBinderId });
+      const completedId = enrollment.activeBinderId;
       setEnrollment(prev => prev ? {
         ...prev,
-        activeSyllabusId: null,
-        completedSyllabusIds: completedId
-          ? [...(prev.completedSyllabusIds || []), completedId]
-          : prev.completedSyllabusIds || []
+        activeBinderId: null,
+        completedBinderIds: completedId
+          ? [...(prev.completedBinderIds || []), completedId]
+          : prev.completedBinderIds || []
       } : null);
     } catch (err) {
-      console.error('Failed to complete syllabus:', err);
+      console.error('Failed to complete binder:', err);
       throw err;
     }
   };
@@ -331,7 +331,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
 
       const submission = await response.json();
-      posthog?.capture('exercise_submitted', { step_id: stepId, syllabind_id: enrollment?.activeSyllabusId });
+      posthog?.capture('exercise_submitted', { step_id: stepId, binder_id: enrollment?.activeBinderId });
 
       // Update local state
       setSubmissions(prev => {
@@ -365,62 +365,62 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       const updatedUser = await res.json();
       queryClient.setQueryData(["/api/auth/me"], updatedUser);
-      // Refresh syllabinds so creator profile data on cards stays current
-      refreshSyllabinds();
+      // Refresh binders so curator profile data on cards stays current
+      refreshBinders();
     } catch (err) {
       console.error('Failed to update user:', err);
       throw err;
     }
   };
 
-  const createSyllabus = async (syllabusData: any): Promise<Syllabus> => {
+  const createBinder = async (binderData: any): Promise<Binder> => {
     try {
-      const res = await fetch('/api/syllabinds', {
+      const res = await fetch('/api/binders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(syllabusData)
+        body: JSON.stringify(binderData)
       });
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || 'Failed to create syllabus');
+        throw new Error(error.message || 'Failed to create binder');
       }
 
-      const syllabus = await res.json();
+      const binder = await res.json();
 
-      // Refresh syllabinds list
-      await refreshSyllabinds();
+      // Refresh binders list
+      await refreshBinders();
 
-      return syllabus;
+      return binder;
     } catch (err) {
-      console.error('Failed to create syllabus:', err);
+      console.error('Failed to create binder:', err);
       throw err;
     }
   };
 
-  const updateSyllabus = async (syllabus: Syllabus) => {
+  const updateBinder = async (binder: Binder) => {
     try {
-      const res = await fetch(`/api/syllabinds/${syllabus.id}`, {
+      const res = await fetch(`/api/binders/${binder.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(syllabus)
+        body: JSON.stringify(binder)
       });
 
-      if (!res.ok) throw new Error('Failed to update syllabus');
+      if (!res.ok) throw new Error('Failed to update binder');
 
-      // Refresh syllabinds list
-      await refreshSyllabinds();
+      // Refresh binders list
+      await refreshBinders();
     } catch (err) {
-      console.error('Failed to update syllabus:', err);
+      console.error('Failed to update binder:', err);
       throw err;
     }
   };
 
-  const batchDeleteSyllabinds = async (ids: number[]) => {
+  const batchDeleteBinders = async (ids: number[]) => {
     try {
-      const res = await fetch('/api/syllabinds/batch-delete', {
+      const res = await fetch('/api/binders/batch-delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -429,24 +429,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || 'Failed to delete syllabinds');
+        throw new Error(error.message || 'Failed to delete binders');
       }
 
-      // Refresh syllabinds list
-      await refreshSyllabinds();
+      // Refresh binders list
+      await refreshBinders();
     } catch (err) {
-      console.error('Failed to delete syllabinds:', err);
+      console.error('Failed to delete binders:', err);
       throw err;
     }
   };
 
-  const getLearnersForSyllabus = async (syllabusId: number): Promise<{ classmates: LearnerProfile[]; totalEnrolled: number }> => {
+  const getReadersForBinder = async (binderId: number): Promise<{ classmates: ReaderProfile[]; totalEnrolled: number }> => {
     try {
-      const res = await fetch(`/api/syllabinds/${syllabusId}/classmates`, {
+      const res = await fetch(`/api/binders/${binderId}/classmates`, {
         credentials: 'include'
       });
 
-      if (!res.ok) throw new Error('Failed to fetch learners');
+      if (!res.ok) throw new Error('Failed to fetch readers');
 
       const data = await res.json();
       // Handle both old format (array) and new format (object with classmates/totalEnrolled)
@@ -458,7 +458,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         totalEnrolled: typeof data.totalEnrolled === 'number' ? data.totalEnrolled : 0
       };
     } catch (err) {
-      console.error('Failed to fetch learners:', err);
+      console.error('Failed to fetch readers:', err);
       return { classmates: [], totalEnrolled: 0 };
     }
   };
@@ -486,13 +486,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return submissions.find(s => s.stepId === stepId);
   };
 
-  const getActiveSyllabus = () => {
-    if (!enrollment?.activeSyllabusId) return undefined;
-    return syllabinds.find(s => s.id === enrollment.activeSyllabusId);
+  const getActiveBinder = () => {
+    if (!enrollment?.activeBinderId) return undefined;
+    return binders.find(s => s.id === enrollment.activeBinderId);
   };
 
-  const getSyllabusById = (id: number) => {
-    return syllabinds.find(s => s.id === id);
+  const getBinderById = (id: number) => {
+    return binders.find(s => s.id === id);
   };
 
   const isStepCompleted = (stepId: number) => {
@@ -504,22 +504,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return submission?.answer || null;
   };
 
-  const getOverallProgress = (syllabusId: number) => {
-    const syllabus = getSyllabusById(syllabusId);
-    if (!syllabus || !syllabus.weeks) return 0;
+  const getOverallProgress = (binderId: number) => {
+    const binder = getBinderById(binderId);
+    if (!binder || !binder.weeks) return 0;
 
-    const allStepIds = syllabus.weeks.flatMap(week => week.steps.map(step => step.id));
+    const allStepIds = binder.weeks.flatMap(week => week.steps.map(step => step.id));
     if (allStepIds.length === 0) return 0;
 
     const completedCount = allStepIds.filter(id => completedStepIds.includes(id)).length;
     return Math.round((completedCount / allStepIds.length) * 100);
   };
 
-  const getProgressForWeek = (syllabusId: number, weekIndex: number) => {
-    const syllabus = getSyllabusById(syllabusId);
-    if (!syllabus || !syllabus.weeks) return 0;
+  const getProgressForWeek = (binderId: number, weekIndex: number) => {
+    const binder = getBinderById(binderId);
+    if (!binder || !binder.weeks) return 0;
 
-    const week = syllabus.weeks.find(w => w.index === weekIndex);
+    const week = binder.weeks.find(w => w.index === weekIndex);
     if (!week || week.steps.length === 0) return 0;
 
     const weekStepIds = week.steps.map(step => step.id);
@@ -531,7 +531,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const stepSubmissions = submissions.filter(s => s.stepId === stepId);
     const result: Record<string, Submission> = {};
     stepSubmissions.forEach((sub, index) => {
-      result[`learner-${index}`] = sub;
+      result[`reader-${index}`] = sub;
     });
     return result;
   };
@@ -542,34 +542,34 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated,
       logout,
       isLoading,
-      syllabinds,
+      binders,
       enrollment,
       completedStepIds,
-      syllabindsLoading,
+      bindersLoading,
       enrollmentLoading,
-      toggleCreatorMode,
-      completeActiveSyllabus,
+      toggleCuratorMode,
+      completeActiveBinder,
       updateEnrollment,
       completeStep,
       markStepComplete,
       markStepIncomplete,
       saveExercise,
       getSubmission,
-      getActiveSyllabus,
-      getSyllabusById,
+      getActiveBinder,
+      getBinderById,
       getOverallProgress,
-      enrollInSyllabus,
+      enrollInBinder,
       isStepCompleted,
       getExerciseText,
-      getLearnersForSyllabus,
+      getReadersForBinder,
       updateEnrollmentShareProfile,
       updateUser,
       getProgressForWeek,
-      createSyllabus,
-      updateSyllabus,
-      batchDeleteSyllabinds,
+      createBinder,
+      updateBinder,
+      batchDeleteBinders,
       getSubmissionsForStep,
-      refreshSyllabinds,
+      refreshBinders,
       refreshEnrollments,
       isPro,
       subscriptionLimits,

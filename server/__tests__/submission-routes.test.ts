@@ -1,10 +1,10 @@
 import request from 'supertest';
 import express from 'express';
-import { resetAllMocks, mockStorage, mockUser, mockCreator } from './setup/mocks';
+import { resetAllMocks, mockStorage, mockUser, mockCurator } from './setup/mocks';
 
 describe('Submission Routes', () => {
-  let learnerApp: express.Express;
-  let creatorApp: express.Express;
+  let readerApp: express.Express;
+  let curatorApp: express.Express;
 
   function registerRoutes(a: express.Express) {
     const authMiddleware = (req: any, res: any, next: any) => {
@@ -41,10 +41,10 @@ describe('Submission Routes', () => {
       const enrollment = await mockStorage.getEnrollmentById(submission.enrollmentId);
       if (!enrollment) return res.status(404).json({ message: 'Enrollment not found' });
 
-      const syllabus = await mockStorage.getSyllabus(enrollment.syllabusId);
-      if (!syllabus) return res.status(404).json({ message: 'Syllabus not found' });
-      if (syllabus.creatorId !== username) {
-        return res.status(403).json({ error: 'Not syllabus owner' });
+      const binder = await mockStorage.getBinder(enrollment.binderId);
+      if (!binder) return res.status(404).json({ message: 'Binder not found' });
+      if (binder.curatorId !== username) {
+        return res.status(403).json({ error: 'Not binder owner' });
       }
 
       const updated = await mockStorage.updateSubmissionFeedback(id, feedback, grade, rubricUrl);
@@ -53,15 +53,15 @@ describe('Submission Routes', () => {
   }
 
   beforeAll(() => {
-    learnerApp = express();
-    learnerApp.use(express.json());
-    learnerApp.use((req, _res, next) => { req.user = mockUser; next(); });
-    registerRoutes(learnerApp);
+    readerApp = express();
+    readerApp.use(express.json());
+    readerApp.use((req, _res, next) => { req.user = mockUser; next(); });
+    registerRoutes(readerApp);
 
-    creatorApp = express();
-    creatorApp.use(express.json());
-    creatorApp.use((req, _res, next) => { req.user = mockCreator; next(); });
-    registerRoutes(creatorApp);
+    curatorApp = express();
+    curatorApp.use(express.json());
+    curatorApp.use((req, _res, next) => { req.user = mockCurator; next(); });
+    registerRoutes(curatorApp);
   });
 
   beforeEach(() => {
@@ -73,7 +73,7 @@ describe('Submission Routes', () => {
       const submissionData = { enrollmentId: 1, stepId: 5, answer: 'My answer', isShared: false };
       mockStorage.createSubmission.mockResolvedValue({ id: 1, ...submissionData });
 
-      const res = await request(learnerApp)
+      const res = await request(readerApp)
         .post('/api/submissions')
         .send(submissionData)
         .expect(200);
@@ -83,7 +83,7 @@ describe('Submission Routes', () => {
     });
 
     it('should return 400 for missing required fields', async () => {
-      await request(learnerApp)
+      await request(readerApp)
         .post('/api/submissions')
         .send({ enrollmentId: 1 })
         .expect(400);
@@ -98,7 +98,7 @@ describe('Submission Routes', () => {
       ];
       mockStorage.getSubmissionsByEnrollmentId.mockResolvedValue(submissions);
 
-      const res = await request(learnerApp)
+      const res = await request(readerApp)
         .get('/api/enrollments/1/submissions')
         .expect(200);
 
@@ -108,15 +108,15 @@ describe('Submission Routes', () => {
   });
 
   describe('PUT /api/submissions/:id/feedback', () => {
-    it('should add feedback when creator owns syllabus', async () => {
+    it('should add feedback when curator owns binder', async () => {
       mockStorage.getSubmission.mockResolvedValue({ id: 1, enrollmentId: 10 });
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 10, syllabusId: 20 });
-      mockStorage.getSyllabus.mockResolvedValue({ id: 20, creatorId: 'testcreator' });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 10, binderId: 20 });
+      mockStorage.getBinder.mockResolvedValue({ id: 20, curatorId: 'testcurator' });
       mockStorage.updateSubmissionFeedback.mockResolvedValue({
         id: 1, feedback: 'Great work!', grade: 'A'
       });
 
-      const res = await request(creatorApp)
+      const res = await request(curatorApp)
         .put('/api/submissions/1/feedback')
         .send({ feedback: 'Great work!', grade: 'A' })
         .expect(200);
@@ -128,7 +128,7 @@ describe('Submission Routes', () => {
     it('should return 404 when submission not found', async () => {
       mockStorage.getSubmission.mockResolvedValue(null);
 
-      await request(creatorApp)
+      await request(curatorApp)
         .put('/api/submissions/999/feedback')
         .send({ feedback: 'test' })
         .expect(404);
@@ -138,29 +138,29 @@ describe('Submission Routes', () => {
       mockStorage.getSubmission.mockResolvedValue({ id: 1, enrollmentId: 10 });
       mockStorage.getEnrollmentById.mockResolvedValue(null);
 
-      await request(creatorApp)
+      await request(curatorApp)
         .put('/api/submissions/1/feedback')
         .send({ feedback: 'test' })
         .expect(404);
     });
 
-    it('should return 404 when syllabus not found', async () => {
+    it('should return 404 when binder not found', async () => {
       mockStorage.getSubmission.mockResolvedValue({ id: 1, enrollmentId: 10 });
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 10, syllabusId: 20 });
-      mockStorage.getSyllabus.mockResolvedValue(null);
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 10, binderId: 20 });
+      mockStorage.getBinder.mockResolvedValue(null);
 
-      await request(creatorApp)
+      await request(curatorApp)
         .put('/api/submissions/1/feedback')
         .send({ feedback: 'test' })
         .expect(404);
     });
 
-    it('should return 403 when not syllabus owner', async () => {
+    it('should return 403 when not binder owner', async () => {
       mockStorage.getSubmission.mockResolvedValue({ id: 1, enrollmentId: 10 });
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 10, syllabusId: 20 });
-      mockStorage.getSyllabus.mockResolvedValue({ id: 20, creatorId: 'othercreator' });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 10, binderId: 20 });
+      mockStorage.getBinder.mockResolvedValue({ id: 20, curatorId: 'othercreator' });
 
-      await request(creatorApp)
+      await request(curatorApp)
         .put('/api/submissions/1/feedback')
         .send({ feedback: 'test' })
         .expect(403);

@@ -35,12 +35,12 @@ describe('claudeClient', () => {
   });
 
   describe('getPlanningTools', () => {
-    it('should return only the plan_curriculum tool (no web search)', () => {
+    it('should return only the plan_outline tool (no web search)', () => {
       jest.resetModules();
       const { getPlanningTools } = require('../utils/claudeClient');
       const tools = getPlanningTools();
       expect(tools).toHaveLength(1);
-      expect(tools[0].name).toBe('plan_curriculum');
+      expect(tools[0].name).toBe('plan_outline');
     });
   });
 
@@ -54,7 +54,7 @@ describe('claudeClient', () => {
       expect(tools[1].name).toBe('finalize_week');
     });
 
-    it('finalize_week should not require title (optional for pre-set curriculum)', () => {
+    it('finalize_week should not require title (optional for pre-set outline)', () => {
       jest.resetModules();
       const { getGenerationTools } = require('../utils/claudeClient');
       const tools = getGenerationTools();
@@ -79,14 +79,14 @@ describe('claudeClient', () => {
       expect(result.handled_by_api).toBe(true);
     });
 
-    it('should handle plan_curriculum tool', async () => {
+    it('should handle plan_outline tool', async () => {
       const input = {
         weeks: [
           { weekIndex: 1, title: 'Foundations', description: 'Core concepts' },
           { weekIndex: 2, title: 'Advanced', description: 'Deep dive' }
         ]
       };
-      const result = await executeToolCall('plan_curriculum', input, {});
+      const result = await executeToolCall('plan_outline', input, {});
       expect(result.weeks).toHaveLength(2);
       expect(result.weeks[0].title).toBe('Foundations');
       expect(result.weeks[1].weekIndex).toBe(2);
@@ -99,7 +99,7 @@ describe('claudeClient', () => {
       expect(result.title).toBe('Week 1');
     });
 
-    it('should handle finalize_week without title (pre-set by curriculum plan)', async () => {
+    it('should handle finalize_week without title (pre-set by outline plan)', async () => {
       const input = { weekIndex: 3, steps: [{ type: 'reading', title: 'Article' }] };
       const result = await executeToolCall('finalize_week', input, {});
       expect(result.weekIndex).toBe(3);

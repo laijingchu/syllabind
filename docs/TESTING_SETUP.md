@@ -41,7 +41,7 @@ Time:        3.936 s
 ### Test Files
 
 5. **`server/__tests__/setup/mocks.ts`** - Mock utilities
-   - Mock users (regular user and creator)
+   - Mock users (regular user and curator)
    - Request factories (authenticated/unauthenticated)
    - Storage mock references
    - `resetAllMocks()` helper function
@@ -52,7 +52,7 @@ Time:        3.936 s
 
 7. **`server/__tests__/storage.test.ts`** - Storage layer tests (17 tests)
    - User operations (getUserByEmail, getUserByUsername, createUser, updateUser)
-   - Syllabus operations (getAllSyllabi, getSyllabusById, createSyllabus, updateSyllabus, deleteSyllabus)
+   - Binder operations (getAllBinders, getBinderById, createBinder, updateBinder, deleteBinder)
    - Enrollment operations (getEnrollmentsByUserId, createEnrollment)
    - Step completion operations (getCompletedSteps, markStepComplete, markStepIncomplete)
    - Submission operations (getSubmissionsByEnrollmentId, createSubmission, updateSubmission)
@@ -63,12 +63,12 @@ Time:        3.936 s
    - User logout
    - Current user endpoint (authenticated/unauthenticated)
 
-9. **`server/__tests__/syllabind-routes.test.ts`** - Syllabus API tests (16 tests)
-   - GET /api/syllabi (all syllabi, empty list)
-   - GET /api/syllabi/:id (by ID, not found)
-   - POST /api/syllabi (create as creator, unauthorized)
-   - PUT /api/syllabi/:id (update as creator, forbidden for non-creator)
-   - GET /api/syllabi/:id/learners (with learners, empty list)
+9. **`server/__tests__/binder-routes.test.ts`** - Binder API tests (16 tests)
+   - GET /api/binders (all binders, empty list)
+   - GET /api/binders/:id (by ID, not found)
+   - POST /api/binders (create as curator, unauthorized)
+   - PUT /api/binders/:id (update as curator, forbidden for non-curator)
+   - GET /api/binders/:id/readers (with readers, empty list)
 
 ## Package.json Updates
 
@@ -126,7 +126,7 @@ expect(result).toEqual(mockUser);
 Tests use supertest to make HTTP requests to Express app:
 ```typescript
 const response = await request(app)
-  .get('/api/syllabi')
+  .get('/api/binders')
   .expect(200);
 
 expect(response.body).toHaveLength(2);

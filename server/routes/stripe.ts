@@ -14,17 +14,17 @@ export async function registerStripeRoutes(app: Express) {
     });
   });
 
-  // Get subscription limits (syllabind count, can create more, can enroll)
+  // Get subscription limits (binder count, can create more, can enroll)
   app.get("/api/subscription/limits", isAuthenticated, async (req, res) => {
     const user = req.user as any;
     const isPro = user.subscriptionStatus === 'pro' || user.isAdmin === true;
-    const syllabindCount = await storage.countSyllabindsByCreator(user.username);
-    const FREE_SYLLABIND_LIMIT = 2;
+    const binderCount = await storage.countBindersByCurator(user.username);
+    const FREE_BINDER_LIMIT = 2;
 
     res.json({
-      syllabindCount,
-      syllabindLimit: isPro ? null : FREE_SYLLABIND_LIMIT,
-      canCreateMore: isPro || syllabindCount < FREE_SYLLABIND_LIMIT,
+      binderCount,
+      binderLimit: isPro ? null : FREE_BINDER_LIMIT,
+      canCreateMore: isPro || binderCount < FREE_BINDER_LIMIT,
       canEnroll: isPro,
       isPro,
     });

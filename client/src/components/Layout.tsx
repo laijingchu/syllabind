@@ -99,13 +99,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       <span className="font-medium">Catalog</span>
                     </button>
                     <button
-                      onClick={() => handleMobileNavClick("/creator")}
+                      onClick={() => handleMobileNavClick("/curator")}
                       className={cn(
                         "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
-                        location.startsWith("/creator") ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                        location.startsWith("/curator") ? "bg-primary/10 text-primary" : "hover:bg-muted"
                       )}
                     >
-                      <span className="font-medium">Syllabind Builder</span>
+                      <span className="font-medium">Curator Studio</span>
                     </button>
                     <div className="border-t my-4" />
                     <button
@@ -164,8 +164,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <Link href="/catalog" className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/catalog" ? "text-primary" : "text-muted-foreground")}>
                     Catalog
                   </Link>
-                  <Link href="/creator" className={cn("text-sm font-medium transition-colors hover:text-primary", location.startsWith("/creator") ? "text-primary" : "text-muted-foreground")}>
-                    Syllabind Builder
+                  <Link href="/curator" className={cn("text-sm font-medium transition-colors hover:text-primary", location.startsWith("/curator") ? "text-primary" : "text-muted-foreground")}>
+                    Curator Studio
                   </Link>
                 </>
               )}

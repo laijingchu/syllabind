@@ -1,23 +1,23 @@
-import { Syllabus, User, Enrollment, LearnerProfile } from './types';
+import { Binder, User, Enrollment, ReaderProfile } from './types';
 
 export const MOCK_USER: User = {
   id: 'user-1',
   username: 'alexlearner',
   name: 'Alex Learner',
-  isCreator: false,
+  isCurator: false,
   bio: 'Lifelong learner passionate about technology and design.',
   linkedin: 'alexlearner',
   twitter: 'alexlearner',
   shareProfile: true,
 };
 
-export const MOCK_LEARNERS: LearnerProfile[] = [
+export const MOCK_READERS: ReaderProfile[] = [
   {
     user: {
       id: 'user-2',
       username: 'sarahchen',
       name: 'Sarah Chen',
-      isCreator: false,
+      isCurator: false,
       avatarUrl: 'https://api.dicebear.com/7.x/notionists/svg?seed=Sarah',
       bio: 'Product Designer at TechCo',
       linkedin: 'sarahchen',
@@ -31,7 +31,7 @@ export const MOCK_LEARNERS: LearnerProfile[] = [
       id: 'user-3',
       username: 'marcusj',
       name: 'Marcus Johnson',
-      isCreator: false,
+      isCurator: false,
       avatarUrl: 'https://api.dicebear.com/7.x/notionists/svg?seed=Marcus',
       bio: 'Software Engineer learning design systems',
       website: 'https://marcus.dev',
@@ -44,7 +44,7 @@ export const MOCK_LEARNERS: LearnerProfile[] = [
       id: 'user-4',
       username: 'emilyd',
       name: 'Emily Davis',
-      isCreator: false,
+      isCurator: false,
       avatarUrl: 'https://api.dicebear.com/7.x/notionists/svg?seed=Emily',
       bio: 'Marketing Specialist',
       threads: 'emilyd_marketing',
@@ -57,7 +57,7 @@ export const MOCK_LEARNERS: LearnerProfile[] = [
       id: 'user-5',
       username: 'davidw',
       name: 'David Wilson',
-      isCreator: false,
+      isCurator: false,
       avatarUrl: 'https://api.dicebear.com/7.x/notionists/svg?seed=David',
     },
     status: 'completed',
@@ -66,13 +66,13 @@ export const MOCK_LEARNERS: LearnerProfile[] = [
 ];
 
 export const INITIAL_ENROLLMENT: Enrollment = {
-  activeSyllabusId: null,
+  activeBinderId: null,
   currentWeekIndex: 1,
   completedStepIds: [],
-  completedSyllabusIds: [],
+  completedBinderIds: [],
 };
 
-export const MOCK_SYLLABINDS: Syllabus[] = [
+export const MOCK_BINDERS: Binder[] = [
   {
     id: 1,
     title: 'Digital Minimalism',
@@ -80,11 +80,11 @@ export const MOCK_SYLLABINDS: Syllabus[] = [
     audienceLevel: 'Beginner',
     durationWeeks: 4,
     status: 'published',
-    creatorId: 'creator-1',
+    curatorId: 'curator-1',
     weeks: [
       {
         id: 1,
-        syllabusId: 1,
+        binderId: 1,
         index: 1,
         title: 'The Philosophy of Less',
         steps: [
@@ -111,7 +111,7 @@ export const MOCK_SYLLABINDS: Syllabus[] = [
       },
       {
         id: 2,
-        syllabusId: 1,
+        binderId: 1,
         index: 2,
         title: 'Digital Declutter',
         steps: [
@@ -137,7 +137,7 @@ export const MOCK_SYLLABINDS: Syllabus[] = [
       },
       {
         id: 3,
-        syllabusId: 1,
+        binderId: 1,
         index: 3,
         title: 'Reclaiming Leisure',
         steps: [
@@ -163,7 +163,7 @@ export const MOCK_SYLLABINDS: Syllabus[] = [
       },
       {
         id: 4,
-        syllabusId: 1,
+        binderId: 1,
         index: 4,
         title: 'Deep Work Habits',
         steps: [
@@ -196,11 +196,11 @@ export const MOCK_SYLLABINDS: Syllabus[] = [
     audienceLevel: 'Intermediate',
     durationWeeks: 2,
     status: 'published',
-    creatorId: 'creator-1',
+    curatorId: 'curator-1',
     weeks: [
       {
         id: 5,
-        syllabusId: 2,
+        binderId: 2,
         index: 1,
         title: 'Basics of Systems',
         steps: [
@@ -217,7 +217,7 @@ export const MOCK_SYLLABINDS: Syllabus[] = [
       },
       {
         id: 6,
-        syllabusId: 2,
+        binderId: 2,
         index: 2,
         title: 'Feedback Loops',
         steps: [],

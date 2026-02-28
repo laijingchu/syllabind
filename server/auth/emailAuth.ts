@@ -31,7 +31,7 @@ export function registerEmailAuthRoutes(app: Express): void {
   // Email/Password Registration
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { email, password, name, isCreator } = req.body;
+      const { email, password, name, isCurator } = req.body;
 
       if (!email || !password || !name) {
         return res.status(400).json({ message: "Email, password, and name are required" });
@@ -65,7 +65,7 @@ export function registerEmailAuthRoutes(app: Express): void {
         password: hashedPassword,
         username,
         name,
-        isCreator: isCreator || false,
+        isCurator: isCurator || false,
         authProvider: 'email',
       }).returning();
 

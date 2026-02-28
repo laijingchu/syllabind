@@ -79,7 +79,7 @@ export async function setupAuth(app: Express) {
       username: dbUser.username,
       name: dbUser.name,
       avatarUrl: dbUser.avatarUrl,
-      isCreator: dbUser.isCreator,
+      isCurator: dbUser.isCurator,
     };
     updateUserSession(user, tokens);
     verified(null, user);

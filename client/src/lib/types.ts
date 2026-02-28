@@ -1,7 +1,7 @@
 export type AudienceLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 export type StepType = 'reading' | 'exercise';
-export type SyllabusStatus = 'draft' | 'published' | 'generating';
-export type SyllabusVisibility = 'public' | 'unlisted' | 'private';
+export type BinderStatus = 'draft' | 'published' | 'generating';
+export type BinderVisibility = 'public' | 'unlisted' | 'private';
 
 export interface Category {
   id: number;
@@ -37,14 +37,14 @@ export interface Step {
 
 export interface Week {
   id: number; // Primary key
-  syllabusId: number; // Foreign key to syllabinds table
+  binderId: number; // Foreign key to binders table
   index: number; // 1-4
   title?: string; // e.g. "Foundations"
   description?: string; // Weekly summary
   steps: Step[];
 }
 
-export interface CreatorProfile {
+export interface CuratorProfile {
   name: string | null;
   username: string;
   avatarUrl: string | null;
@@ -58,19 +58,19 @@ export interface CreatorProfile {
   schedulingUrl: string | null;
 }
 
-export interface Syllabus {
+export interface Binder {
   id: number; // Changed from string to number for normalized DB
   title: string;
   description: string;
   audienceLevel: AudienceLevel;
   durationWeeks: number; // 1-4
-  status: SyllabusStatus;
-  visibility?: SyllabusVisibility;
+  status: BinderStatus;
+  visibility?: BinderVisibility;
   weeks: Week[];
   showSchedulingLink?: boolean;
   mediaPreference?: 'auto' | 'yes' | 'no';
-  creatorId: string; // Username (unique) instead of UUID
-  creator?: CreatorProfile; // Populated when listing syllabinds
+  curatorId: string; // Username (unique) instead of UUID
+  curator?: CuratorProfile; // Populated when listing binders
   categoryId?: number | null;
   category?: { name: string; slug: string } | null;
   tags?: Tag[];
@@ -80,10 +80,10 @@ export interface Syllabus {
 
 export interface Enrollment {
   id?: number; // Enrollment ID
-  activeSyllabusId: number | null; // Changed from string to number
+  activeBinderId: number | null; // Changed from string to number
   currentWeekIndex: number; // 1-based
   completedStepIds: number[]; // Changed from string[] to number[]
-  completedSyllabusIds: number[]; // Changed from string[] to number[]
+  completedBinderIds: number[]; // Changed from string[] to number[]
 }
 
 export interface Submission {
@@ -92,9 +92,9 @@ export interface Submission {
   stepId: number; // Changed from string to number
   answer: string; // URL or text
   submittedAt: string;
-  isShared: boolean; // Learner opt-in
+  isShared: boolean; // Reader opt-in
 
-  // Creator feedback
+  // Curator feedback
   feedback?: string; // Rich text
   grade?: string; // e.g. "A", "Pass", "85/100"
   rubricUrl?: string; // URL to grading rubric
@@ -109,8 +109,8 @@ export interface CompletedStep {
 export interface Cohort {
   id: number;
   name: string;
-  syllabusId: number;               // FK to syllabinds
-  creatorId?: string;               // Username of creator
+  binderId: number;               // FK to binders
+  curatorId?: string;             // Username of curator
   description?: string;
   isActive: boolean;
   createdAt: string;
@@ -118,9 +118,9 @@ export interface Cohort {
 
 export interface CohortMember {
   cohortId: number;
-  studentId: string;                // Username of student
+  readerId: string;               // Username of reader
   joinedAt: string;
-  role: string;                     // 'member', 'moderator', etc.
+  role: string;                   // 'member', 'moderator', etc.
 }
 
 export interface User {
@@ -128,7 +128,7 @@ export interface User {
   username: string;
   name: string;
   email?: string;
-  isCreator: boolean;
+  isCurator: boolean;
   isAdmin?: boolean;
   bio?: string;
   expertise?: string;
@@ -148,14 +148,14 @@ export interface User {
 }
 
 export interface SubscriptionLimits {
-  syllabindCount: number;
-  syllabindLimit: number | null;
+  binderCount: number;
+  binderLimit: number | null;
   canCreateMore: boolean;
   canEnroll: boolean;
   isPro: boolean;
 }
 
-export interface LearnerProfile {
+export interface ReaderProfile {
   user: User;
   status: 'in-progress' | 'completed';
   joinedDate: string;

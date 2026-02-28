@@ -72,7 +72,7 @@ export default function Billing() {
           ) : (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                <strong>$9.99 one-time</strong> — Unlimited syllabinds, enroll in any course, full progress tracking.
+                <strong>$9.99 one-time</strong> — Unlimited binders, enroll in any course, full progress tracking.
               </p>
               <Button
                 onClick={async () => {

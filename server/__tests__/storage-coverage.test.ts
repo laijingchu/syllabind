@@ -2,10 +2,10 @@
  * Storage Coverage Tests
  *
  * Tests uncovered branches/methods in server/storage.ts:
- * - getSyllabusWithContent: when syllabus exists (with weeks and steps)
- * - getLearnersBySyllabusId: when enrollments exist
- * - getClassmatesBySyllabusId: when classmates exist with user data and null users
- * - getSyllabusAnalytics: full analytics with enrollment data, progress, dropoff
+ * - getBinderWithContent: when binder exists (with weeks and steps)
+ * - getReadersByBinderId: when enrollments exist
+ * - getClassmatesByBinderId: when classmates exist with user data and null users
+ * - getBinderAnalytics: full analytics with enrollment data, progress, dropoff
  *
  * Uses a controllable db mock so sequential db calls return different data.
  */
@@ -47,36 +47,36 @@ describe('DatabaseStorage coverage tests', () => {
     mockDbResult.mockResolvedValue([]);
   });
 
-  describe('getSyllabusWithContent', () => {
-    it('returns syllabus with empty weeks when syllabus found but no weeks', async () => {
-      const mockSyllabus = {
+  describe('getBinderWithContent', () => {
+    it('returns binder with empty weeks when binder found but no weeks', async () => {
+      const mockBinder = {
         id: 1, title: 'Test', description: 'Desc',
         audienceLevel: 'Beginner', durationWeeks: 4,
-        status: 'published', creatorId: 'creator',
+        status: 'published', curatorId: 'curator',
         createdAt: new Date(), updatedAt: new Date(),
-        studentActive: 0, studentsCompleted: 0,
+        readerActive: 0, readersCompleted: 0,
       };
 
-      // First call: getSyllabus select → returns syllabus
-      mockDbResult.mockResolvedValueOnce([mockSyllabus]);
-      // Second call: weeks query → returns empty
+      // First call: getBinder select -> returns binder
+      mockDbResult.mockResolvedValueOnce([mockBinder]);
+      // Second call: weeks query -> returns empty
       mockDbResult.mockResolvedValueOnce([]);
 
-      const result = await storage.getSyllabusWithContent(1);
+      const result = await storage.getBinderWithContent(1);
       expect(result).toBeDefined();
       expect(result!.title).toBe('Test');
       expect(result!.weeks).toEqual([]);
     });
 
-    it('returns syllabus with weeks and steps', async () => {
-      const mockSyllabus = {
+    it('returns binder with weeks and steps', async () => {
+      const mockBinder = {
         id: 1, title: 'Test', description: 'Desc',
         audienceLevel: 'Beginner', durationWeeks: 4,
-        status: 'published', creatorId: 'creator',
+        status: 'published', curatorId: 'curator',
         createdAt: new Date(), updatedAt: new Date(),
-        studentActive: 0, studentsCompleted: 0,
+        readerActive: 0, readersCompleted: 0,
       };
-      const mockWeek = { id: 10, syllabusId: 1, index: 1, title: 'Week 1', description: null };
+      const mockWeek = { id: 10, binderId: 1, index: 1, title: 'Week 1', description: null };
       const mockStep = {
         id: 100, weekId: 10, position: 1, type: 'reading',
         title: 'Read Article', url: null, note: null,
@@ -84,14 +84,14 @@ describe('DatabaseStorage coverage tests', () => {
         promptText: null, estimatedMinutes: null,
       };
 
-      // getSyllabus → syllabus found
-      mockDbResult.mockResolvedValueOnce([mockSyllabus]);
-      // weeks query → returns week
+      // getBinder -> binder found
+      mockDbResult.mockResolvedValueOnce([mockBinder]);
+      // weeks query -> returns week
       mockDbResult.mockResolvedValueOnce([mockWeek]);
-      // steps query for week → returns step
+      // steps query for week -> returns step
       mockDbResult.mockResolvedValueOnce([mockStep]);
 
-      const result = await storage.getSyllabusWithContent(1);
+      const result = await storage.getBinderWithContent(1);
       expect(result).toBeDefined();
       expect(result!.weeks).toHaveLength(1);
       expect(result!.weeks[0].title).toBe('Week 1');
@@ -100,23 +100,23 @@ describe('DatabaseStorage coverage tests', () => {
     });
 
     it('deduplicates weeks with same index, keeping highest ID', async () => {
-      const mockSyllabus = {
+      const mockBinder = {
         id: 1, title: 'Test', description: 'Desc',
         audienceLevel: 'Beginner', durationWeeks: 2,
-        status: 'published', creatorId: 'creator',
+        status: 'published', curatorId: 'curator',
         createdAt: new Date(), updatedAt: new Date(),
-        studentActive: 0, studentsCompleted: 0,
+        readerActive: 0, readersCompleted: 0,
       };
       // Two weeks with the same index (race condition duplicate)
-      const oldWeek = { id: 10, syllabusId: 1, index: 1, title: 'Old Week 1', description: null };
-      const newWeek = { id: 20, syllabusId: 1, index: 1, title: 'New Week 1', description: null };
-      const week2 = { id: 30, syllabusId: 1, index: 2, title: 'Week 2', description: null };
+      const oldWeek = { id: 10, binderId: 1, index: 1, title: 'Old Week 1', description: null };
+      const newWeek = { id: 20, binderId: 1, index: 1, title: 'New Week 1', description: null };
+      const week2 = { id: 30, binderId: 1, index: 2, title: 'Week 2', description: null };
 
-      // getSyllabus → syllabus found
-      mockDbResult.mockResolvedValueOnce([mockSyllabus]);
-      // weeks query → returns duplicates
+      // getBinder -> binder found
+      mockDbResult.mockResolvedValueOnce([mockBinder]);
+      // weeks query -> returns duplicates
       mockDbResult.mockResolvedValueOnce([oldWeek, newWeek, week2]);
-      // steps for newWeek (id=20, kept) → 1 step
+      // steps for newWeek (id=20, kept) -> 1 step
       mockDbResult.mockResolvedValueOnce([{
         id: 100, weekId: 20, position: 1, type: 'reading',
         title: 'New Step', url: null, note: null,
@@ -126,7 +126,7 @@ describe('DatabaseStorage coverage tests', () => {
       // steps for week2 (id=30)
       mockDbResult.mockResolvedValueOnce([]);
 
-      const result = await storage.getSyllabusWithContent(1);
+      const result = await storage.getBinderWithContent(1);
       expect(result).toBeDefined();
       expect(result!.weeks).toHaveLength(2);
       expect(result!.weeks[0].id).toBe(20); // Higher ID kept
@@ -135,17 +135,17 @@ describe('DatabaseStorage coverage tests', () => {
     });
   });
 
-  describe('getLearnersBySyllabusId', () => {
-    it('returns learner data when enrollments exist', async () => {
+  describe('getReadersByBinderId', () => {
+    it('returns reader data when enrollments exist', async () => {
       const mockEnrollment = {
-        id: 1, studentId: 'testuser', syllabusId: 1,
+        id: 1, readerId: 'testuser', binderId: 1,
         status: 'in-progress', currentWeekIndex: 1,
         shareProfile: false, joinedAt: new Date(),
       };
       const mockUser = {
         id: 'user-1', username: 'testuser', name: 'Test User',
         email: 'test@example.com', password: null, replitId: null,
-        googleId: null, appleId: null, isCreator: false,
+        googleId: null, appleId: null, isCurator: false,
         bio: null, expertise: null, avatarUrl: null,
         linkedin: null, website: null, twitter: null, threads: null,
         shareProfile: false, authProvider: 'email',
@@ -156,7 +156,7 @@ describe('DatabaseStorage coverage tests', () => {
       // getUserByUsername for the enrollment
       mockDbResult.mockResolvedValueOnce([mockUser]);
 
-      const result = await storage.getLearnersBySyllabusId(1);
+      const result = await storage.getReadersByBinderId(1);
       expect(result).toHaveLength(1);
       expect(result[0].user).toBeDefined();
       expect(result[0].user.username).toBe('testuser');
@@ -165,17 +165,17 @@ describe('DatabaseStorage coverage tests', () => {
     });
   });
 
-  describe('getClassmatesBySyllabusId', () => {
+  describe('getClassmatesByBinderId', () => {
     it('returns classmates when sharing enrollments exist', async () => {
       const mockEnrollment = {
-        id: 1, studentId: 'testuser', syllabusId: 1,
+        id: 1, readerId: 'testuser', binderId: 1,
         status: 'in-progress', currentWeekIndex: 1,
         shareProfile: true, joinedAt: new Date(),
       };
       const mockUser = {
         id: 'user-1', username: 'testuser', name: 'Test User',
         email: 'test@example.com', password: null, replitId: null,
-        googleId: null, appleId: null, isCreator: false,
+        googleId: null, appleId: null, isCurator: false,
         bio: 'A bio', expertise: null, avatarUrl: null,
         linkedin: 'testuser', website: null, twitter: 'testuser', threads: null,
         shareProfile: true, authProvider: 'email',
@@ -188,7 +188,7 @@ describe('DatabaseStorage coverage tests', () => {
       // getUserByUsername
       mockDbResult.mockResolvedValueOnce([mockUser]);
 
-      const result = await storage.getClassmatesBySyllabusId(1);
+      const result = await storage.getClassmatesByBinderId(1);
       expect(result.totalEnrolled).toBe(3);
       expect(result.classmates).toHaveLength(1);
       expect(result.classmates[0].user.username).toBe('testuser');
@@ -197,7 +197,7 @@ describe('DatabaseStorage coverage tests', () => {
 
     it('filters out null users from classmates', async () => {
       const mockEnrollment = {
-        id: 1, studentId: 'deleteduser', syllabusId: 1,
+        id: 1, readerId: 'deleteduser', binderId: 1,
         status: 'in-progress', currentWeekIndex: 1,
         shareProfile: true, joinedAt: new Date(),
       };
@@ -209,15 +209,15 @@ describe('DatabaseStorage coverage tests', () => {
       // getUserByUsername returns nothing (user deleted)
       mockDbResult.mockResolvedValueOnce([]);
 
-      const result = await storage.getClassmatesBySyllabusId(1);
+      const result = await storage.getClassmatesByBinderId(1);
       expect(result.totalEnrolled).toBe(1);
       expect(result.classmates).toHaveLength(0);
     });
   });
 
-  describe('getSyllabusAnalytics', () => {
-    const mockWeek1 = { id: 10, syllabusId: 1, index: 1, title: 'Week 1', description: null };
-    const mockWeek2 = { id: 20, syllabusId: 1, index: 2, title: 'Week 2', description: null };
+  describe('getBinderAnalytics', () => {
+    const mockWeek1 = { id: 10, binderId: 1, index: 1, title: 'Week 1', description: null };
+    const mockWeek2 = { id: 20, binderId: 1, index: 2, title: 'Week 2', description: null };
     const mockStep1 = {
       id: 100, weekId: 10, position: 1, type: 'reading',
       title: 'Step 1', url: null, note: null, author: null,
@@ -234,14 +234,14 @@ describe('DatabaseStorage coverage tests', () => {
       creationDate: null, mediaType: null, promptText: null, estimatedMinutes: null,
     };
 
-    it('calculates analytics with enrolled learners and progress', async () => {
+    it('calculates analytics with enrolled readers and progress', async () => {
       const enrollment1 = {
-        id: 1, studentId: 'learner1', syllabusId: 1,
+        id: 1, readerId: 'reader1', binderId: 1,
         status: 'in-progress', currentWeekIndex: 1,
         shareProfile: false, joinedAt: new Date(),
       };
       const enrollment2 = {
-        id: 2, studentId: 'learner2', syllabusId: 1,
+        id: 2, readerId: 'reader2', binderId: 1,
         status: 'completed', currentWeekIndex: 2,
         shareProfile: false, joinedAt: new Date(),
       };
@@ -254,19 +254,19 @@ describe('DatabaseStorage coverage tests', () => {
       mockDbResult.mockResolvedValueOnce([mockStep1, mockStep2]);
       // 4. steps for week 2
       mockDbResult.mockResolvedValueOnce([mockStep3]);
-      // 5. getCompletedSteps for enrollment 1 → completed step 100
+      // 5. getCompletedSteps for enrollment 1 -> completed step 100
       mockDbResult.mockResolvedValueOnce([{ stepId: 100 }]);
-      // 6. getUserByUsername for learner1
-      mockDbResult.mockResolvedValueOnce([{ id: 'u1', username: 'learner1', name: 'Learner One' }]);
-      // 7. getCompletedSteps for enrollment 2 → completed all steps
+      // 6. getUserByUsername for reader1
+      mockDbResult.mockResolvedValueOnce([{ id: 'u1', username: 'reader1', name: 'Reader One' }]);
+      // 7. getCompletedSteps for enrollment 2 -> completed all steps
       mockDbResult.mockResolvedValueOnce([{ stepId: 100 }, { stepId: 101 }, { stepId: 200 }]);
-      // 8. getUserByUsername for learner2
-      mockDbResult.mockResolvedValueOnce([{ id: 'u2', username: 'learner2', name: 'Learner Two' }]);
+      // 8. getUserByUsername for reader2
+      mockDbResult.mockResolvedValueOnce([{ id: 'u2', username: 'reader2', name: 'Reader Two' }]);
 
-      const result = await storage.getSyllabusAnalytics(1);
+      const result = await storage.getBinderAnalytics(1);
 
-      expect(result.learnersStarted).toBe(2);
-      expect(result.learnersCompleted).toBe(1);
+      expect(result.readersStarted).toBe(2);
+      expect(result.readersCompleted).toBe(1);
       expect(result.completionRate).toBe(50);
       expect(result.averageProgress).toBeGreaterThan(0);
       expect(result.weekReach).toHaveLength(2);
@@ -274,16 +274,16 @@ describe('DatabaseStorage coverage tests', () => {
     });
 
     it('returns zero stats when no enrollments', async () => {
-      // enrollments query → empty
+      // enrollments query -> empty
       mockDbResult.mockResolvedValueOnce([]);
-      // weeks query → some weeks
+      // weeks query -> some weeks
       mockDbResult.mockResolvedValueOnce([mockWeek1]);
       // steps for week 1
       mockDbResult.mockResolvedValueOnce([mockStep1]);
 
-      const result = await storage.getSyllabusAnalytics(1);
-      expect(result.learnersStarted).toBe(0);
-      expect(result.learnersCompleted).toBe(0);
+      const result = await storage.getBinderAnalytics(1);
+      expect(result.readersStarted).toBe(0);
+      expect(result.readersCompleted).toBe(0);
       expect(result.completionRate).toBe(0);
       expect(result.averageProgress).toBe(0);
       expect(result.topDropoutStep).toBeNull();
@@ -291,12 +291,12 @@ describe('DatabaseStorage coverage tests', () => {
 
     it('identifies top dropout step', async () => {
       const enrollment1 = {
-        id: 1, studentId: 'learner1', syllabusId: 1,
+        id: 1, readerId: 'reader1', binderId: 1,
         status: 'in-progress', currentWeekIndex: 1,
         shareProfile: false, joinedAt: new Date(),
       };
       const enrollment2 = {
-        id: 2, studentId: 'learner2', syllabusId: 1,
+        id: 2, readerId: 'reader2', binderId: 1,
         status: 'in-progress', currentWeekIndex: 1,
         shareProfile: false, joinedAt: new Date(),
       };
@@ -307,26 +307,26 @@ describe('DatabaseStorage coverage tests', () => {
       mockDbResult.mockResolvedValueOnce([mockWeek1]);
       // 3. steps for week 1
       mockDbResult.mockResolvedValueOnce([mockStep1, mockStep2]);
-      // 4. getCompletedSteps for enrollment 1 → completed step 100 only
+      // 4. getCompletedSteps for enrollment 1 -> completed step 100 only
       mockDbResult.mockResolvedValueOnce([{ stepId: 100 }]);
-      // 5. getUserByUsername for learner1
-      mockDbResult.mockResolvedValueOnce([{ id: 'u1', username: 'learner1', name: 'Learner One' }]);
-      // 6. getCompletedSteps for enrollment 2 → completed step 100 only
+      // 5. getUserByUsername for reader1
+      mockDbResult.mockResolvedValueOnce([{ id: 'u1', username: 'reader1', name: 'Reader One' }]);
+      // 6. getCompletedSteps for enrollment 2 -> completed step 100 only
       mockDbResult.mockResolvedValueOnce([{ stepId: 100 }]);
-      // 7. getUserByUsername for learner2
-      mockDbResult.mockResolvedValueOnce([{ id: 'u2', username: 'learner2', name: 'Learner Two' }]);
+      // 7. getUserByUsername for reader2
+      mockDbResult.mockResolvedValueOnce([{ id: 'u2', username: 'reader2', name: 'Reader Two' }]);
 
-      const result = await storage.getSyllabusAnalytics(1);
+      const result = await storage.getBinderAnalytics(1);
 
-      // Both learners completed step 100 but not step 101
+      // Both readers completed step 100 but not step 101
       expect(result.topDropoutStep).not.toBeNull();
       expect(result.topDropoutStep!.stepTitle).toBe('Step 2');
       expect(result.topDropoutStep!.dropoffRate).toBe(100);
     });
 
-    it('handles learner with no username match', async () => {
+    it('handles reader with no username match', async () => {
       const enrollment = {
-        id: 1, studentId: 'ghost', syllabusId: 1,
+        id: 1, readerId: 'ghost', binderId: 1,
         status: 'in-progress', currentWeekIndex: 1,
         shareProfile: false, joinedAt: new Date(),
       };
@@ -337,20 +337,20 @@ describe('DatabaseStorage coverage tests', () => {
       mockDbResult.mockResolvedValueOnce([mockWeek1]);
       // steps for week 1
       mockDbResult.mockResolvedValueOnce([mockStep1]);
-      // getCompletedSteps → empty
+      // getCompletedSteps -> empty
       mockDbResult.mockResolvedValueOnce([]);
-      // getUserByUsername → not found
+      // getUserByUsername -> not found
       mockDbResult.mockResolvedValueOnce([]);
 
-      const result = await storage.getSyllabusAnalytics(1);
-      expect(result.learnersStarted).toBe(1);
-      // Learner name falls back to studentId
-      expect(result.weekReach[0].learnerNames).toContain('ghost');
+      const result = await storage.getBinderAnalytics(1);
+      expect(result.readersStarted).toBe(1);
+      // Reader name falls back to readerId
+      expect(result.weekReach[0].readerNames).toContain('ghost');
     });
 
     it('handles null currentWeekIndex with default to 1', async () => {
       const enrollment = {
-        id: 1, studentId: 'learner1', syllabusId: 1,
+        id: 1, readerId: 'reader1', binderId: 1,
         status: 'in-progress', currentWeekIndex: null,
         shareProfile: false, joinedAt: new Date(),
       };
@@ -364,11 +364,11 @@ describe('DatabaseStorage coverage tests', () => {
       // completed steps
       mockDbResult.mockResolvedValueOnce([]);
       // getUserByUsername
-      mockDbResult.mockResolvedValueOnce([{ id: 'u1', username: 'learner1', name: 'L1' }]);
+      mockDbResult.mockResolvedValueOnce([{ id: 'u1', username: 'reader1', name: 'R1' }]);
 
-      const result = await storage.getSyllabusAnalytics(1);
-      // With null currentWeekIndex, default is 1, so learner should be at week 1
-      expect(result.weekReach[0].learnerNames).toContain('L1');
+      const result = await storage.getBinderAnalytics(1);
+      // With null currentWeekIndex, default is 1, so reader should be at week 1
+      expect(result.weekReach[0].readerNames).toContain('R1');
     });
   });
 });

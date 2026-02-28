@@ -95,8 +95,8 @@ export default function Login() {
 
       await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       toast({ title: 'Welcome back!', description: 'You have successfully logged in.' });
-      const redirectTarget = sessionStorage.getItem('syllabind_returnTo') || returnTo;
-      sessionStorage.removeItem('syllabind_returnTo');
+      const redirectTarget = sessionStorage.getItem('binder_returnTo') || returnTo;
+      sessionStorage.removeItem('binder_returnTo');
       setLocation(redirectTarget);
     } catch (error: any) {
       toast({
@@ -110,7 +110,7 @@ export default function Login() {
   };
 
   const handleGoogleAuth = () => {
-    sessionStorage.setItem('syllabind_returnTo', returnTo);
+    sessionStorage.setItem('binder_returnTo', returnTo);
     window.location.href = `/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`;
   };
 

@@ -3,7 +3,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { registerRoutes } from '../routes';
 import { storage } from '../storage';
-import { resetAllMocks, mockUser, mockCreator, mockProUser } from './setup/mocks';
+import { resetAllMocks, mockUser, mockCurator, mockProUser } from './setup/mocks';
 
 // Cast storage to jest mocks for type convenience
 const mockStorage = storage as unknown as Record<string, jest.Mock>;
@@ -57,11 +57,11 @@ describe('Routes Integration (real registerRoutes)', () => {
 
     it('returns full profile when shareProfile is true', async () => {
       mockStorage.getUserByUsername.mockResolvedValue({
-        ...mockCreator, password: 'hashed', shareProfile: true
+        ...mockCurator, password: 'hashed', shareProfile: true
       });
-      const res = await request(app).get('/api/users/testcreator');
+      const res = await request(app).get('/api/users/testcurator');
       expect(res.status).toBe(200);
-      expect(res.body.bio).toBe('Test creator bio');
+      expect(res.body.bio).toBe('Test curator bio');
       expect(res.body.password).toBeUndefined();
       expect(res.body.email).toBeUndefined();
     });
@@ -91,227 +91,227 @@ describe('Routes Integration (real registerRoutes)', () => {
     });
   });
 
-  describe('POST /api/users/me/toggle-creator', () => {
+  describe('POST /api/users/me/toggle-curator', () => {
     it('returns 401 when not authenticated', async () => {
-      const res = await request(app).post('/api/users/me/toggle-creator');
+      const res = await request(app).post('/api/users/me/toggle-curator');
       expect(res.status).toBe(401);
     });
 
-    it('toggles creator flag', async () => {
+    it('toggles curator flag', async () => {
       const authed = await createAuthedApp(mockUser);
-      mockStorage.getUser.mockResolvedValue({ ...mockUser, password: 'h', isCreator: false });
-      mockStorage.updateUser.mockResolvedValue({ ...mockUser, isCreator: true, password: 'h' });
+      mockStorage.getUser.mockResolvedValue({ ...mockUser, password: 'h', isCurator: false });
+      mockStorage.updateUser.mockResolvedValue({ ...mockUser, isCurator: true, password: 'h' });
 
-      const res = await request(authed).post('/api/users/me/toggle-creator');
+      const res = await request(authed).post('/api/users/me/toggle-curator');
       expect(res.status).toBe(200);
-      expect(res.body.isCreator).toBe(true);
+      expect(res.body.isCurator).toBe(true);
     });
 
     it('returns 404 if user not found', async () => {
       const authed = await createAuthedApp(mockUser);
       mockStorage.getUser.mockResolvedValue(null);
-      const res = await request(authed).post('/api/users/me/toggle-creator');
+      const res = await request(authed).post('/api/users/me/toggle-curator');
       expect(res.status).toBe(404);
     });
   });
 
-  // ========== SYLLABUS ROUTES ==========
+  // ========== BINDER ROUTES ==========
 
-  describe('GET /api/syllabinds', () => {
-    it('returns all published syllabinds', async () => {
-      const syllabinds = [{ id: 1, title: 'Test' }];
-      mockStorage.listSyllabinds.mockResolvedValue(syllabinds);
-      const res = await request(app).get('/api/syllabinds');
+  describe('GET /api/binders', () => {
+    it('returns all published binders', async () => {
+      const binders = [{ id: 1, title: 'Test' }];
+      mockStorage.listBinders.mockResolvedValue(binders);
+      const res = await request(app).get('/api/binders');
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(syllabinds);
+      expect(res.body).toEqual(binders);
     });
   });
 
-  describe('GET /api/syllabinds/:id', () => {
-    it('returns syllabus with content', async () => {
+  describe('GET /api/binders/:id', () => {
+    it('returns binder with content', async () => {
       const data = { id: 1, title: 'Test', weeks: [] };
-      mockStorage.getSyllabusWithContent.mockResolvedValue(data);
-      const res = await request(app).get('/api/syllabinds/1');
+      mockStorage.getBinderWithContent.mockResolvedValue(data);
+      const res = await request(app).get('/api/binders/1');
       expect(res.status).toBe(200);
       expect(res.body.title).toBe('Test');
     });
 
     it('returns 404 when not found', async () => {
-      mockStorage.getSyllabusWithContent.mockResolvedValue(null);
-      const res = await request(app).get('/api/syllabinds/999');
+      mockStorage.getBinderWithContent.mockResolvedValue(null);
+      const res = await request(app).get('/api/binders/999');
       expect(res.status).toBe(404);
     });
   });
 
-  describe('PUT /api/syllabinds/:id', () => {
+  describe('PUT /api/binders/:id', () => {
     it('returns 401 when not authenticated', async () => {
-      const res = await request(app).put('/api/syllabinds/1').send({ title: 'X' });
+      const res = await request(app).put('/api/binders/1').send({ title: 'X' });
       expect(res.status).toBe(401);
     });
 
-    it('returns 403 when non-creator edits', async () => {
+    it('returns 403 when non-curator edits', async () => {
       const authed = await createAuthedApp(mockUser);
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'other' });
-      const res = await request(authed).put('/api/syllabinds/1').send({ title: 'X' });
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: 'other' });
+      const res = await request(authed).put('/api/binders/1').send({ title: 'X' });
       expect(res.status).toBe(403);
     });
 
-    it('updates syllabus when authorized', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
-      mockStorage.updateSyllabus.mockResolvedValue({ id: 1, title: 'Updated' });
-      const res = await request(authed).put('/api/syllabinds/1').send({ title: 'Updated' });
+    it('updates binder when authorized', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username });
+      mockStorage.updateBinder.mockResolvedValue({ id: 1, title: 'Updated' });
+      const res = await request(authed).put('/api/binders/1').send({ title: 'Updated' });
       expect(res.status).toBe(200);
       expect(res.body.title).toBe('Updated');
     });
 
-    it('returns 404 when syllabus not found', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus.mockResolvedValue(null);
-      const res = await request(authed).put('/api/syllabinds/1').send({ title: 'X' });
+    it('returns 404 when binder not found', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue(null);
+      const res = await request(authed).put('/api/binders/1').send({ title: 'X' });
       expect(res.status).toBe(404);
     });
   });
 
-  describe('DELETE /api/syllabinds/:id', () => {
+  describe('DELETE /api/binders/:id', () => {
     it('returns 401 when not authenticated', async () => {
-      const res = await request(app).delete('/api/syllabinds/1');
+      const res = await request(app).delete('/api/binders/1');
       expect(res.status).toBe(401);
     });
 
     it('deletes when authorized', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
-      mockStorage.deleteSyllabus.mockResolvedValue(undefined);
-      const res = await request(authed).delete('/api/syllabinds/1');
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username });
+      mockStorage.deleteBinder.mockResolvedValue(undefined);
+      const res = await request(authed).delete('/api/binders/1');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
     it('returns 403 when not owner', async () => {
       const authed = await createAuthedApp(mockUser);
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'other' });
-      const res = await request(authed).delete('/api/syllabinds/1');
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: 'other' });
+      const res = await request(authed).delete('/api/binders/1');
       expect(res.status).toBe(403);
     });
   });
 
-  describe('POST /api/syllabinds/batch-delete', () => {
+  describe('POST /api/binders/batch-delete', () => {
     it('returns 400 for empty ids', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      const res = await request(authed).post('/api/syllabinds/batch-delete').send({ ids: [] });
+      const authed = await createAuthedApp(mockCurator);
+      const res = await request(authed).post('/api/binders/batch-delete').send({ ids: [] });
       expect(res.status).toBe(400);
     });
 
-    it('deletes owned syllabinds', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
-      mockStorage.batchDeleteSyllabinds.mockResolvedValue(undefined);
-      const res = await request(authed).post('/api/syllabinds/batch-delete').send({ ids: [1] });
+    it('deletes owned binders', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username });
+      mockStorage.batchDeleteBinders.mockResolvedValue(undefined);
+      const res = await request(authed).post('/api/binders/batch-delete').send({ ids: [1] });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
-    it('returns 403 if any syllabus not owned', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus
-        .mockResolvedValueOnce({ id: 1, creatorId: mockCreator.username })
-        .mockResolvedValueOnce({ id: 2, creatorId: 'other' });
-      const res = await request(authed).post('/api/syllabinds/batch-delete').send({ ids: [1, 2] });
+    it('returns 403 if any binder not owned', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder
+        .mockResolvedValueOnce({ id: 1, curatorId: mockCurator.username })
+        .mockResolvedValueOnce({ id: 2, curatorId: 'other' });
+      const res = await request(authed).post('/api/binders/batch-delete').send({ ids: [1, 2] });
       expect(res.status).toBe(403);
     });
   });
 
-  describe('POST /api/syllabinds', () => {
+  describe('POST /api/binders', () => {
     it('returns 401 when not authenticated', async () => {
-      const res = await request(app).post('/api/syllabinds').send({});
+      const res = await request(app).post('/api/binders').send({});
       expect(res.status).toBe(401);
     });
 
-    it('returns 403 when user is not creator', async () => {
-      const authed = await createAuthedApp({ ...mockUser, isCreator: false });
-      const res = await request(authed).post('/api/syllabinds').send({
+    it('returns 403 when user is not curator', async () => {
+      const authed = await createAuthedApp({ ...mockUser, isCurator: false });
+      const res = await request(authed).post('/api/binders').send({
         title: 'X', description: 'Y', audienceLevel: 'Beginner', durationWeeks: 4
       });
       expect(res.status).toBe(403);
     });
 
-    it('creates syllabus when authorized creator', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      const syllabusData = { title: 'New', description: 'Desc', audienceLevel: 'Beginner', durationWeeks: 4, status: 'draft' };
-      mockStorage.createSyllabus.mockResolvedValue({ id: 1, ...syllabusData });
-      const res = await request(authed).post('/api/syllabinds').send(syllabusData);
+    it('creates binder when authorized curator', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      const binderData = { title: 'New', description: 'Desc', audienceLevel: 'Beginner', durationWeeks: 4, status: 'draft' };
+      mockStorage.createBinder.mockResolvedValue({ id: 1, ...binderData });
+      const res = await request(authed).post('/api/binders').send(binderData);
       expect(res.status).toBe(200);
       expect(res.body.title).toBe('New');
     });
   });
 
-  describe('GET /api/creator/syllabinds', () => {
+  describe('GET /api/curator/binders', () => {
     it('returns 401 when not authenticated', async () => {
-      const res = await request(app).get('/api/creator/syllabinds');
+      const res = await request(app).get('/api/curator/binders');
       expect(res.status).toBe(401);
     });
 
-    it('returns 403 when not a creator', async () => {
-      const authed = await createAuthedApp({ ...mockUser, isCreator: false });
-      const res = await request(authed).get('/api/creator/syllabinds');
+    it('returns 403 when not a curator', async () => {
+      const authed = await createAuthedApp({ ...mockUser, isCurator: false });
+      const res = await request(authed).get('/api/curator/binders');
       expect(res.status).toBe(403);
     });
 
-    it('returns syllabinds for creator', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      const syllabinds = [{ id: 1, title: 'Mine' }];
-      mockStorage.getSyllabindsByCreator.mockResolvedValue(syllabinds);
-      const res = await request(authed).get('/api/creator/syllabinds');
+    it('returns binders for curator', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      const binders = [{ id: 1, title: 'Mine' }];
+      mockStorage.getBindersByCurator.mockResolvedValue(binders);
+      const res = await request(authed).get('/api/curator/binders');
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(syllabinds);
+      expect(res.body).toEqual(binders);
     });
   });
 
-  describe('GET /api/syllabinds/:id/learners', () => {
-    it('returns learners for owned syllabus', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
-      mockStorage.getLearnersBySyllabusId.mockResolvedValue([{ user: mockUser }]);
-      const res = await request(authed).get('/api/syllabinds/1/learners');
+  describe('GET /api/binders/:id/readers', () => {
+    it('returns readers for owned binder', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username });
+      mockStorage.getReadersByBinderId.mockResolvedValue([{ user: mockUser }]);
+      const res = await request(authed).get('/api/binders/1/readers');
       expect(res.status).toBe(200);
       expect(res.body.length).toBe(1);
     });
 
     it('returns 403 for non-owner', async () => {
       const authed = await createAuthedApp(mockUser);
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'other' });
-      const res = await request(authed).get('/api/syllabinds/1/learners');
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: 'other' });
+      const res = await request(authed).get('/api/binders/1/readers');
       expect(res.status).toBe(403);
     });
   });
 
-  describe('GET /api/syllabinds/:id/classmates', () => {
+  describe('GET /api/binders/:id/classmates', () => {
     it('returns classmates (public route)', async () => {
-      mockStorage.getClassmatesBySyllabusId.mockResolvedValue({ classmates: [], totalEnrolled: 5 });
-      const res = await request(app).get('/api/syllabinds/1/classmates');
+      mockStorage.getClassmatesByBinderId.mockResolvedValue({ classmates: [], totalEnrolled: 5 });
+      const res = await request(app).get('/api/binders/1/classmates');
       expect(res.status).toBe(200);
       expect(res.body.totalEnrolled).toBe(5);
     });
   });
 
-  describe('POST /api/syllabinds/:id/publish', () => {
+  describe('POST /api/binders/:id/publish', () => {
     it('toggles publish status', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username, status: 'draft' });
-      mockStorage.updateSyllabus.mockResolvedValue({ id: 1, status: 'published' });
-      const res = await request(authed).post('/api/syllabinds/1/publish');
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username, status: 'draft' });
+      mockStorage.updateBinder.mockResolvedValue({ id: 1, status: 'published' });
+      const res = await request(authed).post('/api/binders/1/publish');
       expect(res.status).toBe(200);
-      expect(mockStorage.updateSyllabus).toHaveBeenCalledWith(1, { status: 'published', visibility: 'public' });
+      expect(mockStorage.updateBinder).toHaveBeenCalledWith(1, { status: 'published', visibility: 'public' });
     });
 
     it('unpublishes when already published', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username, status: 'published' });
-      mockStorage.updateSyllabus.mockResolvedValue({ id: 1, status: 'draft' });
-      const res = await request(authed).post('/api/syllabinds/1/publish');
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username, status: 'published' });
+      mockStorage.updateBinder.mockResolvedValue({ id: 1, status: 'draft' });
+      const res = await request(authed).post('/api/binders/1/publish');
       expect(res.status).toBe(200);
-      expect(mockStorage.updateSyllabus).toHaveBeenCalledWith(1, { status: 'draft', visibility: 'public' });
+      expect(mockStorage.updateBinder).toHaveBeenCalledWith(1, { status: 'draft', visibility: 'public' });
     });
   });
 
@@ -325,7 +325,7 @@ describe('Routes Integration (real registerRoutes)', () => {
 
     it('returns user enrollments', async () => {
       const authed = await createAuthedApp(mockUser);
-      const enrollments = [{ id: 1, syllabusId: 1, status: 'in-progress' }];
+      const enrollments = [{ id: 1, binderId: 1, status: 'in-progress' }];
       mockStorage.getUserEnrollments.mockResolvedValue(enrollments);
       const res = await request(authed).get('/api/enrollments');
       expect(res.status).toBe(200);
@@ -338,9 +338,9 @@ describe('Routes Integration (real registerRoutes)', () => {
       const authed = await createAuthedApp(mockProUser);
       mockStorage.getEnrollment.mockResolvedValue(null);
       mockStorage.dropActiveEnrollments.mockResolvedValue(undefined);
-      mockStorage.createEnrollment.mockResolvedValue({ id: 1, syllabusId: 1, status: 'in-progress' });
+      mockStorage.createEnrollment.mockResolvedValue({ id: 1, binderId: 1, status: 'in-progress' });
       const res = await request(authed).post('/api/enrollments').send({
-        syllabusId: 1, status: 'in-progress', shareProfile: false
+        binderId: 1, status: 'in-progress', shareProfile: false
       });
       expect(res.status).toBe(200);
       expect(res.body.id).toBe(1);
@@ -349,7 +349,7 @@ describe('Routes Integration (real registerRoutes)', () => {
     it('returns 403 for free user (subscription required)', async () => {
       const authed = await createAuthedApp(mockUser);
       const res = await request(authed).post('/api/enrollments').send({
-        syllabusId: 1, status: 'in-progress'
+        binderId: 1, status: 'in-progress'
       });
       expect(res.status).toBe(403);
       expect(res.body.error).toBe('SUBSCRIPTION_REQUIRED');
@@ -359,7 +359,7 @@ describe('Routes Integration (real registerRoutes)', () => {
       const authed = await createAuthedApp(mockProUser);
       mockStorage.getEnrollment.mockResolvedValue({ id: 1, status: 'in-progress' });
       const res = await request(authed).post('/api/enrollments').send({
-        syllabusId: 1, status: 'in-progress'
+        binderId: 1, status: 'in-progress'
       });
       expect(res.status).toBe(409);
     });
@@ -370,7 +370,7 @@ describe('Routes Integration (real registerRoutes)', () => {
       mockStorage.dropActiveEnrollments.mockResolvedValue(undefined);
       mockStorage.updateEnrollment.mockResolvedValue({ id: 1, status: 'in-progress' });
       const res = await request(authed).post('/api/enrollments').send({
-        syllabusId: 1, status: 'in-progress'
+        binderId: 1, status: 'in-progress'
       });
       expect(res.status).toBe(200);
     });
@@ -379,15 +379,15 @@ describe('Routes Integration (real registerRoutes)', () => {
   describe('PUT /api/enrollments/:id', () => {
     it('updates enrollment when authorized', async () => {
       const authed = await createAuthedApp(mockUser);
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: mockUser.username });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: mockUser.username });
       mockStorage.updateEnrollment.mockResolvedValue({ id: 1, currentWeekIndex: 2 });
       const res = await request(authed).put('/api/enrollments/1').send({ currentWeekIndex: 2 });
       expect(res.status).toBe(200);
     });
 
-    it('returns 403 when not the student', async () => {
+    it('returns 403 when not the reader', async () => {
       const authed = await createAuthedApp(mockUser);
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: 'other' });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: 'other' });
       const res = await request(authed).put('/api/enrollments/1').send({ currentWeekIndex: 2 });
       expect(res.status).toBe(403);
     });
@@ -403,7 +403,7 @@ describe('Routes Integration (real registerRoutes)', () => {
   describe('PATCH /api/enrollments/:id/share-profile', () => {
     it('toggles shareProfile', async () => {
       const authed = await createAuthedApp(mockUser);
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: mockUser.username });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: mockUser.username });
       mockStorage.updateEnrollmentShareProfile.mockResolvedValue({ id: 1, shareProfile: true });
       const res = await request(authed)
         .patch('/api/enrollments/1/share-profile')
@@ -413,7 +413,7 @@ describe('Routes Integration (real registerRoutes)', () => {
 
     it('returns 400 for non-boolean shareProfile', async () => {
       const authed = await createAuthedApp(mockUser);
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: mockUser.username });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: mockUser.username });
       const res = await request(authed)
         .patch('/api/enrollments/1/share-profile')
         .send({ shareProfile: 'yes' });
@@ -444,11 +444,11 @@ describe('Routes Integration (real registerRoutes)', () => {
   });
 
   describe('PUT /api/submissions/:id/feedback', () => {
-    it('adds feedback when creator owns syllabus', async () => {
-      const authed = await createAuthedApp(mockCreator);
+    it('adds feedback when curator owns binder', async () => {
+      const authed = await createAuthedApp(mockCurator);
       mockStorage.getSubmission.mockResolvedValue({ id: 1, enrollmentId: 1 });
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, syllabusId: 1 });
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, binderId: 1 });
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username });
       mockStorage.updateSubmissionFeedback.mockResolvedValue({ id: 1, feedback: 'Good' });
       const res = await request(authed)
         .put('/api/submissions/1/feedback')
@@ -457,7 +457,7 @@ describe('Routes Integration (real registerRoutes)', () => {
     });
 
     it('returns 404 when submission not found', async () => {
-      const authed = await createAuthedApp(mockCreator);
+      const authed = await createAuthedApp(mockCurator);
       mockStorage.getSubmission.mockResolvedValue(null);
       const res = await request(authed)
         .put('/api/submissions/999/feedback')
@@ -465,11 +465,11 @@ describe('Routes Integration (real registerRoutes)', () => {
       expect(res.status).toBe(404);
     });
 
-    it('returns 403 when not syllabus owner', async () => {
-      const authed = await createAuthedApp(mockCreator);
+    it('returns 403 when not binder owner', async () => {
+      const authed = await createAuthedApp(mockCurator);
       mockStorage.getSubmission.mockResolvedValue({ id: 1, enrollmentId: 1 });
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, syllabusId: 1 });
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'other' });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, binderId: 1 });
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: 'other' });
       const res = await request(authed)
         .put('/api/submissions/1/feedback')
         .send({ feedback: 'X' });
@@ -481,10 +481,10 @@ describe('Routes Integration (real registerRoutes)', () => {
 
   describe('DELETE /api/steps/:id', () => {
     it('deletes step when authorized', async () => {
-      const authed = await createAuthedApp(mockCreator);
+      const authed = await createAuthedApp(mockCurator);
       mockStorage.getStep.mockResolvedValue({ id: 1, weekId: 10 });
-      mockStorage.getWeek.mockResolvedValue({ id: 10, syllabusId: 1 });
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
+      mockStorage.getWeek.mockResolvedValue({ id: 10, binderId: 1 });
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username });
       mockStorage.deleteStep.mockResolvedValue(undefined);
       const res = await request(authed).delete('/api/steps/1');
       expect(res.status).toBe(200);
@@ -492,17 +492,17 @@ describe('Routes Integration (real registerRoutes)', () => {
     });
 
     it('returns 404 when step not found', async () => {
-      const authed = await createAuthedApp(mockCreator);
+      const authed = await createAuthedApp(mockCurator);
       mockStorage.getStep.mockResolvedValue(null);
       const res = await request(authed).delete('/api/steps/999');
       expect(res.status).toBe(404);
     });
 
     it('returns 403 when not owner', async () => {
-      const authed = await createAuthedApp(mockCreator);
+      const authed = await createAuthedApp(mockCurator);
       mockStorage.getStep.mockResolvedValue({ id: 1, weekId: 10 });
-      mockStorage.getWeek.mockResolvedValue({ id: 10, syllabusId: 1 });
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'other' });
+      mockStorage.getWeek.mockResolvedValue({ id: 10, binderId: 1 });
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: 'other' });
       const res = await request(authed).delete('/api/steps/1');
       expect(res.status).toBe(403);
     });
@@ -513,7 +513,7 @@ describe('Routes Integration (real registerRoutes)', () => {
   describe('POST /api/enrollments/:enrollmentId/steps/:stepId/complete', () => {
     it('marks step complete', async () => {
       const authed = await createAuthedApp(mockUser);
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: mockUser.username });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: mockUser.username });
       mockStorage.markStepCompleted.mockResolvedValue({ enrollmentId: 1, stepId: 5 });
       const res = await request(authed).post('/api/enrollments/1/steps/5/complete');
       expect(res.status).toBe(200);
@@ -521,7 +521,7 @@ describe('Routes Integration (real registerRoutes)', () => {
 
     it('returns 403 when not authorized', async () => {
       const authed = await createAuthedApp(mockUser);
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: 'other' });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: 'other' });
       const res = await request(authed).post('/api/enrollments/1/steps/5/complete');
       expect(res.status).toBe(403);
     });
@@ -530,7 +530,7 @@ describe('Routes Integration (real registerRoutes)', () => {
   describe('DELETE /api/enrollments/:enrollmentId/steps/:stepId/complete', () => {
     it('marks step incomplete', async () => {
       const authed = await createAuthedApp(mockUser);
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: mockUser.username });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: mockUser.username });
       mockStorage.markStepIncomplete.mockResolvedValue(undefined);
       const res = await request(authed).delete('/api/enrollments/1/steps/5/complete');
       expect(res.status).toBe(200);
@@ -540,7 +540,7 @@ describe('Routes Integration (real registerRoutes)', () => {
   describe('GET /api/enrollments/:enrollmentId/completed-steps', () => {
     it('returns completed step IDs', async () => {
       const authed = await createAuthedApp(mockUser);
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: mockUser.username });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: mockUser.username });
       mockStorage.getCompletedSteps.mockResolvedValue([1, 2, 3]);
       const res = await request(authed).get('/api/enrollments/1/completed-steps');
       expect(res.status).toBe(200);
@@ -549,7 +549,7 @@ describe('Routes Integration (real registerRoutes)', () => {
 
     it('returns 403 when not authorized', async () => {
       const authed = await createAuthedApp(mockUser);
-      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, studentId: 'other' });
+      mockStorage.getEnrollmentById.mockResolvedValue({ id: 1, readerId: 'other' });
       const res = await request(authed).get('/api/enrollments/1/completed-steps');
       expect(res.status).toBe(403);
     });
@@ -557,89 +557,89 @@ describe('Routes Integration (real registerRoutes)', () => {
 
   // ========== ANALYTICS ==========
 
-  describe('GET /api/syllabinds/:id/analytics', () => {
-    it('returns analytics for creator', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
-      mockStorage.getSyllabusAnalytics.mockResolvedValue({ learnersStarted: 5 });
-      const res = await request(authed).get('/api/syllabinds/1/analytics');
+  describe('GET /api/binders/:id/analytics', () => {
+    it('returns analytics for curator', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username });
+      mockStorage.getBinderAnalytics.mockResolvedValue({ readersStarted: 5 });
+      const res = await request(authed).get('/api/binders/1/analytics');
       expect(res.status).toBe(200);
-      expect(res.body.learnersStarted).toBe(5);
+      expect(res.body.readersStarted).toBe(5);
     });
 
-    it('returns 403 for non-creator', async () => {
+    it('returns 403 for non-curator', async () => {
       const authed = await createAuthedApp(mockUser);
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: 'other' });
-      const res = await request(authed).get('/api/syllabinds/1/analytics');
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: 'other' });
+      const res = await request(authed).get('/api/binders/1/analytics');
       expect(res.status).toBe(403);
     });
   });
 
-  describe('GET /api/syllabinds/:id/analytics/completion-rates', () => {
-    it('returns completion rates for creator', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
+  describe('GET /api/binders/:id/analytics/completion-rates', () => {
+    it('returns completion rates for curator', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username });
       mockStorage.getStepCompletionRates.mockResolvedValue([{ stepId: 1, completionRate: 50 }]);
-      const res = await request(authed).get('/api/syllabinds/1/analytics/completion-rates');
+      const res = await request(authed).get('/api/binders/1/analytics/completion-rates');
       expect(res.status).toBe(200);
     });
   });
 
-  describe('GET /api/syllabinds/:id/analytics/completion-times', () => {
-    it('returns completion times for creator', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus.mockResolvedValue({ id: 1, creatorId: mockCreator.username });
+  describe('GET /api/binders/:id/analytics/completion-times', () => {
+    it('returns completion times for curator', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username });
       mockStorage.getAverageCompletionTimes.mockResolvedValue([{ stepId: 1, avgMinutes: 30 }]);
-      const res = await request(authed).get('/api/syllabinds/1/analytics/completion-times');
+      const res = await request(authed).get('/api/binders/1/analytics/completion-times');
       expect(res.status).toBe(200);
     });
   });
 
   // ========== AI GENERATION ==========
 
-  describe('POST /api/generate-syllabind', () => {
-    it('returns 403 when not creator', async () => {
-      const authed = await createAuthedApp({ ...mockUser, isCreator: false });
-      const res = await request(authed).post('/api/generate-syllabind').send({ syllabusId: 1 });
+  describe('POST /api/generate-binder', () => {
+    it('returns 403 when not curator', async () => {
+      const authed = await createAuthedApp({ ...mockUser, isCurator: false });
+      const res = await request(authed).post('/api/generate-binder').send({ binderId: 1 });
       expect(res.status).toBe(403);
     });
 
-    it('returns 400 when syllabusId missing', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      const res = await request(authed).post('/api/generate-syllabind').send({});
+    it('returns 400 when binderId missing', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      const res = await request(authed).post('/api/generate-binder').send({});
       expect(res.status).toBe(400);
     });
 
     it('returns 400 when basics not complete', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus.mockResolvedValue({
-        id: 1, creatorId: mockCreator.username, title: 'T', description: null
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({
+        id: 1, curatorId: mockCurator.username, title: 'T', description: null
       });
-      const res = await request(authed).post('/api/generate-syllabind').send({ syllabusId: 1 });
+      const res = await request(authed).post('/api/generate-binder').send({ binderId: 1 });
       expect(res.status).toBe(400);
     });
 
     it('returns websocket URL when valid', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus.mockResolvedValue({
-        id: 1, creatorId: mockCreator.username,
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({
+        id: 1, curatorId: mockCurator.username,
         title: 'T', description: 'D', audienceLevel: 'Beginner', durationWeeks: 4
       });
-      mockStorage.updateSyllabus.mockResolvedValue(undefined);
-      const res = await request(authed).post('/api/generate-syllabind').send({ syllabusId: 1 });
+      mockStorage.updateBinder.mockResolvedValue(undefined);
+      const res = await request(authed).post('/api/generate-binder').send({ binderId: 1 });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.websocketUrl).toContain('/ws/generate-syllabind');
+      expect(res.body.websocketUrl).toContain('/ws/generate-binder');
     });
 
     it('returns 409 when generation already in progress', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus.mockResolvedValue({
-        id: 1, creatorId: mockCreator.username,
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({
+        id: 1, curatorId: mockCurator.username,
         title: 'T', description: 'D', audienceLevel: 'Beginner', durationWeeks: 4,
         status: 'generating'
       });
-      const res = await request(authed).post('/api/generate-syllabind').send({ syllabusId: 1 });
+      const res = await request(authed).post('/api/generate-binder').send({ binderId: 1 });
       expect(res.status).toBe(409);
       expect(res.body.error).toBe('Generation already in progress');
     });
@@ -647,27 +647,27 @@ describe('Routes Integration (real registerRoutes)', () => {
 
   describe('POST /api/regenerate-week', () => {
     it('returns 400 for invalid weekIndex', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      const res = await request(authed).post('/api/regenerate-week').send({ syllabusId: 1, weekIndex: 0 });
+      const authed = await createAuthedApp(mockCurator);
+      const res = await request(authed).post('/api/regenerate-week').send({ binderId: 1, weekIndex: 0 });
       expect(res.status).toBe(400);
     });
 
     it('returns websocket URL for valid request', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus.mockResolvedValue({
-        id: 1, creatorId: mockCreator.username, durationWeeks: 4
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({
+        id: 1, curatorId: mockCurator.username, durationWeeks: 4
       });
-      const res = await request(authed).post('/api/regenerate-week').send({ syllabusId: 1, weekIndex: 2 });
+      const res = await request(authed).post('/api/regenerate-week').send({ binderId: 1, weekIndex: 2 });
       expect(res.status).toBe(200);
       expect(res.body.websocketUrl).toContain('/ws/regenerate-week');
     });
 
     it('returns 400 when weekIndex exceeds duration', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabus.mockResolvedValue({
-        id: 1, creatorId: mockCreator.username, durationWeeks: 2
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({
+        id: 1, curatorId: mockCurator.username, durationWeeks: 2
       });
-      const res = await request(authed).post('/api/regenerate-week').send({ syllabusId: 1, weekIndex: 5 });
+      const res = await request(authed).post('/api/regenerate-week').send({ binderId: 1, weekIndex: 5 });
       expect(res.status).toBe(400);
     });
   });

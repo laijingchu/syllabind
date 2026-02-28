@@ -3,7 +3,7 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { WebSocketServer } from 'ws';
-import { handleGenerateSyllabindWS, handleRegenerateWeekWS } from './websocket/generateSyllabind';
+import { handleGenerateBinderWS, handleRegenerateWeekWS } from './websocket/generateBinder';
 import { authenticateWebSocket } from './auth';
 import { storage } from './storage';
 
@@ -137,49 +137,49 @@ app.use((req, res, next) => {
       return;
     }
 
-    // Parse syllabusId from URL for ownership check
-    let syllabusId: number | undefined;
-    if (url?.startsWith('/ws/generate-syllabind/')) {
+    // Parse binderId from URL for ownership check
+    let binderId: number | undefined;
+    if (url?.startsWith('/ws/generate-binder/')) {
       const urlObj = new URL(url, 'http://localhost');
       const pathParts = urlObj.pathname.split('/');
-      syllabusId = parseInt(pathParts[pathParts.length - 1] || '');
+      binderId = parseInt(pathParts[pathParts.length - 1] || '');
     } else if (url?.startsWith('/ws/regenerate-week/')) {
       const urlObj = new URL(url, 'http://localhost');
       const pathParts = urlObj.pathname.split('/');
-      syllabusId = parseInt(pathParts[3] || '');
+      binderId = parseInt(pathParts[3] || '');
     }
 
-    if (!syllabusId) {
-      ws.send(JSON.stringify({ type: 'error', data: { message: 'Missing syllabus ID in WebSocket URL.' } }));
+    if (!binderId) {
+      ws.send(JSON.stringify({ type: 'error', data: { message: 'Missing binder ID in WebSocket URL.' } }));
       ws.close(4400, 'Bad Request');
       return;
     }
 
     // Verify ownership
-    const syllabus = await storage.getSyllabus(syllabusId);
-    if (!syllabus) {
-      ws.send(JSON.stringify({ type: 'error', data: { message: 'Syllabus not found.' } }));
-      ws.close(4404, 'Syllabus not found');
+    const binder = await storage.getBinder(binderId);
+    if (!binder) {
+      ws.send(JSON.stringify({ type: 'error', data: { message: 'Binder not found.' } }));
+      ws.close(4404, 'Binder not found');
       return;
     }
-    if (syllabus.creatorId !== user.username) {
-      ws.send(JSON.stringify({ type: 'error', data: { message: 'Not authorized to modify this syllabus.' } }));
+    if (binder.curatorId !== user.username) {
+      ws.send(JSON.stringify({ type: 'error', data: { message: 'Not authorized to modify this binder.' } }));
       ws.close(4403, 'Forbidden');
       return;
     }
 
     // Route to appropriate handler
-    if (url?.startsWith('/ws/generate-syllabind/')) {
+    if (url?.startsWith('/ws/generate-binder/')) {
       const urlObj = new URL(url, 'http://localhost');
       const useMock = urlObj.searchParams.get('mock') === 'true';
-      handleGenerateSyllabindWS(ws, syllabusId, useMock);
+      handleGenerateBinderWS(ws, binderId, useMock);
     } else if (url?.startsWith('/ws/regenerate-week/')) {
       const urlObj = new URL(url, 'http://localhost');
       const pathParts = urlObj.pathname.split('/');
       const weekIndex = parseInt(pathParts[4] || '');
       const useMock = urlObj.searchParams.get('mock') === 'true';
       if (weekIndex) {
-        handleRegenerateWeekWS(ws, syllabusId, weekIndex, useMock);
+        handleRegenerateWeekWS(ws, binderId, weekIndex, useMock);
       } else {
         ws.send(JSON.stringify({ type: 'error', data: { message: 'Invalid week index.' } }));
         ws.close(4400, 'Bad Request');

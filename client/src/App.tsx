@@ -11,15 +11,14 @@ import NotFound from "@/pages/not-found";
 
 import Dashboard from "@/pages/Dashboard";
 import Catalog from "@/pages/Catalog";
-import SyllabindOverview from "@/pages/SyllabindOverview";
+import BinderOverview from "@/pages/BinderOverview";
 import WeekView from "@/pages/WeekView";
 import Completion from "@/pages/Completion";
-import CreatorDashboard from "@/pages/CreatorDashboard";
-import SyllabindEditor from "@/pages/SyllabindEditor";
-import SyllabindAnalytics from "@/pages/SyllabindAnalytics";
-import SyllabindLearners from "@/pages/SyllabindLearners";
-import CreatorProfile from "@/pages/CreatorProfile";
-import Marketing from "@/pages/Marketing";
+import CuratorDashboard from "@/pages/CuratorDashboard";
+import BinderEditor from "@/pages/BinderEditor";
+import BinderAnalytics from "@/pages/BinderAnalytics";
+import BinderReaders from "@/pages/BinderReaders";
+import CuratorProfile from "@/pages/CuratorProfile";
 import Login from "@/pages/Login";
 import Profile from "@/pages/Profile";
 import AdminSettings from "@/pages/AdminSettings";
@@ -29,7 +28,7 @@ import Billing from "@/pages/Billing";
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
   const { user, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -59,22 +58,23 @@ function Router() {
   return (
     <Layout>
       <Switch>
-        <Route path="/welcome" component={Marketing} />
+        <Route path="/welcome" component={Catalog} />
         <Route path="/login" component={Login} />
-        
+
         <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
         <Route path="/catalog" component={Catalog} />
-        <Route path="/syllabind/:id" component={SyllabindOverview} />
-        <Route path="/syllabind/:id/week/:index" component={WeekView} />
-        <Route path="/syllabind/:id/completed" component={() => <ProtectedRoute component={Completion} />} />
+        <Route path="/binder/:id" component={BinderOverview} />
+        <Route path="/binder/:id/week/:index" component={WeekView} />
+        <Route path="/binder/:id/completed" component={() => <ProtectedRoute component={Completion} />} />
         <Route path="/profile" component={() => <ProtectedRoute component={Profile} />} />
-        
-        <Route path="/creator" component={() => <ProtectedRoute component={CreatorDashboard} />} />
-        <Route path="/creator/syllabind/new" component={() => <ProtectedRoute component={SyllabindEditor} />} />
-        <Route path="/creator/syllabind/:id/edit" component={() => <ProtectedRoute component={SyllabindEditor} />} />
-        <Route path="/creator/syllabind/:id/learners" component={() => <ProtectedRoute component={SyllabindLearners} />} />
-        <Route path="/creator/syllabind/:id/analytics" component={() => <ProtectedRoute component={SyllabindAnalytics} />} />
-        <Route path="/creator/profile" component={() => <ProtectedRoute component={CreatorProfile} />} />
+
+        <Route path="/create" component={BinderEditor} />
+        <Route path="/curator" component={() => <ProtectedRoute component={CuratorDashboard} />} />
+        <Route path="/curator/binder/new" component={() => <ProtectedRoute component={BinderEditor} />} />
+        <Route path="/curator/binder/:id/edit" component={() => <ProtectedRoute component={BinderEditor} />} />
+        <Route path="/curator/binder/:id/readers" component={() => <ProtectedRoute component={BinderReaders} />} />
+        <Route path="/curator/binder/:id/analytics" component={() => <ProtectedRoute component={BinderAnalytics} />} />
+        <Route path="/curator/profile" component={() => <ProtectedRoute component={CuratorProfile} />} />
         <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
         <Route path="/billing" component={() => <ProtectedRoute component={Billing} />} />
         <Route path="/admin/settings" component={() => <ProtectedRoute component={AdminSettings} />} />

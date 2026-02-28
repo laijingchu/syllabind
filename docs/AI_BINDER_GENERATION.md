@@ -1,8 +1,8 @@
-# AI Syllabind Generation Feature
+# AI Binder Generation Feature
 
 ## Overview
 
-This feature adds AI-powered Syllabind generation to Syllabind using Claude's agentic capabilities with web search. It allows creators to automatically generate complete, high-quality Syllabinds with just a title and description.
+This feature adds AI-powered Binder generation to Binder using Claude's agentic capabilities with web search. It allows curators to automatically generate complete, high-quality Binders with just a title and description.
 
 ## Implementation Status
 
@@ -10,19 +10,19 @@ This feature adds AI-powered Syllabind generation to Syllabind using Claude's ag
 - Database schema updated with `chat_messages` table
 - Web search utility with Google Custom Search API integration
 - Claude client with tool definitions for generation and chat
-- Syllabind generator service with agentic loop
+- Binder generator service with agentic loop
 - WebSocket handlers for real-time progress streaming
 
 ✅ **Backend - API Routes**
-- POST `/api/generate-Syllabind` - Initiate Syllabind generation
-- GET `/api/syllabi/:id/chat-messages` - Retrieve chat history
-- POST `/api/syllabi/:id/chat-messages` - Save chat messages
-- WebSocket `/ws/generate-Syllabind/:id` - Generation progress stream
-- WebSocket `/ws/chat-Syllabind/:id` - Chat interface stream
+- POST `/api/generate-Binder` - Initiate Binder generation
+- GET `/api/binders/:id/chat-messages` - Retrieve chat history
+- POST `/api/binders/:id/chat-messages` - Save chat messages
+- WebSocket `/ws/generate-Binder/:id` - Generation progress stream
+- WebSocket `/ws/chat-Binder/:id` - Chat interface stream
 
 ✅ **Frontend - User Interface**
-- Autogenerate button in SyllabindEditor with real-time progress
-- SyllabindChatPanel component for Syllabind refinement
+- Autogenerate button in BinderEditor with real-time progress
+- BinderChatPanel component for Binder refinement
 - WebSocket integration for streaming updates
 - Toast notifications for status updates
 
@@ -32,28 +32,28 @@ This feature adds AI-powered Syllabind generation to Syllabind using Claude's ag
 ┌─────────────────────────────────────────────────────────────┐
 │                     Frontend (React)                        │
 ├─────────────────────────────────────────────────────────────┤
-│  SyllabindEditor                                              │
+│  BinderEditor                                              │
 │  ├─ Autogenerate Button                                     │
-│  │  └─ WebSocket → /ws/generate-Syllabind/:id            │
-│  └─ SyllabindChatPanel (floating)                         │
-│     └─ WebSocket → /ws/chat-Syllabind/:id                 │
+│  │  └─ WebSocket → /ws/generate-Binder/:id            │
+│  └─ BinderChatPanel (floating)                         │
+│     └─ WebSocket → /ws/chat-Binder/:id                 │
 └─────────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                  Backend (Express + WS)                     │
 ├─────────────────────────────────────────────────────────────┤
 │  API Routes                                                 │
-│  └─ POST /api/generate-Syllabind                          │
+│  └─ POST /api/generate-Binder                          │
 │                                                             │
 │  WebSocket Handlers                                         │
-│  ├─ /ws/generate-Syllabind/:id                            │
-│  │  └─ SyllabindGenerator.ts                              │
+│  ├─ /ws/generate-Binder/:id                            │
+│  │  └─ BinderGenerator.ts                              │
 │  │     ├─ Claude API (agentic tool calling)                │
 │  │     ├─ Web Search (Google Custom Search)                │
 │  │     └─ Database writes (weeks, steps)                   │
 │  │                                                          │
-│  └─ /ws/chat-Syllabind/:id                                │
-│     └─ chatSyllabind.ts                                   │
+│  └─ /ws/chat-Binder/:id                                │
+│     └─ chatBinder.ts                                   │
 │        ├─ Claude API (streaming)                            │
 │        ├─ Tool execution (CRUD operations)                  │
 │        └─ Database updates                                  │
@@ -62,7 +62,7 @@ This feature adds AI-powered Syllabind generation to Syllabind using Claude's ag
 ┌─────────────────────────────────────────────────────────────┐
 │                   Database (PostgreSQL)                     │
 ├─────────────────────────────────────────────────────────────┤
-│  syllabi, weeks, steps, chat_messages                       │
+│  binders, weeks, steps, chat_messages                       │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -80,16 +80,16 @@ This feature adds AI-powered Syllabind generation to Syllabind using Claude's ag
    - Tool execution logic
    - Search, finalize, CRUD operations
 
-3. **`server/utils/SyllabindGenerator.ts`** (120 lines)
-   - Main agentic loop for Syllabind generation
+3. **`server/utils/BinderGenerator.ts`** (120 lines)
+   - Main agentic loop for Binder generation
    - Week-by-week generation with web search
    - Real-time progress streaming via WebSocket
 
-4. **`server/websocket/generateSyllabind.ts`** (45 lines)
+4. **`server/websocket/generateBinder.ts`** (45 lines)
    - WebSocket handler for generation
    - Error handling and status updates
 
-5. **`server/websocket/chatSyllabind.ts`** (180 lines)
+5. **`server/websocket/chatBinder.ts`** (180 lines)
    - WebSocket handler for chat
    - Streaming Claude responses
    - Tool call execution and DB updates
@@ -107,12 +107,12 @@ This feature adds AI-powered Syllabind generation to Syllabind using Claude's ag
 
 ### Frontend
 
-9. **`client/src/pages/SyllabindEditor.tsx`** (updated)
+9. **`client/src/pages/BinderEditor.tsx`** (updated)
    - Autogenerate button with progress display
    - WebSocket message handling
    - Chat panel integration
 
-10. **`client/src/components/SyllabindChatPanel.tsx`** (new, 180 lines)
+10. **`client/src/components/BinderChatPanel.tsx`** (new, 180 lines)
     - Floating chat interface
     - Message streaming
     - Conversation history
@@ -146,15 +146,15 @@ Add these to Replit Secrets:
 
 ### Generation Flow
 
-1. **User clicks "Autogenerate Syllabind with AI"**
+1. **User clicks "Autogenerate Binder with AI"**
    - Frontend validates title and description are filled
-   - Creates syllabus if new (saves to DB)
-   - Sends POST to `/api/generate-Syllabind`
+   - Creates binder if new (saves to DB)
+   - Sends POST to `/api/generate-Binder`
 
 2. **Backend initiates generation**
-   - Updates syllabus status to `'generating'`
+   - Updates binder status to `'generating'`
    - Returns WebSocket URL to frontend
-   - Frontend connects to `/ws/generate-Syllabind/:id`
+   - Frontend connects to `/ws/generate-Binder/:id`
 
 3. **Agentic loop runs (week by week)**
    - Claude receives system prompt with requirements
@@ -169,24 +169,24 @@ Add these to Replit Secrets:
 
 4. **Generation complete**
    - Status changed to `'draft'`
-   - Frontend fetches updated syllabus
+   - Frontend fetches updated binder
    - User can now edit or use chat to refine
 
 ### Chat Refinement Flow
 
 1. **User opens chat panel** (bottom-right floating button)
-   - Only appears for saved syllabi (id > 0)
-   - WebSocket connects to `/ws/chat-Syllabind/:id`
+   - Only appears for saved binders (id > 0)
+   - WebSocket connects to `/ws/chat-Binder/:id`
    - Loads conversation history from database
 
 2. **User sends message** (e.g., "Add a video about neural networks to Week 1")
    - Message saved to database
-   - Sent to Claude with system prompt including current Syllabind state
+   - Sent to Claude with system prompt including current Binder state
 
 3. **Claude responds with streaming**
    - Analyzes request
    - May call tools:
-     - `read_current_Syllabind` - Get current state
+     - `read_current_Binder` - Get current state
      - `search_web` - Find new resources
      - `add_step` - Insert new step
      - `update_week` - Modify week title/description
@@ -195,8 +195,8 @@ Add these to Replit Secrets:
    - Server executes tool calls and updates database
    - Text response streamed to frontend in real-time
 
-4. **Frontend refreshes Syllabind**
-   - After tool execution, fetches updated syllabus
+4. **Frontend refreshes Binder**
+   - After tool execution, fetches updated binder
    - Editor updates with new content
    - Chat history persisted for future sessions
 
@@ -210,14 +210,14 @@ Add these to Replit Secrets:
   - Can filter by recent content (past year)
 
 - **`finalize_week(weekIndex, title, description, steps)`**
-  - Finalizes a week's Syllabind
+  - Finalizes a week's Binder
   - Steps include readings and exercises
   - Validates structure before saving
 
 ### Chat Mode Tools
 
-- **`read_current_Syllabind()`**
-  - Returns full syllabus with weeks and steps
+- **`read_current_Binder()`**
+  - Returns full binder with weeks and steps
   - Used for context before making changes
 
 - **`update_week(weekIndex, updates)`**
@@ -232,7 +232,7 @@ Add these to Replit Secrets:
   - Deletes step by position (1-indexed)
 
 - **`update_basics(title?, description?, audienceLevel?, durationWeeks?)`**
-  - Updates core syllabus metadata
+  - Updates core binder metadata
   - Claude explains changes to user first
 
 - **`search_web(query)`**
@@ -261,19 +261,19 @@ Maximum: 100
 
 ### Autogenerate Flow
 
-1. Navigate to Creator Dashboard → Create New Syllabus
+1. Navigate to Curator Studio → Create New Binder
 2. Fill in:
    - Title: "Introduction to Machine Learning"
    - Description: "Learn ML fundamentals"
    - Audience: Beginner
    - Duration: 4 weeks
-3. Click "Autogenerate Syllabind with AI"
+3. Click "Autogenerate Binder with AI"
 4. Watch real-time progress:
    - "Week 1/4: Generating..."
    - "Searching: machine learning beginner tutorial"
    - "Week 1/4: Week completed"
    - (repeats for each week)
-5. After 30-60 seconds, full Syllabind appears
+5. After 30-60 seconds, full Binder appears
 6. Review and edit as needed
 7. Publish or save as draft
 
@@ -285,7 +285,7 @@ Maximum: 100
    - "Add a video about gradient descent to Week 2"
    - "Change Week 1 title to 'ML Foundations'"
    - "Remove the first reading from Week 3"
-   - "Make this Syllabind 6 weeks instead of 4"
+   - "Make this Binder 6 weeks instead of 4"
 4. Claude responds conversationally
 5. Changes automatically applied to editor
 6. History persists across sessions
@@ -300,7 +300,7 @@ Maximum: 100
 - [x] Verify `GOOGLE_SEARCH_API_KEY` exists
 
 ### Generation Testing
-- [ ] Navigate to `/creator/syllabind/new`
+- [ ] Navigate to `/curator/binder/new`
 - [ ] Fill in title, description, audience, duration
 - [ ] Click autogenerate button
 - [ ] Verify progress updates appear in real-time
@@ -314,7 +314,7 @@ Maximum: 100
 - [ ] Open chat panel
 - [ ] Send message: "Add a video to Week 1"
 - [ ] Verify Claude searches and adds resource
-- [ ] Check Syllabind updates in editor
+- [ ] Check Binder updates in editor
 - [ ] Send message: "Change title to 'ML Basics'"
 - [ ] Verify title updates with explanation
 - [ ] Close and reopen chat - verify history persists
@@ -322,9 +322,9 @@ Maximum: 100
 
 ### Edge Cases
 - [ ] Try autogenerate without title (should error)
-- [ ] Try autogenerate on someone else's syllabus (should fail auth)
+- [ ] Try autogenerate on someone else's binder (should fail auth)
 - [ ] Test with 1-week and 6-week durations
-- [ ] Test chat on unsaved syllabus (should not show)
+- [ ] Test chat on unsaved binder (should not show)
 - [ ] Test WebSocket reconnection after disconnect
 
 ## API Costs
@@ -333,12 +333,12 @@ Maximum: 100
 - Model: `claude-sonnet-4-20250514`
 - Input: ~$3 per million tokens
 - Output: ~$15 per million tokens
-- **Estimated cost per 4-week Syllabind**: $0.02 - $0.05
+- **Estimated cost per 4-week Binder**: $0.02 - $0.05
 
 ### Google Custom Search API
 - Free tier: 100 queries/day
 - Paid: $5 per 1,000 queries
-- **Estimated queries per Syllabind**: 8-12 (2-3 per week)
+- **Estimated queries per Binder**: 8-12 (2-3 per week)
 - Within free tier for most use cases
 
 ## Future Enhancements
@@ -382,7 +382,7 @@ Maximum: 100
 
 ### Generation takes too long (>2 minutes)
 - Check Claude API rate limits
-- Reduce `max_tokens` in `SyllabindGenerator.ts` (currently 4000)
+- Reduce `max_tokens` in `BinderGenerator.ts` (currently 4000)
 - Switch to Haiku model for faster generation (lower quality)
 
 ### Poor quality resources generated
@@ -392,12 +392,12 @@ Maximum: 100
 
 ### Chat not working
 - Check WebSocket connection in browser DevTools
-- Verify syllabus ID is valid and user is creator
+- Verify binder ID is valid and user is curator
 - Check server logs for Claude API errors
 - Ensure `chat_messages` table exists in database
 
 ### Changes from chat not appearing
-- Check that `onSyllabindUpdate` is called after tool execution
+- Check that `onBinderUpdate` is called after tool execution
 - Verify database updates are successful
 - Check for race conditions in state updates
 
@@ -413,8 +413,8 @@ Maximum: 100
 
 ## Security Considerations
 
-- Creator authentication required for all endpoints
-- Syllabus ownership verified before generation
+- Curator authentication required for all endpoints
+- Binder ownership verified before generation
 - WebSocket connections authenticated via session
 - No arbitrary code execution
 - Rate limiting handled by Claude API
@@ -422,7 +422,7 @@ Maximum: 100
 
 ## Performance Characteristics
 
-- **Generation time**: 30-90 seconds for 4-week Syllabind
+- **Generation time**: 30-90 seconds for 4-week Binder
 - **Search latency**: 500-1000ms per query (cached for 15 min)
 - **WebSocket overhead**: <100ms for progress updates
 - **Chat response time**: 2-5 seconds (streaming starts immediately)
@@ -435,7 +435,7 @@ Maximum: 100
    - Add `GOOGLE_SEARCH_ENGINE_ID` to Replit Secrets
 
 2. **Test End-to-End**
-   - Create test syllabus
+   - Create test binder
    - Run autogeneration
    - Verify quality of generated content
    - Test chat refinement
