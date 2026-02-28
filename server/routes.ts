@@ -264,8 +264,13 @@ export async function registerRoutes(
     if (!user.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
-    const queue = await storage.getBindersByStatus('pending_review');
-    res.json(queue);
+    try {
+      const queue = await storage.getBindersByStatus('pending_review');
+      res.json(queue);
+    } catch (err) {
+      console.error("Failed to fetch review queue:", err);
+      res.status(500).json({ error: "Failed to fetch review queue" });
+    }
   });
 
   // Approve a binder (admin only)
@@ -283,6 +288,7 @@ export async function registerRoutes(
     const updated = await storage.updateBinder(id, {
       status: 'published',
       reviewNote: req.body?.note || null,
+      reviewedAt: new Date(),
     });
     res.json(updated);
   });
@@ -307,8 +313,50 @@ export async function registerRoutes(
       status: 'draft',
       reviewNote: reason,
       submittedAt: null,
+      reviewedAt: new Date(),
     });
     res.json(updated);
+  });
+
+  // ========== NOTIFICATION ROUTES ==========
+
+  // Get notification status for the current user
+  app.get("/api/notifications/status", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
+    const dbUser = await storage.getUser(user.id);
+    if (!dbUser) return res.status(404).json({ message: "User not found" });
+
+    const ackedAt = dbUser.notificationsAckedAt || null;
+
+    if (user.isAdmin) {
+      const pendingCount = await storage.getAdminUnreadCount(ackedAt);
+      return res.json({
+        hasUnread: pendingCount > 0,
+        pendingCount,
+        items: [],
+      });
+    }
+
+    // Curator notifications
+    const unread = await storage.getCuratorUnreadNotifications(dbUser.username, ackedAt);
+    const items = unread.map(n => ({
+      binderId: n.binderId,
+      title: n.title,
+      type: n.status === 'published' ? 'approved' : 'rejected',
+    }));
+
+    res.json({
+      hasUnread: items.length > 0,
+      pendingCount: 0,
+      items,
+    });
+  });
+
+  // Acknowledge notifications
+  app.post("/api/notifications/acknowledge", isAuthenticated, async (req, res) => {
+    const userId = (req.user as any).id;
+    await storage.acknowledgeNotifications(userId);
+    res.json({ success: true });
   });
 
   // ========== CATEGORY & TAG ROUTES ==========
@@ -418,10 +466,18 @@ export async function registerRoutes(
       return res.status(403).json({ error: "Forbidden: Only curator can edit this binder" });
     }
 
-    // Strip isDemo from non-admin updates
+    // Strip privileged fields from non-admin updates
     const updatePayload = { ...req.body };
     if (!isAdmin) {
       delete updatePayload.isDemo;
+      delete updatePayload.status; // status changes must go through /publish
+      delete updatePayload.visibility; // visibility changes must go through /publish
+      delete updatePayload.reviewNote;
+      delete updatePayload.reviewedAt;
+      delete updatePayload.submittedAt;
+      delete updatePayload.readerActive;
+      delete updatePayload.readersCompleted;
+      delete updatePayload.searchVector;
     }
 
     const updated = await storage.updateBinder(id, updatePayload);
@@ -600,14 +656,20 @@ export async function registerRoutes(
 
     // Non-admin curator
     if (binder.status === 'draft') {
-      // Submit for review
-      const updated = await storage.updateBinder(id, {
-        status: 'pending_review',
-        visibility,
-        submittedAt: new Date(),
-        reviewNote: null,
-      });
-      return res.json(updated);
+      if (visibility === 'public') {
+        // Public = catalog listing, requires admin review
+        const updated = await storage.updateBinder(id, {
+          status: 'pending_review',
+          visibility,
+          submittedAt: new Date(),
+          reviewNote: null,
+        });
+        return res.json(updated);
+      } else {
+        // Unlisted/private: publish directly (not in catalog)
+        const updated = await storage.updateBinder(id, { status: 'published', visibility });
+        return res.json(updated);
+      }
     } else if (binder.status === 'pending_review') {
       // Withdraw submission
       const updated = await storage.updateBinder(id, {

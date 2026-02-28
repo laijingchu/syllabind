@@ -298,8 +298,8 @@ describe('Catalog Search & Categories/Tags', () => {
   // ========== PUBLISH WITH VISIBILITY ==========
 
   describe('POST /api/binders/:id/publish (visibility)', () => {
-    it('publishes with default public visibility', async () => {
-      const authed = await createAuthedApp(mockCurator);
+    it('admin publishes with default public visibility', async () => {
+      const authed = await createAuthedApp(mockAdmin);
       mockStorage.getBinder.mockResolvedValue({
         id: 1, curatorId: mockCurator.username, status: 'draft', visibility: 'public',
       });
@@ -310,8 +310,8 @@ describe('Catalog Search & Categories/Tags', () => {
       expect(mockStorage.updateBinder).toHaveBeenCalledWith(1, { status: 'published', visibility: 'public' });
     });
 
-    it('publishes with custom visibility', async () => {
-      const authed = await createAuthedApp(mockCurator);
+    it('admin publishes with custom visibility', async () => {
+      const authed = await createAuthedApp(mockAdmin);
       mockStorage.getBinder.mockResolvedValue({
         id: 1, curatorId: mockCurator.username, status: 'draft', visibility: 'public',
       });
@@ -322,7 +322,37 @@ describe('Catalog Search & Categories/Tags', () => {
       expect(mockStorage.updateBinder).toHaveBeenCalledWith(1, { status: 'published', visibility: 'unlisted' });
     });
 
-    it('preserves existing visibility on unpublish', async () => {
+    it('non-admin curator publishes directly with unlisted visibility', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({
+        id: 1, curatorId: mockCurator.username, status: 'draft', visibility: 'public',
+      });
+      mockStorage.updateBinder.mockResolvedValue({ id: 1, status: 'published', visibility: 'unlisted' });
+
+      const res = await request(authed).post('/api/binders/1/publish').send({ visibility: 'unlisted' });
+      expect(res.status).toBe(200);
+      expect(mockStorage.updateBinder).toHaveBeenCalledWith(1, {
+        status: 'published',
+        visibility: 'unlisted',
+      });
+    });
+
+    it('non-admin curator submits for review with public visibility', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({
+        id: 1, curatorId: mockCurator.username, status: 'draft', visibility: 'public',
+      });
+      mockStorage.updateBinder.mockResolvedValue({ id: 1, status: 'pending_review', visibility: 'public' });
+
+      const res = await request(authed).post('/api/binders/1/publish').send({ visibility: 'public' });
+      expect(res.status).toBe(200);
+      expect(mockStorage.updateBinder).toHaveBeenCalledWith(1, expect.objectContaining({
+        status: 'pending_review',
+        visibility: 'public',
+      }));
+    });
+
+    it('non-admin curator unpublishes to draft', async () => {
       const authed = await createAuthedApp(mockCurator);
       mockStorage.getBinder.mockResolvedValue({
         id: 1, curatorId: mockCurator.username, status: 'published', visibility: 'unlisted',
@@ -331,7 +361,7 @@ describe('Catalog Search & Categories/Tags', () => {
 
       const res = await request(authed).post('/api/binders/1/publish');
       expect(res.status).toBe(200);
-      expect(mockStorage.updateBinder).toHaveBeenCalledWith(1, { status: 'draft', visibility: 'unlisted' });
+      expect(mockStorage.updateBinder).toHaveBeenCalledWith(1, { status: 'draft' });
     });
   });
 });

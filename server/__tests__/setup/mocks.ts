@@ -189,4 +189,8 @@ export const resetAllMocks = () => {
   if (mockStorage.incrementGenerationCount) mockStorage.incrementGenerationCount.mockResolvedValue(undefined);
   if (mockStorage.getGenerationInfo) mockStorage.getGenerationInfo.mockResolvedValue({ generationCount: 0, lastGeneratedAt: null });
   if (mockStorage.getDemoBinders) mockStorage.getDemoBinders.mockResolvedValue([]);
+  if (mockStorage.getBindersByStatus) mockStorage.getBindersByStatus.mockResolvedValue([]);
+  if (mockStorage.getCuratorUnreadNotifications) mockStorage.getCuratorUnreadNotifications.mockResolvedValue([]);
+  if (mockStorage.getAdminUnreadCount) mockStorage.getAdminUnreadCount.mockResolvedValue(0);
+  if (mockStorage.acknowledgeNotifications) mockStorage.acknowledgeNotifications.mockResolvedValue(undefined);
 };

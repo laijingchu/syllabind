@@ -64,10 +64,12 @@ Binders are the core learning content created by curators. The binder structure 
   description: text NOT NULL,
   audienceLevel: text NOT NULL,      // 'Beginner', 'Intermediate', 'Advanced'
   durationWeeks: integer NOT NULL,
-  status: text DEFAULT 'draft' NOT NULL, // 'draft', 'published'
+  status: text DEFAULT 'draft' NOT NULL, // 'draft', 'pending_review', 'published'
   curatorId: text FK(users.username) ON UPDATE CASCADE ON DELETE SET NULL,
   createdAt: timestamp DEFAULT now(),
   updatedAt: timestamp DEFAULT now(), // Last modification timestamp
+  submittedAt: timestamp,            // When curator submitted for review
+  reviewNote: text,                  // Admin feedback on rejection (cleared on resubmit)
   readerActive: integer DEFAULT 0,   // Number of readers currently enrolled (in-progress)
   readersCompleted: integer DEFAULT 0, // Number of readers who completed the binder
   showSchedulingLink: boolean DEFAULT true, // Per-binder toggle for "Book a Call" button visibility
@@ -76,9 +78,52 @@ Binders are the core learning content created by curators. The binder structure 
 }
 ```
 
+**Binder Approval Workflow:**
+```
+draft ──(curator submits public)──> pending_review ──(admin approves)──> published
+  ^                                      │                                    │
+  │                                      │ (admin rejects with feedback)      │
+  └──────────────────────────────────────┘                                    │
+  ^                                                                           │
+  │                             (curator unpublishes)                         │
+  └───────────────────────────────────────────────────────────────────────────┘
+
+draft ──(curator publishes unlisted/private)──> published (direct, no review)
+```
+- **Visibility-aware review**: Only `public` visibility requires admin review for non-admin curators. `unlisted` and `private` binders publish directly (they don't appear in the catalog).
+- Non-admin curators submitting as `public` get `pending_review` status with a confirmation modal (checkboxes for domain expertise and content vetting)
+- Admins can approve (→ `published`) or reject with feedback (→ `draft` with `reviewNote`)
+- Admins bypass the review gate and can publish directly for all visibilities
+- Pending binders do not appear in the catalog (`searchCatalog` filters `status='published'`)
+- The `PUT /api/binders/:id` endpoint strips `status` from non-admin updates to prevent bypassing the review workflow
+
 **Indexes:**
 - `binders_curator_id_idx` - Curator dashboard: lookup binders by curator
 - `binders_status_idx` - Catalog page: filter published binders
+- `binders_pending_review_idx` - Admin review queue: partial index on `status='pending_review'`
+
+#### Review Notification System
+
+Uses a timestamp-comparison approach (no notifications table). Two columns drive the logic:
+- `binders.reviewed_at` — set when admin approves or rejects a binder
+- `users.notifications_acked_at` — set when user clicks dismiss/mark-as-read
+
+**Curator unread**: any owned binder where `reviewed_at > notifications_acked_at` (or `reviewed_at IS NOT NULL` when `notifications_acked_at IS NULL`). Items include binder id, title, and type (`approved`/`rejected`).
+
+**Admin unread**: count of binders where `status = 'pending_review'` AND (`submitted_at > notifications_acked_at` OR `notifications_acked_at IS NULL`).
+
+**API endpoints:**
+- `GET /api/notifications/status` — returns `{ hasUnread, pendingCount, items[] }`
+- `POST /api/notifications/acknowledge` — sets `notifications_acked_at = now()` on the current user
+
+**Frontend:**
+- Red dot on "Curator Studio" nav link (all users with unread notifications)
+- Admin toggle bar in Curator Studio has three tabs: My Binders / Others / Review Queue
+- Red dot on "Review Queue" tab when `pendingReviewCount > 0`
+- Review queue UI (approve/reject with feedback) rendered inline in Curator Studio
+- Green "Approved and published!" banner on binder cards in Curator Studio
+- "Dismiss" button in Curator Studio to acknowledge and clear notifications
+- "Mark all as read" button in Review Queue tab
 
 #### Weeks Table
 

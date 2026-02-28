@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
-import { BookOpen, User, LogOut, Menu, X, Bug, Settings, CreditCard } from 'lucide-react';
+import { BookOpen, User, LogOut, Menu, X, Bug, Settings, CreditCard, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/sheet";
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, logout } = useStore();
+  const { user, isAuthenticated, logout, isLoggingOut, hasUnreadNotifications } = useStore();
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [bugReportUrl, setBugReportUrl] = useState<string | null>(null);
@@ -60,6 +60,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground font-text selection:bg-primary/20">
+      {isLoggingOut && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="text-lg text-muted-foreground">
+              Logging out<span className="inline-flex w-[1.5em]"><span className="animate-ellipsis" /></span>
+            </span>
+          </div>
+        </div>
+      )}
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/85 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
@@ -164,9 +174,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <Link href="/catalog" className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/catalog" ? "text-primary" : "text-muted-foreground")}>
                     Catalog
                   </Link>
-                  <Link href="/curator" className={cn("text-sm font-medium transition-colors hover:text-primary", location.startsWith("/curator") ? "text-primary" : "text-muted-foreground")}>
-                    Curator Studio
-                  </Link>
+                  <span className="relative">
+                    <Link href="/curator" className={cn("text-sm font-medium transition-colors hover:text-primary", location.startsWith("/curator") ? "text-primary" : "text-muted-foreground")}>
+                      Curator Studio
+                    </Link>
+                    {hasUnreadNotifications && (
+                      <span className="absolute -top-1 -right-2 h-2 w-2 rounded-full bg-red-500" />
+                    )}
+                  </span>
                 </>
               )}
             </nav>

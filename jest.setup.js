@@ -253,6 +253,10 @@ jest.mock('./server/storage', () => ({
     incrementGenerationCount: jest.fn().mockResolvedValue(undefined),
     getGenerationInfo: jest.fn().mockResolvedValue({ generationCount: 0, lastGeneratedAt: null }),
     getDemoBinders: jest.fn().mockResolvedValue([]),
+    getBindersByStatus: jest.fn().mockResolvedValue([]),
+    getCuratorUnreadNotifications: jest.fn().mockResolvedValue([]),
+    getAdminUnreadCount: jest.fn().mockResolvedValue(0),
+    acknowledgeNotifications: jest.fn().mockResolvedValue(undefined),
   },
   DatabaseStorage: jest.fn(),
 }));

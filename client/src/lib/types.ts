@@ -78,6 +78,7 @@ export interface Binder {
   createdAt?: string | Date | null;
   updatedAt?: string | Date | null;
   submittedAt?: string | Date | null;
+  reviewedAt?: string | Date | null;
   reviewNote?: string | null;
 }
 

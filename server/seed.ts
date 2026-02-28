@@ -344,6 +344,37 @@ async function seed() {
 
     console.log(`✅ Created binder: ${binder3.title} (unlisted, 1 week, 2 steps)\n`);
 
+    // Binder 4: Pending Review binder (for testing approval workflow)
+    console.log("Creating: Introduction to Philosophy (pending_review)");
+    const [binder4] = await db.insert(binders).values({
+      title: "Introduction to Philosophy",
+      description: "Explore the big questions of life through the lens of classic and modern philosophers. From Socrates to Simone de Beauvoir.",
+      audienceLevel: "Beginner",
+      durationWeeks: 2,
+      status: "pending_review",
+      visibility: "public",
+      curatorId: curator.username,
+      submittedAt: new Date(),
+    }).returning();
+
+    const [phil_week1] = await db.insert(weeks).values({
+      binderId: binder4.id,
+      index: 1,
+      title: "Ancient Philosophy",
+    }).returning();
+
+    await db.insert(steps).values([
+      {
+        weekId: phil_week1.id,
+        position: 1,
+        type: "reading",
+        title: "The Apology of Socrates",
+        url: "https://example.com/apology",
+        estimatedMinutes: 40,
+      },
+    ]);
+    console.log(`✅ Created binder: ${binder4.title} (pending_review, 1 week, 1 step)\n`);
+
     // Update existing binders with categories
     if (personalDevCategory) {
       await db.update(binders).set({ categoryId: personalDevCategory.id }).where(eq(binders.id, binder1.id));

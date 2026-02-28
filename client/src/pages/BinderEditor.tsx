@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -318,6 +319,9 @@ export default function BinderEditor() {
   const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showUnpublishDialog, setShowUnpublishDialog] = useState(false);
+  const [showReviewConfirmDialog, setShowReviewConfirmDialog] = useState(false);
+  const [reviewChecks, setReviewChecks] = useState({ expert: false, vetted: false });
+  const [pendingVisibility, setPendingVisibility] = useState('public');
   const [isDeleting, setIsDeleting] = useState(false);
   const [regeneratingWeekIndex, setRegeneratingWeekIndex] = useState<number | null>(null);
   const [showRegenerateWeekDialog, setShowRegenerateWeekDialog] = useState(false);
@@ -1606,29 +1610,24 @@ export default function BinderEditor() {
         posthog?.capture('binder_published', { binder_id: dataToSave.id, title: dataToSave.title });
       }
 
-      const isSubmitForReview = statusOverride === 'published' && !user?.isAdmin;
       const isWithdraw = statusOverride === 'draft' && formData.status === 'pending_review';
       const isUnpublish = statusOverride === 'draft' && formData.status === 'published';
 
-      const message = isSubmitForReview
-        ? "Submitted for review!"
-        : statusOverride === 'published'
-          ? "Binder published successfully!"
-          : isWithdraw
-            ? "Submission withdrawn."
-            : isUnpublish
-              ? "Binder has been unpublished."
-              : "Your changes have been saved successfully.";
+      const message = statusOverride === 'published'
+        ? "Binder published successfully!"
+        : isWithdraw
+          ? "Submission withdrawn."
+          : isUnpublish
+            ? "Binder has been unpublished."
+            : "Your changes have been saved successfully.";
 
-      const toastTitle = isSubmitForReview
-        ? "Submitted for Review"
-        : statusOverride === 'published'
-          ? "Binder Published"
-          : isWithdraw
-            ? "Submission Withdrawn"
-            : isUnpublish
-              ? "Binder Unpublished"
-              : "Binder saved";
+      const toastTitle = statusOverride === 'published'
+        ? "Binder Published"
+        : isWithdraw
+          ? "Submission Withdrawn"
+          : isUnpublish
+            ? "Binder Unpublished"
+            : "Binder saved";
 
       toast({
         title: toastTitle,
@@ -1654,6 +1653,31 @@ export default function BinderEditor() {
         description: "Something went wrong. Please try again.",
         variant: "destructive"
       });
+    }
+  };
+
+  // Publish action via POST /publish endpoint (for non-admin curators)
+  const handlePublishAction = async (visibility: string) => {
+    try {
+      const res = await fetch(`/api/binders/${formData.id}/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ visibility }),
+      });
+      if (!res.ok) throw new Error('Failed');
+      const updated = await res.json();
+      setFormData(prev => ({ ...prev, status: updated.status, visibility: updated.visibility, submittedAt: updated.submittedAt }));
+      await refreshBinders();
+      if (updated.status === 'pending_review') {
+        toast({ title: "Submitted for Review", description: "Your binder has been submitted for admin review." });
+      } else if (updated.status === 'published') {
+        toast({ title: "Binder Published", description: `Published as ${visibility}.` });
+      } else {
+        toast({ title: "Status Updated", description: `Binder is now ${updated.status}.` });
+      }
+    } catch {
+      toast({ title: "Failed", description: "Something went wrong.", variant: "destructive" });
     }
   };
 
@@ -1833,9 +1857,9 @@ export default function BinderEditor() {
             ) : formData.status === 'pending_review' && !user?.isAdmin ? (
               <>
                 <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Pending Review</Badge>
-                <Button variant="secondary" size="sm" onClick={() => handleSave('draft')}>Withdraw</Button>
+                <Button variant="secondary" size="sm" onClick={() => handlePublishAction('withdraw')}>Withdraw from Review</Button>
               </>
-            ) : user?.isAdmin ? (
+            ) : (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" className="gap-1.5">
@@ -1843,37 +1867,15 @@ export default function BinderEditor() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuItem onClick={() => handleSave('published', 'public')}>
+                  <DropdownMenuItem onClick={() => user?.isAdmin ? handleSave('published', 'public') : (() => { setPendingVisibility('public'); setShowReviewConfirmDialog(true); })()}>
                     <Globe className="h-4 w-4 mr-2" /> Public
-                    <span className="ml-auto text-xs text-muted-foreground">Catalog</span>
+                    <span className="ml-auto text-xs text-muted-foreground">{user?.isAdmin ? 'Catalog' : 'To be featured'}</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleSave('published', 'unlisted')}>
+                  <DropdownMenuItem onClick={() => user?.isAdmin ? handleSave('published', 'unlisted') : handlePublishAction('unlisted')}>
                     <EyeOff className="h-4 w-4 mr-2" /> Unlisted
                     <span className="ml-auto text-xs text-muted-foreground">Link only</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleSave('published', 'private')}>
-                    <Lock className="h-4 w-4 mr-2" /> Private
-                    <span className="ml-auto text-xs text-muted-foreground">Only you</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" className="gap-1.5">
-                    Submit for Review <ChevronDown className="h-3.5 w-3.5 opacity-60" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuItem onClick={() => handleSave('published', 'public')}>
-                    <Globe className="h-4 w-4 mr-2" /> Public
-                    <span className="ml-auto text-xs text-muted-foreground">Catalog</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleSave('published', 'unlisted')}>
-                    <EyeOff className="h-4 w-4 mr-2" /> Unlisted
-                    <span className="ml-auto text-xs text-muted-foreground">Link only</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleSave('published', 'private')}>
+                  <DropdownMenuItem onClick={() => user?.isAdmin ? handleSave('published', 'private') : handlePublishAction('private')}>
                     <Lock className="h-4 w-4 mr-2" /> Private
                     <span className="ml-auto text-xs text-muted-foreground">Only you</span>
                   </DropdownMenuItem>
@@ -2428,6 +2430,29 @@ export default function BinderEditor() {
       )}
 
 
+      {/* Bottom action bar for guest mode */}
+      {isGuestMode && hasBinderContent && !isGenerating && (
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-4 pb-2 border-t">
+          <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={handleFormReset}>
+            <RefreshCw className="h-3.5 w-3.5" /> Start Over
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => {
+              sessionStorage.setItem('guestBinderPreview', JSON.stringify(formData));
+              setLocation('/create/preview');
+            }}
+          >
+            <Eye className="h-4 w-4" /> Preview
+          </Button>
+          <Button size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>
+            Sign up
+          </Button>
+        </div>
+      )}
+
       </>
       )}
 
@@ -2471,6 +2496,36 @@ export default function BinderEditor() {
             >
               Unpublish
             </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showReviewConfirmDialog} onOpenChange={(open) => { if (!open) { setShowReviewConfirmDialog(false); setReviewChecks({ expert: false, vetted: false }); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Submit for Review</AlertDialogTitle>
+            <AlertDialogDescription>
+              Public binders are reviewed by an admin before being featured in the catalog.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3 py-2">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <Checkbox checked={reviewChecks.expert} onCheckedChange={(v) => setReviewChecks(prev => ({ ...prev, expert: !!v }))} />
+              <span className="text-sm">I am knowledgeable in this domain</span>
+            </label>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <Checkbox checked={reviewChecks.vetted} onCheckedChange={(v) => setReviewChecks(prev => ({ ...prev, vetted: !!v }))} />
+              <span className="text-sm">The content and resources are hand-crafted and vetted</span>
+            </label>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!reviewChecks.expert || !reviewChecks.vetted}
+              onClick={() => { handlePublishAction(pendingVisibility); setShowReviewConfirmDialog(false); setReviewChecks({ expert: false, vetted: false }); }}
+            >
+              Submit for Review
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

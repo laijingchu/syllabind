@@ -57,6 +57,7 @@ export const users = pgTable("users", {
   subscriptionStatus: text("subscription_status").notNull().default('free'), // 'free' | 'pro' | 'past_due'
   generationCount: integer("generation_count").notNull().default(0),
   lastGeneratedAt: timestamp("last_generated_at"),
+  notificationsAckedAt: timestamp("notifications_acked_at"),
 });
 
 // Admin-managed categories for binder discovery
@@ -82,6 +83,7 @@ export const binders = pgTable("binders", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   submittedAt: timestamp("submitted_at"),
+  reviewedAt: timestamp("reviewed_at"),
   reviewNote: text("review_note"),
   readerActive: integer("reader_active").default(0),
   readersCompleted: integer("readers_completed").default(0),

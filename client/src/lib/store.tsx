@@ -9,6 +9,7 @@ interface StoreContextType {
   isAuthenticated: boolean;
   logout: () => void;
   isLoading: boolean;
+  isLoggingOut: boolean;
 
   // Data
   binders: Binder[];
@@ -49,12 +50,19 @@ interface StoreContextType {
   isPro: boolean;
   subscriptionLimits: SubscriptionLimits | null;
   refreshSubscriptionLimits: () => Promise<void>;
+
+  // Notifications
+  hasUnreadNotifications: boolean;
+  notificationItems: Array<{ binderId: number; title: string; type: 'approved' | 'rejected' }>;
+  pendingReviewCount: number;
+  refreshNotifications: () => Promise<void>;
+  acknowledgeNotifications: () => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, logout, isLoading } = useAuth();
+  const { user, isAuthenticated, logout, isLoading, isLoggingOut } = useAuth();
   const queryClient = useQueryClient();
   const posthog = usePostHog();
   const [binders, setBinders] = useState<Binder[]>([]);
@@ -64,6 +72,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [bindersLoading, setBindersLoading] = useState(false);
   const [enrollmentLoading, setEnrollmentLoading] = useState(false);
   const [subscriptionLimits, setSubscriptionLimits] = useState<SubscriptionLimits | null>(null);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
+  const [notificationItems, setNotificationItems] = useState<Array<{ binderId: number; title: string; type: 'approved' | 'rejected' }>>([]);
+  const [pendingReviewCount, setPendingReviewCount] = useState(0);
 
   const isPro = user?.subscriptionStatus === 'pro' || user?.isAdmin === true;
 
@@ -183,6 +194,47 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setSubscriptionLimits(null);
     }
   }, [isAuthenticated, isLoading]);
+
+  // Fetch notifications when user logs in
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      refreshNotifications();
+    } else if (!isAuthenticated) {
+      setHasUnreadNotifications(false);
+      setNotificationItems([]);
+      setPendingReviewCount(0);
+    }
+  }, [isAuthenticated, isLoading]);
+
+  const refreshNotifications = async () => {
+    try {
+      const res = await fetch('/api/notifications/status', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setHasUnreadNotifications(data.hasUnread);
+        setNotificationItems(data.items || []);
+        setPendingReviewCount(data.pendingCount || 0);
+      }
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+    }
+  };
+
+  const acknowledgeNotifications = async () => {
+    try {
+      const res = await fetch('/api/notifications/acknowledge', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        setHasUnreadNotifications(false);
+        setNotificationItems([]);
+        setPendingReviewCount(0);
+      }
+    } catch (err) {
+      console.error('Failed to acknowledge notifications:', err);
+    }
+  };
 
   const toggleCuratorMode = async () => {
     try {
@@ -542,6 +594,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated,
       logout,
       isLoading,
+      isLoggingOut,
       binders,
       enrollment,
       completedStepIds,
@@ -574,6 +627,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       isPro,
       subscriptionLimits,
       refreshSubscriptionLimits,
+      hasUnreadNotifications,
+      notificationItems,
+      pendingReviewCount,
+      refreshNotifications,
+      acknowledgeNotifications,
     }}>
       {children}
     </StoreContext.Provider>

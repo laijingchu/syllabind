@@ -12,7 +12,7 @@ import {
   categories, tags, binderTags
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql, asc, desc, inArray, ilike, count } from "drizzle-orm";
+import { eq, and, or, sql, asc, desc, inArray, ilike, count, gt, isNotNull } from "drizzle-orm";
 
 // Extended types for nested data
 export interface WeekWithSteps extends Week {
@@ -146,6 +146,11 @@ export interface IStorage {
 
   // Demo binders
   getDemoBinders(): Promise<BinderWithContent[]>;
+
+  // Notification methods
+  getCuratorUnreadNotifications(username: string, ackedAt: Date | null): Promise<Array<{ binderId: number; title: string; status: string; reviewNote: string | null }>>;
+  getAdminUnreadCount(ackedAt: Date | null): Promise<number>;
+  acknowledgeNotifications(userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1104,6 +1109,51 @@ export class DatabaseStorage implements IStorage {
     const demoBinders = await db.select().from(binders).where(eq(binders.isDemo, true));
     const results = await Promise.all(demoBinders.map(b => this.getBinderWithContent(b.id)));
     return results.filter((b): b is BinderWithContent => b !== undefined);
+  }
+
+  // Notification methods
+  async getCuratorUnreadNotifications(username: string, ackedAt: Date | null): Promise<Array<{ binderId: number; title: string; status: string; reviewNote: string | null }>> {
+    const conditions = [
+      eq(binders.curatorId, username),
+      isNotNull(binders.reviewedAt),
+    ];
+
+    if (ackedAt) {
+      conditions.push(gt(binders.reviewedAt, ackedAt));
+    }
+
+    const rows = await db.select({
+      binderId: binders.id,
+      title: binders.title,
+      status: binders.status,
+      reviewNote: binders.reviewNote,
+    })
+    .from(binders)
+    .where(and(...conditions));
+
+    return rows;
+  }
+
+  async getAdminUnreadCount(ackedAt: Date | null): Promise<number> {
+    const conditions: any[] = [
+      eq(binders.status, 'pending_review'),
+    ];
+
+    if (ackedAt) {
+      conditions.push(gt(binders.submittedAt, ackedAt));
+    }
+
+    const [result] = await db.select({ count: sql<number>`cast(count(*) as int)` })
+      .from(binders)
+      .where(and(...conditions));
+
+    return result?.count || 0;
+  }
+
+  async acknowledgeNotifications(userId: string): Promise<void> {
+    await db.update(users)
+      .set({ notificationsAckedAt: new Date() })
+      .where(eq(users.id, userId));
   }
 
   // Refresh search vector for a binder (includes week content and tag names)

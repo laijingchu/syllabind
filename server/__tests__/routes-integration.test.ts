@@ -296,22 +296,35 @@ describe('Routes Integration (real registerRoutes)', () => {
   });
 
   describe('POST /api/binders/:id/publish', () => {
-    it('toggles publish status', async () => {
+    it('non-admin curator submits draft for review', async () => {
       const authed = await createAuthedApp(mockCurator);
       mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username, status: 'draft' });
-      mockStorage.updateBinder.mockResolvedValue({ id: 1, status: 'published' });
+      mockStorage.updateBinder.mockResolvedValue({ id: 1, status: 'pending_review' });
       const res = await request(authed).post('/api/binders/1/publish');
       expect(res.status).toBe(200);
-      expect(mockStorage.updateBinder).toHaveBeenCalledWith(1, { status: 'published', visibility: 'public' });
+      expect(mockStorage.updateBinder).toHaveBeenCalledWith(1, expect.objectContaining({
+        status: 'pending_review',
+        visibility: 'public',
+        reviewNote: null,
+      }));
     });
 
-    it('unpublishes when already published', async () => {
+    it('non-admin curator unpublishes back to draft', async () => {
       const authed = await createAuthedApp(mockCurator);
       mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username, status: 'published' });
       mockStorage.updateBinder.mockResolvedValue({ id: 1, status: 'draft' });
       const res = await request(authed).post('/api/binders/1/publish');
       expect(res.status).toBe(200);
-      expect(mockStorage.updateBinder).toHaveBeenCalledWith(1, { status: 'draft', visibility: 'public' });
+      expect(mockStorage.updateBinder).toHaveBeenCalledWith(1, { status: 'draft' });
+    });
+
+    it('admin publishes draft directly', async () => {
+      const authed = await createAuthedApp(mockAdmin);
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username, status: 'draft' });
+      mockStorage.updateBinder.mockResolvedValue({ id: 1, status: 'published' });
+      const res = await request(authed).post('/api/binders/1/publish');
+      expect(res.status).toBe(200);
+      expect(mockStorage.updateBinder).toHaveBeenCalledWith(1, { status: 'published', visibility: 'public' });
     });
   });
 
