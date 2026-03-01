@@ -193,7 +193,7 @@ export default function Pricing() {
             {[
               { plan: 'credits_100' as CheckoutPlan, credits: 100, price: '$4.99', perCredit: '$0.05' },
               { plan: 'credits_250' as CheckoutPlan, credits: 250, price: '$9.99', perCredit: '$0.04' },
-              { plan: 'credits_500' as CheckoutPlan, credits: 550, price: '$19.99', perCredit: '$0.036' },
+              { plan: 'credits_550' as CheckoutPlan, credits: 550, price: '$19.99', perCredit: '$0.036' },
             ].map(pkg => (
               <Card key={pkg.plan}>
                 <CardContent className="pt-6 text-center space-y-2">

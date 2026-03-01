@@ -96,11 +96,11 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo, creditCos
             <Button
               className="w-full justify-between"
               variant="outline"
-              onClick={() => handleUpgrade('credits_500')}
+              onClick={() => handleUpgrade('credits_550')}
               disabled={loading !== null}
             >
               <span>550 credits</span>
-              <span className="font-semibold">{loading === 'credits_500' ? 'Redirecting...' : '$19.99'}</span>
+              <span className="font-semibold">{loading === 'credits_550' ? 'Redirecting...' : '$19.99'}</span>
             </Button>
           </div>
           <DialogFooter>

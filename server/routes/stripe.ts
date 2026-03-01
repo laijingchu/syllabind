@@ -52,7 +52,7 @@ export async function registerStripeRoutes(app: Express) {
     lifetime: { envVar: 'STRIPE_PRICE_ID_LIFETIME', mode: 'payment', credits: 5000, tier: 'lifetime' },
     credits_100: { envVar: 'STRIPE_PRICE_ID_CREDITS_100', mode: 'payment', credits: 100 },
     credits_250: { envVar: 'STRIPE_PRICE_ID_CREDITS_250', mode: 'payment', credits: 250 },
-    credits_500: { envVar: 'STRIPE_PRICE_ID_CREDITS_500', mode: 'payment', credits: 500 },
+    credits_550: { envVar: 'STRIPE_PRICE_ID_CREDITS_550', mode: 'payment', credits: 550 },
   };
 
   // Create Stripe Checkout session

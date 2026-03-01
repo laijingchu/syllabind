@@ -1,6 +1,6 @@
 import { apiRequest } from './queryClient';
 
-export type CheckoutPlan = 'pro_monthly' | 'pro_annual' | 'lifetime' | 'credits_100' | 'credits_250' | 'credits_500';
+export type CheckoutPlan = 'pro_monthly' | 'pro_annual' | 'lifetime' | 'credits_100' | 'credits_250' | 'credits_550';
 
 export async function redirectToCheckout(returnTo?: string, plan?: CheckoutPlan) {
   const res = await apiRequest('POST', '/api/create-checkout-session', { returnTo, plan });

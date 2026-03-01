@@ -11,7 +11,7 @@ const PLAN_FULFILLMENT: Record<string, { tier: string; credits?: number }> = {
   lifetime: { tier: 'lifetime', credits: 5000 },
   credits_100: { tier: '', credits: 100 },
   credits_250: { tier: '', credits: 250 },
-  credits_500: { tier: '', credits: 550 },
+  credits_550: { tier: '', credits: 550 },
 };
 
 async function fulfillCheckoutSession(session: Stripe.Checkout.Session, stripe: Stripe) {

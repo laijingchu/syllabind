@@ -30,7 +30,7 @@ export type CreditTransactionType =
 export const CREDIT_PACKAGES = {
   credits_100: { credits: 100, price: 4.99 },
   credits_250: { credits: 250, price: 9.99 },
-  credits_500: { credits: 550, price: 19.99 },
+  credits_550: { credits: 550, price: 19.99 },
 } as const;
 
 /**

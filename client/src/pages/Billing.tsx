@@ -157,7 +157,7 @@ export default function Billing() {
               <Button size="sm" variant="outline" onClick={() => handleCheckout('credits_250')} disabled={checkoutLoading !== null}>
                 250 — $9.99
               </Button>
-              <Button size="sm" variant="outline" onClick={() => handleCheckout('credits_500')} disabled={checkoutLoading !== null}>
+              <Button size="sm" variant="outline" onClick={() => handleCheckout('credits_550')} disabled={checkoutLoading !== null}>
                 550 — $19.99
               </Button>
             </div>
