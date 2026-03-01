@@ -337,7 +337,7 @@ export default function BinderEditor() {
   // Demo & generation info state
   const [demoBinders, setDemoBinders] = useState<Array<{ id: number; title: string; description: string; audienceLevel: string; durationWeeks: number; weeks: Week[] }>>([]);
   const [isDemoMode, setIsDemoMode] = useState(false); // True after user taps a demo pill
-  const [generationInfo, setGenerationInfo] = useState<{ generationCount: number; generationLimit: number | null; remaining: number | null; cooldownRemaining: number; isPro: boolean } | null>(null);
+  const [generationInfo, setGenerationInfo] = useState<{ creditBalance?: number; isPro: boolean; isAdmin?: boolean; subscriptionTier?: string; costs?: { per_week: number; improve_writing: number; auto_fill: number }; maxWeeks?: number; generationCount: number; generationLimit: number | null; remaining: number | null; cooldownRemaining: number } | null>(null);
   const [showWaitlist, setShowWaitlist] = useState(false);
   const [waitlistUrl, setWaitlistUrl] = useState<string | null>(null);
 
@@ -944,29 +944,33 @@ export default function BinderEditor() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        if (errorData.error === 'GENERATION_LIMIT_REACHED') {
-          toast({ title: "Generation Limit Reached", description: errorData.message || "Upgrade to Pro for unlimited generations.", variant: "destructive" });
+        if (errorData.error === 'INSUFFICIENT_CREDITS') {
+          toast({ title: "Insufficient Credits", description: errorData.message || "Not enough credits for this generation.", variant: "destructive" });
           setIsGenerating(false);
           isGeneratingRef.current = false;
-          // Refresh generation info
           fetch('/api/generation-info', { credentials: 'include' }).then(r => r.json()).then(setGenerationInfo).catch(() => {});
           return;
         }
-        if (errorData.error === 'GENERATION_COOLDOWN') {
-          toast({ title: "Cooldown Active", description: `Please wait ${Math.ceil((errorData.retryAfterSeconds || 900) / 60)} minutes before generating again.`, variant: "destructive" });
+        if (errorData.error === 'GENERATION_LIMIT_REACHED') {
+          toast({ title: "Generation Limit Reached", description: errorData.message || "Upgrade to Pro for more credits.", variant: "destructive" });
           setIsGenerating(false);
           isGeneratingRef.current = false;
+          fetch('/api/generation-info', { credentials: 'include' }).then(r => r.json()).then(setGenerationInfo).catch(() => {});
           return;
         }
         throw new Error(errorData.error || 'Failed to start generation');
       }
 
-      const { websocketUrl } = await response.json();
+      const data = await response.json();
+      const { websocketUrl, transactionId, creditsDeducted } = data;
 
+      // Pass credit reservation info via query params for refund on WS failure
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      // Append mock=true to WebSocket URL if in mock mode
-      const wsUrl = useMock ? `${websocketUrl}&mock=true` : websocketUrl;
-      const ws = new WebSocket(`${protocol}//${window.location.host}${wsUrl}`);
+      const creditParams = transactionId ? `&txId=${transactionId}&txAmount=${creditsDeducted}` : '';
+      const wsUrl = useMock ? `${websocketUrl}${creditParams}&mock=true` : `${websocketUrl}${creditParams}`;
+      // Ensure URL has proper query string format
+      const wsPath = websocketUrl.includes('?') ? wsUrl : wsUrl.replace('&', '?');
+      const ws = new WebSocket(`${protocol}//${window.location.host}${wsPath}`);
       generationWsRef.current = ws;
 
       ws.onmessage = (event) => {
@@ -1202,6 +1206,8 @@ export default function BinderEditor() {
               title: "Binder Generated!",
               description: "Your Binder has been generated. Review and make any edits.",
             });
+            // Refresh credits and generation info
+            fetch('/api/generation-info', { credentials: 'include' }).then(r => r.json()).then(setGenerationInfo).catch(() => {});
             // Sync store so curator dashboard shows the new binder
             refreshBinders();
             fetch(`/api/binders/${binderId}`, { credentials: 'include' })
@@ -1404,13 +1410,26 @@ export default function BinderEditor() {
         })
       });
 
-      if (!response.ok) throw new Error('Failed to start week regeneration');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        if (errorData.error === 'INSUFFICIENT_CREDITS') {
+          toast({ title: "Insufficient Credits", description: errorData.message || "Not enough credits.", variant: "destructive" });
+          setRegeneratingWeekIndex(null);
+          regeneratingWeekRef.current = null;
+          setGeneratingWeeks(new Set());
+          return;
+        }
+        throw new Error(errorData.error || 'Failed to start week regeneration');
+      }
 
-      const { websocketUrl } = await response.json();
+      const data = await response.json();
+      const { websocketUrl, transactionId, creditsDeducted } = data;
 
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = useMock ? `${websocketUrl}&mock=true` : websocketUrl;
-      const ws = new WebSocket(`${protocol}//${window.location.host}${wsUrl}`);
+      const creditParams = transactionId ? `&txId=${transactionId}&txAmount=${creditsDeducted}` : '';
+      const wsUrl = useMock ? `${websocketUrl}${creditParams}&mock=true` : `${websocketUrl}${creditParams}`;
+      const wsPath = websocketUrl.includes('?') ? wsUrl : wsUrl.replace('&', '?');
+      const ws = new WebSocket(`${protocol}//${window.location.host}${wsPath}`);
       generationWsRef.current = ws;
 
       ws.onmessage = (event) => {
@@ -1504,6 +1523,8 @@ export default function BinderEditor() {
             generationWsRef.current = null;
             setCompletedWeeks(prev => new Set(Array.from(prev).concat(weekIndex)));
             setErroredWeeks(prev => { const next = new Set(prev); next.delete(weekIndex); return next; });
+            // Refresh credits
+            fetch('/api/generation-info', { credentials: 'include' }).then(r => r.json()).then(setGenerationInfo).catch(() => {});
 
             toast({
               title: "Week Regenerated!",
@@ -2150,13 +2171,15 @@ export default function BinderEditor() {
                 </div>
               )}
             </div>
-            {/* Generation info for authenticated free users */}
-            {!isGuestMode && generationInfo && !generationInfo.isPro && (
+            {/* Credit info for authenticated users */}
+            {!isGuestMode && generationInfo && !generationInfo.isAdmin && (
               <p className="text-xs text-muted-foreground">
-                {generationInfo.remaining !== null && generationInfo.remaining > 0
-                  ? `${generationInfo.remaining} of ${generationInfo.generationLimit} free generation${generationInfo.remaining === 1 ? '' : 's'} remaining`
-                  : "You've used all free generations. Upgrade to Pro for unlimited."}
-                {generationInfo.cooldownRemaining > 0 && ` (${Math.ceil(generationInfo.cooldownRemaining / 60)} min cooldown)`}
+                {generationInfo.creditBalance !== undefined && (
+                  <>
+                    {generationInfo.creditBalance} credits available
+                    {generationInfo.costs && ` · Generation cost: ${formData.durationWeeks * generationInfo.costs.per_week} credits`}
+                  </>
+                )}
               </p>
             )}
             {isGenerating && (

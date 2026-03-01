@@ -44,12 +44,15 @@ This table stores all user accounts, whether they're readers or curators. A sing
   threads: string,
   schedulingUrl: string,                        // Calendly/Cal.com link (shown to Pro readers)
   shareProfile: boolean DEFAULT true,
-  // Subscription
+  // Subscription & Credits
   stripeCustomerId: string UNIQUE,              // Stripe customer ID
   subscriptionStatus: string DEFAULT 'free',    // 'free' | 'pro' | 'past_due'
-  // Generation tracking
-  generationCount: integer DEFAULT 0,           // Number of AI binder generations used
-  lastGeneratedAt: timestamp,                   // Last generation timestamp (for cooldown enforcement)
+  subscriptionTier: text DEFAULT 'free',        // 'free' | 'pro_monthly' | 'pro_annual' | 'lifetime'
+  creditBalance: integer DEFAULT 0,             // Current credit balance
+  creditsGrantedAt: timestamp,                  // Deduplication for monthly credit grants
+  // Legacy (deprecated — kept for backwards compat, no longer written to)
+  generationCount: integer DEFAULT 0,
+  lastGeneratedAt: timestamp,
 }
 ```
 
@@ -75,6 +78,7 @@ Binders are the core learning content created by curators. The binder structure 
   showSchedulingLink: boolean DEFAULT true, // Per-binder toggle for "Book a Call" button visibility
   mediaPreference: text DEFAULT 'auto',   // Audio/video materials: 'auto', 'yes', 'no'
   isDemo: boolean DEFAULT false,          // Admin-assignable demo content (shown to signed-out visitors)
+  isAiGenerated: boolean DEFAULT false,   // Distinguishes AI-generated vs manually-created binders (for free-tier limits)
 }
 ```
 
@@ -312,6 +316,28 @@ Stores Stripe subscription records as an audit trail for Pro subscriptions. Each
 - `subscriptions_user_id_idx` - Fast lookup by user
 - `subscriptions_stripe_subscription_id_idx` - Fast lookup by Stripe subscription ID
 
+#### Credit Transactions Table
+
+Stores an audit trail of all credit operations — grants, deductions, refunds, and purchases. Each transaction records the running balance, enabling full credit history reconstruction.
+
+```typescript
+{
+  id: serial PRIMARY KEY,
+  userId: varchar FK → users.id,        // CASCADE delete
+  amount: integer NOT NULL,             // Positive = grant, negative = deduction
+  balance: integer NOT NULL,            // Running balance after this transaction
+  type: text NOT NULL,                  // signup_grant | subscription_grant | package_purchase | generation | week_regen | improve_writing | admin_adjustment | refund
+  description: text NOT NULL,           // Human-readable description
+  metadata: text,                       // Reference like 'binder:42' or 'stripe:pi_xxx' or 'refund_of:42'
+  createdAt: timestamp DEFAULT now(),
+}
+```
+
+**Indexes:**
+- `credit_transactions_user_id_idx` — User credit history lookup
+- `credit_transactions_created_at_idx` — Chronological ordering
+- `credit_transactions_type_idx` — Filter by transaction type
+
 #### Site Settings Table
 
 Stores admin-configurable key-value pairs for platform-wide settings (e.g., Slack community URL). Admins can update these via `PUT /api/admin/settings`. Public read access via `GET /api/site-settings/:key`.
@@ -532,7 +558,8 @@ These pages provide the core learning experience. Readers see their dashboard, w
 | `/binder/:id/completed` | `Completion.tsx` | Celebration screen post-completion |
 | `/profile` | `Profile.tsx` | Edit bio, social links, preferences |
 | `/settings` | `Settings.tsx` | Change password, delete account |
-| `/billing` | `Billing.tsx` | Subscription management, upgrade/manage billing |
+| `/billing` | `Billing.tsx` | Subscription management, credit balance, transaction history |
+| `/pricing` | `Pricing.tsx` | Plan comparison, credit costs, credit packages |
 
 #### Curator Pages (Auth + Curator Flag Required)
 
@@ -879,19 +906,30 @@ POST   /api/webhook                 - Stripe webhook handler (signature verified
 **Subscription Limits Response:**
 ```typescript
 {
-  binderCount: number;           // Curator's current binder count
-  binderLimit: number | null;    // null = unlimited (Pro), 2 for free
-  canCreateMore: boolean;        // Whether curator can make more binders
-  canEnroll: boolean;            // Whether reader can enroll (Pro only)
+  binderCount: number;
+  binderLimit: number | null;
+  canCreateMore: boolean;
+  canEnroll: boolean;
   isPro: boolean;
+  creditBalance: number;
+  subscriptionTier: string;
+  costs: { per_week: 10, improve_writing: 1, auto_fill: 0 };
+  enrollmentLimit: number | null;
+  activeEnrollmentCount: number;
 }
 ```
 
+**Credit Endpoints (Auth Required):**
+```
+GET    /api/credits/info     - Credit balance, tier, costs, limits
+GET    /api/credits/history  - Paginated credit transaction log
+```
+
 **Webhook Events Handled:**
-- `checkout.session.completed` → Upgrade user to Pro, create subscription record
+- `checkout.session.completed` → Upgrade user, grant credits based on plan
 - `customer.subscription.updated` → Sync subscription status
-- `customer.subscription.deleted` → Downgrade user to free
-- `invoice.payment_succeeded` → Confirm Pro status
+- `customer.subscription.deleted` → Downgrade user to free, reset tier
+- `invoice.payment_succeeded` → Confirm Pro status + grant monthly credits (deduped)
 - `invoice.payment_failed` → Log only (Stripe retries automatically)
 
 ---
@@ -2375,8 +2413,12 @@ Added free-tier guardrails to the Binder Editor to prevent abuse of AI generatio
 - Uses existing `UpgradePrompt` component with `variant="pro-feature"`
 
 **Server-side (`server/routes.ts`):**
-- `POST /api/generate-binder`: returns 403 if non-Pro user's binder has > 4 weeks
-- `POST /api/regenerate-week`: returns 403 for non-Pro users (regeneration is Pro-only)
+- `POST /api/generate-binder`: reserves credits (10 per week), returns 403 if binder exceeds tier's max weeks
+- `POST /api/regenerate-week`: reserves 10 credits, available to all users with sufficient credits
+- `POST /api/improve-text`: reserves 1 credit, refunds on API error
+- `POST /api/binders`: free users limited to 3 manual (non-AI) binders
+- `POST /api/enrollments`: free users limited to 1 active enrollment
+- `POST /api/binders/:id/publish`: free users can only publish unlisted/private (not public)
 
 ### Anti-Abuse, Demo Experience & Generation Limits (2026-02-28)
 
@@ -2397,40 +2439,62 @@ Three workstreams to manage AI generation costs (~$0.5-1 per generation) and con
 **Storage:**
 - `getDemoBinders()`: Returns `BinderWithContent[]` — full binder data with weeks and steps via `getBinderWithContent()`.
 
-#### B. Free User Generation Limits
+#### B. Weighted Credit System (replaces generation limits)
 
-**Schema additions to `users`:**
-- `generationCount` (integer, default 0) — total AI generations used
-- `lastGeneratedAt` (timestamp) — for cooldown enforcement
+All AI features are now gated by a credit system. The old generation count/cooldown system (`generationCount`, `lastGeneratedAt`, `incrementGenerationCount`) is deprecated — columns kept in DB but no longer written to.
 
-**Limits (non-Pro users only):**
-- Max 2 free generations → 403 `GENERATION_LIMIT_REACHED`
-- 15-minute cooldown between generations → 429 `GENERATION_COOLDOWN` with `retryAfterSeconds`
+**Credit Costs:**
+| Feature | Credits | Notes |
+|---------|---------|-------|
+| Binder generation | 10 per week | 4-week = 40, 6-week = 60 |
+| Week regeneration | 10 | Same as 1 week of generation |
+| Improve writing | 1 | Same cost for all plans |
+| Auto-fill from URL | 0 | Free for all |
 
-**Counter increment:** After successful WebSocket generation (in `server/websocket/generateBinder.ts`), `storage.incrementGenerationCount(curatorUsername)` is called for ALL users (including Pro) for analytics. Only free users are gated.
+**Credit Grants:**
+| Plan | Credits | Cadence |
+|------|---------|---------|
+| Free | 100 | One-time at signup |
+| Pro Monthly ($14.99) | 130 | Monthly (deduped via `creditsGrantedAt`) |
+| Pro Annual ($150) | 130 | Monthly |
+| Lifetime ($500) | 5,000 | One-time at purchase |
+
+**Credit Packages (Pro only):** 100 credits/$4.99, 250/$9.99, 500/$19.99
+
+**Reserve + Refund Pattern:** All credit operations use atomic reserve-upfront, refund-on-failure:
+1. `reserveCredits()` — atomically deducts via SQL CTE (`UPDATE ... WHERE credit_balance >= amount`). Returns `INSUFFICIENT_CREDITS` if balance too low.
+2. On API success — no action (credits already reserved)
+3. On API failure/cancel — `refundCredits()` logs a positive `refund` transaction
+
+**Credit Service (`server/utils/creditService.ts`):** Constants, `reserveCredits`, `refundCredits`, `canAfford`, `grantSubscriptionCredits`, `grantSignupCredits`, `getGenerationCost`, `getMaxWeeks`, `isProTier`
 
 **API:**
-- `GET /api/generation-info` (authenticated): Returns `{ generationCount, generationLimit, remaining, cooldownRemaining, isPro }`. Pro users get `generationLimit: null`.
+- `GET /api/generation-info` — Returns `{ creditBalance, isPro, maxWeeks, costPerWeek, cooldownRemaining: 0 }`
+- `GET /api/credits/info` — Returns `{ creditBalance, subscriptionTier, costs, limits }`
+- `GET /api/credits/history` — Paginated transaction log
 
-**Client display (`BinderEditor.tsx`):** Shows "X of 2 free generations remaining" near the generate button. Handles `GENERATION_LIMIT_REACHED` and `GENERATION_COOLDOWN` errors with appropriate toasts.
-
-**Storage methods:**
-- `incrementGenerationCount(username)`: Atomically increments count and sets `lastGeneratedAt = now()`
-- `getGenerationInfo(username)`: Returns `{ generationCount, lastGeneratedAt }`
+**Free-Tier Limits:**
+- 100 credits lifetime (enough for ~2 × 4-week binders + improve-writing)
+- 1 active enrollment
+- 3 manual (non-AI) binders
+- Max 4-week AI binders
+- No public binder submission (unlisted/private only)
 
 #### C. Duration Hard Cap (6 weeks)
 
 - Client: Duration selector options changed from `[1-8]` to `[1-6]`
-- Server: Universal hard cap `durationWeeks > 6` → 400 error (before Pro/free tier checks)
-- Free-tier limit unchanged: `durationWeeks > 4` → 403 for non-Pro users
+- Server: `durationWeeks > maxWeeks` → 403 (free = 4 weeks max, Pro = 6 weeks max)
 
-**Updated Free vs Pro Feature Matrix:**
-| Feature | Signed-Out | Free | Pro |
-|---------|-----------|------|-----|
-| Duration | N/A | 1-4 weeks | 1-6 weeks |
-| Demo preview (pre-built, full content) | Yes (0 cost) + guest preview | N/A | N/A |
-| Autogenerate / Regenerate | Signup redirect (topic preserved) | 2 total, 15-min cooldown | Unlimited |
-| Regenerate full binder | N/A | Blocked | Allowed |
-| Per-week regeneration | N/A | Blocked | Allowed |
+**Updated Feature Matrix:**
+| Feature | Free | Pro Monthly | Pro Annual | Lifetime |
+|---------|------|-------------|------------|----------|
+| Credits | 100 (lifetime) | 130/month | 130/month | 5,000 upfront |
+| Max AI binder weeks | 4 | 6 | 6 | 6 |
+| Active enrollments | 1 | Unlimited | Unlimited | Unlimited |
+| Manual binders | 3 | Unlimited | Unlimited | Unlimited |
+| Public submission | No | Yes | Yes | Yes |
+| Credit packages | No | Yes | Yes | Yes |
 
-**Migration:** `migrations/0009_add_generation_tracking.sql` adds `generation_count`, `last_generated_at` to users and `is_demo` to binders.
+**Migrations:**
+- `migrations/0009_add_generation_tracking.sql` — original generation count fields + `is_demo`
+- `migrations/0012_add_credit_system.sql` — `credit_balance`, `subscription_tier`, `credits_granted_at` on users; `is_ai_generated` on binders; `credit_transactions` table

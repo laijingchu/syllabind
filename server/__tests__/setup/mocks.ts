@@ -24,8 +24,13 @@ export const mockUser = {
   authProvider: 'email',
   stripeCustomerId: null,
   subscriptionStatus: 'free',
+  subscriptionTier: 'free',
+  creditBalance: 100,
+  creditsGrantedAt: null,
   generationCount: 0,
   lastGeneratedAt: null,
+  notificationsAckedAt: null,
+  profileTitle: null,
 };
 
 // Mock admin user (non-curator admin — tests admin bypass without curator flag)
@@ -52,8 +57,13 @@ export const mockAdmin = {
   authProvider: 'email',
   stripeCustomerId: null,
   subscriptionStatus: 'free',
+  subscriptionTier: 'free',
+  creditBalance: 100,
+  creditsGrantedAt: null,
   generationCount: 0,
   lastGeneratedAt: null,
+  notificationsAckedAt: null,
+  profileTitle: null,
 };
 
 // Mock curator user
@@ -80,8 +90,13 @@ export const mockCurator = {
   authProvider: 'email',
   stripeCustomerId: null,
   subscriptionStatus: 'free',
+  subscriptionTier: 'free',
+  creditBalance: 100,
+  creditsGrantedAt: null,
   generationCount: 0,
   lastGeneratedAt: null,
+  notificationsAckedAt: null,
+  profileTitle: null,
 };
 
 // Mock Pro user (curator with Pro subscription)
@@ -90,6 +105,8 @@ export const mockProCurator = {
   id: 'pro-curator-id-789',
   username: 'procurator',
   subscriptionStatus: 'pro',
+  subscriptionTier: 'pro_monthly',
+  creditBalance: 130,
   stripeCustomerId: 'cus_pro123',
 };
 
@@ -99,6 +116,8 @@ export const mockProUser = {
   id: 'pro-user-id-101',
   username: 'prouser',
   subscriptionStatus: 'pro',
+  subscriptionTier: 'pro_monthly',
+  creditBalance: 130,
   stripeCustomerId: 'cus_prouser123',
 };
 
@@ -188,6 +207,12 @@ export const resetAllMocks = () => {
   if (mockStorage.deleteUser) mockStorage.deleteUser.mockResolvedValue(undefined);
   if (mockStorage.incrementGenerationCount) mockStorage.incrementGenerationCount.mockResolvedValue(undefined);
   if (mockStorage.getGenerationInfo) mockStorage.getGenerationInfo.mockResolvedValue({ generationCount: 0, lastGeneratedAt: null });
+  if (mockStorage.getCreditBalance) mockStorage.getCreditBalance.mockResolvedValue(100);
+  if (mockStorage.getCreditTransactions) mockStorage.getCreditTransactions.mockResolvedValue([]);
+  if (mockStorage.deductCredits) mockStorage.deductCredits.mockResolvedValue({ transactionId: 1, newBalance: 90 });
+  if (mockStorage.grantCredits) mockStorage.grantCredits.mockResolvedValue({ transactionId: 1, newBalance: 110 });
+  if (mockStorage.countActiveEnrollments) mockStorage.countActiveEnrollments.mockResolvedValue(0);
+  if (mockStorage.countManualBinders) mockStorage.countManualBinders.mockResolvedValue(0);
   if (mockStorage.getDemoBinders) mockStorage.getDemoBinders.mockResolvedValue([]);
   if (mockStorage.getBindersByStatus) mockStorage.getBindersByStatus.mockResolvedValue([]);
   if (mockStorage.getCuratorUnreadNotifications) mockStorage.getCuratorUnreadNotifications.mockResolvedValue([]);

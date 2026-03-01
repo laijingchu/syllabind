@@ -5,6 +5,7 @@ import { users, type InsertUser, type User, passwordSchema } from "@shared/schem
 import { eq } from "drizzle-orm";
 import { isAdminUser } from "./admin";
 import { logSecurity } from "../lib/audit";
+import { grantSignupCredits } from "../utils/creditService";
 
 const SALT_ROUNDS = 10;
 
@@ -69,12 +70,19 @@ export function registerEmailAuthRoutes(app: Express): void {
         authProvider: 'email',
       }).returning();
 
+      // Grant signup credits
+      try {
+        await grantSignupCredits(newUser.id);
+      } catch (err) {
+        console.error('[Register] Failed to grant signup credits:', err);
+      }
+
       // Set session
       (req as any).session.userId = newUser.id;
 
       // Return user without password
       const { password: _, ...userWithoutPassword } = newUser;
-      res.json({ ...userWithoutPassword, isAdmin: isAdminUser(newUser.username) });
+      res.json({ ...userWithoutPassword, creditBalance: 100, isAdmin: isAdminUser(newUser.username) });
     } catch (error) {
       console.error("Registration error:", error);
       res.status(500).json({ message: "Registration failed" });

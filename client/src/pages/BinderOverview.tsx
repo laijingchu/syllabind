@@ -252,8 +252,9 @@ export default function BinderOverview() {
       return;
     }
 
-    // Pro gate: must be Pro to enroll
-    if (!isPro) {
+    // Enrollment limit: free users get 1 active enrollment — server enforces,
+    // but show upgrade prompt proactively if they already have an active enrollment
+    if (!isPro && enrollment?.activeBinderId && enrollment.activeBinderId !== binder.id) {
       setUpgradeVariant('enrollment-gate');
       setShowUpgradePrompt(true);
       return;

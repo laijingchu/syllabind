@@ -124,11 +124,15 @@ export function RichTextEditor({ value, onChange, placeholder, className, isSavi
       const res = await fetch('/api/improve-text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ html: editor.getHTML() }),
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        if (data.error === 'INSUFFICIENT_CREDITS') {
+          throw new Error('Not enough credits. Each improvement costs 1 credit.');
+        }
         throw new Error(data.error || 'Failed to improve text');
       }
 
@@ -172,7 +176,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, isSavi
             ) : (
               <Sparkles className="h-3 w-3 mr-1.5 text-primary/60" />
             )}
-            <span className="text-xs">Improve writing</span>
+            <span className="text-xs">Improve writing (1 credit)</span>
           </Button>
         )}
 

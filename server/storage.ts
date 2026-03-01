@@ -7,9 +7,10 @@ import {
   type Submission, type InsertSubmission,
   type CompletedStep, type InsertCompletedStep,
   type Subscription, type InsertSubscription,
+  type CreditTransaction, type InsertCreditTransaction,
   type Category, type Tag, type BinderTag,
   users, binders, enrollments, weeks, steps, submissions, completedSteps, subscriptions, siteSettings,
-  categories, tags, binderTags
+  categories, tags, binderTags, creditTransactions
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, sql, asc, desc, inArray, ilike, count, gt, isNotNull } from "drizzle-orm";
@@ -140,6 +141,14 @@ export interface IStorage {
   // Generation tracking
   incrementGenerationCount(username: string): Promise<void>;
   getGenerationInfo(username: string): Promise<{ generationCount: number; lastGeneratedAt: Date | null }>;
+
+  // Credit operations
+  getCreditBalance(userId: string): Promise<number>;
+  getCreditTransactions(userId: string, limit?: number, offset?: number): Promise<CreditTransaction[]>;
+  deductCredits(userId: string, amount: number, type: string, description: string, metadata?: string): Promise<{ transactionId: number; newBalance: number }>;
+  grantCredits(userId: string, amount: number, type: string, description: string, metadata?: string): Promise<{ transactionId: number; newBalance: number }>;
+  countActiveEnrollments(username: string): Promise<number>;
+  countManualBinders(username: string): Promise<number>;
 
   // Binder review queue
   getBindersByStatus(status: string): Promise<any[]>;
@@ -1156,6 +1165,79 @@ export class DatabaseStorage implements IStorage {
     await db.update(users)
       .set({ notificationsAckedAt: new Date() })
       .where(eq(users.id, userId));
+  }
+
+  // Credit operations
+  async getCreditBalance(userId: string): Promise<number> {
+    const [user] = await db.select({ creditBalance: users.creditBalance }).from(users).where(eq(users.id, userId));
+    return user?.creditBalance ?? 0;
+  }
+
+  async getCreditTransactions(userId: string, limit = 50, offset = 0): Promise<CreditTransaction[]> {
+    return db.select().from(creditTransactions)
+      .where(eq(creditTransactions.userId, userId))
+      .orderBy(desc(creditTransactions.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async deductCredits(userId: string, amount: number, type: string, description: string, metadata?: string): Promise<{ transactionId: number; newBalance: number }> {
+    // Atomic deduction with row lock via raw SQL
+    const result = await db.execute(sql`
+      WITH updated AS (
+        UPDATE users SET credit_balance = credit_balance - ${amount}
+        WHERE id = ${userId} AND credit_balance >= ${amount}
+        RETURNING credit_balance
+      )
+      INSERT INTO credit_transactions (user_id, amount, balance, type, description, metadata)
+      SELECT ${userId}, ${-amount}, updated.credit_balance, ${type}, ${description}, ${metadata ?? null}
+      FROM updated
+      RETURNING id, balance
+    `);
+    const row = (result as any).rows?.[0];
+    if (!row) {
+      throw new Error('INSUFFICIENT_CREDITS');
+    }
+    return { transactionId: row.id, newBalance: row.balance };
+  }
+
+  async grantCredits(userId: string, amount: number, type: string, description: string, metadata?: string): Promise<{ transactionId: number; newBalance: number }> {
+    const result = await db.execute(sql`
+      WITH updated AS (
+        UPDATE users SET credit_balance = credit_balance + ${amount}
+        WHERE id = ${userId}
+        RETURNING credit_balance
+      )
+      INSERT INTO credit_transactions (user_id, amount, balance, type, description, metadata)
+      SELECT ${userId}, ${amount}, updated.credit_balance, ${type}, ${description}, ${metadata ?? null}
+      FROM updated
+      RETURNING id, balance
+    `);
+    const row = (result as any).rows?.[0];
+    if (!row) {
+      throw new Error('User not found');
+    }
+    return { transactionId: row.id, newBalance: row.balance };
+  }
+
+  async countActiveEnrollments(username: string): Promise<number> {
+    const [result] = await db.select({ count: sql<number>`cast(count(*) as int)` })
+      .from(enrollments)
+      .where(and(
+        eq(enrollments.readerId, username),
+        eq(enrollments.status, 'in-progress')
+      ));
+    return result?.count ?? 0;
+  }
+
+  async countManualBinders(username: string): Promise<number> {
+    const [result] = await db.select({ count: sql<number>`cast(count(*) as int)` })
+      .from(binders)
+      .where(and(
+        eq(binders.curatorId, username),
+        eq(binders.isAiGenerated, false)
+      ));
+    return result?.count ?? 0;
   }
 
   // Refresh search vector for a binder (includes week content and tag names)

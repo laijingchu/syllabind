@@ -64,6 +64,8 @@ async function seed() {
       twitter: "jane_teaches",
       schedulingUrl: "https://calendly.com/janesmith",
       shareProfile: true,
+      creditBalance: 100,
+      subscriptionTier: 'free',
     }).returning();
     console.log(`✅ Created curator: ${curator.username}\n`);
 

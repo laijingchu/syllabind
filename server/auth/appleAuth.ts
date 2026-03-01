@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { db } from "../db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { grantSignupCredits } from "../utils/creditService";
 
 const APPLE_CLIENT_ID = process.env.APPLE_CLIENT_ID;
 const APPLE_CLIENT_SECRET = process.env.APPLE_CLIENT_SECRET;
@@ -162,6 +163,9 @@ export function registerAppleAuthRoutes(app: Express): void {
             name: userName,
             authProvider: 'apple',
           }).returning();
+
+          // Grant signup credits to new user
+          try { await grantSignupCredits(user.id); } catch (e) { console.error('[Apple] Signup credits error:', e); }
         }
       }
 

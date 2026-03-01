@@ -149,9 +149,30 @@ export interface User {
   // Subscription
   stripeCustomerId?: string | null;
   subscriptionStatus?: 'free' | 'pro' | 'past_due';
-  // Generation tracking
+  subscriptionTier?: 'free' | 'pro_monthly' | 'pro_annual' | 'lifetime';
+  // Credits
+  creditBalance?: number;
+  creditsGrantedAt?: string | null;
+  // Generation tracking (legacy)
   generationCount?: number;
   lastGeneratedAt?: string | null;
+}
+
+export interface CreditTransaction {
+  id: number;
+  userId: string;
+  amount: number;
+  balance: number;
+  type: string;
+  description: string;
+  metadata?: string | null;
+  createdAt: string;
+}
+
+export interface CreditCosts {
+  per_week: number;
+  improve_writing: number;
+  auto_fill: number;
 }
 
 export interface SubscriptionLimits {
@@ -160,6 +181,13 @@ export interface SubscriptionLimits {
   canCreateMore: boolean;
   canEnroll: boolean;
   isPro: boolean;
+  // Credit system fields
+  creditBalance?: number;
+  subscriptionTier?: string;
+  costs?: CreditCosts;
+  enrollmentLimit?: number | null;
+  activeEnrollmentCount?: number;
+  maxWeeks?: number;
 }
 
 export interface ReaderProfile {

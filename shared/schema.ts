@@ -58,6 +58,10 @@ export const users = pgTable("users", {
   generationCount: integer("generation_count").notNull().default(0),
   lastGeneratedAt: timestamp("last_generated_at"),
   notificationsAckedAt: timestamp("notifications_acked_at"),
+  // Credit system
+  creditBalance: integer("credit_balance").notNull().default(0),
+  subscriptionTier: text("subscription_tier").notNull().default('free'), // 'free' | 'pro_monthly' | 'pro_annual' | 'lifetime'
+  creditsGrantedAt: timestamp("credits_granted_at"),
 });
 
 // Admin-managed categories for binder discovery
@@ -90,6 +94,7 @@ export const binders = pgTable("binders", {
   showSchedulingLink: boolean("show_scheduling_link").default(true),
   isDemo: boolean("is_demo").default(false),
   mediaPreference: text("media_preference").default('auto'), // 'auto', 'yes', 'no'
+  isAiGenerated: boolean("is_ai_generated").default(false),
   searchVector: tsvector("search_vector"),
 }, (table) => [
   index("binders_curator_id_idx").on(table.curatorId),
@@ -208,6 +213,22 @@ export const cohortMembers = pgTable("cohort_members", {
   pk: primaryKey({ columns: [table.cohortId, table.readerId] })
 }));
 
+// Credit transaction ledger
+export const creditTransactions = pgTable("credit_transactions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  amount: integer("amount").notNull(), // positive = grant, negative = deduction
+  balance: integer("balance").notNull(), // running balance after transaction
+  type: text("type").notNull(), // 'signup_grant' | 'subscription_grant' | 'package_purchase' | 'generation' | 'week_regen' | 'improve_writing' | 'admin_adjustment' | 'refund'
+  description: text("description").notNull(),
+  metadata: text("metadata"), // text reference like 'binder:42' or 'stripe:pi_xxx'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("credit_transactions_user_id_idx").on(table.userId),
+  index("credit_transactions_created_at_idx").on(table.createdAt),
+  index("credit_transactions_type_idx").on(table.type),
+]);
+
 // Subscription audit trail
 export const subscriptions = pgTable("subscriptions", {
   id: serial("id").primaryKey(),
@@ -300,6 +321,7 @@ export const insertCohortSchema = createInsertSchema(cohorts).omit({
 export const insertCohortMemberSchema = createInsertSchema(cohortMembers).omit({
   joinedAt: true
 });
+export const insertCreditTransactionSchema = createInsertSchema(creditTransactions).omit({ id: true, createdAt: true });
 export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertWaitlistSchema = createInsertSchema(waitlist).omit({ id: true, status: true, adminNote: true, createdAt: true, reviewedAt: true });
 export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({ id: true, updatedAt: true });
@@ -325,6 +347,8 @@ export type Cohort = typeof cohorts.$inferSelect;
 export type InsertCohort = z.infer<typeof insertCohortSchema>;
 export type CohortMember = typeof cohortMembers.$inferSelect;
 export type InsertCohortMember = z.infer<typeof insertCohortMemberSchema>;
+export type CreditTransaction = typeof creditTransactions.$inferSelect;
+export type InsertCreditTransaction = z.infer<typeof insertCreditTransactionSchema>;
 export type Subscription = typeof subscriptions.$inferSelect;
 export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 export type WaitlistEntry = typeof waitlist.$inferSelect;

@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { db } from "../db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { grantSignupCredits } from "../utils/creditService";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -142,6 +143,9 @@ export function registerGoogleAuthRoutes(app: Express): void {
             avatarUrl: picture,
             authProvider: 'google',
           }).returning();
+
+          // Grant signup credits to new user
+          try { await grantSignupCredits(user.id); } catch (e) { console.error('[Google] Signup credits error:', e); }
         }
       }
 

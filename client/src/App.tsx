@@ -24,6 +24,7 @@ import Profile from "@/pages/Profile";
 import AdminSettings from "@/pages/AdminSettings";
 import Settings from "@/pages/Settings";
 import Billing from "@/pages/Billing";
+import Pricing from "@/pages/Pricing";
 
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
@@ -78,6 +79,7 @@ function Router() {
         <Route path="/curator/profile" component={() => <ProtectedRoute component={CuratorProfile} />} />
         <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
         <Route path="/billing" component={() => <ProtectedRoute component={Billing} />} />
+        <Route path="/pricing" component={Pricing} />
         <Route path="/admin/settings" component={() => <ProtectedRoute component={AdminSettings} />} />
 
         <Route component={NotFound} />

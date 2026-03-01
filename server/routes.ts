@@ -16,6 +16,11 @@ import { registerStripeRoutes } from "./routes/stripe";
 import { registerWebhookRoutes } from "./routes/webhook";
 import multer from "multer";
 import { client, CLAUDE_MODEL } from "./utils/claudeClient";
+import {
+  CREDIT_COSTS, FREE_ENROLLMENT_LIMIT, FREE_MANUAL_BINDER_LIMIT,
+  FREE_MAX_WEEKS, PRO_MAX_WEEKS,
+  reserveCredits, refundCredits, getGenerationCost, getMaxWeeks, isProTier
+} from "./utils/creditService";
 import * as path from "path";
 import fs from "fs/promises";
 import { fileURLToPath } from "url";
@@ -545,11 +550,11 @@ export async function registerRoutes(
       return res.status(403).json({ error: "Curator access required" });
     }
 
-    // Pro gate: free curators limited to 2 binders (admins bypass)
-    if (user.subscriptionStatus !== 'pro' && !user.isAdmin) {
-      const count = await storage.countBindersByCurator(username);
-      if (count >= 2) {
-        return res.status(403).json({ error: "SUBSCRIPTION_REQUIRED", message: "Free plan limited to 2 binders. Upgrade to Pro for unlimited." });
+    // Free curators limited to 3 manual (non-AI) binders (admins bypass, Pro unlimited)
+    if (!isProTier(user.subscriptionTier || 'free') && !user.isAdmin) {
+      const manualCount = await storage.countManualBinders(username);
+      if (manualCount >= FREE_MANUAL_BINDER_LIMIT) {
+        return res.status(403).json({ error: "SUBSCRIPTION_REQUIRED", message: `Free plan limited to ${FREE_MANUAL_BINDER_LIMIT} manual binders. Upgrade to Pro for unlimited.` });
       }
     }
 
@@ -657,6 +662,10 @@ export async function registerRoutes(
     // Non-admin curator
     if (binder.status === 'draft') {
       if (visibility === 'public') {
+        // Free users cannot submit public binders for review
+        if (!isProTier((req.user as any).subscriptionTier || 'free') && !isAdmin) {
+          return res.status(403).json({ error: "SUBSCRIPTION_REQUIRED", message: "Pro subscription required to submit public binders for review. Unlisted and private publishing is available on the free plan." });
+        }
         // Public = catalog listing, requires admin review
         const updated = await storage.updateBinder(id, {
           status: 'pending_review',
@@ -697,9 +706,12 @@ export async function registerRoutes(
     const username = (req.user as any).username;
     const user = req.user as any;
 
-    // Pro gate: enrollment requires Pro subscription (admins bypass)
-    if (user.subscriptionStatus !== 'pro' && !user.isAdmin) {
-      return res.status(403).json({ error: "SUBSCRIPTION_REQUIRED", message: "Pro subscription required to enroll in binders." });
+    // Free users limited to 1 active enrollment (admins and Pro bypass)
+    if (!isProTier(user.subscriptionTier || 'free') && !user.isAdmin) {
+      const activeCount = await storage.countActiveEnrollments(username);
+      if (activeCount >= FREE_ENROLLMENT_LIMIT) {
+        return res.status(403).json({ error: "SUBSCRIPTION_REQUIRED", message: "Free plan limited to 1 active enrollment. Upgrade to Pro for unlimited." });
+      }
     }
 
     // Block enrollment on private binders for non-curators
@@ -919,36 +931,55 @@ export async function registerRoutes(
     res.json(times);
   });
 
+  // ========== CREDIT ENDPOINTS ==========
+
+  app.get("/api/credits/info", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
+    const creditBalance = await storage.getCreditBalance(user.id);
+    const userIsPro = isProTier(user.subscriptionTier || 'free') || user.isAdmin === true;
+
+    res.json({
+      creditBalance,
+      subscriptionTier: user.subscriptionTier || 'free',
+      isPro: userIsPro,
+      isAdmin: user.isAdmin === true,
+      costs: CREDIT_COSTS,
+      limits: {
+        enrollmentLimit: userIsPro ? null : FREE_ENROLLMENT_LIMIT,
+        manualBinderLimit: userIsPro ? null : FREE_MANUAL_BINDER_LIMIT,
+        maxWeeks: getMaxWeeks(user.subscriptionTier || 'free', user.isAdmin === true),
+      },
+    });
+  });
+
+  app.get("/api/credits/history", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+    const offset = parseInt(req.query.offset as string) || 0;
+
+    const transactions = await storage.getCreditTransactions(user.id, limit, offset);
+    res.json({ transactions });
+  });
+
   // ========== GENERATION INFO ==========
 
   app.get("/api/generation-info", isAuthenticated, async (req, res) => {
-    const username = (req.user as any).username;
     const user = req.user as any;
-    const userIsPro = user.subscriptionStatus === 'pro' || user.isAdmin === true;
-
-    if (userIsPro) {
-      return res.json({ generationCount: 0, generationLimit: null, remaining: null, cooldownRemaining: 0, isPro: true });
-    }
-
-    const genInfo = await storage.getGenerationInfo(username);
-    const limit = 2;
-    const remaining = Math.max(0, limit - genInfo.generationCount);
-
-    let cooldownRemaining = 0;
-    if (genInfo.lastGeneratedAt) {
-      const cooldownMs = 15 * 60 * 1000;
-      const elapsed = Date.now() - genInfo.lastGeneratedAt.getTime();
-      if (elapsed < cooldownMs) {
-        cooldownRemaining = Math.ceil((cooldownMs - elapsed) / 1000);
-      }
-    }
+    const userIsPro = isProTier(user.subscriptionTier || 'free') || user.isAdmin === true;
+    const creditBalance = await storage.getCreditBalance(user.id);
 
     res.json({
-      generationCount: genInfo.generationCount,
-      generationLimit: limit,
-      remaining,
-      cooldownRemaining,
-      isPro: false,
+      creditBalance,
+      isPro: userIsPro,
+      isAdmin: user.isAdmin === true,
+      subscriptionTier: user.subscriptionTier || 'free',
+      costs: CREDIT_COSTS,
+      maxWeeks: getMaxWeeks(user.subscriptionTier || 'free', user.isAdmin === true),
+      // Backwards-compatible fields
+      generationCount: 0,
+      generationLimit: null,
+      remaining: null,
+      cooldownRemaining: 0,
     });
   });
 
@@ -978,48 +1009,43 @@ export async function registerRoutes(
       return res.status(400).json({ error: "Complete basics fields before generating" });
     }
 
-    // Universal hard cap: max 6 weeks
-    if (binder.durationWeeks > 6) {
-      return res.status(400).json({ error: "Maximum binder duration is 6 weeks" });
-    }
-
-    // Free-tier users cannot generate binders longer than 4 weeks
-    const userIsPro = user.subscriptionStatus === 'pro' || user.isAdmin === true;
-    if (!userIsPro && binder.durationWeeks > 4) {
-      return res.status(403).json({ error: "Pro subscription required for binders longer than 4 weeks" });
-    }
-
-    // Generation limits for non-Pro users
-    if (!userIsPro) {
-      const genInfo = await storage.getGenerationInfo(username);
-      if (genInfo.generationCount >= 2) {
-        return res.status(403).json({ error: "GENERATION_LIMIT_REACHED", message: "You've used all 2 free generations. Upgrade to Pro for unlimited." });
-      }
-      if (genInfo.lastGeneratedAt) {
-        const cooldownMs = 15 * 60 * 1000; // 15 minutes
-        const elapsed = Date.now() - genInfo.lastGeneratedAt.getTime();
-        if (elapsed < cooldownMs) {
-          const retryAfterSeconds = Math.ceil((cooldownMs - elapsed) / 1000);
-          return res.status(429).json({ error: "GENERATION_COOLDOWN", message: "Please wait before generating again.", retryAfterSeconds });
-        }
-      }
+    // Max weeks based on tier
+    const maxWeeks = getMaxWeeks(user.subscriptionTier || 'free', user.isAdmin === true);
+    if (binder.durationWeeks > maxWeeks) {
+      return res.status(403).json({ error: "SUBSCRIPTION_REQUIRED", message: `Your plan supports up to ${maxWeeks}-week binders. Upgrade to Pro for up to ${PRO_MAX_WEEKS} weeks.` });
     }
 
     if (binder.status === 'generating') {
       return res.status(409).json({ error: "Generation already in progress" });
     }
 
-    await storage.updateBinder(binderId, { status: 'generating' });
+    // Credit-based limits (admins bypass)
+    const cost = getGenerationCost(binder.durationWeeks);
+    let reservationResult: { success: true; transactionId: number; newBalance: number } | null = null;
+
+    if (!isAdmin) {
+      const result = await reserveCredits(user.id, cost, 'generation', `Generate ${binder.durationWeeks}-week binder: ${binder.title}`, `binder:${binderId}`);
+      if (!result.success) {
+        return res.status(403).json({ error: "INSUFFICIENT_CREDITS", message: `Not enough credits. Need ${cost}, check your balance.`, cost });
+      }
+      reservationResult = result;
+    }
+
+    await storage.updateBinder(binderId, { status: 'generating', isAiGenerated: true });
 
     res.json({
       success: true,
       binderId,
-      websocketUrl: `/ws/generate-binder/${binderId}`
+      websocketUrl: `/ws/generate-binder/${binderId}`,
+      creditsDeducted: cost,
+      newBalance: reservationResult?.newBalance,
+      transactionId: reservationResult?.transactionId,
     });
   });
 
   // Improve writing with AI (grammar, spelling, punctuation)
   app.post("/api/improve-text", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
     const { html } = req.body;
 
     if (!html || typeof html !== 'string') {
@@ -1028,6 +1054,18 @@ export async function registerRoutes(
 
     if (html.length > 50000) {
       return res.status(400).json({ error: "Text too long" });
+    }
+
+    // Reserve 1 credit (admins bypass)
+    const isAdmin = user.isAdmin === true;
+    let reservationResult: { transactionId: number; newBalance: number } | null = null;
+
+    if (!isAdmin) {
+      const result = await reserveCredits(user.id, CREDIT_COSTS.improve_writing, 'improve_writing', 'Improve writing');
+      if (!result.success) {
+        return res.status(403).json({ error: "INSUFFICIENT_CREDITS", message: "Not enough credits for improve writing.", cost: CREDIT_COSTS.improve_writing });
+      }
+      reservationResult = result;
     }
 
     try {
@@ -1040,12 +1078,20 @@ export async function registerRoutes(
 
       const textBlock = response.content.find(b => b.type === 'text');
       if (!textBlock || textBlock.type !== 'text') {
+        // Refund on AI failure
+        if (reservationResult) {
+          await refundCredits(user.id, CREDIT_COSTS.improve_writing, reservationResult.transactionId, 'AI returned no response');
+        }
         return res.status(500).json({ error: "No response from AI" });
       }
 
-      res.json({ improved: textBlock.text });
+      res.json({ improved: textBlock.text, newBalance: reservationResult?.newBalance });
     } catch (error: any) {
       console.error("Improve text error:", error?.message || error);
+      // Refund on API error
+      if (reservationResult) {
+        await refundCredits(user.id, CREDIT_COSTS.improve_writing, reservationResult.transactionId, 'AI API error');
+      }
       res.status(500).json({ error: "Failed to improve text" });
     }
   });
@@ -1059,12 +1105,6 @@ export async function registerRoutes(
       return res.status(403).json({ error: "Curator access required" });
     }
 
-    // Week regeneration is a Pro-only feature
-    const userIsPro = user.subscriptionStatus === 'pro' || user.isAdmin === true;
-    if (!userIsPro) {
-      return res.status(403).json({ error: "Pro subscription required for week regeneration" });
-    }
-
     const { binderId, weekIndex } = req.body;
 
     if (!binderId || typeof binderId !== 'number') {
@@ -1076,7 +1116,7 @@ export async function registerRoutes(
     }
 
     const binder = await storage.getBinder(binderId);
-    const isAdmin = (req.user as any).isAdmin === true;
+    const isAdmin = user.isAdmin === true;
     if (!binder || (binder.curatorId !== username && !isAdmin)) {
       return res.status(403).json({ error: "Not your binder" });
     }
@@ -1085,11 +1125,26 @@ export async function registerRoutes(
       return res.status(400).json({ error: "weekIndex exceeds binder duration" });
     }
 
+    // Reserve credits for week regeneration (admins bypass)
+    const cost = CREDIT_COSTS.per_week;
+    let reservationResult: { success: true; transactionId: number; newBalance: number } | null = null;
+
+    if (!isAdmin) {
+      const result = await reserveCredits(user.id, cost, 'week_regen', `Regenerate week ${weekIndex} of: ${binder.title}`, `binder:${binderId}`);
+      if (!result.success) {
+        return res.status(403).json({ error: "INSUFFICIENT_CREDITS", message: `Not enough credits. Need ${cost}, check your balance.`, cost });
+      }
+      reservationResult = result;
+    }
+
     res.json({
       success: true,
       binderId,
       weekIndex,
-      websocketUrl: `/ws/regenerate-week/${binderId}/${weekIndex}`
+      websocketUrl: `/ws/regenerate-week/${binderId}/${weekIndex}`,
+      creditsDeducted: cost,
+      newBalance: reservationResult?.newBalance,
+      transactionId: reservationResult?.transactionId,
     });
   });
 

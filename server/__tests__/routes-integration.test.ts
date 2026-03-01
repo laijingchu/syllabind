@@ -296,9 +296,9 @@ describe('Routes Integration (real registerRoutes)', () => {
   });
 
   describe('POST /api/binders/:id/publish', () => {
-    it('non-admin curator submits draft for review', async () => {
-      const authed = await createAuthedApp(mockCurator);
-      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username, status: 'draft' });
+    it('pro curator submits draft for review', async () => {
+      const authed = await createAuthedApp(mockProCurator);
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockProCurator.username, status: 'draft' });
       mockStorage.updateBinder.mockResolvedValue({ id: 1, status: 'pending_review' });
       const res = await request(authed).post('/api/binders/1/publish');
       expect(res.status).toBe(200);
@@ -309,9 +309,17 @@ describe('Routes Integration (real registerRoutes)', () => {
       }));
     });
 
-    it('non-admin curator unpublishes back to draft', async () => {
+    it('returns 403 for free user submitting public binder', async () => {
       const authed = await createAuthedApp(mockCurator);
-      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username, status: 'published' });
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockCurator.username, status: 'draft' });
+      const res = await request(authed).post('/api/binders/1/publish');
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('SUBSCRIPTION_REQUIRED');
+    });
+
+    it('pro curator unpublishes back to draft', async () => {
+      const authed = await createAuthedApp(mockProCurator);
+      mockStorage.getBinder.mockResolvedValue({ id: 1, curatorId: mockProCurator.username, status: 'published' });
       mockStorage.updateBinder.mockResolvedValue({ id: 1, status: 'draft' });
       const res = await request(authed).post('/api/binders/1/publish');
       expect(res.status).toBe(200);
@@ -359,8 +367,22 @@ describe('Routes Integration (real registerRoutes)', () => {
       expect(res.body.id).toBe(1);
     });
 
-    it('returns 403 for free user (subscription required)', async () => {
+    it('allows free user first enrollment', async () => {
       const authed = await createAuthedApp(mockUser);
+      mockStorage.countActiveEnrollments.mockResolvedValue(0);
+      mockStorage.getEnrollment.mockResolvedValue(null);
+      mockStorage.dropActiveEnrollments.mockResolvedValue(undefined);
+      mockStorage.createEnrollment.mockResolvedValue({ id: 1, binderId: 1, status: 'in-progress' });
+      const res = await request(authed).post('/api/enrollments').send({
+        binderId: 1, status: 'in-progress', shareProfile: false
+      });
+      expect(res.status).toBe(200);
+    });
+
+    it('returns 403 for free user exceeding enrollment limit', async () => {
+      const authed = await createAuthedApp(mockUser);
+      mockStorage.countActiveEnrollments.mockResolvedValue(1);
+      mockStorage.getEnrollment.mockResolvedValue(null);
       const res = await request(authed).post('/api/enrollments').send({
         binderId: 1, status: 'in-progress'
       });
@@ -638,7 +660,7 @@ describe('Routes Integration (real registerRoutes)', () => {
         id: 1, curatorId: mockCurator.username,
         title: 'T', description: 'D', audienceLevel: 'Beginner', durationWeeks: 4
       });
-      mockStorage.getGenerationInfo.mockResolvedValue({ generationCount: 0, lastGeneratedAt: null });
+      mockStorage.deductCredits.mockResolvedValue({ transactionId: 1, newBalance: 60 });
       mockStorage.updateBinder.mockResolvedValue(undefined);
       const res = await request(authed).post('/api/generate-binder').send({ binderId: 1 });
       expect(res.status).toBe(200);
@@ -654,7 +676,7 @@ describe('Routes Integration (real registerRoutes)', () => {
       });
       const res = await request(authed).post('/api/generate-binder').send({ binderId: 1 });
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('Pro subscription required for binders longer than 4 weeks');
+      expect(res.body.error).toBe('SUBSCRIPTION_REQUIRED');
     });
 
     it('returns 409 when generation already in progress', async () => {
@@ -672,11 +694,15 @@ describe('Routes Integration (real registerRoutes)', () => {
   });
 
   describe('POST /api/regenerate-week', () => {
-    it('returns 403 for non-Pro curator', async () => {
+    it('returns 403 for insufficient credits', async () => {
       const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinder.mockResolvedValue({
+        id: 1, curatorId: mockCurator.username, durationWeeks: 4
+      });
+      mockStorage.deductCredits.mockRejectedValue(new Error('INSUFFICIENT_CREDITS'));
       const res = await request(authed).post('/api/regenerate-week').send({ binderId: 1, weekIndex: 1 });
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('Pro subscription required for week regeneration');
+      expect(res.body.error).toBe('INSUFFICIENT_CREDITS');
     });
 
     it('returns 400 for invalid weekIndex', async () => {
@@ -690,6 +716,7 @@ describe('Routes Integration (real registerRoutes)', () => {
       mockStorage.getBinder.mockResolvedValue({
         id: 1, curatorId: mockProCurator.username, durationWeeks: 4
       });
+      mockStorage.deductCredits.mockResolvedValue({ transactionId: 1, newBalance: 120 });
       const res = await request(authed).post('/api/regenerate-week').send({ binderId: 1, weekIndex: 2 });
       expect(res.status).toBe(200);
       expect(res.body.websocketUrl).toContain('/ws/regenerate-week');
@@ -749,54 +776,40 @@ describe('Routes Integration (real registerRoutes)', () => {
       expect(res.status).toBe(401);
     });
 
-    it('returns generation info for free user', async () => {
+    it('returns credit-based info for free user', async () => {
       const authed = await createAuthedApp(mockCurator);
-      mockStorage.getGenerationInfo.mockResolvedValue({ generationCount: 1, lastGeneratedAt: null });
+      mockStorage.getCreditBalance.mockResolvedValue(60);
       const res = await request(authed).get('/api/generation-info');
       expect(res.status).toBe(200);
-      expect(res.body.generationCount).toBe(1);
-      expect(res.body.generationLimit).toBe(2);
-      expect(res.body.remaining).toBe(1);
+      expect(res.body.creditBalance).toBe(60);
       expect(res.body.isPro).toBe(false);
+      expect(res.body.maxWeeks).toBe(4);
     });
 
-    it('returns unlimited for pro user', async () => {
+    it('returns credit-based info for pro user', async () => {
       const authed = await createAuthedApp(mockProCurator);
+      mockStorage.getCreditBalance.mockResolvedValue(130);
       const res = await request(authed).get('/api/generation-info');
       expect(res.status).toBe(200);
       expect(res.body.isPro).toBe(true);
-      expect(res.body.generationLimit).toBeNull();
+      expect(res.body.creditBalance).toBe(130);
+      expect(res.body.maxWeeks).toBe(6);
     });
   });
 
   // ========== GENERATION GUARDS ==========
 
-  describe('POST /api/generate-binder (generation limits)', () => {
-    it('blocks free user who has used 2 generations', async () => {
+  describe('POST /api/generate-binder (credit limits)', () => {
+    it('blocks user with insufficient credits', async () => {
       const authed = await createAuthedApp(mockCurator);
       mockStorage.getBinder.mockResolvedValue({
         id: 1, curatorId: mockCurator.username,
         title: 'T', description: 'D', audienceLevel: 'Beginner', durationWeeks: 4
       });
-      mockStorage.getGenerationInfo.mockResolvedValue({ generationCount: 2, lastGeneratedAt: null });
+      mockStorage.deductCredits.mockRejectedValue(new Error('INSUFFICIENT_CREDITS'));
       const res = await request(authed).post('/api/generate-binder').send({ binderId: 1 });
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('GENERATION_LIMIT_REACHED');
-    });
-
-    it('blocks free user within cooldown period', async () => {
-      const authed = await createAuthedApp(mockCurator);
-      mockStorage.getBinder.mockResolvedValue({
-        id: 1, curatorId: mockCurator.username,
-        title: 'T', description: 'D', audienceLevel: 'Beginner', durationWeeks: 4
-      });
-      mockStorage.getGenerationInfo.mockResolvedValue({
-        generationCount: 1,
-        lastGeneratedAt: new Date() // Just now = within cooldown
-      });
-      const res = await request(authed).post('/api/generate-binder').send({ binderId: 1 });
-      expect(res.status).toBe(429);
-      expect(res.body.error).toBe('GENERATION_COOLDOWN');
+      expect(res.body.error).toBe('INSUFFICIENT_CREDITS');
     });
 
     it('rejects binder with > 6 weeks (hard cap)', async () => {
@@ -806,8 +819,8 @@ describe('Routes Integration (real registerRoutes)', () => {
         title: 'T', description: 'D', audienceLevel: 'Beginner', durationWeeks: 8
       });
       const res = await request(authed).post('/api/generate-binder').send({ binderId: 1 });
-      expect(res.status).toBe(400);
-      expect(res.body.error).toBe('Maximum binder duration is 6 weeks');
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('SUBSCRIPTION_REQUIRED');
     });
   });
 

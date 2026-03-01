@@ -3,7 +3,8 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { WebSocketServer } from 'ws';
-import { handleGenerateBinderWS, handleRegenerateWeekWS } from './websocket/generateBinder';
+import { handleGenerateBinderWS, handleRegenerateWeekWS, type CreditReservation } from './websocket/generateBinder';
+import { isProTier } from './utils/creditService';
 import { authenticateWebSocket } from './auth';
 import { storage } from './storage';
 
@@ -168,19 +169,31 @@ app.use((req, res, next) => {
       return;
     }
 
+    // Build credit reservation from query params (set by HTTP route before WS connect)
+    const parseCreditReservation = (urlObj: URL): CreditReservation | undefined => {
+      const txId = urlObj.searchParams.get('txId');
+      const txAmount = urlObj.searchParams.get('txAmount');
+      if (txId && txAmount) {
+        return { userId: user.id, transactionId: parseInt(txId), amount: parseInt(txAmount) };
+      }
+      return undefined;
+    };
+
     // Route to appropriate handler
     if (url?.startsWith('/ws/generate-binder/')) {
       const urlObj = new URL(url, 'http://localhost');
       const useMock = urlObj.searchParams.get('mock') === 'true';
-      const isProUser = user.subscriptionStatus === 'pro' || user.isAdmin === true;
-      handleGenerateBinderWS(ws, binderId, useMock, isProUser, user.username);
+      const isProUser = isProTier(user.subscriptionTier || 'free') || user.isAdmin === true;
+      const creditReservation = parseCreditReservation(urlObj);
+      handleGenerateBinderWS(ws, binderId, useMock, isProUser, user.username, creditReservation);
     } else if (url?.startsWith('/ws/regenerate-week/')) {
       const urlObj = new URL(url, 'http://localhost');
       const pathParts = urlObj.pathname.split('/');
       const weekIndex = parseInt(pathParts[4] || '');
       const useMock = urlObj.searchParams.get('mock') === 'true';
+      const creditReservation = parseCreditReservation(urlObj);
       if (weekIndex) {
-        handleRegenerateWeekWS(ws, binderId, weekIndex, useMock);
+        handleRegenerateWeekWS(ws, binderId, weekIndex, useMock, creditReservation);
       } else {
         ws.send(JSON.stringify({ type: 'error', data: { message: 'Invalid week index.' } }));
         ws.close(4400, 'Bad Request');

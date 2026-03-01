@@ -3,7 +3,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { registerRoutes } from '../routes';
 import { storage } from '../storage';
-import { resetAllMocks, mockUser, mockCurator, mockAdmin } from './setup/mocks';
+import { resetAllMocks, mockUser, mockCurator, mockProCurator, mockAdmin } from './setup/mocks';
 
 const mockStorage = storage as unknown as Record<string, jest.Mock>;
 
@@ -337,10 +337,10 @@ describe('Catalog Search & Categories/Tags', () => {
       });
     });
 
-    it('non-admin curator submits for review with public visibility', async () => {
-      const authed = await createAuthedApp(mockCurator);
+    it('pro curator submits for review with public visibility', async () => {
+      const authed = await createAuthedApp(mockProCurator);
       mockStorage.getBinder.mockResolvedValue({
-        id: 1, curatorId: mockCurator.username, status: 'draft', visibility: 'public',
+        id: 1, curatorId: mockProCurator.username, status: 'draft', visibility: 'public',
       });
       mockStorage.updateBinder.mockResolvedValue({ id: 1, status: 'pending_review', visibility: 'public' });
 

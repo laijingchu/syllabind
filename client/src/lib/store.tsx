@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePostHog } from '@posthog/react';
 import { useAuth } from '@/hooks/use-auth';
-import { Binder, Enrollment, ReaderProfile, Submission, SubscriptionLimits } from './types';
+import { Binder, Enrollment, ReaderProfile, Submission, SubscriptionLimits, CreditCosts } from './types';
 
 interface StoreContextType {
   user: any;
@@ -46,10 +46,14 @@ interface StoreContextType {
   refreshBinders: () => Promise<void>;
   refreshEnrollments: () => Promise<void>;
 
-  // Subscription
+  // Subscription & Credits
   isPro: boolean;
   subscriptionLimits: SubscriptionLimits | null;
   refreshSubscriptionLimits: () => Promise<void>;
+  creditBalance: number;
+  subscriptionTier: string;
+  creditCosts: CreditCosts;
+  refreshCredits: () => Promise<void>;
 
   // Notifications
   hasUnreadNotifications: boolean;
@@ -76,7 +80,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [notificationItems, setNotificationItems] = useState<Array<{ binderId: number; title: string; type: 'approved' | 'rejected' }>>([]);
   const [pendingReviewCount, setPendingReviewCount] = useState(0);
 
-  const isPro = user?.subscriptionStatus === 'pro' || user?.isAdmin === true;
+  const [creditBalance, setCreditBalance] = useState(0);
+  const [subscriptionTier, setSubscriptionTier] = useState('free');
+  const [creditCosts, setCreditCosts] = useState<CreditCosts>({ per_week: 10, improve_writing: 1, auto_fill: 0 });
+
+  const isPro = ['pro_monthly', 'pro_annual', 'lifetime'].includes(user?.subscriptionTier || subscriptionTier) || user?.isAdmin === true;
 
   // Fetch binders on mount
   useEffect(() => {
@@ -186,12 +194,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Fetch subscription limits when user logs in
+  const refreshCredits = async () => {
+    try {
+      const res = await fetch('/api/credits/info', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setCreditBalance(data.creditBalance ?? 0);
+        setSubscriptionTier(data.subscriptionTier || 'free');
+        if (data.costs) setCreditCosts(data.costs);
+      }
+    } catch (err) {
+      console.error('Failed to fetch credits:', err);
+    }
+  };
+
+  // Fetch subscription limits and credits when user logs in
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
       refreshSubscriptionLimits();
+      refreshCredits();
     } else if (!isAuthenticated) {
       setSubscriptionLimits(null);
+      setCreditBalance(0);
+      setSubscriptionTier('free');
     }
   }, [isAuthenticated, isLoading]);
 
@@ -627,6 +652,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       isPro,
       subscriptionLimits,
       refreshSubscriptionLimits,
+      creditBalance,
+      subscriptionTier,
+      creditCosts,
+      refreshCredits,
       hasUnreadNotifications,
       notificationItems,
       pendingReviewCount,

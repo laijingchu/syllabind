@@ -1,6 +1,7 @@
 import { WebSocket } from 'ws';
 import { storage } from '../storage';
 import { generateBinder, regenerateWeek } from '../utils/binderGenerator';
+import { refundCredits, getGenerationCost, CREDIT_COSTS } from '../utils/creditService';
 
 // Mock data for testing streaming without API calls
 const MOCK_STEPS = [
@@ -149,7 +150,13 @@ async function mockGenerateBinder(ws: WebSocket, binderId: number, durationWeeks
   console.log('[MockGenerate] Mock generation complete!');
 }
 
-export function handleGenerateBinderWS(ws: WebSocket, binderId: number, useMock?: boolean, isProUser?: boolean, curatorUsername?: string) {
+export interface CreditReservation {
+  userId: string;
+  transactionId: number;
+  amount: number;
+}
+
+export function handleGenerateBinderWS(ws: WebSocket, binderId: number, useMock?: boolean, isProUser?: boolean, curatorUsername?: string, creditReservation?: CreditReservation) {
   const abortController = new AbortController();
 
   // When client disconnects (cancel or navigation), abort the generation
@@ -168,6 +175,10 @@ export function handleGenerateBinderWS(ws: WebSocket, binderId: number, useMock?
           type: 'error',
           data: { message: 'Binder not found' }
         }));
+        // Refund credits on binder not found
+        if (creditReservation) {
+          await refundCredits(creditReservation.userId, creditReservation.amount, creditReservation.transactionId, 'Binder not found during generation');
+        }
         ws.close();
         return;
       }
@@ -202,20 +213,15 @@ export function handleGenerateBinderWS(ws: WebSocket, binderId: number, useMock?
         });
       }
 
-      // Track generation count for all users (gate only free users, track for analytics)
-      if (curatorUsername) {
-        try {
-          await storage.incrementGenerationCount(curatorUsername);
-        } catch (err) {
-          console.error('[Generate] Failed to increment generation count:', err);
-        }
-      }
-
     } catch (error) {
       // Don't log abort errors as generation errors
       if (abortController.signal.aborted) {
         console.log(`[Generate] Generation cancelled for binder ${binderId}`);
         await storage.updateBinder(binderId, { status: 'draft' });
+        // Refund credits on cancellation
+        if (creditReservation) {
+          await refundCredits(creditReservation.userId, creditReservation.amount, creditReservation.transactionId, 'Generation cancelled');
+        }
         return;
       }
 
@@ -228,6 +234,10 @@ export function handleGenerateBinderWS(ws: WebSocket, binderId: number, useMock?
       }
 
       await storage.updateBinder(binderId, { status: 'draft' });
+      // Refund credits on error
+      if (creditReservation) {
+        await refundCredits(creditReservation.userId, creditReservation.amount, creditReservation.transactionId, 'Generation failed');
+      }
     } finally {
       if (ws.readyState === WebSocket.OPEN) {
         ws.close();
@@ -334,7 +344,8 @@ export function handleRegenerateWeekWS(
   ws: WebSocket,
   binderId: number,
   weekIndex: number,
-  useMock?: boolean
+  useMock?: boolean,
+  creditReservation?: CreditReservation
 ) {
   const abortController = new AbortController();
 
@@ -401,6 +412,9 @@ export function handleRegenerateWeekWS(
       // Don't log abort errors as generation errors
       if (abortController.signal.aborted) {
         console.log(`[RegenerateWeek] Regeneration cancelled for binder ${binderId} week ${weekIndex}`);
+        if (creditReservation) {
+          await refundCredits(creditReservation.userId, creditReservation.amount, creditReservation.transactionId, 'Week regeneration cancelled');
+        }
         return;
       }
 
@@ -410,6 +424,10 @@ export function handleRegenerateWeekWS(
           type: 'error',
           data: { message: error instanceof Error ? error.message : 'Unknown error' }
         }));
+      }
+      // Refund credits on error
+      if (creditReservation) {
+        await refundCredits(creditReservation.userId, creditReservation.amount, creditReservation.transactionId, 'Week regeneration failed');
       }
     } finally {
       if (ws.readyState === WebSocket.OPEN) {
