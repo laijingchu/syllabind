@@ -91,8 +91,19 @@ export async function registerStripeRoutes(app: Express) {
         return res.status(403).json({ error: "Credit packages are only available for Pro subscribers" });
       }
 
-      // Create or get Stripe customer
-      let customerId = user.stripeCustomerId;
+      // Create or get Stripe customer (re-fetch from DB to avoid stale session data)
+      const freshUser = await storage.getUser(userId);
+      let customerId = freshUser?.stripeCustomerId || null;
+      if (customerId) {
+        // Verify customer still exists in Stripe
+        try {
+          await stripe.customers.retrieve(customerId);
+        } catch {
+          console.log('[Checkout] Stale Stripe customer ID, creating new one');
+          customerId = null;
+          await storage.updateUser(userId, { stripeCustomerId: null } as any);
+        }
+      }
       if (!customerId) {
         const customer = await stripe.customers.create({
           email: user.email || undefined,
