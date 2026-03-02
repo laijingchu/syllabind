@@ -3,11 +3,12 @@ import { BubbleMenu } from '@tiptap/react/menus';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
-import { Bold, Italic, Link as LinkIcon, List, CheckCircle2, Sparkles, Loader2 } from 'lucide-react';
+import { Bold, Italic, Link as LinkIcon, List, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from './button';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { SaveStatus } from '@/pages/BinderEditor';
 
 interface RichTextEditorProps {
   value: string;
@@ -16,6 +17,7 @@ interface RichTextEditorProps {
   className?: string;
   isSaving?: boolean;
   lastSaved?: Date | null;
+  onCreditUsed?: () => void;
 }
 
 const EditorBubbleMenu = ({ editor }: { editor: Editor }) => {
@@ -71,7 +73,7 @@ const EditorBubbleMenu = ({ editor }: { editor: Editor }) => {
   );
 };
 
-export function RichTextEditor({ value, onChange, placeholder, className, isSaving, lastSaved }: RichTextEditorProps) {
+export function RichTextEditor({ value, onChange, placeholder, className, isSaving, lastSaved, onCreditUsed }: RichTextEditorProps) {
   const [isImproving, setIsImproving] = useState(false);
 
   const editor = useEditor({
@@ -139,6 +141,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, isSavi
       const { improved } = await res.json();
       editor.commands.setContent(improved);
       onChange(improved);
+      onCreditUsed?.();
       toast({
         title: "Writing improved",
         description: "Grammar, clarity, and tone improvements applied.",
@@ -181,16 +184,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, isSavi
         )}
 
         {(isSaving !== undefined || lastSaved !== undefined) && (
-          <div className="flex items-center gap-1.5">
-            {isSaving ? (
-              <span className="text-xs text-muted-foreground">Saving...</span>
-            ) : lastSaved ? (
-              <>
-                <CheckCircle2 className="h-3 w-3 text-green-500/70" />
-                <span className="text-xs text-muted-foreground/70">Saved</span>
-              </>
-            ) : null}
-          </div>
+          <SaveStatus isSaving={!!isSaving} lastSaved={lastSaved ?? null} />
         )}
       </div>
     </div>

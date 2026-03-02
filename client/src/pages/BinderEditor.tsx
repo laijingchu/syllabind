@@ -67,6 +67,24 @@ import { CSS } from '@dnd-kit/utilities';
 
 const generateTempId = () => -Math.floor(Math.random() * 1000000); // Temporary negative IDs for unsaved items
 
+export function SaveStatus({ isSaving, lastSaved, className }: { isSaving: boolean; lastSaved: Date | null; className?: string }) {
+  if (!isSaving && !lastSaved) return null;
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 w-[4.5rem]", className)}>
+      {isSaving ? (
+        <>
+          <Loader2 className="h-3 w-3 animate-spin shrink-0" />
+          <span className="text-xs text-muted-foreground">Saving...</span>
+        </>
+      ) : lastSaved ? (
+        <>
+          <CheckCircle2 className="h-3 w-3 text-green-500/70 shrink-0" />
+          <span className="text-xs text-muted-foreground/70">Saved</span>
+        </>
+      ) : null}
+    </span>
+  );
+}
 
 interface SortableStepProps {
   step: Step;
@@ -78,9 +96,10 @@ interface SortableStepProps {
   handleAutoFill: (weekIndex: number, stepId: number) => void;
   isSaving: boolean;
   lastSaved: Date | null;
+  onCreditUsed?: () => void;
 }
 
-function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, removeStep, handleAutoFill, isSaving, lastSaved }: SortableStepProps) {
+function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, removeStep, handleAutoFill, isSaving, lastSaved, onCreditUsed }: SortableStepProps) {
   const {
     attributes,
     listeners,
@@ -230,6 +249,7 @@ function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, remov
                   placeholder="Why should they read this?"
                   isSaving={isSaving}
                   lastSaved={lastSaved}
+                  onCreditUsed={onCreditUsed}
                />
              </div>
            </>
@@ -255,6 +275,7 @@ function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, remov
                   placeholder="What should they do?"
                   isSaving={isSaving}
                   lastSaved={lastSaved}
+                  onCreditUsed={onCreditUsed}
                />
              </div>
            </>
@@ -491,12 +512,16 @@ export default function BinderEditor() {
   }, [isGuestMode]);
 
   // Fetch generation info for authenticated users
-  useEffect(() => {
+  const refreshGenerationInfo = () => {
     if (isGuestMode || !user) return;
     fetch('/api/generation-info', { credentials: 'include' })
       .then(res => res.json())
       .then(data => setGenerationInfo(data))
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    refreshGenerationInfo();
   }, [user, isGuestMode]);
 
   // Fetch tags for this binder
@@ -1807,68 +1832,86 @@ export default function BinderEditor() {
             </Button>
             <h1 className="text-xl sm:text-2xl font-display">{isNew ? 'Create New Binder' : 'Edit Binder'}</h1>
          </div>
-         <div className="flex flex-wrap gap-2 items-center">
-            {!isNew && (
-              <>
-                <Button variant="outline" size="sm" onClick={handleShareDraft} className="gap-2">
-                  <Share2 className="h-4 w-4" /> <span className="hidden sm:inline">Share Draft</span>
-                </Button>
-                <Link href={`/curator/binder/${params?.id}/analytics`}>
-                  <Button variant="ghost" size="sm">
-                    <BarChart2 className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Analytics</span>
-                  </Button>
-                </Link>
-              </>
-            )}
-            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-              {isGuestMode ? (
-                isDemoMode ? (
+         <div className="flex flex-wrap gap-1.5 items-center">
+            <TooltipProvider delayDuration={300}>
+            {isGuestMode ? (
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                {isDemoMode ? (
                   <span className="hidden sm:inline">Demo</span>
                 ) : (formData.title.trim() || formData.description.trim()) ? (
                   <>
                     <AlertTriangle className="h-3 w-3 text-amber-500" />
                     <span className="hidden sm:inline">Progress not saved</span>
                   </>
-                ) : null
-              ) : isSaving ? (
-                <>
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  <span className="hidden sm:inline">Saving...</span>
-                </>
-              ) : lastSaved ? (
-                <>
-                  <CheckCircle2 className="h-3 w-3 text-green-500/70" />
-                  <span className="hidden sm:inline">Saved</span>
-                </>
-              ) : null}
-            </span>
+                ) : null}
+              </span>
+            ) : (
+              <SaveStatus isSaving={isSaving} lastSaved={lastSaved} />
+            )}
             {!isNew && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowDeleteDialog(true)}
-                disabled={isDeleting}
-                className="gap-1.5 border-destructive text-destructive hover:bg-destructive/10"
-              >
-                {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} <span className="hidden sm:inline">{isDeleting ? 'Deleting...' : 'Delete'}</span>
-              </Button>
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleShareDraft}>
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Share Draft</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link href={`/curator/binder/${params?.id}/analytics`}>
+                      <Button variant="outline" size="icon" className="h-8 w-8">
+                        <BarChart2 className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>Analytics</TooltipContent>
+                </Tooltip>
+              </>
+            )}
+            {!isNew && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 border-destructive text-destructive hover:bg-destructive/10"
+                    onClick={() => setShowDeleteDialog(true)}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{isDeleting ? 'Deleting...' : 'Delete'}</TooltipContent>
+              </Tooltip>
             )}
             {isGuestMode && hasBinderContent && !isGenerating && (
-              <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={handleFormReset}>
-                <RefreshCw className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Start Over</span>
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={handleFormReset}>
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Start Over</TooltipContent>
+              </Tooltip>
             )}
             {isGuestMode && hasBinderContent && !isGenerating && (
-              <Button
-                size="sm"
-                className="gap-1.5"
-                onClick={() => {
-                  sessionStorage.setItem('guestBinderPreview', JSON.stringify(formData));
-                  setLocation('/create/preview');
-                }}
-              >
-                <Eye className="h-4 w-4" /> <span className="hidden sm:inline">Preview</span>
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => {
+                      sessionStorage.setItem('guestBinderPreview', JSON.stringify(formData));
+                      setLocation('/create/preview');
+                    }}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Preview</TooltipContent>
+              </Tooltip>
             )}
             {isGuestMode ? (
               <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>Sign up</Button>
@@ -1903,19 +1946,30 @@ export default function BinderEditor() {
               </DropdownMenu>
             )}
             {!isNew && (
-              <Link href={formData.status === 'published' ? `/binder/${params?.id}` : `/binder/${params?.id}?preview=true`}>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Eye className="h-4 w-4" /> <span className="hidden sm:inline">Preview</span>
-                </Button>
-              </Link>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href={formData.status === 'published' ? `/binder/${params?.id}` : `/binder/${params?.id}?preview=true`}>
+                    <Button variant="outline" size="icon" className="h-8 w-8">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>Preview</TooltipContent>
+              </Tooltip>
             )}
             {!isNew && (
-              <Link href={`/curator/binder/${params?.id}/readers`}>
-                <Button variant="outline" size="sm" className="gap-2">
-                   <Users className="h-4 w-4" /> <span className="hidden sm:inline">Readers</span>
-                </Button>
-              </Link>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href={`/curator/binder/${params?.id}/readers`}>
+                    <Button variant="outline" size="icon" className="h-8 w-8">
+                      <Users className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>Readers</TooltipContent>
+              </Tooltip>
             )}
+            </TooltipProvider>
          </div>
       </div>
 
@@ -1972,6 +2026,7 @@ export default function BinderEditor() {
               placeholder="What will they learn?"
               isSaving={isSaving}
               lastSaved={lastSaved}
+              onCreditUsed={refreshGenerationInfo}
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
@@ -2318,6 +2373,7 @@ export default function BinderEditor() {
                           placeholder="What is the theme for this week?"
                           isSaving={isSaving}
                           lastSaved={lastSaved}
+                          onCreditUsed={refreshGenerationInfo}
                        />
                        {/* Regenerate Week Button */}
                        {!isNew && formData.id > 0 && (
@@ -2368,6 +2424,7 @@ export default function BinderEditor() {
                           handleAutoFill={handleAutoFill}
                           isSaving={isSaving}
                           lastSaved={lastSaved}
+                          onCreditUsed={refreshGenerationInfo}
                         />
                       ))}
                     </div>

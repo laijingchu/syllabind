@@ -2498,3 +2498,13 @@ All AI features are now gated by a credit system. The old generation count/coold
 **Migrations:**
 - `migrations/0009_add_generation_tracking.sql` — original generation count fields + `is_demo`
 - `migrations/0012_add_credit_system.sql` — `credit_balance`, `subscription_tier`, `credits_granted_at` on users; `is_ai_generated` on binders; `credit_transactions` table
+
+### Stale Credit Balance After Improve Writing (2026-03-02)
+
+**Problem:** The credit balance shown in the BinderEditor was fetched once on mount via `/api/generation-info` and cached in `generationInfo` state. After using "Improve writing" (which deducts 1 credit server-side), the displayed balance was stale — e.g., showing "deducting 20 from 680" instead of the correct 679.
+
+**Solution:** Added `onCreditUsed` callback prop to `RichTextEditor`. After a successful `/api/improve-text` call, the callback fires and the BinderEditor re-fetches `/api/generation-info` to refresh the displayed credit balance. The callback is threaded through `SortableStep` for step-level editors.
+
+**Files Modified:**
+- `client/src/components/ui/rich-text-editor.tsx` — Added `onCreditUsed` prop, called after successful improve-text
+- `client/src/pages/BinderEditor.tsx` — Extracted `refreshGenerationInfo()` helper, passed as `onCreditUsed` to all `RichTextEditor` and `SortableStep` instances
