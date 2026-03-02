@@ -883,7 +883,7 @@ export class DatabaseStorage implements IStorage {
       { name: 'Science', slug: 'science', description: 'Natural sciences, research methods, and scientific thinking', displayOrder: 4 },
       { name: 'Arts & Culture', slug: 'arts-culture', description: 'Literature, history, art, music, and cultural studies', displayOrder: 5 },
       { name: 'Social Sciences', slug: 'social-sciences', description: 'Psychology, sociology, economics, and political science', displayOrder: 6 },
-      { name: 'Health & Wellness', slug: 'health-wellness', description: 'Physical health, mental well-being, and lifestyle habits', displayOrder: 7 },
+      { name: 'Humanities', slug: 'humanities', description: 'Philosophy, history, languages, and the study of human culture', displayOrder: 7 },
       { name: 'Personal Development', slug: 'personal-development', description: 'Productivity, communication, habits, and self-improvement', displayOrder: 8 },
       { name: 'Other', slug: 'other', description: "Topics that don't fit neatly into other categories", displayOrder: 9 },
     ]).onConflictDoNothing();
