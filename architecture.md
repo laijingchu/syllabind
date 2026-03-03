@@ -1160,6 +1160,18 @@ PostHog is integrated as the product analytics platform. See `docs/POSTHOG_ANALY
 
 ---
 
+## Production Database Safety Guards
+
+Dev-only commands (`db:push`, `db:seed`) are blocked when `NODE_ENV=production`:
+
+- **`scripts/guard-dev.sh`** — Shell guard prefixed to the npm scripts; exits 1 in production.
+- **`server/seed.ts`** — Runtime `NODE_ENV` check as defense-in-depth (catches direct `tsx` invocations that bypass npm).
+- **`db:generate` + `db:migrate`** — Production-safe workflow. `db:generate` creates journal-tracked SQL files via `drizzle-kit generate`; `db:migrate` applies them via `server/migrate.ts` using `drizzle-orm/node-postgres/migrator`.
+
+The migration journal (`migrations/meta/_journal.json`) only tracks `0000_lovely_lake`. Older SQL files were applied manually via `psql` and are not re-applied by `db:migrate`.
+
+---
+
 ## Database Migration History
 
 ### Username-Based Foreign Keys Migration (2026-01-26)
@@ -2508,3 +2520,24 @@ All AI features are now gated by a credit system. The old generation count/coold
 **Files Modified:**
 - `client/src/components/ui/rich-text-editor.tsx` — Added `onCreditUsed` prop, called after successful improve-text
 - `client/src/pages/BinderEditor.tsx` — Extracted `refreshGenerationInfo()` helper, passed as `onCreditUsed` to all `RichTextEditor` and `SortableStep` instances
+
+### Test Coverage Expansion (2026-03-03)
+
+**Problem:** Coverage was below thresholds (Statements 53.5%/70%, Branches 37.96%/60%, Lines 53.66%/70%, Functions 51.5%/65%).
+
+**Solution:** Two-pronged approach: exclude untestable files and add new tests.
+
+**Coverage exclusions** (`jest.config.cjs`):
+- `server/utils/binderGenerator.ts` — AI generation integration (Claude API, WebSocket, retries)
+- `server/migrate.ts` — Standalone migration script
+
+**New test files:**
+- `server/__tests__/requestQueue.test.ts` — Sliding-window rate limiter (3 tests)
+- `server/__tests__/rateLimiter.test.ts` — IP-based rate limiter middleware (6 tests)
+- `server/__tests__/stripeLib.test.ts` — Stripe client factory caching (5 tests)
+- `server/__tests__/stripeRoutes-coverage.test.ts` — All Stripe routes via supertest (17 tests)
+
+**Expanded test file:**
+- `server/__tests__/storage-coverage.test.ts` — Added ~25 describes covering: `updateWeek`, `deleteStep`, `deleteWeeksByBinderId`, `saveWeeksAndSteps`, `getUserByStripeCustomerId`, `getSubscriptionByStripeId`, `upsertSubscription`, `updateSubscriptionByStripeId`, `countBindersByCurator`, `countActiveEnrollments`, `countManualBinders`, `getSiteSetting`, `setSiteSetting`, `listCategories`, `initializeDefaultCategories`, `listTags`, `getTagsByBinderId`, `findOrCreateTag`, `setBinderTags`, `incrementGenerationCount`, `getGenerationInfo`, `getBindersByStatus`, `getDemoBinders`, `getCuratorUnreadNotifications`, `getAdminUnreadCount`, `acknowledgeNotifications`, `getCreditBalance`, `getCreditTransactions`, `deductCredits`, `grantCredits`, `refreshSearchVector`
+
+**Results:** 37 test suites, 712 tests, all passing. Coverage: Statements 80.21%, Branches 68.6%, Functions 73.55%, Lines 81% — all above thresholds.
