@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
-import { BookOpen, User, LogOut, Menu, X, Bug, Settings, CreditCard } from 'lucide-react';
+import { BookOpen, User, LogOut, Menu, X, Bug, Settings, CreditCard, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -22,12 +22,13 @@ import {
 } from "@/components/ui/sheet";
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, logout } = useStore();
+  const { user, isAuthenticated, logout, isLoggingOut, hasUnreadNotifications } = useStore();
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [bugReportUrl, setBugReportUrl] = useState<string | null>(null);
   const [termsUrl, setTermsUrl] = useState<string | null>(null);
   const [privacyUrl, setPrivacyUrl] = useState<string | null>(null);
+  const [getPaidToTeachUrl, setGetPaidToTeachUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -42,10 +43,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
     Promise.all([
       fetch('/api/site-settings/terms_of_service_url').then(r => r.json()),
       fetch('/api/site-settings/privacy_policy_url').then(r => r.json()),
+      fetch('/api/site-settings/get_paid_to_teach_url').then(r => r.json()),
     ])
-      .then(([termsData, privacyData]) => {
+      .then(([termsData, privacyData, teachData]) => {
         setTermsUrl(termsData.value || null);
         setPrivacyUrl(privacyData.value || null);
+        setGetPaidToTeachUrl(teachData.value || null);
       })
       .catch(() => {});
   }, []);
@@ -57,6 +60,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground font-text selection:bg-primary/20">
+      {isLoggingOut && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="text-lg text-muted-foreground">
+              Come back soon!<span className="inline-flex w-[1.5em]"><span className="animate-ellipsis" /></span>
+            </span>
+          </div>
+        </div>
+      )}
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/85 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
@@ -96,13 +109,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       <span className="font-medium">Catalog</span>
                     </button>
                     <button
-                      onClick={() => handleMobileNavClick("/creator")}
+                      onClick={() => handleMobileNavClick("/curator")}
                       className={cn(
                         "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
-                        location.startsWith("/creator") ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                        location.startsWith("/curator") ? "bg-primary/10 text-primary" : "hover:bg-muted"
                       )}
                     >
-                      <span className="font-medium">Syllabind Builder</span>
+                      <span className="font-medium">Curator Studio</span>
                     </button>
                     <div className="border-t my-4" />
                     <button
@@ -161,11 +174,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <Link href="/catalog" className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/catalog" ? "text-primary" : "text-muted-foreground")}>
                     Catalog
                   </Link>
-                  <Link href="/creator" className={cn("text-sm font-medium transition-colors hover:text-primary", location.startsWith("/creator") ? "text-primary" : "text-muted-foreground")}>
-                    Syllabind Builder
-                  </Link>
+                  <span className="relative">
+                    <Link href="/curator" className={cn("text-sm font-medium transition-colors hover:text-primary", location.startsWith("/curator") ? "text-primary" : "text-muted-foreground")}>
+                      Curator Studio
+                    </Link>
+                    {hasUnreadNotifications && (
+                      <span className="absolute -top-1 -right-2 h-2 w-2 rounded-full bg-red-500" />
+                    )}
+                  </span>
                 </>
               )}
+              <Link href="/pricing" className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/pricing" ? "text-primary" : "text-muted-foreground")}>
+                Pricing
+              </Link>
             </nav>
           </div>
 
@@ -235,20 +256,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-4">
                 {location !== '/login' && (
                   <>
-                    <Button 
-                      variant="ghost"
-                      onClick={() => {
-                        const element = document.getElementById('curate');
-                        if (element) {
-                          element.scrollIntoView({ behavior: 'smooth' });
-                        } else {
-                          window.location.href = '/welcome#curate';
-                        }
-                      }}
-                      className="hidden md:inline-flex"
-                    >
-                      Apply to Curate
-                    </Button>
+                    {getPaidToTeachUrl && (
+                      <Button
+                        variant="ghost"
+                        onClick={() => window.open(getPaidToTeachUrl, '_blank', 'noopener,noreferrer')}
+                        className="hidden md:inline-flex"
+                      >
+                        💰 Give feedback
+                      </Button>
+                    )}
                     <Link href="/login?mode=signup">
                       <Button>Sign up / Log in</Button>
                     </Link>

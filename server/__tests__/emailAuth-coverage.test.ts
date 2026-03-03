@@ -57,7 +57,7 @@ const mockUser = {
   replitId: null,
   googleId: null,
   appleId: null,
-  isCreator: false,
+  isCurator: false,
   bio: null,
   expertise: null,
   avatarUrl: null,

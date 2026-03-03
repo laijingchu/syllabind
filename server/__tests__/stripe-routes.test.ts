@@ -26,12 +26,12 @@ describe('Stripe Routes', () => {
     a.get('/api/subscription/limits', authMiddleware, async (req, res) => {
       const user = req.user as any;
       const isPro = user.subscriptionStatus === 'pro';
-      const syllabindCount = await mockStorage.countSyllabindsByCreator(user.username);
-      const FREE_SYLLABIND_LIMIT = 2;
+      const binderCount = await mockStorage.countBindersByCurator(user.username);
+      const FREE_BINDER_LIMIT = 2;
       res.json({
-        syllabindCount,
-        syllabindLimit: isPro ? null : FREE_SYLLABIND_LIMIT,
-        canCreateMore: isPro || syllabindCount < FREE_SYLLABIND_LIMIT,
+        binderCount,
+        binderLimit: isPro ? null : FREE_BINDER_LIMIT,
+        canCreateMore: isPro || binderCount < FREE_BINDER_LIMIT,
         canEnroll: isPro,
         isPro,
       });
@@ -143,12 +143,12 @@ describe('Stripe Routes', () => {
   });
 
   describe('GET /api/subscription/limits', () => {
-    it('should return limits for free user with no syllabinds', async () => {
-      mockStorage.countSyllabindsByCreator.mockResolvedValue(0);
+    it('should return limits for free user with no binders', async () => {
+      mockStorage.countBindersByCurator.mockResolvedValue(0);
       const res = await request(freeApp).get('/api/subscription/limits').expect(200);
       expect(res.body).toEqual({
-        syllabindCount: 0,
-        syllabindLimit: 2,
+        binderCount: 0,
+        binderLimit: 2,
         canCreateMore: true,
         canEnroll: false,
         isPro: false,
@@ -156,17 +156,17 @@ describe('Stripe Routes', () => {
     });
 
     it('should block free user at limit', async () => {
-      mockStorage.countSyllabindsByCreator.mockResolvedValue(2);
+      mockStorage.countBindersByCurator.mockResolvedValue(2);
       const res = await request(freeApp).get('/api/subscription/limits').expect(200);
       expect(res.body.canCreateMore).toBe(false);
     });
 
     it('should return unlimited for pro user', async () => {
-      mockStorage.countSyllabindsByCreator.mockResolvedValue(10);
+      mockStorage.countBindersByCurator.mockResolvedValue(10);
       const res = await request(proApp).get('/api/subscription/limits').expect(200);
       expect(res.body).toEqual({
-        syllabindCount: 10,
-        syllabindLimit: null,
+        binderCount: 10,
+        binderLimit: null,
         canCreateMore: true,
         canEnroll: true,
         isPro: true,

@@ -42,7 +42,7 @@ describe('Authentication Workflow', () => {
           username,
           name,
           passwordHash: 'hashed',
-          isCreator: false
+          isCurator: false
         });
 
         res.status(201).json(user);
@@ -101,7 +101,7 @@ describe('Authentication Workflow', () => {
         email: 'newuser@example.com',
         username: 'newuser',
         name: 'New User',
-        isCreator: false
+        isCurator: false
       });
 
       const response = await request(app)

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Syllabind is a full-stack learning platform connecting creators who build curated multi-week syllabinds with learners seeking structured educational experiences.
+Syllabind is a full-stack learning platform connecting curators who build curated multi-week binders with readers seeking structured educational experiences.
 
 **Tech Stack:**
 - Frontend: React 19 + TypeScript + Vite
@@ -112,20 +112,20 @@ Vite is configured with the following path aliases:
 The database uses a fully normalized relational schema with **username-based foreign keys** for better debugging and logging:
 
 **Foreign Key Strategy:**
-- `syllabi.creator_id` → `users.username` (with CASCADE updates, SET NULL on delete)
-- `enrollments.student_id` → `users.username` (with CASCADE updates and deletes)
-- `cohorts.creator_id` → `users.username`
-- `cohort_members.student_id` → `users.username`
+- `binders.curator_id` → `users.username` (with CASCADE updates, SET NULL on delete)
+- `enrollments.reader_id` → `users.username` (with CASCADE updates and deletes)
+- `cohorts.curator_id` → `users.username`
+- `cohort_members.reader_id` → `users.username`
 
 **Key Tables:**
-1. **users** - User accounts with creator flag, profile info, social links
-2. **syllabi** - Syllabinds: learning content metadata (title, description, status, creator)
-3. **weeks** - Weekly structure within each syllabind (normalized)
+1. **users** - User accounts with curator flag, profile info, social links
+2. **binders** - Learning content metadata (title, description, status, curator)
+3. **weeks** - Weekly structure within each binder (normalized)
 4. **steps** - Individual learning activities (readings/exercises) within weeks (normalized)
-5. **enrollments** - Learner participation in syllabinds with progress tracking
+5. **enrollments** - Reader participation in binders with progress tracking
 6. **completed_steps** - Junction table tracking step completion (replaces JSONB arrays)
-7. **submissions** - Learner exercise submissions with creator feedback
-8. **cohorts** - Groups of learners for social learning
+7. **submissions** - Reader exercise submissions with curator feedback
+8. **cohorts** - Groups of readers for social learning
 9. **cohort_members** - Junction table for cohort membership
 10. **sessions** - Express-session storage (required for auth)
 
@@ -135,8 +135,8 @@ The database uses a fully normalized relational schema with **username-based for
 
 **Context Store (`client/src/lib/store.tsx`):**
 - Central state management using React Context API
-- Provides user auth state, enrollment data, syllabinds list
-- Methods for login/logout, enrollment, progress tracking, and creator actions
+- Provides user auth state, enrollment data, binders list
+- Methods for login/logout, enrollment, progress tracking, and curator actions
 
 **React Query:**
 - Handles API data fetching and caching
@@ -153,25 +153,25 @@ The database uses a fully normalized relational schema with **username-based for
 
 **Authorization Pattern:**
 ```typescript
-// Creator authorization example
+// Curator authorization example
 const username = (req.user as any).username;
-const syllabind = await storage.getSyllabind(id);
-if (syllabind.creatorId !== username) {
+const binder = await storage.getBinder(id);
+if (binder.curatorId !== username) {
   return res.status(403).json({ error: "Forbidden" });
 }
 ```
 
 **ID Types:**
-- Syllabinds, enrollments, steps, weeks: `integer` (serial primary keys)
+- Binders, enrollments, steps, weeks: `integer` (serial primary keys)
 - Users: `varchar` (UUID)
 - Foreign keys to users: `text` (username)
 
 ### Component Organization
 
 **Pages:** 14 main pages in `client/src/pages/`
-- Public: Marketing, Login, Catalog, SyllabindOverview
-- Learner: Dashboard, WeekView, Completion, Profile
-- Creator: CreatorDashboard, SyllabindEditor, SyllabindAnalytics, SyllabindLearners, CreatorProfile
+- Public: Marketing, Login, Catalog, BinderOverview
+- Reader: Dashboard, WeekView, Completion, Profile
+- Curator: CuratorDashboard, BinderEditor, BinderAnalytics, BinderReaders, CuratorProfile
 
 **UI Primitives:** 50+ reusable components in `client/src/components/ui/`
 - Built on Radix UI with TailwindCSS styling
@@ -189,7 +189,7 @@ The project has undergone significant schema migrations:
    - Migration: `migrations/manual_username_migration.sql`
 
 2. **JSONB to Normalized Tables** (2026-01-26)
-   - Migrated syllabind content from JSONB to `weeks` and `steps` tables
+   - Migrated binder content from JSONB to `weeks` and `steps` tables
    - Changed step IDs from string UUIDs to integer serials
    - Migration script: `server/migrate-jsonb-to-normalized.ts`
 
@@ -205,12 +205,12 @@ The project has undergone significant schema migrations:
 3. Session stored in PostgreSQL `sessions` table
 4. Protected routes check `req.user.username` for authorization
 
-### Creator vs Learner Roles
+### Curator vs Reader Roles
 
-- Users toggle between roles via `isCreator` flag
-- Same user can be both creator and learner
-- Creator routes check authorization using `username` matching
-- Learner enrollment tracks progress per user per syllabind
+- Users toggle between roles via `isCurator` flag
+- Same user can be both curator and reader
+- Curator routes check authorization using `username` matching
+- Reader enrollment tracks progress per user per binder
 
 ## Common Development Workflows
 
@@ -223,9 +223,9 @@ npm run db:seed
 ```
 
 **What gets created:**
-- 1 creator account (janesmith)
-- 5 learner accounts (various enrollment states)
-- 2 published syllabinds (Digital Minimalism, Systems Thinking 101)
+- 1 curator account (janesmith)
+- 5 reader accounts (various enrollment states)
+- 2 published binders (Digital Minimalism, Systems Thinking 101)
 - 5 enrollments with realistic progress
 - Multiple completed steps for testing
 
@@ -259,7 +259,7 @@ See `docs/SEEDING_GUIDE.md` for detailed documentation on test accounts, data st
 3. Validate input with Zod schemas from `shared/schema.ts`
 4. Call storage methods from `server/storage.ts`
 5. Return JSON responses with appropriate status codes
-6. Add authorization checks for creator-only actions
+6. Add authorization checks for curator-only actions
 
 ## Important Notes
 
@@ -270,7 +270,7 @@ The `sessions` table is **mandatory** for authentication. Do not drop or modify 
 ### Foreign Key Cascading
 
 The schema uses cascading deletes and updates:
-- Deleting a syllabind cascades to weeks, steps, enrollments, submissions, completed_steps
+- Deleting a binder cascades to weeks, steps, enrollments, submissions, completed_steps
 - Deleting a user cascades to enrollments, submissions, cohort_members
 - Updating a username cascades to all foreign key references
 
@@ -311,24 +311,24 @@ Page sections include semantic class names alongside Tailwind utilities for easy
 
 **Pattern:**
 ```tsx
-<div className="syllabus-metadata flex flex-wrap gap-6 text-sm">
+<div className="binder-metadata flex flex-wrap gap-6 text-sm">
   <div className="metadata-duration flex items-center gap-2">...</div>
   <div className="metadata-steps flex items-center gap-2">...</div>
 </div>
 ```
 
-**SyllabindOverview semantic classes:**
+**BinderOverview semantic classes:**
 - `preview-banner` - Draft preview warning
-- `syllabus-header` - Title, badge, description
-- `syllabus-metadata` - Duration/steps/date row
+- `binder-header` - Title, badge, description
+- `binder-metadata` - Duration/steps/date row
   - `metadata-duration`, `metadata-steps`, `metadata-date`
-- `syllabind-section` - Week accordion
-- `classmates-section` - Learner avatars
+- `binder-section` - Week accordion
+- `classmates-section` - Reader avatars
   - `classmates-header`, `classmates-grid`, `classmates-group`, `classmates-avatars`
 - `enrollment-sidebar` - Sticky CTA card
   - `enrollment-card`, `enrollment-cta`, `enrollment-status`, `enrollment-visibility`
-- `creator-card` - Creator profile
-  - `creator-info`
+- `curator-card` - Curator profile
+  - `curator-info`
 
 ### Reusable Section Components
 
@@ -341,10 +341,10 @@ Use for patterns repeated across multiple pages.
 
 ### Naming Conventions
 
-- The branded term for a course is "Syllabind" (singular) / "Syllabinds" (plural)
-- Never use the Latin plural "syllabi" in code or UI text — always use "syllabinds"
-- The database table is still named `syllabi` (PostgreSQL), but the Drizzle ORM export is `syllabinds`
-- The creator dashboard is called "Syllabind Builder" (not "Curator Studio")
+- The branded term for a course is "Binder" (singular) / "Binders" (plural)
+- The database table is named `binders` (PostgreSQL), and the Drizzle ORM export is `binders`
+- Content creators are called "curators", content consumers are called "readers"
+- The curator dashboard is called "Binder Builder"
 
 ## Instructions
 1. Always update `architecture.md` after any non-trivial change.

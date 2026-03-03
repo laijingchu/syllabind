@@ -49,7 +49,7 @@ Handled in `client/src/lib/store.tsx`:
 posthog.identify(user.username, {
   email: user.email,
   name: user.name,
-  is_creator: user.isCreator,
+  is_curator: user.isCurator,
 });
 ```
 
@@ -67,36 +67,36 @@ This ensures:
 
 All custom events fire **after successful actions** (not optimistically), so they reflect real completions.
 
-### Learner Events
+### Reader Events
 
 | Event | File | Trigger | Properties |
 |-------|------|---------|------------|
-| `enrolled_in_syllabind` | `store.tsx` | Successful enrollment API response | `syllabind_id: number` |
-| `step_completed` | `store.tsx` | Step marked complete via API | `step_id: number`, `syllabind_id: number` |
-| `syllabind_completed` | `store.tsx` | Enrollment status set to "completed" | `syllabind_id: number` |
-| `exercise_submitted` | `store.tsx` | Exercise submission saved via API | `step_id: number`, `syllabind_id: number` |
+| `enrolled_in_binder` | `store.tsx` | Successful enrollment API response | `binder_id: number` |
+| `step_completed` | `store.tsx` | Step marked complete via API | `step_id: number`, `binder_id: number` |
+| `binder_completed` | `store.tsx` | Enrollment status set to "completed" | `binder_id: number` |
+| `exercise_submitted` | `store.tsx` | Exercise submission saved via API | `step_id: number`, `binder_id: number` |
 
-### Creator Events
+### Curator Events
 
 | Event | File | Trigger | Properties |
 |-------|------|---------|------------|
-| `syllabind_published` | `SyllabindEditor.tsx` | Creator clicks "Publish" | `syllabind_id: number`, `title: string` |
+| `binder_published` | `BinderEditor.tsx` | Curator clicks "Publish" | `binder_id: number`, `title: string` |
 
 ### Engagement Events
 
 | Event | File | Trigger | Properties |
 |-------|------|---------|------------|
 | `link_shared` | `ShareDialog.tsx` | User copies share link | `url: string` |
-| `link_shared` | `SyllabindEditor.tsx` | Creator copies draft preview link | `url: string`, `type: 'draft_preview'` |
+| `link_shared` | `BinderEditor.tsx` | Curator copies draft preview link | `url: string`, `type: 'draft_preview'` |
 
 ## Suggested Funnels
 
 These events enable key product funnels in the PostHog dashboard:
 
-1. **Enrollment Funnel:** Pageview (catalog) → Pageview (syllabus overview) → `enrolled_in_syllabind`
-2. **Completion Funnel:** `enrolled_in_syllabind` → `step_completed` → `syllabind_completed`
-3. **Creator Funnel:** Pageview (editor) → `syllabind_published` → `link_shared`
-4. **Engagement Depth:** `enrolled_in_syllabind` → count of `step_completed` per user
+1. **Enrollment Funnel:** Pageview (catalog) → Pageview (binder overview) → `enrolled_in_binder`
+2. **Completion Funnel:** `enrolled_in_binder` → `step_completed` → `binder_completed`
+3. **Curator Funnel:** Pageview (editor) → `binder_published` → `link_shared`
+4. **Engagement Depth:** `enrolled_in_binder` → count of `step_completed` per user
 
 ## Adding New Custom Events
 
@@ -122,11 +122,11 @@ To track a new event:
 - Use `snake_case` for property keys
 - Fire events after the action succeeds (not optimistically)
 - Use optional chaining (`posthog?.capture`) so the app works without PostHog configured
-- Include the relevant entity ID (`syllabind_id`, `step_id`) for easy filtering
+- Include the relevant entity ID (`binder_id`, `step_id`) for easy filtering
 
 ## Privacy
 
 - `person_profiles: 'identified_only'` is not currently set — PostHog creates person profiles for all visitors. To limit this to logged-in users only, add `person_profiles: 'identified_only'` to the options in `main.tsx`.
 - No sensitive data (passwords, tokens) is sent to PostHog.
-- User properties sent on identify: `email`, `name`, `is_creator` — all non-sensitive profile data.
+- User properties sent on identify: `email`, `name`, `is_curator` — all non-sensitive profile data.
 - PostHog's autocapture may capture text content of clicked elements. If this is a concern, configure `autocapture: { css_selector_allowlist: [...] }` in the PostHog options.

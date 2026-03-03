@@ -130,7 +130,7 @@ export default function Profile() {
             <CardHeader>
               <CardTitle>Public Information</CardTitle>
               <CardDescription>
-                This information will be displayed on your profile and to other learners.
+                This information will be displayed on your profile and to other readers.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -275,7 +275,7 @@ export default function Profile() {
                       <Input placeholder="https://calendly.com/you" {...field} />
                     </FormControl>
                     <FormDescription>
-                      Link to your scheduling page (Calendly, Cal.com, etc.). Shown to Pro learners on your syllabinds.
+                      Link to your scheduling page (Calendly, Cal.com, etc.). Shown to Pro readers on your binders.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

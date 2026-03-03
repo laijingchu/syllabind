@@ -32,74 +32,74 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Plus, Users, Search, Filter, ExternalLink, Check, MoreHorizontal } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { LearnerProfile, Submission, Syllabus } from '@/lib/types';
+import { ReaderProfile, Submission, Binder } from '@/lib/types';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { cn } from '@/lib/utils';
 
-export default function SyllabindLearners() {
-  const [match, params] = useRoute('/creator/syllabind/:id/learners');
-  const { getSyllabusById, getLearnersForSyllabus, getSubmissionsForStep } = useStore();
+export default function BinderReaders() {
+  const [match, params] = useRoute('/curator/binder/:id/readers');
+  const { getBinderById, getReadersForBinder, getSubmissionsForStep } = useStore();
   const [, setLocation] = useLocation();
 
   // All state hooks at the top
-  const [learners, setLearners] = useState<LearnerProfile[]>([]);
-  const [syllabus, setSyllabus] = useState<Syllabus | undefined>(undefined);
-  const [activeTab, setActiveTab] = useState('learners');
+  const [readers, setReaders] = useState<ReaderProfile[]>([]);
+  const [binder, setBinder] = useState<Binder | undefined>(undefined);
+  const [activeTab, setActiveTab] = useState('readers');
   const [newCohortName, setNewCohortName] = useState('');
-  const [selectedLearner, setSelectedLearner] = useState<string | null>(null);
-  const [selectedSubmission, setSelectedSubmission] = useState<{ stepId: number, learnerId: string, submission: Submission } | null>(null);
+  const [selectedReader, setSelectedReader] = useState<string | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<{ stepId: number, readerId: string, submission: Submission } | null>(null);
   const [feedbackText, setFeedbackText] = useState('');
   const [grade, setGrade] = useState('');
   const [rubricUrl, setRubricUrl] = useState('');
 
-  const syllabusId = params?.id ? parseInt(params.id) : undefined;
+  const binderId = params?.id ? parseInt(params.id) : undefined;
 
-  // Fetch full syllabus with weeks and steps
+  // Fetch full binder with weeks and steps
   useEffect(() => {
-    if (syllabusId) {
-      fetch(`/api/syllabinds/${syllabusId}`, {
+    if (binderId) {
+      fetch(`/api/binders/${binderId}`, {
         credentials: 'include'
       })
         .then(res => res.json())
-        .then(data => setSyllabus(data))
-        .catch(err => console.error('Failed to fetch syllabus:', err));
+        .then(data => setBinder(data))
+        .catch(err => console.error('Failed to fetch binder:', err));
     }
-  }, [syllabusId]);
+  }, [binderId]);
 
-  // Fetch learners asynchronously
+  // Fetch readers asynchronously
   useEffect(() => {
-    if (syllabusId) {
-      getLearnersForSyllabus(syllabusId).then(({ classmates }) => setLearners(classmates));
+    if (binderId) {
+      getReadersForBinder(binderId).then(({ classmates }) => setReaders(classmates));
     }
-  }, [syllabusId]);
+  }, [binderId]);
 
-  if (!syllabus) return <div>Loading...</div>;
+  if (!binder) return <div>Loading...</div>;
 
   // Mock cohort data (not yet implemented in store)
   const cohorts: any[] = [];
-  const createCohort = (name: string, syllabusId: number) => console.log('Create cohort:', name, syllabusId);
-  const assignLearnerToCohort = (learnerId: string, cohortId: number) => console.log('Assign learner:', learnerId, cohortId);
-  const provideFeedback = (stepId: number, learnerId: string, feedback: string, grade: string, rubricUrl: string) => console.log('Provide feedback:', stepId, learnerId, feedback, grade, rubricUrl);
+  const createCohort = (name: string, binderId: number) => console.log('Create cohort:', name, binderId);
+  const assignReaderToCohort = (readerId: string, cohortId: number) => console.log('Assign reader:', readerId, cohortId);
+  const provideFeedback = (stepId: number, readerId: string, feedback: string, grade: string, rubricUrl: string) => console.log('Provide feedback:', stepId, readerId, feedback, grade, rubricUrl);
 
-  const syllabusCohorts = cohorts.filter(c => c.syllabusId === syllabus.id);
+  const binderCohorts = cohorts.filter(c => c.binderId === binder.id);
 
-  // Get all exercise steps for this syllabus
-  const exerciseSteps = syllabus.weeks.flatMap(w => w.steps.filter(s => s.type === 'exercise').map(s => ({ ...s, weekIndex: w.index })));
+  // Get all exercise steps for this binder
+  const exerciseSteps = binder.weeks.flatMap(w => w.steps.filter(s => s.type === 'exercise').map(s => ({ ...s, weekIndex: w.index })));
 
   const handleCreateCohort = () => {
     if (newCohortName.trim()) {
-      createCohort(newCohortName, syllabus.id);
+      createCohort(newCohortName, binder.id);
       setNewCohortName('');
     }
   };
 
-  const handleAssignCohort = (learnerId: string, cohortId: string) => {
+  const handleAssignCohort = (readerId: string, cohortId: string) => {
     const cohortIdNum = cohortId === "unassigned" ? 0 : parseInt(cohortId);
-    assignLearnerToCohort(learnerId, cohortIdNum);
+    assignReaderToCohort(readerId, cohortIdNum);
   };
 
-  const openGrading = (stepId: number, learnerId: string, submission: Submission) => {
-    setSelectedSubmission({ stepId, learnerId, submission });
+  const openGrading = (stepId: number, readerId: string, submission: Submission) => {
+    setSelectedSubmission({ stepId, readerId, submission });
     setFeedbackText(submission.feedback || '');
     setGrade(submission.grade || '');
     setRubricUrl(submission.rubricUrl || '');
@@ -107,7 +107,7 @@ export default function SyllabindLearners() {
 
   const saveFeedback = () => {
     if (selectedSubmission) {
-      provideFeedback(selectedSubmission.stepId, selectedSubmission.learnerId, feedbackText, grade, rubricUrl);
+      provideFeedback(selectedSubmission.stepId, selectedSubmission.readerId, feedbackText, grade, rubricUrl);
       setSelectedSubmission(null);
     }
   };
@@ -117,15 +117,15 @@ export default function SyllabindLearners() {
       <div className="border-b bg-card">
         <div className="container mx-auto px-4 py-3 sm:py-4 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
           <div className="space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-4">
-             <Link href={`/creator/syllabind/${syllabus.id}/edit`}>
+             <Link href={`/curator/binder/${binder.id}/edit`}>
                <Button variant="ghost" size="sm" className="gap-2 -ml-2 sm:ml-0">
                  <ArrowLeft className="h-4 w-4" /> Back to Editor
                </Button>
              </Link>
              <div className="hidden sm:block h-6 w-px bg-border" />
              <div>
-               <h1 className="font-display text-lg sm:text-xl">{syllabus.title}</h1>
-               <p className="text-xs text-muted-foreground">Learner Management</p>
+               <h1 className="font-display text-lg sm:text-xl">{binder.title}</h1>
+               <p className="text-xs text-muted-foreground">Reader Management</p>
              </div>
           </div>
         </div>
@@ -135,20 +135,20 @@ export default function SyllabindLearners() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
              <TabsList className="w-full sm:w-auto inline-flex">
-               <TabsTrigger value="learners" className="text-xs sm:text-sm">Learners</TabsTrigger>
+               <TabsTrigger value="readers" className="text-xs sm:text-sm">Readers</TabsTrigger>
                <TabsTrigger value="cohorts" className="text-xs sm:text-sm">Cohorts</TabsTrigger>
                <TabsTrigger value="submissions" className="text-xs sm:text-sm">Submissions</TabsTrigger>
              </TabsList>
           </div>
 
-          <TabsContent value="learners" className="space-y-4">
+          <TabsContent value="readers" className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 bg-card p-3 sm:p-4 rounded-lg border">
               <div className="flex gap-2 w-full sm:max-w-sm">
-                <Input placeholder="Search learners..." className="bg-background text-sm" />
+                <Input placeholder="Search readers..." className="bg-background text-sm" />
                 <Button variant="outline" size="icon" className="shrink-0"><Search className="h-4 w-4" /></Button>
               </div>
               <div className="text-sm text-muted-foreground text-center sm:text-right">
-                {learners.length} Enrolled
+                {readers.length} Enrolled
               </div>
             </div>
 
@@ -157,7 +157,7 @@ export default function SyllabindLearners() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Learner</TableHead>
+                    <TableHead>Reader</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Joined</TableHead>
                     <TableHead>Cohort</TableHead>
@@ -165,39 +165,39 @@ export default function SyllabindLearners() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {learners.map((learner) => (
-                    <TableRow key={learner.user.id}>
+                  {readers.map((reader) => (
+                    <TableRow key={reader.user.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage src={learner.user.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${learner.user.name || learner.user.username}`} />
-                            <AvatarFallback>{(learner.user.name || learner.user.username || '?').charAt(0)}</AvatarFallback>
+                            <AvatarImage src={reader.user.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${reader.user.name || reader.user.username}`} />
+                            <AvatarFallback>{(reader.user.name || reader.user.username || '?').charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-medium">{learner.user.name}</div>
-                            <div className="text-xs text-muted-foreground">{learner.user.email || 'No email'}</div>
+                            <div className="font-medium">{reader.user.name}</div>
+                            <div className="text-xs text-muted-foreground">{reader.user.email || 'No email'}</div>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={learner.status === 'completed' ? 'default' : 'secondary'}>
-                          {learner.status}
+                        <Badge variant={reader.status === 'completed' ? 'default' : 'secondary'}>
+                          {reader.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm">
-                        {new Date(learner.joinedDate).toLocaleDateString()}
+                        {new Date(reader.joinedDate).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
                          <Select
-                           value={learner.cohortId || "unassigned"}
-                           onValueChange={(val) => handleAssignCohort(learner.user.id, val === "unassigned" ? "" : val)}
+                           value={reader.cohortId || "unassigned"}
+                           onValueChange={(val) => handleAssignCohort(reader.user.id, val === "unassigned" ? "" : val)}
                          >
                            <SelectTrigger className="w-[140px] h-8 text-xs">
                              <SelectValue placeholder="Assign Cohort" />
                            </SelectTrigger>
                            <SelectContent>
                              <SelectItem value="unassigned">Unassigned</SelectItem>
-                             {syllabusCohorts.map(c => (
+                             {binderCohorts.map(c => (
                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                              ))}
                            </SelectContent>
@@ -210,10 +210,10 @@ export default function SyllabindLearners() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {learners.length === 0 && (
+                  {readers.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        No learners enrolled yet.
+                        No readers enrolled yet.
                       </TableCell>
                     </TableRow>
                   )}
@@ -223,37 +223,37 @@ export default function SyllabindLearners() {
 
             {/* Mobile card view */}
             <div className="md:hidden space-y-3">
-              {learners.map((learner) => (
-                <div key={learner.user.id} className="border rounded-lg bg-card p-4 space-y-3">
+              {readers.map((reader) => (
+                <div key={reader.user.id} className="border rounded-lg bg-card p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={learner.user.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${learner.user.name || learner.user.username}`} />
-                        <AvatarFallback>{(learner.user.name || learner.user.username || '?').charAt(0)}</AvatarFallback>
+                        <AvatarImage src={reader.user.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${reader.user.name || reader.user.username}`} />
+                        <AvatarFallback>{(reader.user.name || reader.user.username || '?').charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium text-sm">{learner.user.name}</div>
-                        <div className="text-xs text-muted-foreground">{learner.user.email || 'No email'}</div>
+                        <div className="font-medium text-sm">{reader.user.name}</div>
+                        <div className="text-xs text-muted-foreground">{reader.user.email || 'No email'}</div>
                       </div>
                     </div>
-                    <Badge variant={learner.status === 'completed' ? 'default' : 'secondary'} className="text-xs">
-                      {learner.status}
+                    <Badge variant={reader.status === 'completed' ? 'default' : 'secondary'} className="text-xs">
+                      {reader.status}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t">
                     <div className="text-xs text-muted-foreground">
-                      Joined {new Date(learner.joinedDate).toLocaleDateString()}
+                      Joined {new Date(reader.joinedDate).toLocaleDateString()}
                     </div>
                     <Select
-                      value={learner.cohortId || "unassigned"}
-                      onValueChange={(val) => handleAssignCohort(learner.user.id, val === "unassigned" ? "" : val)}
+                      value={reader.cohortId || "unassigned"}
+                      onValueChange={(val) => handleAssignCohort(reader.user.id, val === "unassigned" ? "" : val)}
                     >
                       <SelectTrigger className="w-[120px] h-8 text-xs">
                         <SelectValue placeholder="Cohort" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="unassigned">Unassigned</SelectItem>
-                        {syllabusCohorts.map(c => (
+                        {binderCohorts.map(c => (
                           <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                         ))}
                       </SelectContent>
@@ -261,9 +261,9 @@ export default function SyllabindLearners() {
                   </div>
                 </div>
               ))}
-              {learners.length === 0 && (
+              {readers.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground border rounded-lg bg-card">
-                  No learners enrolled yet.
+                  No readers enrolled yet.
                 </div>
               )}
             </div>
@@ -274,19 +274,19 @@ export default function SyllabindLearners() {
                 <Card className="md:col-span-2 order-2 md:order-1">
                   <CardHeader className="p-4 sm:p-6">
                     <CardTitle className="text-base sm:text-lg">Active Cohorts</CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">Group learners to manage them effectively.</CardDescription>
+                    <CardDescription className="text-xs sm:text-sm">Group readers to manage them effectively.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
-                     {syllabusCohorts.map(cohort => (
+                     {binderCohorts.map(cohort => (
                        <div key={cohort.id} className="flex items-center justify-between p-3 sm:p-4 border rounded-lg bg-card/50 hover:bg-card transition-colors">
                           <div>
                             <h3 className="font-medium text-sm sm:text-base">{cohort.name}</h3>
-                            <p className="text-xs sm:text-sm text-muted-foreground">{cohort.learnerIds.length} learners</p>
+                            <p className="text-xs sm:text-sm text-muted-foreground">{cohort.readerIds.length} readers</p>
                           </div>
                           <Button variant="outline" size="sm">Manage</Button>
                        </div>
                      ))}
-                     {syllabusCohorts.length === 0 && (
+                     {binderCohorts.length === 0 && (
                        <div className="text-center py-6 sm:py-8 text-muted-foreground text-sm border-dashed border-2 rounded-lg">
                          No cohorts created yet.
                        </div>
@@ -335,22 +335,22 @@ export default function SyllabindLearners() {
 
                       <div className="divide-y">
                         {sharedSubmissions.length > 0 ? sharedSubmissions.map((sub, idx) => {
-                          const learnerId = Object.keys(submissions).find(key => submissions[key] === sub);
-                          const learner = learners.find(l => l.user.id === learnerId);
+                          const readerId = Object.keys(submissions).find(key => submissions[key] === sub);
+                          const reader = readers.find(l => l.user.id === readerId);
 
-                          if (!learner) return null;
+                          if (!reader) return null;
 
                           return (
                             <div key={idx} className="p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:gap-6 items-start hover:bg-muted/20 transition-colors">
                               <Avatar className="h-8 w-8 sm:h-10 sm:w-10 shrink-0">
-                                <AvatarImage src={learner.user.avatarUrl} />
-                                <AvatarFallback>{learner.user.name.charAt(0)}</AvatarFallback>
+                                <AvatarImage src={reader.user.avatarUrl} />
+                                <AvatarFallback>{reader.user.name.charAt(0)}</AvatarFallback>
                               </Avatar>
 
                               <div className="flex-1 space-y-2 w-full min-w-0">
                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
                                     <div>
-                                      <div className="font-medium text-sm sm:text-base">{learner.user.name}</div>
+                                      <div className="font-medium text-sm sm:text-base">{reader.user.name}</div>
                                       <div className="text-xs text-muted-foreground">{new Date(sub.submittedAt).toLocaleDateString()}</div>
                                     </div>
                                     {sub.grade ? (
@@ -370,7 +370,7 @@ export default function SyllabindLearners() {
                                  </div>
 
                                  <div className="pt-1 sm:pt-2">
-                                   <Button size="sm" variant="outline" onClick={() => openGrading(step.id, learner.user.id, sub)} className="text-xs sm:text-sm">
+                                   <Button size="sm" variant="outline" onClick={() => openGrading(step.id, reader.user.id, sub)} className="text-xs sm:text-sm">
                                      {sub.grade ? 'Edit Feedback' : 'Grade Submission'}
                                    </Button>
                                  </div>
@@ -396,7 +396,7 @@ export default function SyllabindLearners() {
           <DialogHeader>
             <DialogTitle className="text-lg sm:text-xl">Grade Submission</DialogTitle>
             <DialogDescription className="text-sm">
-              Provide feedback, a grade, and rubric for the learner.
+              Provide feedback, a grade, and rubric for the reader.
             </DialogDescription>
           </DialogHeader>
 

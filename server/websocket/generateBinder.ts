@@ -1,6 +1,7 @@
 import { WebSocket } from 'ws';
 import { storage } from '../storage';
-import { generateSyllabind, regenerateWeek } from '../utils/syllabindGenerator';
+import { generateBinder, regenerateWeek } from '../utils/binderGenerator';
+import { refundCredits, getGenerationCost, CREDIT_COSTS } from '../utils/creditService';
 
 // Mock data for testing streaming without API calls
 const MOCK_STEPS = [
@@ -10,7 +11,7 @@ const MOCK_STEPS = [
   { type: 'exercise', title: 'Reflection Exercise', promptText: '<p>Based on this week\'s readings:</p><ol><li><p>Identify 3 key concepts</p></li><li><p>Write a 200-word reflection</p></li><li><p>Share with a peer for feedback</p></li></ol>', estimatedMinutes: 30 }
 ];
 
-// Mock week titles for distinct curriculum topics
+// Mock week titles for distinct binder topics
 const MOCK_WEEK_TITLES = [
   { title: 'Foundations & First Principles', description: 'Establish core vocabulary and mental models for the topic.' },
   { title: 'Historical Context & Evolution', description: 'Trace how the field developed and why current approaches exist.' },
@@ -22,10 +23,10 @@ const MOCK_WEEK_TITLES = [
   { title: 'Synthesis & Future Directions', description: 'Integrate everything learned and explore emerging frontiers.' },
 ];
 
-async function mockGenerateSyllabind(ws: WebSocket, syllabusId: number, durationWeeks: number): Promise<void> {
+async function mockGenerateBinder(ws: WebSocket, binderId: number, durationWeeks: number): Promise<void> {
   console.log('[MockGenerate] Starting mock generation for testing...');
 
-  // Phase 1: Plan curriculum
+  // Phase 1: Plan outline
   ws.send(JSON.stringify({
     type: 'planning_started',
     data: { durationWeeks }
@@ -34,7 +35,7 @@ async function mockGenerateSyllabind(ws: WebSocket, syllabusId: number, duration
   await new Promise(resolve => setTimeout(resolve, 1000));
 
   // Send all week titles immediately
-  const curriculum = Array.from({ length: durationWeeks }, (_, i) => ({
+  const outline = Array.from({ length: durationWeeks }, (_, i) => ({
     weekIndex: i + 1,
     title: MOCK_WEEK_TITLES[i % MOCK_WEEK_TITLES.length].title,
     description: MOCK_WEEK_TITLES[i % MOCK_WEEK_TITLES.length].description
@@ -42,9 +43,9 @@ async function mockGenerateSyllabind(ws: WebSocket, syllabusId: number, duration
 
   // Create all weeks in DB
   const savedWeeks: Map<number, number> = new Map(); // weekIndex -> weekId
-  for (const cw of curriculum) {
+  for (const cw of outline) {
     const week = await storage.createWeek({
-      syllabusId,
+      binderId,
       index: cw.weekIndex,
       title: cw.title,
       description: cw.description
@@ -55,8 +56,8 @@ async function mockGenerateSyllabind(ws: WebSocket, syllabusId: number, duration
   await new Promise(resolve => setTimeout(resolve, 300));
 
   ws.send(JSON.stringify({
-    type: 'curriculum_planned',
-    data: { weeks: curriculum }
+    type: 'outline_planned',
+    data: { weeks: outline }
   }));
 
   await new Promise(resolve => setTimeout(resolve, 500));
@@ -64,10 +65,10 @@ async function mockGenerateSyllabind(ws: WebSocket, syllabusId: number, duration
   // Phase 2: Generate content per week
   for (let weekIndex = 1; weekIndex <= durationWeeks; weekIndex++) {
     const weekId = savedWeeks.get(weekIndex)!;
-    const weekTitle = curriculum[weekIndex - 1].title;
-    const weekDescription = curriculum[weekIndex - 1].description;
+    const weekTitle = outline[weekIndex - 1].title;
+    const weekDescription = outline[weekIndex - 1].description;
 
-    // Send week_started (title/description already set by curriculum_planned)
+    // Send week_started (title/description already set by outline_planned)
     ws.send(JSON.stringify({
       type: 'week_started',
       data: { weekIndex }
@@ -139,73 +140,88 @@ async function mockGenerateSyllabind(ws: WebSocket, syllabusId: number, duration
     await new Promise(resolve => setTimeout(resolve, 300));
   }
 
-  await storage.updateSyllabus(syllabusId, { status: 'draft' });
+  await storage.updateBinder(binderId, { status: 'draft' });
 
   ws.send(JSON.stringify({
     type: 'generation_complete',
-    data: { syllabusId }
+    data: { binderId }
   }));
 
   console.log('[MockGenerate] Mock generation complete!');
 }
 
-export function handleGenerateSyllabindWS(ws: WebSocket, syllabusId: number, useMock?: boolean) {
+export interface CreditReservation {
+  userId: string;
+  transactionId: number;
+  amount: number;
+}
+
+export function handleGenerateBinderWS(ws: WebSocket, binderId: number, useMock?: boolean, isProUser?: boolean, curatorUsername?: string, creditReservation?: CreditReservation) {
   const abortController = new AbortController();
 
   // When client disconnects (cancel or navigation), abort the generation
   ws.on('close', () => {
     if (!abortController.signal.aborted) {
-      console.log(`[Generate] Client disconnected, aborting generation for syllabind ${syllabusId}`);
+      console.log(`[Generate] Client disconnected, aborting generation for binder ${binderId}`);
       abortController.abort();
     }
   });
 
   (async () => {
     try {
-      const syllabus = await storage.getSyllabus(syllabusId);
-      if (!syllabus) {
+      const binder = await storage.getBinder(binderId);
+      if (!binder) {
         ws.send(JSON.stringify({
           type: 'error',
-          data: { message: 'Syllabus not found' }
+          data: { message: 'Binder not found' }
         }));
+        // Refund credits on binder not found
+        if (creditReservation) {
+          await refundCredits(creditReservation.userId, creditReservation.amount, creditReservation.transactionId, 'Binder not found during generation');
+        }
         ws.close();
         return;
       }
 
-      if (syllabus.status !== 'generating') {
-        await storage.updateSyllabus(syllabusId, { status: 'generating' });
+      if (binder.status !== 'generating') {
+        await storage.updateBinder(binderId, { status: 'generating' });
       }
 
       // Delete existing weeks/steps before regenerating to prevent orphaned data
-      console.log('[Generate] Deleting existing Syllabind data...');
-      await storage.deleteWeeksBySyllabusId(syllabusId);
+      console.log('[Generate] Deleting existing Binder data...');
+      await storage.deleteWeeksByBinderId(binderId);
 
-      const mediaPreference = syllabus.mediaPreference ?? 'auto';
-      console.log(`[Generate] Syllabind ${syllabusId} mediaPreference: ${mediaPreference}`);
+      const mediaPreference = binder.mediaPreference ?? 'auto';
+      console.log(`[Generate] Binder ${binderId} mediaPreference: ${mediaPreference}`);
 
       // Use mock mode for testing streaming without API calls
       if (useMock) {
-        await mockGenerateSyllabind(ws, syllabusId, syllabus.durationWeeks);
+        await mockGenerateBinder(ws, binderId, binder.durationWeeks);
       } else {
-        await generateSyllabind({
-          syllabusId,
+        await generateBinder({
+          binderId,
           basics: {
-            title: syllabus.title,
-            description: syllabus.description,
-            audienceLevel: syllabus.audienceLevel,
-            durationWeeks: syllabus.durationWeeks,
+            title: binder.title,
+            description: binder.description,
+            audienceLevel: binder.audienceLevel,
+            durationWeeks: binder.durationWeeks,
             mediaPreference
           },
           ws,
-          signal: abortController.signal
+          signal: abortController.signal,
+          isProUser
         });
       }
 
     } catch (error) {
       // Don't log abort errors as generation errors
       if (abortController.signal.aborted) {
-        console.log(`[Generate] Generation cancelled for syllabind ${syllabusId}`);
-        await storage.updateSyllabus(syllabusId, { status: 'draft' });
+        console.log(`[Generate] Generation cancelled for binder ${binderId}`);
+        await storage.updateBinder(binderId, { status: 'draft' });
+        // Refund credits on cancellation
+        if (creditReservation) {
+          await refundCredits(creditReservation.userId, creditReservation.amount, creditReservation.transactionId, 'Generation cancelled');
+        }
         return;
       }
 
@@ -217,7 +233,11 @@ export function handleGenerateSyllabindWS(ws: WebSocket, syllabusId: number, use
         }));
       }
 
-      await storage.updateSyllabus(syllabusId, { status: 'draft' });
+      await storage.updateBinder(binderId, { status: 'draft' });
+      // Refund credits on error
+      if (creditReservation) {
+        await refundCredits(creditReservation.userId, creditReservation.amount, creditReservation.transactionId, 'Generation failed');
+      }
     } finally {
       if (ws.readyState === WebSocket.OPEN) {
         ws.close();
@@ -229,7 +249,7 @@ export function handleGenerateSyllabindWS(ws: WebSocket, syllabusId: number, use
 // Mock regeneration for a single week — preserves existing title/description
 async function mockRegenerateWeek(
   ws: WebSocket,
-  syllabusId: number,
+  binderId: number,
   weekIndex: number,
   existingWeekId?: number,
   existingTitle?: string,
@@ -251,7 +271,7 @@ async function mockRegenerateWeek(
   let weekId = existingWeekId;
   if (!weekId) {
     const week = await storage.createWeek({
-      syllabusId,
+      binderId,
       index: weekIndex,
       title: weekTitle,
       description: weekDescription
@@ -314,7 +334,7 @@ async function mockRegenerateWeek(
 
   ws.send(JSON.stringify({
     type: 'week_regeneration_complete',
-    data: { syllabusId, weekIndex }
+    data: { binderId, weekIndex }
   }));
 
   console.log(`[MockRegenerateWeek] Week ${weekIndex} regeneration complete!`);
@@ -322,34 +342,35 @@ async function mockRegenerateWeek(
 
 export function handleRegenerateWeekWS(
   ws: WebSocket,
-  syllabusId: number,
+  binderId: number,
   weekIndex: number,
-  useMock?: boolean
+  useMock?: boolean,
+  creditReservation?: CreditReservation
 ) {
   const abortController = new AbortController();
 
   // When client disconnects (cancel or navigation), abort the regeneration
   ws.on('close', () => {
     if (!abortController.signal.aborted) {
-      console.log(`[RegenerateWeek] Client disconnected, aborting regeneration for syllabind ${syllabusId} week ${weekIndex}`);
+      console.log(`[RegenerateWeek] Client disconnected, aborting regeneration for binder ${binderId} week ${weekIndex}`);
       abortController.abort();
     }
   });
 
   (async () => {
     try {
-      const syllabus = await storage.getSyllabus(syllabusId);
-      if (!syllabus) {
+      const binder = await storage.getBinder(binderId);
+      if (!binder) {
         ws.send(JSON.stringify({
           type: 'error',
-          data: { message: 'Syllabus not found' }
+          data: { message: 'Binder not found' }
         }));
         ws.close();
         return;
       }
 
       // Get existing week record
-      const existingWeeks = await storage.getWeeksBySyllabusId(syllabusId);
+      const existingWeeks = await storage.getWeeksByBinderId(binderId);
       const existingWeek = existingWeeks.find(w => w.index === weekIndex);
 
       if (existingWeek) {
@@ -366,18 +387,18 @@ export function handleRegenerateWeekWS(
       }));
 
       if (useMock) {
-        await mockRegenerateWeek(ws, syllabusId, weekIndex, existingWeek?.id, existingWeek?.title ?? undefined, existingWeek?.description ?? undefined);
+        await mockRegenerateWeek(ws, binderId, weekIndex, existingWeek?.id, existingWeek?.title ?? undefined, existingWeek?.description ?? undefined);
       } else {
         await regenerateWeek({
-          syllabusId,
+          binderId,
           weekIndex,
           existingWeekId: existingWeek?.id,
           basics: {
-            title: syllabus.title,
-            description: syllabus.description,
-            audienceLevel: syllabus.audienceLevel,
-            durationWeeks: syllabus.durationWeeks,
-            mediaPreference: syllabus.mediaPreference ?? 'auto'
+            title: binder.title,
+            description: binder.description,
+            audienceLevel: binder.audienceLevel,
+            durationWeeks: binder.durationWeeks,
+            mediaPreference: binder.mediaPreference ?? 'auto'
           },
           weekTitle: existingWeek?.title ?? undefined,
           weekDescription: existingWeek?.description ?? undefined,
@@ -390,7 +411,10 @@ export function handleRegenerateWeekWS(
     } catch (error) {
       // Don't log abort errors as generation errors
       if (abortController.signal.aborted) {
-        console.log(`[RegenerateWeek] Regeneration cancelled for syllabind ${syllabusId} week ${weekIndex}`);
+        console.log(`[RegenerateWeek] Regeneration cancelled for binder ${binderId} week ${weekIndex}`);
+        if (creditReservation) {
+          await refundCredits(creditReservation.userId, creditReservation.amount, creditReservation.transactionId, 'Week regeneration cancelled');
+        }
         return;
       }
 
@@ -400,6 +424,10 @@ export function handleRegenerateWeekWS(
           type: 'error',
           data: { message: error instanceof Error ? error.message : 'Unknown error' }
         }));
+      }
+      // Refund credits on error
+      if (creditReservation) {
+        await refundCredits(creditReservation.userId, creditReservation.amount, creditReservation.transactionId, 'Week regeneration failed');
       }
     } finally {
       if (ws.readyState === WebSocket.OPEN) {

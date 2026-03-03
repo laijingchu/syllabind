@@ -27,42 +27,42 @@ import {
 } from 'recharts';
 
 interface AnalyticsData {
-  learnersStarted: number;
-  learnersCompleted: number;
+  readersStarted: number;
+  readersCompleted: number;
   completionRate: number;
   averageProgress: number;
-  weekReach: Array<{ week: string; weekIndex: number; percentage: number; learnerCount: number; learnerNames: string[] }>;
+  weekReach: Array<{ week: string; weekIndex: number; percentage: number; readerCount: number; readerNames: string[] }>;
   stepDropoff: Array<{ stepId: number; weekIndex: number; stepTitle: string; dropoffRate: number; completionCount: number }>;
   topDropoutStep: { weekIndex: number; stepTitle: string; dropoffRate: number } | null;
 }
 
-export default function SyllabindAnalytics() {
-  const [match, params] = useRoute('/creator/syllabind/:id/analytics');
-  const { getSyllabusById } = useStore();
-  const syllabusId = match && params?.id ? parseInt(params.id) : undefined;
+export default function BinderAnalytics() {
+  const [match, params] = useRoute('/curator/binder/:id/analytics');
+  const { getBinderById } = useStore();
+  const binderId = match && params?.id ? parseInt(params.id) : undefined;
 
-  const syllabus = syllabusId ? getSyllabusById(syllabusId) : undefined;
+  const binder = binderId ? getBinderById(binderId) : undefined;
 
   // Fetch analytics data from API
   const { data: analytics, isLoading, error } = useQuery<AnalyticsData>({
-    queryKey: ['syllabus-analytics', syllabusId],
+    queryKey: ['binder-analytics', binderId],
     queryFn: async () => {
-      const res = await fetch(`/api/syllabinds/${syllabusId}/analytics`, {
+      const res = await fetch(`/api/binders/${binderId}/analytics`, {
         credentials: 'include'
       });
       if (!res.ok) throw new Error('Failed to fetch analytics');
       return res.json();
     },
-    enabled: !!syllabusId,
+    enabled: !!binderId,
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: true
   });
 
-  if (!syllabus) {
+  if (!binder) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <p className="text-muted-foreground mb-4">Syllabind not found</p>
-        <Link href="/creator">
+        <p className="text-muted-foreground mb-4">Binder not found</p>
+        <Link href="/curator">
           <Button variant="outline">Back to Dashboard</Button>
         </Link>
       </div>
@@ -73,7 +73,7 @@ export default function SyllabindAnalytics() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <p className="text-muted-foreground mb-4">Failed to load analytics</p>
-        <Link href="/creator">
+        <Link href="/curator">
           <Button variant="outline">Back to Dashboard</Button>
         </Link>
       </div>
@@ -89,26 +89,26 @@ export default function SyllabindAnalytics() {
   return (
     <AnimatedPage className="max-w-5xl mx-auto space-y-8">
       <div className="space-y-4">
-        <Link href="/creator">
+        <Link href="/curator">
           <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" /> Back to Dashboard
           </Button>
         </Link>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-display">{syllabus.title}</h1>
+            <h1 className="text-2xl sm:text-3xl font-display">{binder.title}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant={syllabus.status === 'published' ? 'default' : 'secondary'} className="capitalize">
-                {syllabus.status}
+              <Badge variant={binder.status === 'published' ? 'default' : 'secondary'} className="capitalize">
+                {binder.status}
               </Badge>
               <span className="text-sm text-muted-foreground">Analytics Overview</span>
             </div>
           </div>
           <div className="flex gap-2">
-            <Link href={`/creator/syllabind/${syllabus.id}/edit`}>
-              <Button variant="outline" size="sm">Edit Syllabind</Button>
+            <Link href={`/curator/binder/${binder.id}/edit`}>
+              <Button variant="outline" size="sm">Edit Binder</Button>
             </Link>
-            <Link href={`/syllabind/${syllabus.id}`}>
+            <Link href={`/binder/${binder.id}`}>
               <Button variant="outline" size="sm">Preview</Button>
             </Link>
           </div>
@@ -119,14 +119,14 @@ export default function SyllabindAnalytics() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-card/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Learners Started</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Readers Started</CardTitle>
             <Users className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <div className="text-2xl font-bold">{analytics?.learnersStarted ?? 0}</div>
+              <div className="text-2xl font-bold">{analytics?.readersStarted ?? 0}</div>
             )}
             <p className="text-xs text-muted-foreground mt-1">total enrollments</p>
           </CardContent>
@@ -134,17 +134,17 @@ export default function SyllabindAnalytics() {
 
         <Card className="bg-card/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Learners Completed</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Readers Completed</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <div className="text-2xl font-bold">{analytics?.learnersCompleted ?? 0}</div>
+              <div className="text-2xl font-bold">{analytics?.readersCompleted ?? 0}</div>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              {analytics && analytics.learnersStarted > 0
+              {analytics && analytics.readersStarted > 0
                 ? `${analytics.completionRate}% of starters`
                 : 'no enrollments yet'}
             </p>
@@ -162,7 +162,7 @@ export default function SyllabindAnalytics() {
             ) : (
               <div className="text-2xl font-bold">{analytics?.completionRate ?? 0}%</div>
             )}
-            <p className="text-xs text-muted-foreground mt-1">finished the syllabind</p>
+            <p className="text-xs text-muted-foreground mt-1">finished the binder</p>
           </CardContent>
         </Card>
 
@@ -186,7 +186,7 @@ export default function SyllabindAnalytics() {
         {/* Weekly Drop-off Chart */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-lg font-display">How far learners get</CardTitle>
+            <CardTitle className="text-lg font-display">How far readers get</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -220,18 +220,18 @@ export default function SyllabindAnalytics() {
                             <div className="bg-card border border-border rounded-lg p-3 shadow-lg max-w-[250px]">
                               <div className="font-medium mb-1">{data.week}</div>
                               <div className="text-sm text-muted-foreground mb-2">
-                                {data.percentage}% reach ({data.learnerCount} learners)
+                                {data.percentage}% reach ({data.readerCount} readers)
                               </div>
-                              {data.learnerNames && data.learnerNames.length > 0 && (
+                              {data.readerNames && data.readerNames.length > 0 && (
                                 <div className="border-t border-border pt-2 mt-2">
                                   <div className="text-xs text-muted-foreground mb-1">Currently at this week:</div>
                                   <div className="text-xs space-y-0.5 max-h-[120px] overflow-y-auto">
-                                    {data.learnerNames.slice(0, 10).map((name: string, i: number) => (
+                                    {data.readerNames.slice(0, 10).map((name: string, i: number) => (
                                       <div key={i} className="truncate">{name}</div>
                                     ))}
-                                    {data.learnerNames.length > 10 && (
+                                    {data.readerNames.length > 10 && (
                                       <div className="text-muted-foreground italic">
-                                        +{data.learnerNames.length - 10} more
+                                        +{data.readerNames.length - 10} more
                                       </div>
                                     )}
                                   </div>
@@ -279,14 +279,14 @@ export default function SyllabindAnalytics() {
                 </div>
                 <h4 className="text-lg font-medium leading-tight mb-2">{analytics.topDropoutStep.stepTitle}</h4>
                 <p className="text-sm text-muted-foreground">
-                  {analytics.topDropoutStep.dropoffRate}% of learners drop off here. Consider shortening or moving this step.
+                  {analytics.topDropoutStep.dropoffRate}% of readers drop off here. Consider shortening or moving this step.
                 </p>
               </div>
             ) : (
               <div className="p-4 rounded-xl bg-muted border border-border">
                 <h4 className="text-lg font-medium leading-tight mb-2">No significant dropoff detected</h4>
                 <p className="text-sm text-muted-foreground">
-                  Learners are progressing smoothly through your content.
+                  Readers are progressing smoothly through your content.
                 </p>
               </div>
             )}
@@ -298,7 +298,7 @@ export default function SyllabindAnalytics() {
                   {frictionPoints.map((step) => (
                     <div key={step.stepId} className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground truncate max-w-[180px]">
-                        W{step.weekIndex} – {step.stepTitle}
+                        W{step.weekIndex} - {step.stepTitle}
                       </span>
                       <span className="font-mono text-muted-foreground">{step.dropoffRate}% drop</span>
                     </div>
@@ -307,9 +307,9 @@ export default function SyllabindAnalytics() {
               </div>
             )}
 
-            {!isLoading && frictionPoints.length === 0 && analytics?.learnersStarted === 0 && (
+            {!isLoading && frictionPoints.length === 0 && analytics?.readersStarted === 0 && (
               <div className="text-sm text-muted-foreground">
-                Friction points will appear once learners start enrolling.
+                Friction points will appear once readers start enrolling.
               </div>
             )}
           </CardContent>

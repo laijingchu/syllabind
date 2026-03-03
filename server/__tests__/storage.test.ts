@@ -1,4 +1,4 @@
-import { resetAllMocks, mockStorage, mockUser, mockCreator } from './setup/mocks';
+import { resetAllMocks, mockStorage, mockUser, mockCurator } from './setup/mocks';
 
 // Import and apply mocks
 import './setup/mocks';
@@ -54,7 +54,7 @@ describe('Storage Layer', () => {
           name: 'New User',
           email: 'new@example.com',
           passwordHash: '$2a$10$hashedpassword',
-          isCreator: false
+          isCurator: false
         };
 
         const createdUser = {
@@ -103,101 +103,101 @@ describe('Storage Layer', () => {
     });
   });
 
-  describe('Syllabus Storage Operations', () => {
-    const mockSyllabus = {
+  describe('Binder Storage Operations', () => {
+    const mockBinder = {
       id: 1,
-      title: 'Test Syllabus',
+      title: 'Test Binder',
       description: 'Test description',
       audienceLevel: 'Beginner' as const,
       durationWeeks: 4,
       status: 'published' as const,
-      creatorId: 'testcreator',
+      curatorId: 'testcurator',
       createdAt: new Date(),
       updatedAt: new Date()
     };
 
-    describe('listSyllabinds', () => {
-      it('should retrieve all syllabinds', async () => {
-        mockStorage.listSyllabinds.mockResolvedValue([mockSyllabus]);
+    describe('listBinders', () => {
+      it('should retrieve all binders', async () => {
+        mockStorage.listBinders.mockResolvedValue([mockBinder]);
 
-        const result = await mockStorage.listSyllabinds();
+        const result = await mockStorage.listBinders();
 
-        expect(mockStorage.listSyllabinds).toHaveBeenCalled();
+        expect(mockStorage.listBinders).toHaveBeenCalled();
         expect(result).toHaveLength(1);
-        expect(result[0]).toEqual(mockSyllabus);
+        expect(result[0]).toEqual(mockBinder);
       });
 
-      it('should return empty array when no syllabinds exist', async () => {
-        mockStorage.listSyllabinds.mockResolvedValue([]);
+      it('should return empty array when no binders exist', async () => {
+        mockStorage.listBinders.mockResolvedValue([]);
 
-        const result = await mockStorage.listSyllabinds();
+        const result = await mockStorage.listBinders();
 
         expect(result).toEqual([]);
       });
     });
 
-    describe('getSyllabusById', () => {
-      it('should retrieve syllabus by ID', async () => {
-        mockStorage.getSyllabusById.mockResolvedValue(mockSyllabus);
+    describe('getBinder', () => {
+      it('should retrieve binder by ID', async () => {
+        mockStorage.getBinder.mockResolvedValue(mockBinder);
 
-        const result = await mockStorage.getSyllabusById(1);
+        const result = await mockStorage.getBinder(1);
 
-        expect(mockStorage.getSyllabusById).toHaveBeenCalledWith(1);
-        expect(result).toEqual(mockSyllabus);
+        expect(mockStorage.getBinder).toHaveBeenCalledWith(1);
+        expect(result).toEqual(mockBinder);
       });
 
-      it('should return null when syllabus not found', async () => {
-        mockStorage.getSyllabusById.mockResolvedValue(null);
+      it('should return null when binder not found', async () => {
+        mockStorage.getBinder.mockResolvedValue(null);
 
-        const result = await mockStorage.getSyllabusById(999);
+        const result = await mockStorage.getBinder(999);
 
         expect(result).toBeNull();
       });
     });
 
-    describe('createSyllabus', () => {
-      it('should create new syllabus', async () => {
-        const newSyllabus = {
-          title: 'New Syllabus',
+    describe('createBinder', () => {
+      it('should create new binder', async () => {
+        const newBinder = {
+          title: 'New Binder',
           description: 'New description',
           audienceLevel: 'Intermediate' as const,
           durationWeeks: 2,
           status: 'draft' as const,
-          creatorId: 'testcreator'
+          curatorId: 'testcurator'
         };
 
-        mockStorage.createSyllabus.mockResolvedValue({ id: 2, ...newSyllabus });
+        mockStorage.createBinder.mockResolvedValue({ id: 2, ...newBinder });
 
-        const result = await mockStorage.createSyllabus(newSyllabus);
+        const result = await mockStorage.createBinder(newBinder);
 
-        expect(mockStorage.createSyllabus).toHaveBeenCalledWith(newSyllabus);
+        expect(mockStorage.createBinder).toHaveBeenCalledWith(newBinder);
         expect(result.id).toBeDefined();
-        expect(result.title).toEqual(newSyllabus.title);
+        expect(result.title).toEqual(newBinder.title);
       });
     });
 
-    describe('updateSyllabus', () => {
-      it('should update syllabus', async () => {
+    describe('updateBinder', () => {
+      it('should update binder', async () => {
         const updateData = {
           title: 'Updated Title',
           status: 'published' as const
         };
 
-        mockStorage.updateSyllabus.mockResolvedValue(undefined);
+        mockStorage.updateBinder.mockResolvedValue(undefined);
 
-        await mockStorage.updateSyllabus(1, updateData);
+        await mockStorage.updateBinder(1, updateData);
 
-        expect(mockStorage.updateSyllabus).toHaveBeenCalledWith(1, updateData);
+        expect(mockStorage.updateBinder).toHaveBeenCalledWith(1, updateData);
       });
     });
 
-    describe('deleteSyllabus', () => {
-      it('should delete syllabus', async () => {
-        mockStorage.deleteSyllabus.mockResolvedValue(undefined);
+    describe('deleteBinder', () => {
+      it('should delete binder', async () => {
+        mockStorage.deleteBinder.mockResolvedValue(undefined);
 
-        await mockStorage.deleteSyllabus(1);
+        await mockStorage.deleteBinder(1);
 
-        expect(mockStorage.deleteSyllabus).toHaveBeenCalledWith(1);
+        expect(mockStorage.deleteBinder).toHaveBeenCalledWith(1);
       });
     });
   });
@@ -205,8 +205,8 @@ describe('Storage Layer', () => {
   describe('Enrollment Storage Operations', () => {
     const mockEnrollment = {
       id: 1,
-      studentId: 'test-user-id-123',
-      syllabusId: 1,
+      readerId: 'test-user-id-123',
+      binderId: 1,
       status: 'in-progress' as const,
       currentWeekIndex: 1,
       joinedAt: new Date()
@@ -235,8 +235,8 @@ describe('Storage Layer', () => {
     describe('createEnrollment', () => {
       it('should create new enrollment', async () => {
         const newEnrollment = {
-          studentId: 'test-user-id-123',
-          syllabusId: 1
+          readerId: 'test-user-id-123',
+          binderId: 1
         };
 
         mockStorage.createEnrollment.mockResolvedValue({ id: 1, ...newEnrollment });
@@ -251,7 +251,7 @@ describe('Storage Layer', () => {
         const duplicateError = new Error('Already enrolled');
         mockStorage.createEnrollment.mockRejectedValue(duplicateError);
 
-        await expect(mockStorage.createEnrollment({ studentId: 'test-user-id-123', syllabusId: 1 }))
+        await expect(mockStorage.createEnrollment({ readerId: 'test-user-id-123', binderId: 1 }))
           .rejects.toThrow('Already enrolled');
       });
     });

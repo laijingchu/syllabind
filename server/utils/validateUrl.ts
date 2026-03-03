@@ -1,6 +1,6 @@
 /**
  * Lightweight URL validator using HEAD requests with GET fallback.
- * Used to strip hallucinated/dead URLs from AI-generated syllabinds.
+ * Used to strip hallucinated/dead URLs from AI-generated binders.
  *
  * Many academic sites (jstor, arxiv, .edu) block HEAD requests or return
  * 403/405, so we fall back to GET and accept "exists but restricted" responses.

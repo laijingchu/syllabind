@@ -3,7 +3,8 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { WebSocketServer } from 'ws';
-import { handleGenerateSyllabindWS, handleRegenerateWeekWS } from './websocket/generateSyllabind';
+import { handleGenerateBinderWS, handleRegenerateWeekWS, type CreditReservation } from './websocket/generateBinder';
+import { isProTier } from './utils/creditService';
 import { authenticateWebSocket } from './auth';
 import { storage } from './storage';
 
@@ -12,10 +13,19 @@ const httpServer = createServer(app);
 
 const isProduction = process.env.NODE_ENV === "production";
 
+// Health check endpoint — must respond before any redirects for deployment healthchecks
+app.get("/__healthz", (_req, res) => {
+  res.status(200).send("ok");
+});
+
 // HTTPS redirect — in production, redirect HTTP requests to HTTPS
 // Replit's reverse proxy sets X-Forwarded-Proto to indicate the original protocol
 if (isProduction) {
   app.use((req, res, next) => {
+    // Skip redirect for internal health checks (no x-forwarded-proto means direct connection)
+    if (!req.headers["x-forwarded-proto"]) {
+      return next();
+    }
     if (req.headers["x-forwarded-proto"] !== "https") {
       return res.redirect(301, `https://${req.hostname}${req.originalUrl}`);
     }
@@ -128,49 +138,62 @@ app.use((req, res, next) => {
       return;
     }
 
-    // Parse syllabusId from URL for ownership check
-    let syllabusId: number | undefined;
-    if (url?.startsWith('/ws/generate-syllabind/')) {
+    // Parse binderId from URL for ownership check
+    let binderId: number | undefined;
+    if (url?.startsWith('/ws/generate-binder/')) {
       const urlObj = new URL(url, 'http://localhost');
       const pathParts = urlObj.pathname.split('/');
-      syllabusId = parseInt(pathParts[pathParts.length - 1] || '');
+      binderId = parseInt(pathParts[pathParts.length - 1] || '');
     } else if (url?.startsWith('/ws/regenerate-week/')) {
       const urlObj = new URL(url, 'http://localhost');
       const pathParts = urlObj.pathname.split('/');
-      syllabusId = parseInt(pathParts[3] || '');
+      binderId = parseInt(pathParts[3] || '');
     }
 
-    if (!syllabusId) {
-      ws.send(JSON.stringify({ type: 'error', data: { message: 'Missing syllabus ID in WebSocket URL.' } }));
+    if (!binderId) {
+      ws.send(JSON.stringify({ type: 'error', data: { message: 'Missing binder ID in WebSocket URL.' } }));
       ws.close(4400, 'Bad Request');
       return;
     }
 
     // Verify ownership
-    const syllabus = await storage.getSyllabus(syllabusId);
-    if (!syllabus) {
-      ws.send(JSON.stringify({ type: 'error', data: { message: 'Syllabus not found.' } }));
-      ws.close(4404, 'Syllabus not found');
+    const binder = await storage.getBinder(binderId);
+    if (!binder) {
+      ws.send(JSON.stringify({ type: 'error', data: { message: 'Binder not found.' } }));
+      ws.close(4404, 'Binder not found');
       return;
     }
-    if (syllabus.creatorId !== user.username) {
-      ws.send(JSON.stringify({ type: 'error', data: { message: 'Not authorized to modify this syllabus.' } }));
+    if (binder.curatorId !== user.username) {
+      ws.send(JSON.stringify({ type: 'error', data: { message: 'Not authorized to modify this binder.' } }));
       ws.close(4403, 'Forbidden');
       return;
     }
 
+    // Build credit reservation from query params (set by HTTP route before WS connect)
+    const parseCreditReservation = (urlObj: URL): CreditReservation | undefined => {
+      const txId = urlObj.searchParams.get('txId');
+      const txAmount = urlObj.searchParams.get('txAmount');
+      if (txId && txAmount) {
+        return { userId: user.id, transactionId: parseInt(txId), amount: parseInt(txAmount) };
+      }
+      return undefined;
+    };
+
     // Route to appropriate handler
-    if (url?.startsWith('/ws/generate-syllabind/')) {
+    if (url?.startsWith('/ws/generate-binder/')) {
       const urlObj = new URL(url, 'http://localhost');
       const useMock = urlObj.searchParams.get('mock') === 'true';
-      handleGenerateSyllabindWS(ws, syllabusId, useMock);
+      const isProUser = isProTier(user.subscriptionTier || 'free') || user.isAdmin === true;
+      const creditReservation = parseCreditReservation(urlObj);
+      handleGenerateBinderWS(ws, binderId, useMock, isProUser, user.username, creditReservation);
     } else if (url?.startsWith('/ws/regenerate-week/')) {
       const urlObj = new URL(url, 'http://localhost');
       const pathParts = urlObj.pathname.split('/');
       const weekIndex = parseInt(pathParts[4] || '');
       const useMock = urlObj.searchParams.get('mock') === 'true';
+      const creditReservation = parseCreditReservation(urlObj);
       if (weekIndex) {
-        handleRegenerateWeekWS(ws, syllabusId, weekIndex, useMock);
+        handleRegenerateWeekWS(ws, binderId, weekIndex, useMock, creditReservation);
       } else {
         ws.send(JSON.stringify({ type: 'error', data: { message: 'Invalid week index.' } }));
         ws.close(4400, 'Bad Request');

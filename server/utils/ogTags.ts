@@ -1,16 +1,16 @@
-import type { Syllabus } from "@shared/schema";
+import type { Binder } from "@shared/schema";
 
 const DEFAULT_TITLE = "Syllabind";
 const DEFAULT_DESCRIPTION =
-  "A calm web platform where thought leaders bind the best of the web into 4-week syllabi.";
+  "A calm web platform where thought leaders bind the best of the web into multi-week binders.";
 
 /**
  * Replace static OG meta tags in the HTML template with dynamic values
- * from a specific syllabind. Used for link preview on social platforms.
+ * from a specific binder. Used for link preview on social platforms.
  */
-export function injectOgTags(html: string, syllabus: Syllabus): string {
-  const title = `${syllabus.title} | Syllabind`;
-  const description = syllabus.description || DEFAULT_DESCRIPTION;
+export function injectOgTags(html: string, binder: Binder): string {
+  const title = `${binder.title} | Syllabind`;
+  const description = binder.description || DEFAULT_DESCRIPTION;
 
   // Escape HTML entities to prevent injection
   const safeTitle = escapeHtml(title);
@@ -44,8 +44,8 @@ function escapeHtml(str: string): string {
     .replace(/>/g, "&gt;");
 }
 
-/** Extract syllabind ID from a URL path like /syllabind/42 */
-export function parseSyllabindIdFromUrl(url: string): number | null {
-  const match = url.match(/^\/syllabind\/(\d+)/);
+/** Extract binder ID from a URL path like /binder/42 */
+export function parseBinderIdFromUrl(url: string): number | null {
+  const match = url.match(/^\/binder\/(\d+)/);
   return match ? parseInt(match[1], 10) : null;
 }

@@ -93,22 +93,22 @@ async function createMessageWithRetry(
   throw new Error('Max retries exceeded');
 }
 
-export interface CurriculumWeek {
+export interface OutlineWeek {
   weekIndex: number;
   title: string;
   description: string;
 }
 
 /**
- * Phase 1: Plan the full curriculum outline in a single API call.
+ * Phase 1: Plan the full binder outline in a single API call.
  * Returns distinct week titles and descriptions for all weeks.
  */
-async function planCurriculum(
+async function planOutline(
   basics: { title: string; description: string; audienceLevel: string; durationWeeks: number; mediaPreference?: string },
   ws: WebSocket,
   signal?: AbortSignal
-): Promise<CurriculumWeek[]> {
-  const systemPrompt = `You are a curriculum designer. Plan a ${basics.durationWeeks}-week Syllabind outline for "${basics.title}" (${basics.audienceLevel}).
+): Promise<OutlineWeek[]> {
+  const systemPrompt = `You are a binder designer. Plan a ${basics.durationWeeks}-week Binder outline for "${basics.title}" (${basics.audienceLevel}).
 
 Description: ${basics.description}
 
@@ -117,10 +117,10 @@ Rules:
 - Each week MUST have a DISTINCT topic. No two weeks should cover the same theme.
 - Titles should form a logical learning arc (foundations → intermediate → advanced/synthesis).
 - Descriptions should be 1-2 sentences explaining the week's focus.
-- Call the plan_curriculum tool with all ${basics.durationWeeks} weeks at once.`;
+- Call the plan_outline tool with all ${basics.durationWeeks} weeks at once.`;
 
   const messages: Anthropic.MessageParam[] = [
-    { role: 'user', content: `Plan the ${basics.durationWeeks}-week curriculum outline. Call the plan_curriculum tool.` }
+    { role: 'user', content: `Plan the ${basics.durationWeeks}-week binder outline. Call the plan_outline tool.` }
   ];
 
   const MAX_PLANNING_RETRIES = 2;
@@ -135,28 +135,28 @@ Rules:
       tools: getPlanningTools(),
       messages,
       signal: signal as AbortSignal | undefined
-    }, ws, `plan curriculum (attempt ${attempt + 1})`);
+    }, ws, `plan outline (attempt ${attempt + 1})`);
 
     const toolUse = response.content.find(
       (block): block is Anthropic.ContentBlock & { type: 'tool_use' } =>
-        block.type === 'tool_use' && block.name === 'plan_curriculum'
+        block.type === 'tool_use' && block.name === 'plan_outline'
     );
 
     if (toolUse) {
-      const input = toolUse.input as { weeks: CurriculumWeek[] };
+      const input = toolUse.input as { weeks: OutlineWeek[] };
       if (Array.isArray(input.weeks) && input.weeks.length > 0) {
-        console.log(`[PlanCurriculum] Got ${input.weeks.length} week outlines (expected ${basics.durationWeeks})`);
+        console.log(`[PlanOutline] Got ${input.weeks.length} week outlines (expected ${basics.durationWeeks})`);
 
         // Validate week count matches requested duration
         if (input.weeks.length < basics.durationWeeks) {
-          console.warn(`[PlanCurriculum] Model returned ${input.weeks.length} weeks but ${basics.durationWeeks} requested, retrying`);
+          console.warn(`[PlanOutline] Model returned ${input.weeks.length} weeks but ${basics.durationWeeks} requested, retrying`);
           const filtered = response.content.filter((block: any) =>
             block.type === 'text' || block.type === 'tool_use'
           );
           messages.push({ role: 'assistant', content: filtered.length > 0 ? filtered : [{ type: 'text', text: '(thinking)' }] });
           messages.push({
             role: 'user',
-            content: `You returned ${input.weeks.length} weeks but the course requires exactly ${basics.durationWeeks} weeks. Call plan_curriculum again with exactly ${basics.durationWeeks} weeks.`
+            content: `You returned ${input.weeks.length} weeks but the course requires exactly ${basics.durationWeeks} weeks. Call plan_outline again with exactly ${basics.durationWeeks} weeks.`
           });
           continue;
         }
@@ -171,22 +171,22 @@ Rules:
     }
 
     // Retry: Claude didn't call the tool
-    console.log(`[PlanCurriculum] Attempt ${attempt + 1}: Claude didn't call plan_curriculum, retrying`);
+    console.log(`[PlanOutline] Attempt ${attempt + 1}: Claude didn't call plan_outline, retrying`);
     const filtered = response.content.filter((block: any) =>
       block.type === 'text' || block.type === 'tool_use'
     );
     messages.push({ role: 'assistant', content: filtered.length > 0 ? filtered : [{ type: 'text', text: '(thinking)' }] });
-    messages.push({ role: 'user', content: 'You MUST call the plan_curriculum tool with all week titles and descriptions.' });
+    messages.push({ role: 'user', content: 'You MUST call the plan_outline tool with all week titles and descriptions.' });
   }
 
-  throw new Error('Failed to plan curriculum after retries');
+  throw new Error('Failed to plan outline after retries');
 }
 
 /**
- * Build a human-readable outline string from curriculum weeks for batch prompts.
+ * Build a human-readable outline string from outline weeks for batch prompts.
  */
-function buildOutlineString(curriculum: CurriculumWeek[]): string {
-  return curriculum.map(w => `Week ${w.weekIndex}: "${w.title}" — ${w.description}`).join('\n');
+function buildOutlineString(outline: OutlineWeek[]): string {
+  return outline.map(w => `Week ${w.weekIndex}: "${w.title}" — ${w.description}`).join('\n');
 }
 
 interface MissingUrlStep {
@@ -199,11 +199,11 @@ interface MissingUrlStep {
 
 /**
  * After each batch, check for readings missing URLs and make a focused API call
- * to find them. This separates "find URLs" (simple) from "generate curriculum" (complex).
+ * to find them. This separates "find URLs" (simple) from "generate binder" (complex).
  */
 async function repairMissingUrls(
   missingSteps: MissingUrlStep[],
-  syllabindTitle: string,
+  binderTitle: string,
   ws: WebSocket,
   signal?: AbortSignal
 ): Promise<void> {
@@ -348,7 +348,7 @@ async function ensureMediaUrl(
   weekId: number,
   weekTopic: string,
   weekDescription: string,
-  syllabindTitle: string,
+  binderTitle: string,
   ws: WebSocket
 ): Promise<void> {
   const weekSteps = await storage.getStepsByWeekId(weekId);
@@ -371,9 +371,9 @@ async function ensureMediaUrl(
 
   // Try progressively broader queries to guarantee a result
   const queries = [
-    `${weekTopic} ${syllabindTitle}`,
-    `${weekDescription} ${syllabindTitle}`,
-    syllabindTitle
+    `${weekTopic} ${binderTitle}`,
+    `${weekDescription} ${binderTitle}`,
+    binderTitle
   ];
   let result = null;
   for (const query of queries) {
@@ -417,7 +417,7 @@ async function ensureMediaUrl(
 }
 
 interface GenerationContext {
-  syllabusId: number;
+  binderId: number;
   basics: {
     title: string;
     description: string;
@@ -427,37 +427,38 @@ interface GenerationContext {
   };
   ws: WebSocket;
   signal?: AbortSignal;
+  isProUser?: boolean;
 }
 
-export async function generateSyllabind(context: GenerationContext): Promise<void> {
-  const { syllabusId, basics, ws, signal } = context;
+export async function generateBinder(context: GenerationContext): Promise<void> {
+  const { binderId, basics, ws, signal } = context;
   resetApiCallCounter();
-  console.log(`[Generate] Starting generation for syllabind ${syllabusId} (${basics.durationWeeks} weeks, ${basics.audienceLevel})`);
+  console.log(`[Generate] Starting generation for binder ${binderId} (${basics.durationWeeks} weeks, ${basics.audienceLevel})`);
 
-  // === Phase 1: Plan curriculum outline ===
-  console.log(`[Generate] Phase 1: Planning curriculum outline...`);
+  // === Phase 1: Plan binder outline ===
+  console.log(`[Generate] Phase 1: Planning binder outline...`);
   ws.send(JSON.stringify({
     type: 'planning_started',
     data: { durationWeeks: basics.durationWeeks }
   }));
 
-  let curriculum: CurriculumWeek[];
+  let outline: OutlineWeek[];
   try {
-    curriculum = await planCurriculum(basics, ws, signal);
+    outline = await planOutline(basics, ws, signal);
   } catch (error: any) {
     if (signal?.aborted || error.name === 'AbortError') {
-      console.log(`[Generate] Cancelled during curriculum planning`);
-      await storage.updateSyllabus(syllabusId, { status: 'draft' });
+      console.log(`[Generate] Cancelled during outline planning`);
+      await storage.updateBinder(binderId, { status: 'draft' });
       return;
     }
     throw error;
   }
 
-  // Save all weeks to DB and stream curriculum_planned to client
+  // Save all weeks to DB and stream outline_planned to client
   const savedWeeks: Map<number, { id: number; title: string; description: string }> = new Map();
-  for (const cw of curriculum) {
+  for (const cw of outline) {
     const week = await storage.createWeek({
-      syllabusId,
+      binderId,
       index: cw.weekIndex,
       title: cw.title,
       description: cw.description
@@ -466,21 +467,21 @@ export async function generateSyllabind(context: GenerationContext): Promise<voi
   }
 
   ws.send(JSON.stringify({
-    type: 'curriculum_planned',
-    data: { weeks: curriculum }
+    type: 'outline_planned',
+    data: { weeks: outline }
   }));
 
-  const outlineString = buildOutlineString(curriculum);
-  console.log(`[Generate] Curriculum planned:\n${outlineString}`);
+  const outlineString = buildOutlineString(outline);
+  console.log(`[Generate] Outline planned:\n${outlineString}`);
 
   // === Phase 2: Generate content in batches ===
-  const BATCH_SIZE = 2;
+  const BATCH_SIZE = context.isProUser ? 2 : 3;
   let weekIndex = 1;
 
   while (weekIndex <= basics.durationWeeks) {
     if (signal?.aborted) {
       console.log(`[Generate] Cancelled before week ${weekIndex}`);
-      await storage.updateSyllabus(syllabusId, { status: 'draft' });
+      await storage.updateBinder(binderId, { status: 'draft' });
       return;
     }
 
@@ -493,25 +494,25 @@ export async function generateSyllabind(context: GenerationContext): Promise<voi
 
     console.log(`[Generate] Starting batch: ${weekLabel}`);
 
-    // Build batch-specific topic guidance from the curriculum
+    // Build batch-specific topic guidance from the outline
     const batchTopics = [];
     for (let i = batchStart; i <= batchEnd; i++) {
       const cw = savedWeeks.get(i);
       if (cw) batchTopics.push(`Week ${i}: "${cw.title}" — ${cw.description}`);
     }
 
-    // Build media instruction based on creator preference
+    // Build media instruction based on curator preference
     const mediaInstruction = basics.mediaPreference === 'yes'
       ? `- At least 1 reading per week should be a YouTube video or podcast. Search "topic YouTube" or "topic podcast episode". Set mediaType to "Youtube video" or "Podcast".`
       : basics.mediaPreference === 'no'
         ? `- Do NOT include YouTube videos or podcasts. Only use text-based media types.`
         : ``;
 
-    const systemPrompt = `You are a Syllabind designer. Generate readings and exercises for ${weekLabel} of "${basics.title}" (${basics.audienceLevel}).
+    const systemPrompt = `You are a Binder designer. Generate readings and exercises for ${weekLabel} of "${basics.title}" (${basics.audienceLevel}).
 
 Description: ${basics.description}
 
-FULL CURRICULUM OUTLINE (for context — do NOT duplicate content across weeks):
+FULL BINDER OUTLINE (for context — do NOT duplicate content across weeks):
 ${outlineString}
 
 You are generating ${weekLabel} ONLY. The week titles and descriptions are already set. Generate ONLY the readings and exercises.
@@ -520,7 +521,7 @@ ${batchTopics.map(t => `Topic for ${t}`).join('\n')}
 Rules:
 - Each week: 3 readings + 1 exercise (exercise last). Max 5 hours/week.
 - EVERY reading MUST have a url found via web search. Do NOT invent or guess URLs.
-- EVERY reading MUST have a note (1-2 sentence context for the learner).
+- EVERY reading MUST have a note (1-2 sentence context for the reader).
 - EVERY step MUST have estimatedMinutes (typical: 15-30 for readings, 30-60 for exercises).
 - EVERY exercise MUST have a promptText (~500 chars). Be concise — focus on the core task, not lengthy preambles.
 - Include 1+ academic source per week (jstor, arxiv, scholar.google, .edu, worldcat, academia.edu)
@@ -548,7 +549,7 @@ weekIndex values: Week ${batchStart} = ${batchStart}${batchWeekCount > 1 ? `, We
     while (weekIndex <= batchEnd) {
       if (signal?.aborted) {
         console.log(`[Generate] Cancelled before week ${weekIndex}`);
-        await storage.updateSyllabus(syllabusId, { status: 'draft' });
+        await storage.updateBinder(binderId, { status: 'draft' });
         return;
       }
 
@@ -565,14 +566,14 @@ weekIndex values: Week ${batchStart} = ${batchStart}${batchWeekCount > 1 ? `, We
       } catch (error: any) {
         if (signal?.aborted || error.name === 'AbortError') {
           console.log(`[Generate] Cancelled during week ${weekIndex} API call (${sessionApiCalls} API calls made)`);
-          await storage.updateSyllabus(syllabusId, { status: 'draft' });
+          await storage.updateBinder(binderId, { status: 'draft' });
           return;
         }
 
-        console.error('Syllabind generation error:', error);
+        console.error('Binder generation error:', error);
 
         let errorData: any = {
-          message: error.message || 'Failed to generate Syllabind',
+          message: error.message || 'Failed to generate Binder',
           weekIndex
         };
 
@@ -878,7 +879,7 @@ weekIndex values: Week ${batchStart} = ${batchStart}${batchWeekCount > 1 ? `, We
 
   // === Final sweep: collect ALL readings missing URLs across all weeks ===
   if (!signal?.aborted) {
-    const allWeeks = await storage.getWeeksBySyllabusId(syllabusId);
+    const allWeeks = await storage.getWeeksByBinderId(binderId);
     const allMissingUrls: MissingUrlStep[] = [];
     for (const week of allWeeks) {
       const weekSteps = await storage.getStepsByWeekId(week.id);
@@ -902,18 +903,18 @@ weekIndex values: Week ${batchStart} = ${batchStart}${batchWeekCount > 1 ? `, We
   }
 
   const totalTime = ((Date.now() - sessionStartTime) / 1000).toFixed(1);
-  console.log(`[Generate] Complete for syllabind ${syllabusId}: ${sessionApiCalls} API calls, ${totalTime}s total`);
+  console.log(`[Generate] Complete for binder ${binderId}: ${sessionApiCalls} API calls, ${totalTime}s total`);
 
-  await storage.updateSyllabus(syllabusId, { status: 'draft' });
+  await storage.updateBinder(binderId, { status: 'draft' });
 
   ws.send(JSON.stringify({
     type: 'generation_complete',
-    data: { syllabusId }
+    data: { binderId }
   }));
 }
 
 interface WeekRegenerationContext {
-  syllabusId: number;
+  binderId: number;
   weekIndex: number;
   existingWeekId?: number;
   basics: {
@@ -925,15 +926,15 @@ interface WeekRegenerationContext {
   };
   weekTitle?: string;
   weekDescription?: string;
-  allWeeksOutline?: CurriculumWeek[];
+  allWeeksOutline?: OutlineWeek[];
   ws: WebSocket;
   signal?: AbortSignal;
 }
 
 export async function regenerateWeek(context: WeekRegenerationContext): Promise<void> {
-  const { syllabusId, weekIndex, existingWeekId, basics, weekTitle, weekDescription, allWeeksOutline, ws, signal } = context;
+  const { binderId, weekIndex, existingWeekId, basics, weekTitle, weekDescription, allWeeksOutline, ws, signal } = context;
   resetApiCallCounter();
-  console.log(`[RegenerateWeek] Starting regeneration for syllabind ${syllabusId}, week ${weekIndex}`);
+  console.log(`[RegenerateWeek] Starting regeneration for binder ${binderId}, week ${weekIndex}`);
 
   if (signal?.aborted) {
     console.log(`[RegenerateWeek] Cancelled before starting week ${weekIndex}`);
@@ -947,7 +948,7 @@ export async function regenerateWeek(context: WeekRegenerationContext): Promise<
 
   // Build outline context if available
   const outlineSection = allWeeksOutline && allWeeksOutline.length > 0
-    ? `\nFULL CURRICULUM OUTLINE (for context — do NOT duplicate content from other weeks):\n${buildOutlineString(allWeeksOutline)}\n`
+    ? `\nFULL BINDER OUTLINE (for context — do NOT duplicate content from other weeks):\n${buildOutlineString(allWeeksOutline)}\n`
     : '';
 
   // Build topic guidance from existing title/description
@@ -955,14 +956,14 @@ export async function regenerateWeek(context: WeekRegenerationContext): Promise<
     ? `\nThis week's topic: "${weekTitle}"${weekDescription ? ` — ${weekDescription}` : ''}\nThe week title and description are already set. Generate ONLY the readings and exercises. Do NOT include title or description in finalize_week.`
     : '';
 
-  // Build media instruction based on creator preference
+  // Build media instruction based on curator preference
   const regenMediaInstruction = basics.mediaPreference === 'yes'
     ? `- At least 1 reading should be a YouTube video or podcast. Search "topic YouTube" or "topic podcast episode". Set mediaType to "Youtube video" or "Podcast".`
     : basics.mediaPreference === 'no'
       ? `- Do NOT include YouTube videos or podcasts. Only use text-based media types.`
       : ``;
 
-  const systemPrompt = `You are a Syllabind designer regenerating Week ${weekIndex} for "${basics.title}" (${basics.audienceLevel}).
+  const systemPrompt = `You are a Binder designer regenerating Week ${weekIndex} for "${basics.title}" (${basics.audienceLevel}).
 
 Description: ${basics.description}
 Week ${weekIndex} of ${basics.durationWeeks} total.
@@ -971,7 +972,7 @@ ${outlineSection}${topicSection}
 Rules:
 - Generate Week ${weekIndex} ONLY. 3 readings + 1 exercise (exercise last). Max 5 hours/week.
 - EVERY reading MUST have a url found via web search. Do NOT invent or guess URLs.
-- EVERY reading MUST have a note (1-2 sentence context for the learner).
+- EVERY reading MUST have a note (1-2 sentence context for the reader).
 - EVERY step MUST have estimatedMinutes (typical: 15-30 for readings, 30-60 for exercises).
 - EVERY exercise MUST have a promptText (max 500 chars). Be concise — focus on the core task, not lengthy preambles.
 - Include 1+ academic source (jstor, arxiv, scholar.google, .edu, worldcat, academia.edu)
@@ -1104,7 +1105,7 @@ Process: Search for resources first (~2-3 searches), then call finalize_week.`;
         let weekId = existingWeekId;
         if (!weekId) {
           const week = await storage.createWeek({
-            syllabusId,
+            binderId,
             index: weekIndex,
             title: finalTitle,
             description: finalDescription
@@ -1230,10 +1231,10 @@ Process: Search for resources first (~2-3 searches), then call finalize_week.`;
   }
 
   const totalTime = ((Date.now() - sessionStartTime) / 1000).toFixed(1);
-  console.log(`[RegenerateWeek] Complete for syllabind ${syllabusId}, week ${weekIndex}: ${sessionApiCalls} API calls, ${totalTime}s total`);
+  console.log(`[RegenerateWeek] Complete for binder ${binderId}, week ${weekIndex}: ${sessionApiCalls} API calls, ${totalTime}s total`);
 
   ws.send(JSON.stringify({
     type: 'week_regeneration_complete',
-    data: { syllabusId, weekIndex }
+    data: { binderId, weekIndex }
   }));
 }

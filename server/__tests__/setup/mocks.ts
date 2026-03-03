@@ -10,7 +10,7 @@ export const mockUser = {
   replitId: null,
   googleId: null,
   appleId: null,
-  isCreator: false,
+  isCurator: false,
   isAdmin: false,
   bio: null,
   expertise: null,
@@ -24,9 +24,16 @@ export const mockUser = {
   authProvider: 'email',
   stripeCustomerId: null,
   subscriptionStatus: 'free',
+  subscriptionTier: 'free',
+  creditBalance: 100,
+  creditsGrantedAt: null,
+  generationCount: 0,
+  lastGeneratedAt: null,
+  notificationsAckedAt: null,
+  profileTitle: null,
 };
 
-// Mock admin user (non-creator admin — tests admin bypass without creator flag)
+// Mock admin user (non-curator admin — tests admin bypass without curator flag)
 export const mockAdmin = {
   id: 'admin-user-id-789',
   username: 'adminuser',
@@ -36,7 +43,7 @@ export const mockAdmin = {
   replitId: null,
   googleId: null,
   appleId: null,
-  isCreator: false,
+  isCurator: false,
   isAdmin: true,
   bio: null,
   expertise: null,
@@ -50,49 +57,67 @@ export const mockAdmin = {
   authProvider: 'email',
   stripeCustomerId: null,
   subscriptionStatus: 'free',
+  subscriptionTier: 'free',
+  creditBalance: 100,
+  creditsGrantedAt: null,
+  generationCount: 0,
+  lastGeneratedAt: null,
+  notificationsAckedAt: null,
+  profileTitle: null,
 };
 
-// Mock creator user
-export const mockCreator = {
-  id: 'creator-user-id-456',
-  username: 'testcreator',
-  name: 'Test Creator',
-  email: 'creator@example.com',
+// Mock curator user
+export const mockCurator = {
+  id: 'curator-user-id-456',
+  username: 'testcurator',
+  name: 'Test Curator',
+  email: 'curator@example.com',
   password: null,
   replitId: null,
   googleId: null,
   appleId: null,
-  isCreator: true,
+  isCurator: true,
   isAdmin: false,
-  bio: 'Test creator bio',
+  bio: 'Test curator bio',
   expertise: 'Test expertise',
   avatarUrl: null,
-  linkedin: 'testcreator',
+  linkedin: 'testcurator',
   website: null,
   twitter: null,
   threads: null,
-  schedulingUrl: 'https://calendly.com/testcreator',
+  schedulingUrl: 'https://calendly.com/testcurator',
   shareProfile: true,
   authProvider: 'email',
   stripeCustomerId: null,
   subscriptionStatus: 'free',
+  subscriptionTier: 'free',
+  creditBalance: 100,
+  creditsGrantedAt: null,
+  generationCount: 0,
+  lastGeneratedAt: null,
+  notificationsAckedAt: null,
+  profileTitle: null,
 };
 
-// Mock Pro user (creator with Pro subscription)
-export const mockProCreator = {
-  ...mockCreator,
-  id: 'pro-creator-id-789',
-  username: 'procreator',
+// Mock Pro user (curator with Pro subscription)
+export const mockProCurator = {
+  ...mockCurator,
+  id: 'pro-curator-id-789',
+  username: 'procurator',
   subscriptionStatus: 'pro',
+  subscriptionTier: 'pro_monthly',
+  creditBalance: 130,
   stripeCustomerId: 'cus_pro123',
 };
 
-// Mock Pro user (learner with Pro subscription)
+// Mock Pro user (reader with Pro subscription)
 export const mockProUser = {
   ...mockUser,
   id: 'pro-user-id-101',
   username: 'prouser',
   subscriptionStatus: 'pro',
+  subscriptionTier: 'pro_monthly',
+  creditBalance: 130,
   stripeCustomerId: 'cus_prouser123',
 };
 
@@ -129,15 +154,14 @@ export const resetAllMocks = () => {
   if (mockStorage.getUser) mockStorage.getUser.mockResolvedValue(null);
   if (mockStorage.createUser) mockStorage.createUser.mockResolvedValue(mockUser);
   if (mockStorage.updateUser) mockStorage.updateUser.mockResolvedValue(mockUser);
-  if (mockStorage.getSyllabusById) mockStorage.getSyllabusById.mockResolvedValue(null);
-  if (mockStorage.getSyllabus) mockStorage.getSyllabus.mockResolvedValue(null);
-  if (mockStorage.getSyllabusWithContent) mockStorage.getSyllabusWithContent.mockResolvedValue(null);
-  if (mockStorage.getSyllabindsByCreator) mockStorage.getSyllabindsByCreator.mockResolvedValue([]);
-  if (mockStorage.listSyllabinds) mockStorage.listSyllabinds.mockResolvedValue([]);
-  if (mockStorage.createSyllabus) mockStorage.createSyllabus.mockResolvedValue({ id: 1 });
-  if (mockStorage.updateSyllabus) mockStorage.updateSyllabus.mockResolvedValue(undefined);
-  if (mockStorage.deleteSyllabus) mockStorage.deleteSyllabus.mockResolvedValue(undefined);
-  if (mockStorage.batchDeleteSyllabinds) mockStorage.batchDeleteSyllabinds.mockResolvedValue(undefined);
+  if (mockStorage.getBinder) mockStorage.getBinder.mockResolvedValue(null);
+  if (mockStorage.getBinderWithContent) mockStorage.getBinderWithContent.mockResolvedValue(null);
+  if (mockStorage.getBindersByCurator) mockStorage.getBindersByCurator.mockResolvedValue([]);
+  if (mockStorage.listBinders) mockStorage.listBinders.mockResolvedValue([]);
+  if (mockStorage.createBinder) mockStorage.createBinder.mockResolvedValue({ id: 1 });
+  if (mockStorage.updateBinder) mockStorage.updateBinder.mockResolvedValue(undefined);
+  if (mockStorage.deleteBinder) mockStorage.deleteBinder.mockResolvedValue(undefined);
+  if (mockStorage.batchDeleteBinders) mockStorage.batchDeleteBinders.mockResolvedValue(undefined);
   if (mockStorage.getEnrollmentsByUserId) mockStorage.getEnrollmentsByUserId.mockResolvedValue([]);
   if (mockStorage.getUserEnrollments) mockStorage.getUserEnrollments.mockResolvedValue([]);
   if (mockStorage.getEnrollment) mockStorage.getEnrollment.mockResolvedValue(null);
@@ -155,9 +179,9 @@ export const resetAllMocks = () => {
   if (mockStorage.createSubmission) mockStorage.createSubmission.mockResolvedValue({ id: 1 });
   if (mockStorage.updateSubmission) mockStorage.updateSubmission.mockResolvedValue(undefined);
   if (mockStorage.updateSubmissionFeedback) mockStorage.updateSubmissionFeedback.mockResolvedValue(undefined);
-  if (mockStorage.getLearnersBySyllabusId) mockStorage.getLearnersBySyllabusId.mockResolvedValue([]);
-  if (mockStorage.getClassmatesBySyllabusId) mockStorage.getClassmatesBySyllabusId.mockResolvedValue({ classmates: [], totalEnrolled: 0 });
-  if (mockStorage.getSyllabusAnalytics) mockStorage.getSyllabusAnalytics.mockResolvedValue({});
+  if (mockStorage.getReadersByBinderId) mockStorage.getReadersByBinderId.mockResolvedValue([]);
+  if (mockStorage.getClassmatesByBinderId) mockStorage.getClassmatesByBinderId.mockResolvedValue({ classmates: [], totalEnrolled: 0 });
+  if (mockStorage.getBinderAnalytics) mockStorage.getBinderAnalytics.mockResolvedValue({});
   if (mockStorage.getStepCompletionRates) mockStorage.getStepCompletionRates.mockResolvedValue([]);
   if (mockStorage.getAverageCompletionTimes) mockStorage.getAverageCompletionTimes.mockResolvedValue([]);
   if (mockStorage.getStep) mockStorage.getStep.mockResolvedValue(null);
@@ -169,15 +193,29 @@ export const resetAllMocks = () => {
   if (mockStorage.getSubscriptionByStripeId) mockStorage.getSubscriptionByStripeId.mockResolvedValue(null);
   if (mockStorage.upsertSubscription) mockStorage.upsertSubscription.mockResolvedValue({ id: 1 });
   if (mockStorage.updateSubscriptionByStripeId) mockStorage.updateSubscriptionByStripeId.mockResolvedValue(undefined);
-  if (mockStorage.countSyllabindsByCreator) mockStorage.countSyllabindsByCreator.mockResolvedValue(0);
+  if (mockStorage.countBindersByCurator) mockStorage.countBindersByCurator.mockResolvedValue(0);
   if (mockStorage.getSiteSetting) mockStorage.getSiteSetting.mockResolvedValue(null);
   if (mockStorage.setSiteSetting) mockStorage.setSiteSetting.mockResolvedValue(undefined);
+  if (mockStorage.initializeDefaultCategories) mockStorage.initializeDefaultCategories.mockResolvedValue(undefined);
   if (mockStorage.listCategories) mockStorage.listCategories.mockResolvedValue([]);
   if (mockStorage.listTags) mockStorage.listTags.mockResolvedValue([]);
-  if (mockStorage.getTagsBySyllabindId) mockStorage.getTagsBySyllabindId.mockResolvedValue([]);
+  if (mockStorage.getTagsByBinderId) mockStorage.getTagsByBinderId.mockResolvedValue([]);
   if (mockStorage.findOrCreateTag) mockStorage.findOrCreateTag.mockResolvedValue({ id: 1, name: 'test', slug: 'test' });
-  if (mockStorage.setSyllabindTags) mockStorage.setSyllabindTags.mockResolvedValue([]);
-  if (mockStorage.searchCatalog) mockStorage.searchCatalog.mockResolvedValue({ syllabinds: [], total: 0 });
+  if (mockStorage.setBinderTags) mockStorage.setBinderTags.mockResolvedValue([]);
+  if (mockStorage.searchCatalog) mockStorage.searchCatalog.mockResolvedValue({ binders: [], total: 0 });
   if (mockStorage.refreshSearchVector) mockStorage.refreshSearchVector.mockResolvedValue(undefined);
   if (mockStorage.deleteUser) mockStorage.deleteUser.mockResolvedValue(undefined);
+  if (mockStorage.incrementGenerationCount) mockStorage.incrementGenerationCount.mockResolvedValue(undefined);
+  if (mockStorage.getGenerationInfo) mockStorage.getGenerationInfo.mockResolvedValue({ generationCount: 0, lastGeneratedAt: null });
+  if (mockStorage.getCreditBalance) mockStorage.getCreditBalance.mockResolvedValue(100);
+  if (mockStorage.getCreditTransactions) mockStorage.getCreditTransactions.mockResolvedValue([]);
+  if (mockStorage.deductCredits) mockStorage.deductCredits.mockResolvedValue({ transactionId: 1, newBalance: 90 });
+  if (mockStorage.grantCredits) mockStorage.grantCredits.mockResolvedValue({ transactionId: 1, newBalance: 110 });
+  if (mockStorage.countActiveEnrollments) mockStorage.countActiveEnrollments.mockResolvedValue(0);
+  if (mockStorage.countManualBinders) mockStorage.countManualBinders.mockResolvedValue(0);
+  if (mockStorage.getDemoBinders) mockStorage.getDemoBinders.mockResolvedValue([]);
+  if (mockStorage.getBindersByStatus) mockStorage.getBindersByStatus.mockResolvedValue([]);
+  if (mockStorage.getCuratorUnreadNotifications) mockStorage.getCuratorUnreadNotifications.mockResolvedValue([]);
+  if (mockStorage.getAdminUnreadCount) mockStorage.getAdminUnreadCount.mockResolvedValue(0);
+  if (mockStorage.acknowledgeNotifications) mockStorage.acknowledgeNotifications.mockResolvedValue(undefined);
 };

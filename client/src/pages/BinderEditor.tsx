@@ -1,7 +1,7 @@
 import { useRoute, useLocation, Link } from 'wouter';
 import { usePostHog } from '@posthog/react';
 import { useStore } from '@/lib/store';
-import { Syllabus, Week, Step, StepType, Category, Tag } from '@/lib/types';
+import { Binder, Week, Step, StepType, Category, Tag } from '@/lib/types';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, AlertTriangle, Users, ExternalLink, Wand2, Loader2, X, Pencil, ChevronDown, Globe, EyeOff, Lock } from 'lucide-react';
+import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, AlertTriangle, Users, ExternalLink, Wand2, Loader2, X, Pencil, ChevronDown, Globe, EyeOff, Lock, Eye, Crown, RefreshCw } from 'lucide-react';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,10 +19,20 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 import { useDebounce } from '@/hooks/use-debounce';
 import { GeneratingWeekPlaceholder } from '@/components/GeneratingWeekPlaceholder';
 import { Progress } from '@/components/ui/progress';
@@ -56,6 +67,24 @@ import { CSS } from '@dnd-kit/utilities';
 
 const generateTempId = () => -Math.floor(Math.random() * 1000000); // Temporary negative IDs for unsaved items
 
+export function SaveStatus({ isSaving, lastSaved, className }: { isSaving: boolean; lastSaved: Date | null; className?: string }) {
+  if (!isSaving && !lastSaved) return null;
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 w-[4.5rem]", className)}>
+      {isSaving ? (
+        <>
+          <Loader2 className="h-3 w-3 animate-spin shrink-0" />
+          <span className="text-xs text-muted-foreground">Saving...</span>
+        </>
+      ) : lastSaved ? (
+        <>
+          <CheckCircle2 className="h-3 w-3 text-green-500/70 shrink-0" />
+          <span className="text-xs text-muted-foreground/70">Saved</span>
+        </>
+      ) : null}
+    </span>
+  );
+}
 
 interface SortableStepProps {
   step: Step;
@@ -67,9 +96,10 @@ interface SortableStepProps {
   handleAutoFill: (weekIndex: number, stepId: number) => void;
   isSaving: boolean;
   lastSaved: Date | null;
+  onCreditUsed?: () => void;
 }
 
-function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, removeStep, handleAutoFill, isSaving, lastSaved }: SortableStepProps) {
+function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, removeStep, handleAutoFill, isSaving, lastSaved, onCreditUsed }: SortableStepProps) {
   const {
     attributes,
     listeners,
@@ -219,6 +249,7 @@ function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, remov
                   placeholder="Why should they read this?"
                   isSaving={isSaving}
                   lastSaved={lastSaved}
+                  onCreditUsed={onCreditUsed}
                />
              </div>
            </>
@@ -244,6 +275,7 @@ function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, remov
                   placeholder="What should they do?"
                   isSaving={isSaving}
                   lastSaved={lastSaved}
+                  onCreditUsed={onCreditUsed}
                />
              </div>
            </>
@@ -253,40 +285,46 @@ function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, remov
   );
 }
 
-export default function SyllabindEditor() {
-  const [match, params] = useRoute('/creator/syllabind/:id/edit');
-  const isNew = useLocation()[0] === '/creator/syllabind/new';
-  const { createSyllabus, updateSyllabus, refreshSyllabinds, getSubmissionsForStep, getLearnersForSyllabus, user } = useStore();
-  const posthog = usePostHog();
+export default function BinderEditor() {
+  const [match, params] = useRoute('/curator/binder/:id/edit');
   const [location, setLocation] = useLocation();
-  const [learners, setLearners] = useState<any[]>([]);
+  const isNew = location === '/curator/binder/new' || location.startsWith('/create');
+  const isGuestMode = location.startsWith('/create');
+  const { createBinder, updateBinder, refreshBinders, getSubmissionsForStep, getReadersForBinder, user, isPro } = useStore();
+  const isFreeTier = isGuestMode || !isPro;
+  const posthog = usePostHog();
+  const [readers, setReaders] = useState<any[]>([]);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   const [allCategories, setAllCategories] = useState<Category[]>([]);
-  const [syllabindTags, setSyllabindTags] = useState<Tag[]>([]);
+  const [binderTags, setBinderTags] = useState<Tag[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [tagSuggestions, setTagSuggestions] = useState<(Tag & { usageCount?: number })[]>([]);
   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
 
-  const [formData, setFormData] = useState<Syllabus>({
+  const initialTitle = isNew ? new URLSearchParams(window.location.search).get('title') || '' : '';
+
+  const defaultWeeks = isGuestMode ? 3 : 4;
+  const [formData, setFormData] = useState<Binder>({
     id: generateTempId(),
-    title: '',
+    title: initialTitle,
     description: '',
     audienceLevel: 'Beginner',
-    durationWeeks: 4,
+    durationWeeks: defaultWeeks,
     status: 'draft',
     visibility: 'public',
-    creatorId: user?.username || '',
+    curatorId: user?.username || '',
     showSchedulingLink: true,
     mediaPreference: 'auto',
-    weeks: Array.from({ length: 4 }, (_, i) => ({
+    weeks: Array.from({ length: defaultWeeks }, (_, i) => ({
       id: generateTempId(),
-      syllabusId: generateTempId(),
+      binderId: generateTempId(),
       index: i + 1,
       steps: [] as Step[],
       title: ''
     })),
   });
-  
+
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const debouncedFormData = useDebounce(formData, 1000);
@@ -302,6 +340,9 @@ export default function SyllabindEditor() {
   const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showUnpublishDialog, setShowUnpublishDialog] = useState(false);
+  const [showReviewConfirmDialog, setShowReviewConfirmDialog] = useState(false);
+  const [reviewChecks, setReviewChecks] = useState({ expert: false, vetted: false });
+  const [pendingVisibility, setPendingVisibility] = useState('public');
   const [isDeleting, setIsDeleting] = useState(false);
   const [regeneratingWeekIndex, setRegeneratingWeekIndex] = useState<number | null>(null);
   const [showRegenerateWeekDialog, setShowRegenerateWeekDialog] = useState(false);
@@ -314,24 +355,31 @@ export default function SyllabindEditor() {
   const regeneratingWeekRef = useRef<number | null>(null); // Ref for ws.onclose (avoids stale closure)
   const rateLimitRetryRef = useRef<ReturnType<typeof setInterval> | null>(null); // Track rate limit countdown
 
-  // Check if Syllabind already has content
-  const hasSyllabindContent = formData.weeks.some(week =>
-    week.steps.length > 0 || week.title || week.description
+  // Demo & generation info state
+  const [demoBinders, setDemoBinders] = useState<Array<{ id: number; title: string; description: string; audienceLevel: string; durationWeeks: number; weeks: Week[] }>>([]);
+  const [isDemoMode, setIsDemoMode] = useState(false); // True after user taps a demo pill
+  const [generationInfo, setGenerationInfo] = useState<{ creditBalance?: number; isPro: boolean; isAdmin?: boolean; subscriptionTier?: string; costs?: { per_week: number; improve_writing: number; auto_fill: number }; maxWeeks?: number; generationCount: number; generationLimit: number | null; remaining: number | null; cooldownRemaining: number } | null>(null);
+  const [showWaitlist, setShowWaitlist] = useState(false);
+  const [waitlistUrl, setWaitlistUrl] = useState<string | null>(null);
+
+  // Check if Binder already has content (treat '<p></p>' as empty — TipTap's default)
+  const hasBinderContent = formData.weeks.some(week =>
+    week.steps.length > 0 || week.title || (week.description && week.description !== '<p></p>')
   );
 
-  // Fetch full syllabus with weeks and steps when editing
+  // Fetch full binder with weeks and steps when editing
   useEffect(() => {
-    // Skip fetch if generation is in progress — the generation handlers manage formData
+    // Skip fetch if generation is in progress -- the generation handlers manage formData
     if (isGeneratingRef.current) return;
 
     if (!isNew && params?.id) {
-      const syllabusId = parseInt(params.id);
-      fetch(`/api/syllabinds/${syllabusId}`, { credentials: 'include' })
+      const binderId = parseInt(params.id);
+      fetch(`/api/binders/${binderId}`, { credentials: 'include' })
         .then(res => {
-          if (!res.ok) throw new Error('Failed to fetch syllabus');
+          if (!res.ok) throw new Error('Failed to fetch binder');
           return res.json();
         })
-        .then((existing: Syllabus) => {
+        .then((existing: Binder) => {
           // Skip update if generation started while fetch was in-flight
           if (isGeneratingRef.current) return;
 
@@ -344,7 +392,7 @@ export default function SyllabindEditor() {
 
           // Reset stale "generating" status if no generation is active on this client
           if (existing.status === 'generating') {
-            fetch(`/api/syllabinds/${syllabusId}`, {
+            fetch(`/api/binders/${binderId}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
@@ -359,17 +407,17 @@ export default function SyllabindEditor() {
             categoryId: existing.categoryId || null,
             weeks: weeksArray.length > 0 ? weeksArray : Array.from({ length: existing.durationWeeks || 4 }, (_, i) => ({
               id: generateTempId(),
-              syllabusId: existing.id,
+              binderId: existing.id,
               index: i + 1,
               steps: [] as Step[],
               title: ''
             }))
           });
-          if (existing.tags) setSyllabindTags(existing.tags);
+          if (existing.tags) setBinderTags(existing.tags);
           setIsLoadingContent(false);
         })
         .catch(err => {
-          console.error('Failed to fetch syllabus:', err);
+          console.error('Failed to fetch binder:', err);
           setIsLoadingContent(false);
         });
     }
@@ -379,24 +427,25 @@ export default function SyllabindEditor() {
   // so that subsequent auto-saves work and content persists across refresh
   const isCreatingRef = useRef(false);
   useEffect(() => {
+    if (isGuestMode) return; // Skip in guest mode
     if (formData.id >= 0 || !formData.title?.trim() || isCreatingRef.current) return;
 
     isCreatingRef.current = true;
     (async () => {
       try {
-        const res = await fetch('/api/syllabinds', {
+        const res = await fetch('/api/binders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ ...formData, creatorId: undefined, status: 'draft' })
+          body: JSON.stringify({ ...formData, curatorId: undefined, status: 'draft' })
         });
-        if (!res.ok) throw new Error('Failed to create syllabind');
+        if (!res.ok) throw new Error('Failed to create binder');
         const created = await res.json();
         setFormData(prev => ({ ...prev, id: created.id }));
-        window.history.replaceState(null, '', `/creator/syllabind/${created.id}/edit`);
+        window.history.replaceState(null, '', `/curator/binder/${created.id}/edit`);
         setLastSaved(new Date());
       } catch (err) {
-        console.error('Failed to auto-create syllabind:', err);
+        console.error('Failed to auto-create binder:', err);
       } finally {
         isCreatingRef.current = false;
       }
@@ -405,18 +454,19 @@ export default function SyllabindEditor() {
 
   // Auto-save effect
   useEffect(() => {
-    // Skip initial load, empty title, or unsaved syllabinds (negative IDs)
+    if (isGuestMode) return; // Skip in guest mode
+    // Skip initial load, empty title, or unsaved binders (negative IDs)
     if (!formData.title || formData.id < 0) return;
 
-    // Skip auto-save during AI generation/regeneration — the server is actively
+    // Skip auto-save during AI generation/regeneration -- the server is actively
     // creating weeks/steps, and a concurrent saveWeeksAndSteps would race with it,
-    // causing "duplicate key" constraint violations on weeks(syllabus_id, index)
+    // causing "duplicate key" constraint violations on weeks(binder_id, index)
     if (isGenerating || regeneratingWeekIndex !== null) return;
 
     const save = async () => {
       setIsSaving(true);
       try {
-        await updateSyllabus(debouncedFormData);
+        await updateBinder(debouncedFormData);
         setLastSaved(new Date());
       } catch (err) {
         console.error('Auto-save failed:', err);
@@ -428,10 +478,10 @@ export default function SyllabindEditor() {
     save();
   }, [debouncedFormData]);
 
-  // Fetch learners when syllabus ID changes
+  // Fetch readers when binder ID changes
   useEffect(() => {
     if (formData.id && formData.id > 0) { // Only fetch for real IDs, not temp negative IDs
-      getLearnersForSyllabus(formData.id).then(({ classmates }) => setLearners(classmates));
+      getReadersForBinder(formData.id).then(({ classmates }) => setReaders(classmates));
     }
   }, [formData.id]);
 
@@ -443,13 +493,44 @@ export default function SyllabindEditor() {
       .catch(() => {});
   }, []);
 
-  // Fetch tags for this syllabind
+  // Fetch demo binders in guest mode
+  useEffect(() => {
+    if (!isGuestMode) return;
+    fetch('/api/demo-binders')
+      .then(res => res.json())
+      .then(data => setDemoBinders(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, [isGuestMode]);
+
+  // Fetch waitlist URL in guest mode
+  useEffect(() => {
+    if (!isGuestMode) return;
+    fetch('/api/site-settings/waitlist_form_url')
+      .then(r => r.json())
+      .then(data => setWaitlistUrl(data.value || null))
+      .catch(() => {});
+  }, [isGuestMode]);
+
+  // Fetch generation info for authenticated users
+  const refreshGenerationInfo = () => {
+    if (isGuestMode || !user) return;
+    fetch('/api/generation-info', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => setGenerationInfo(data))
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    refreshGenerationInfo();
+  }, [user, isGuestMode]);
+
+  // Fetch tags for this binder
   useEffect(() => {
     if (formData.id > 0) {
-      fetch(`/api/syllabinds/${formData.id}`, { credentials: 'include' })
+      fetch(`/api/binders/${formData.id}`, { credentials: 'include' })
         .then(res => res.json())
         .then(data => {
-          if (data.tags) setSyllabindTags(data.tags);
+          if (data.tags) setBinderTags(data.tags);
         })
         .catch(() => {});
     }
@@ -464,24 +545,24 @@ export default function SyllabindEditor() {
     const timer = setTimeout(() => {
       fetch(`/api/tags?q=${encodeURIComponent(tagInput)}`)
         .then(res => res.json())
-        .then(data => setTagSuggestions(data.filter((t: Tag) => !syllabindTags.some(st => st.id === t.id))))
+        .then(data => setTagSuggestions(data.filter((t: Tag) => !binderTags.some(st => st.id === t.id))))
         .catch(() => {});
     }, 200);
     return () => clearTimeout(timer);
-  }, [tagInput, syllabindTags]);
+  }, [tagInput, binderTags]);
 
   const addTag = async (name: string) => {
-    if (syllabindTags.length >= 5) return;
+    if (binderTags.length >= 5) return;
     const trimmed = name.trim();
-    if (!trimmed || syllabindTags.some(t => t.name.toLowerCase() === trimmed.toLowerCase())) return;
+    if (!trimmed || binderTags.some(t => t.name.toLowerCase() === trimmed.toLowerCase())) return;
 
-    const newTagNames = [...syllabindTags.map(t => t.name), trimmed];
+    const newTagNames = [...binderTags.map(t => t.name), trimmed];
     setTagInput('');
     setShowTagSuggestions(false);
 
     if (formData.id > 0) {
       try {
-        const res = await fetch(`/api/syllabinds/${formData.id}/tags`, {
+        const res = await fetch(`/api/binders/${formData.id}/tags`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -489,7 +570,7 @@ export default function SyllabindEditor() {
         });
         if (res.ok) {
           const updatedTags = await res.json();
-          setSyllabindTags(updatedTags);
+          setBinderTags(updatedTags);
         }
       } catch (err) {
         console.error('Failed to add tag:', err);
@@ -498,12 +579,12 @@ export default function SyllabindEditor() {
   };
 
   const removeTag = async (tagId: number) => {
-    const newTags = syllabindTags.filter(t => t.id !== tagId);
-    setSyllabindTags(newTags);
+    const newTags = binderTags.filter(t => t.id !== tagId);
+    setBinderTags(newTags);
 
     if (formData.id > 0) {
       try {
-        await fetch(`/api/syllabinds/${formData.id}/tags`, {
+        await fetch(`/api/binders/${formData.id}/tags`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -518,6 +599,15 @@ export default function SyllabindEditor() {
   // Adjust weeks array when duration changes - restore from database if available
   const handleDurationChange = (weeksStr: string) => {
     const count = parseInt(weeksStr);
+    // Guest mode: 4+ weeks requires signup
+    if (count > 3 && isGuestMode) {
+      setShowWaitlist(true);
+      return;
+    }
+    if (count > 4 && isFreeTier) {
+      setShowUpgrade(true);
+      return;
+    }
     const newWeeks = [...formData.weeks];
     if (count > newWeeks.length) {
       for (let i = newWeeks.length; i < count; i++) {
@@ -528,7 +618,7 @@ export default function SyllabindEditor() {
         } else {
           newWeeks.push({
             id: generateTempId(),
-            syllabusId: formData.id,
+            binderId: formData.id,
             index: i + 1,
             steps: [],
             title: ''
@@ -599,12 +689,107 @@ export default function SyllabindEditor() {
         variant: "destructive"
       });
       // Revert by refetching
-      const response = await fetch(`/api/syllabinds/${formData.id}`, { credentials: 'include' });
+      const response = await fetch(`/api/binders/${formData.id}`, { credentials: 'include' });
       if (response.ok) {
         const updated = await response.json();
         setFormData(updated);
       }
     }
+  };
+
+  // Demo generation: simulate the full generation lifecycle using pre-built demo data
+  const handleDemoGenerate = (demo: { id: number; title: string; description: string; audienceLevel: string; durationWeeks: number; weeks: Week[] }) => {
+    setIsDemoMode(true);
+    const weekCount = Math.min(demo.durationWeeks || 6, 6);
+    const demoWeeks = (demo.weeks || []).slice(0, weekCount);
+
+    // Prefill form basics and initialize empty week slots
+    setFormData(prev => ({
+      ...prev,
+      title: demo.title || prev.title,
+      description: demo.description || prev.description,
+      audienceLevel: (demo.audienceLevel as any) || prev.audienceLevel,
+      durationWeeks: weekCount,
+      weeks: Array.from({ length: weekCount }, (_, i) => ({
+        id: generateTempId(),
+        binderId: prev.id,
+        index: i + 1,
+        steps: [] as Step[],
+        title: ''
+      })),
+    }));
+
+    // Start generation animation
+    setIsGenerating(true);
+    setGeneratingWeeks(new Set());
+    setCompletedWeeks(new Set());
+    setErroredWeeks(new Set());
+    setJustCompletedWeek(null);
+    setGenerationProgress({ currentWeek: 0, status: `Planning ${weekCount}-week course structure...` });
+    setActiveWeekTab('week-1');
+
+    // Phase 1: planning delay, then populate week titles
+    setTimeout(() => {
+      // Show all week titles/descriptions (like outline_planned event)
+      setFormData(prev => {
+        const newWeeks = [...prev.weeks];
+        demoWeeks.forEach((dw, i) => {
+          if (newWeeks[i]) {
+            newWeeks[i] = { ...newWeeks[i], title: dw.title || '', description: dw.description || '' };
+          }
+        });
+        return { ...prev, weeks: newWeeks };
+      });
+      setGenerationProgress(prev => ({ ...prev, status: 'Course outline ready — generating content...' }));
+
+      // Phase 2: simulate week-by-week content generation
+      demoWeeks.forEach((dw, i) => {
+        const weekIndex = i + 1;
+        const startDelay = 1200 + i * 2000; // stagger: each week starts 2s after the previous
+        const endDelay = startDelay + 1500;  // each week "generates" for 1.5s
+
+        // Week starts generating
+        setTimeout(() => {
+          setGeneratingWeeks(prev => new Set(Array.from(prev).concat(weekIndex)));
+          setGenerationProgress({ currentWeek: weekIndex, status: `Generating Week ${weekIndex}...` });
+          setActiveWeekTab(`week-${weekIndex}`);
+        }, startDelay);
+
+        // Week completes: populate steps into formData
+        setTimeout(() => {
+          setFormData(prev => {
+            const newWeeks = [...prev.weeks];
+            const idx = weekIndex - 1;
+            if (newWeeks[idx]) {
+              newWeeks[idx] = {
+                ...newWeeks[idx],
+                title: dw.title || newWeeks[idx].title,
+                description: dw.description || newWeeks[idx].description,
+                steps: dw.steps || [],
+              };
+            }
+            return { ...prev, weeks: newWeeks };
+          });
+
+          setGeneratingWeeks(prev => { const next = new Set(prev); next.delete(weekIndex); return next; });
+          setCompletedWeeks(prev => new Set(Array.from(prev).concat(weekIndex)));
+          setJustCompletedWeek(weekIndex);
+          setTimeout(() => setJustCompletedWeek(null), 600);
+
+          // Final week: finish generation
+          if (weekIndex === weekCount) {
+            setTimeout(() => {
+              setIsGenerating(false);
+              setGeneratingWeeks(new Set());
+              setCompletedWeeks(new Set());
+              setJustCompletedWeek(null);
+              setGenerationProgress({ currentWeek: 0, status: '' });
+              setActiveWeekTab('week-1');
+            }, 400);
+          }
+        }, endDelay);
+      });
+    }, 1800);
   };
 
   // Cmd+click (Mac) or Ctrl+click (Windows) to use mock mode (test streaming without API calls)
@@ -620,8 +805,20 @@ export default function SyllabindEditor() {
       return;
     }
 
-    // If Syllabind already has content, show confirmation dialog
-    if (hasSyllabindContent) {
+    // Guest mode: show waitlist/signup popup
+    if (isGuestMode) {
+      setShowWaitlist(true);
+      return;
+    }
+
+    // Regeneration is a Pro feature
+    if (hasBinderContent && isFreeTier) {
+      setShowUpgrade(true);
+      return;
+    }
+
+    // If Binder already has content, show confirmation dialog
+    if (hasBinderContent) {
       setShowRegenerateDialog(true);
       // Store mock preference for dialog confirmation
       (window as any).__useMockGeneration = useMock;
@@ -654,26 +851,60 @@ export default function SyllabindEditor() {
     setGenerationProgress({ currentWeek: 0, status: '' });
     toast({
       title: "Generation Cancelled",
-      description: "Syllabind generation was cancelled. Any completed weeks have been saved.",
+      description: "Binder generation was cancelled. Any completed weeks have been saved.",
     });
     // Refresh to get current state from server
     if (formData.id > 0) {
-      fetch(`/api/syllabinds/${formData.id}`, { credentials: 'include' })
+      fetch(`/api/binders/${formData.id}`, { credentials: 'include' })
         .then(res => res.json())
         .then(updated => setFormData(updated))
         .catch(() => {});
     }
   };
 
+  // Reset form to initial state (guest mode "Start Over")
+  const handleFormReset = () => {
+    setFormData({
+      id: generateTempId(),
+      title: '',
+      description: '',
+      audienceLevel: 'Beginner',
+      durationWeeks: defaultWeeks,
+      status: 'draft',
+      visibility: 'public',
+      curatorId: '',
+      showSchedulingLink: true,
+      mediaPreference: 'auto',
+      weeks: Array.from({ length: defaultWeeks }, (_, i) => ({
+        id: generateTempId(),
+        binderId: generateTempId(),
+        index: i + 1,
+        steps: [] as Step[],
+        title: ''
+      })),
+    });
+    setIsDemoMode(false);
+    setActiveWeekTab('week-1');
+  };
+
+  // Redirect guest users to sign up, preserving their title
+  const requireAuth = () => {
+    if (!isGuestMode) return false;
+    const titleParam = formData.title?.trim() ? `?title=${encodeURIComponent(formData.title.trim())}` : '';
+    setLocation(`/login?mode=signup&redirect=${encodeURIComponent(`/curator/binder/new${titleParam}`)}`);
+    return true;
+  };
+
   // useMock: Alt+click to test streaming without API calls
   const handleAutogenerate = async (useMock = false) => {
+    if (requireAuth()) return;
     setShowRegenerateDialog(false);
 
     if (useMock) {
       console.log('[Mock Mode] Testing streaming effect without API calls');
     }
 
-    // Show progress immediately — don't wait for create/start API calls
+    // Show progress immediately -- don't wait for create/start API calls
     setIsGenerating(true);
     isGeneratingRef.current = true;
     setGenerationProgress({ currentWeek: 0, status: 'Starting generation...' });
@@ -682,27 +913,27 @@ export default function SyllabindEditor() {
     setErroredWeeks(new Set());
     setJustCompletedWeek(null);
 
-    let syllabusId = formData.id;
+    let binderId = formData.id;
     try {
-      // For new syllabinds, create via API directly (skip store's refreshSyllabinds)
-      // and stay on /new — no navigation, no remount, all state preserved
-      if (syllabusId < 0) {
-        const res = await fetch('/api/syllabinds', {
+      // For new binders, create via API directly (skip store's refreshBinders)
+      // and stay on /new -- no navigation, no remount, all state preserved
+      if (binderId < 0) {
+        const res = await fetch('/api/binders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ ...formData, creatorId: undefined, status: 'draft' })
+          body: JSON.stringify({ ...formData, curatorId: undefined, status: 'draft' })
         });
-        if (!res.ok) throw new Error('Failed to create syllabind');
+        if (!res.ok) throw new Error('Failed to create binder');
         const created = await res.json();
-        syllabusId = created.id;
-        setFormData(prev => ({ ...prev, id: syllabusId }));
+        binderId = created.id;
+        setFormData(prev => ({ ...prev, id: binderId }));
       } else {
-        // Flush current basics to DB before generation — auto-save is debounced and
+        // Flush current basics to DB before generation -- auto-save is debounced and
         // skipped during generation, so durationWeeks/title/etc. may be stale in the DB
         const mediaPref = formData.mediaPreference || 'auto';
         console.log('[Generate] Pre-generation save mediaPreference:', mediaPref);
-        await fetch(`/api/syllabinds/${syllabusId}`, {
+        await fetch(`/api/binders/${binderId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -716,34 +947,55 @@ export default function SyllabindEditor() {
         });
       }
 
-      // Reset all weeks to empty slots — server deletes existing data before regenerating,
+      // Reset all weeks to empty slots -- server deletes existing data before regenerating,
       // so client must also start clean to prevent stale/duplicate content from prior attempts
       setFormData(prev => {
         const targetCount = prev.durationWeeks;
         const newWeeks = Array.from({ length: targetCount }, (_, i) => ({
           id: generateTempId(),
-          syllabusId: syllabusId,
+          binderId: binderId,
           index: i + 1,
           steps: [] as Step[],
           title: ''
         }));
         return { ...prev, weeks: newWeeks };
       });
-      const response = await fetch('/api/generate-syllabind', {
+      const response = await fetch('/api/generate-binder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ syllabusId })
+        body: JSON.stringify({ binderId: binderId })
       });
 
-      if (!response.ok) throw new Error('Failed to start generation');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        if (errorData.error === 'INSUFFICIENT_CREDITS') {
+          toast({ title: "Insufficient Credits", description: errorData.message || "Not enough credits for this generation.", variant: "destructive" });
+          setIsGenerating(false);
+          isGeneratingRef.current = false;
+          fetch('/api/generation-info', { credentials: 'include' }).then(r => r.json()).then(setGenerationInfo).catch(() => {});
+          return;
+        }
+        if (errorData.error === 'GENERATION_LIMIT_REACHED') {
+          toast({ title: "Generation Limit Reached", description: errorData.message || "Upgrade to Pro for more credits.", variant: "destructive" });
+          setIsGenerating(false);
+          isGeneratingRef.current = false;
+          fetch('/api/generation-info', { credentials: 'include' }).then(r => r.json()).then(setGenerationInfo).catch(() => {});
+          return;
+        }
+        throw new Error(errorData.error || 'Failed to start generation');
+      }
 
-      const { websocketUrl } = await response.json();
+      const data = await response.json();
+      const { websocketUrl, transactionId, creditsDeducted } = data;
 
+      // Pass credit reservation info via query params for refund on WS failure
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      // Append mock=true to WebSocket URL if in mock mode
-      const wsUrl = useMock ? `${websocketUrl}&mock=true` : websocketUrl;
-      const ws = new WebSocket(`${protocol}//${window.location.host}${wsUrl}`);
+      const creditParams = transactionId ? `&txId=${transactionId}&txAmount=${creditsDeducted}` : '';
+      const wsUrl = useMock ? `${websocketUrl}${creditParams}&mock=true` : `${websocketUrl}${creditParams}`;
+      // Ensure URL has proper query string format
+      const wsPath = websocketUrl.includes('?') ? wsUrl : wsUrl.replace('&', '?');
+      const ws = new WebSocket(`${protocol}//${window.location.host}${wsPath}`);
       generationWsRef.current = ws;
 
       ws.onmessage = (event) => {
@@ -754,7 +1006,7 @@ export default function SyllabindEditor() {
             const { resetIn } = message.data;
             setGenerationProgress(prev => ({
               ...prev,
-              status: `Lots of creators are building right now — please hold on! Resuming in ${resetIn}s`
+              status: `Lots of curators are building right now -- please hold on! Resuming in ${resetIn}s`
             }));
             break;
           }
@@ -767,7 +1019,7 @@ export default function SyllabindEditor() {
             break;
           }
 
-          case 'curriculum_planned': {
+          case 'outline_planned': {
             // Phase 1 complete: populate all week titles/descriptions immediately
             const plannedWeeks = message.data.weeks as Array<{ weekIndex: number; title: string; description: string }>;
             setFormData(prev => {
@@ -777,7 +1029,7 @@ export default function SyllabindEditor() {
                 if (!newWeeks[idx]) {
                   newWeeks[idx] = {
                     id: generateTempId(),
-                    syllabusId: prev.id,
+                    binderId: prev.id,
                     index: pw.weekIndex,
                     steps: [],
                     title: ''
@@ -793,7 +1045,7 @@ export default function SyllabindEditor() {
             });
             setGenerationProgress(prev => ({
               ...prev,
-              status: 'Course outline ready — generating content...'
+              status: 'Course outline ready -- generating content...'
             }));
             break;
           }
@@ -807,14 +1059,14 @@ export default function SyllabindEditor() {
             });
             // Auto-switch to the generating week's tab so user sees streaming
             setActiveWeekTab(`week-${weekIdx}`);
-            // Clear only steps for this week — preserve title/description from curriculum plan
+            // Clear only steps for this week -- preserve title/description from outline plan
             setFormData(prev => {
               const newWeeks = [...prev.weeks];
               const weekIndex = weekIdx - 1;
               if (!newWeeks[weekIndex]) {
                 newWeeks[weekIndex] = {
                   id: generateTempId(),
-                  syllabusId: prev.id,
+                  binderId: prev.id,
                   index: weekIdx,
                   steps: [],
                   title: ''
@@ -845,7 +1097,7 @@ export default function SyllabindEditor() {
               if (!newWeeks[weekIdx]) {
                 newWeeks[weekIdx] = {
                   id: generateTempId(),
-                  syllabusId: prev.id,
+                  binderId: prev.id,
                   index: infoWeekIndex,
                   steps: [],
                   title: ''
@@ -869,7 +1121,7 @@ export default function SyllabindEditor() {
               if (!newWeeks[weekIdx]) {
                 newWeeks[weekIdx] = {
                   id: generateTempId(),
-                  syllabusId: prev.id,
+                  binderId: prev.id,
                   index: stepWeekIndex,
                   steps: [],
                   title: ''
@@ -901,7 +1153,7 @@ export default function SyllabindEditor() {
               if (!newWeeks[weekIndex]) {
                 newWeeks[weekIndex] = {
                   id: generateTempId(),
-                  syllabusId: prev.id,
+                  binderId: prev.id,
                   index: week.weekIndex,
                   steps: [],
                   title: ''
@@ -925,7 +1177,7 @@ export default function SyllabindEditor() {
             setCompletedWeeks(prev => new Set(Array.from(prev).concat(weekIdx)));
             setJustCompletedWeek(weekIdx);
 
-            // Update progress bar immediately — don't wait for next week_started
+            // Update progress bar immediately -- don't wait for next week_started
             setGenerationProgress(prev => {
               const totalWeeks = formData.durationWeeks;
               if (weekIdx >= totalWeeks) {
@@ -965,7 +1217,7 @@ export default function SyllabindEditor() {
           }
 
           case 'url_repair_complete':
-            // No UI change needed — generation continues
+            // No UI change needed -- generation continues
             break;
 
           case 'generation_complete':
@@ -976,15 +1228,17 @@ export default function SyllabindEditor() {
             setJustCompletedWeek(null);
             generationWsRef.current = null;
             toast({
-              title: "Syllabind Generated!",
-              description: "Your Syllabind has been generated. Review and make any edits.",
+              title: "Binder Generated!",
+              description: "Your Binder has been generated. Review and make any edits.",
             });
-            // Sync store so creator dashboard shows the new syllabind
-            refreshSyllabinds();
-            fetch(`/api/syllabinds/${syllabusId}`, { credentials: 'include' })
+            // Refresh credits and generation info
+            fetch('/api/generation-info', { credentials: 'include' }).then(r => r.json()).then(setGenerationInfo).catch(() => {});
+            // Sync store so curator dashboard shows the new binder
+            refreshBinders();
+            fetch(`/api/binders/${binderId}`, { credentials: 'include' })
               .then(res => res.json())
               .then(updated => {
-                // Preserve mediaPreference from local state — the DB value is authoritative
+                // Preserve mediaPreference from local state -- the DB value is authoritative
                 // but we keep the user's selection in case it wasn't flushed yet
                 setFormData(prev => ({
                   ...updated,
@@ -994,7 +1248,7 @@ export default function SyllabindEditor() {
                   setOriginalWeeks(updated.weeks);
                 }
                 // Update URL to edit route (replace avoids browser back to /new)
-                window.history.replaceState(null, '', `/creator/syllabind/${syllabusId}/edit`);
+                window.history.replaceState(null, '', `/curator/binder/${binderId}/edit`);
               });
             break;
 
@@ -1002,11 +1256,11 @@ export default function SyllabindEditor() {
             const errorData = message.data;
 
             if (errorData.isRateLimit) {
-              // Keep progress card visible — no toast, no state reset
+              // Keep progress card visible -- no toast, no state reset
               const retryIn = Math.max(errorData.resetIn || 60, 30);
               setGenerationProgress(prev => ({
                 ...prev,
-                status: `Lots of creators building right now — resuming in ${retryIn}s`
+                status: `Lots of curators building right now -- resuming in ${retryIn}s`
               }));
               let remaining = retryIn;
               const countdown = setInterval(() => {
@@ -1018,7 +1272,7 @@ export default function SyllabindEditor() {
                 } else {
                   setGenerationProgress(prev => ({
                     ...prev,
-                    status: `Lots of creators building right now — resuming in ${remaining}s`
+                    status: `Lots of curators building right now -- resuming in ${remaining}s`
                   }));
                 }
               }, 1000);
@@ -1035,17 +1289,17 @@ export default function SyllabindEditor() {
             setGeneratingWeeks(new Set());
 
             // Re-fetch clean state from server to avoid stale/duplicate data
-            refreshSyllabinds();
-            fetch(`/api/syllabinds/${syllabusId}`, { credentials: 'include' })
+            refreshBinders();
+            fetch(`/api/binders/${binderId}`, { credentials: 'include' })
               .then(res => res.json())
               .then(updated => {
                 setFormData(updated);
                 if (updated.weeks?.length > 0) {
                   setOriginalWeeks(updated.weeks);
                 }
-                window.history.replaceState(null, '', `/creator/syllabind/${syllabusId}/edit`);
+                window.history.replaceState(null, '', `/curator/binder/${binderId}/edit`);
               })
-              .catch(() => {}); // Silently fail — user will see the error toast
+              .catch(() => {}); // Silently fail -- user will see the error toast
 
             toast({
               title: "Generation Error",
@@ -1074,16 +1328,16 @@ export default function SyllabindEditor() {
         generationWsRef.current = null;
         setGeneratingWeeks(new Set());
         // Re-fetch to show whatever was saved before the connection dropped
-        if (syllabusId > 0) {
-          refreshSyllabinds();
-          fetch(`/api/syllabinds/${syllabusId}`, { credentials: 'include' })
+        if (binderId > 0) {
+          refreshBinders();
+          fetch(`/api/binders/${binderId}`, { credentials: 'include' })
             .then(res => res.json())
             .then(updated => {
               setFormData(updated);
               if (updated.weeks?.length > 0) {
                 setOriginalWeeks(updated.weeks);
               }
-              window.history.replaceState(null, '', `/creator/syllabind/${syllabusId}/edit`);
+              window.history.replaceState(null, '', `/curator/binder/${binderId}/edit`);
             })
             .catch(() => {});
         }
@@ -1107,8 +1361,8 @@ export default function SyllabindEditor() {
 
         const errorMessages: Record<number, string> = {
           4401: 'Authentication failed. Please log in again.',
-          4403: 'Not authorized to modify this Syllabind.',
-          4404: 'Syllabind not found.',
+          4403: 'Not authorized to modify this Binder.',
+          4404: 'Binder not found.',
           4400: 'Invalid request.',
         };
 
@@ -1125,15 +1379,15 @@ export default function SyllabindEditor() {
       isGeneratingRef.current = false;
       generationWsRef.current = null;
       // Reset status back to draft so user can retry
-      if (syllabusId > 0) {
-        refreshSyllabinds();
-        fetch(`/api/syllabinds/${syllabusId}`, {
+      if (binderId > 0) {
+        refreshBinders();
+        fetch(`/api/binders/${binderId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ status: 'draft' })
         }).catch(() => {});
-        window.history.replaceState(null, '', `/creator/syllabind/${syllabusId}/edit`);
+        window.history.replaceState(null, '', `/curator/binder/${binderId}/edit`);
       }
       toast({
         title: "Error",
@@ -1157,7 +1411,7 @@ export default function SyllabindEditor() {
     setGeneratingWeeks(new Set([weekIndex]));
     setErroredWeeks(prev => { const next = new Set(prev); next.delete(weekIndex); return next; });
 
-    // Clear only steps for this week — preserve title/description
+    // Clear only steps for this week -- preserve title/description
     setFormData(prev => {
       const newWeeks = [...prev.weeks];
       const weekIdx = weekIndex - 1;
@@ -1176,18 +1430,31 @@ export default function SyllabindEditor() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          syllabusId: formData.id,
+          binderId: formData.id,
           weekIndex
         })
       });
 
-      if (!response.ok) throw new Error('Failed to start week regeneration');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        if (errorData.error === 'INSUFFICIENT_CREDITS') {
+          toast({ title: "Insufficient Credits", description: errorData.message || "Not enough credits.", variant: "destructive" });
+          setRegeneratingWeekIndex(null);
+          regeneratingWeekRef.current = null;
+          setGeneratingWeeks(new Set());
+          return;
+        }
+        throw new Error(errorData.error || 'Failed to start week regeneration');
+      }
 
-      const { websocketUrl } = await response.json();
+      const data = await response.json();
+      const { websocketUrl, transactionId, creditsDeducted } = data;
 
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = useMock ? `${websocketUrl}&mock=true` : websocketUrl;
-      const ws = new WebSocket(`${protocol}//${window.location.host}${wsUrl}`);
+      const creditParams = transactionId ? `&txId=${transactionId}&txAmount=${creditsDeducted}` : '';
+      const wsUrl = useMock ? `${websocketUrl}${creditParams}&mock=true` : `${websocketUrl}${creditParams}`;
+      const wsPath = websocketUrl.includes('?') ? wsUrl : wsUrl.replace('&', '?');
+      const ws = new WebSocket(`${protocol}//${window.location.host}${wsPath}`);
       generationWsRef.current = ws;
 
       ws.onmessage = (event) => {
@@ -1198,7 +1465,7 @@ export default function SyllabindEditor() {
             const { resetIn } = message.data;
             setGenerationProgress(prev => ({
               ...prev,
-              status: `Lots of creators are building right now — please hold on! Resuming in ${resetIn}s`
+              status: `Lots of curators are building right now -- please hold on! Resuming in ${resetIn}s`
             }));
             break;
           }
@@ -1239,7 +1506,7 @@ export default function SyllabindEditor() {
               if (!newWeeks[weekIdx]) {
                 newWeeks[weekIdx] = {
                   id: generateTempId(),
-                  syllabusId: prev.id,
+                  binderId: prev.id,
                   index: infoWeekIndex,
                   steps: [],
                   title: ''
@@ -1259,7 +1526,7 @@ export default function SyllabindEditor() {
               if (!newWeeks[weekIdx]) {
                 newWeeks[weekIdx] = {
                   id: generateTempId(),
-                  syllabusId: prev.id,
+                  binderId: prev.id,
                   index: stepWeekIndex,
                   steps: [],
                   title: ''
@@ -1281,14 +1548,16 @@ export default function SyllabindEditor() {
             generationWsRef.current = null;
             setCompletedWeeks(prev => new Set(Array.from(prev).concat(weekIndex)));
             setErroredWeeks(prev => { const next = new Set(prev); next.delete(weekIndex); return next; });
+            // Refresh credits
+            fetch('/api/generation-info', { credentials: 'include' }).then(r => r.json()).then(setGenerationInfo).catch(() => {});
 
             toast({
               title: "Week Regenerated!",
               description: `Week ${weekIndex} has been regenerated successfully.`,
             });
 
-            // Refresh full syllabus data
-            fetch(`/api/syllabinds/${formData.id}`, { credentials: 'include' })
+            // Refresh full binder data
+            fetch(`/api/binders/${formData.id}`, { credentials: 'include' })
               .then(res => res.json())
               .then(updated => setFormData(updated));
             break;
@@ -1338,8 +1607,8 @@ export default function SyllabindEditor() {
 
         const errorMessages: Record<number, string> = {
           4401: 'Authentication failed. Please log in again.',
-          4403: 'Not authorized to modify this Syllabind.',
-          4404: 'Syllabind not found.',
+          4403: 'Not authorized to modify this Binder.',
+          4404: 'Binder not found.',
           4400: 'Invalid request.',
         };
 
@@ -1366,7 +1635,7 @@ export default function SyllabindEditor() {
 
 
   const handleSave = async (statusOverride?: 'draft' | 'published', visibilityOverride?: string) => {
-    // Update formData immediately so autosave doesn't race with stale values
+    if (requireAuth()) return;
     const overrides: Record<string, any> = {};
     if (statusOverride) overrides.status = statusOverride;
     if (visibilityOverride) overrides.visibility = visibilityOverride;
@@ -1378,32 +1647,52 @@ export default function SyllabindEditor() {
 
     try {
       if (formData.id < 0) {
-        await createSyllabus(dataToSave);
+        await createBinder(dataToSave);
       } else {
-        await updateSyllabus(dataToSave);
+        await updateBinder(dataToSave);
       }
 
       if (statusOverride === 'published') {
-        posthog?.capture('syllabind_published', { syllabind_id: dataToSave.id, title: dataToSave.title });
+        posthog?.capture('binder_published', { binder_id: dataToSave.id, title: dataToSave.title });
       }
 
+      const isWithdraw = statusOverride === 'draft' && formData.status === 'pending_review';
+      const isUnpublish = statusOverride === 'draft' && formData.status === 'published';
+
       const message = statusOverride === 'published'
-        ? "Syllabind published successfully!"
-        : statusOverride === 'draft' && formData.status === 'published'
-          ? "Syllabind has been unpublished."
-          : "Your changes have been saved successfully.";
+        ? "Binder published successfully!"
+        : isWithdraw
+          ? "Submission withdrawn."
+          : isUnpublish
+            ? "Binder has been unpublished."
+            : "Your changes have been saved successfully.";
+
+      const toastTitle = statusOverride === 'published'
+        ? "Binder Published"
+        : isWithdraw
+          ? "Submission Withdrawn"
+          : isUnpublish
+            ? "Binder Unpublished"
+            : "Binder saved";
 
       toast({
-        title: statusOverride === 'published' ? "Syllabind Published" : statusOverride === 'draft' && formData.status === 'published' ? "Syllabind Unpublished" : "Syllabind saved",
-        description: message
+        title: toastTitle,
+        description: message,
+        ...(statusOverride === 'published' && user?.isAdmin && dataToSave.id > 0 && {
+          action: (
+            <ToastAction altText="View binder" onClick={() => setLocation(`/binder/${dataToSave.id}`)}>
+              View Binder
+            </ToastAction>
+          ),
+        }),
       });
       if (!statusOverride) {
-        setLocation('/creator');
+        setLocation('/curator');
       }
     } catch (err) {
       // Revert status on failure
       if (statusOverride) {
-        setFormData(prev => ({ ...prev, status: statusOverride === 'published' ? 'draft' : 'published' }));
+        setFormData(prev => ({ ...prev, status: formData.status }));
       }
       toast({
         title: "Save failed",
@@ -1413,13 +1702,38 @@ export default function SyllabindEditor() {
     }
   };
 
+  // Publish action via POST /publish endpoint (for non-admin curators)
+  const handlePublishAction = async (visibility: string) => {
+    try {
+      const res = await fetch(`/api/binders/${formData.id}/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ visibility }),
+      });
+      if (!res.ok) throw new Error('Failed');
+      const updated = await res.json();
+      setFormData(prev => ({ ...prev, status: updated.status, visibility: updated.visibility, submittedAt: updated.submittedAt }));
+      await refreshBinders();
+      if (updated.status === 'pending_review') {
+        toast({ title: "Submitted for Review", description: "Your binder has been submitted for admin review." });
+      } else if (updated.status === 'published') {
+        toast({ title: "Binder Published", description: `Published as ${visibility}.` });
+      } else {
+        toast({ title: "Status Updated", description: `Binder is now ${updated.status}.` });
+      }
+    } catch {
+      toast({ title: "Failed", description: "Something went wrong.", variant: "destructive" });
+    }
+  };
+
   const handleShareDraft = () => {
-    const draftUrl = `${window.location.origin}/syllabind/${formData.id}?preview=true`;
+    const draftUrl = `${window.location.origin}/binder/${formData.id}?preview=true`;
     navigator.clipboard.writeText(draftUrl);
     posthog?.capture('link_shared', { url: draftUrl, type: 'draft_preview' });
     toast({
-      title: "Draft Link Copied!", 
-      description: "Share this link with anyone to preview your syllabind before publishing.",
+      title: "Draft Link Copied!",
+      description: "Share this link with anyone to preview your binder before publishing.",
       duration: 3000,
     });
   };
@@ -1431,14 +1745,14 @@ export default function SyllabindEditor() {
     if (!step?.url) return;
 
     toast({ title: "Analyzing URL...", description: "AI is extracting metadata from the link." });
-    
+
     // Simulate AI delay
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     // Mock data based on simple heuristic or random
     const isBook = step.url.includes('amazon') || step.url.includes('goodreads');
     const isVideo = step.url.includes('youtube') || step.url.includes('vimeo');
-    
+
     updateStep(weekIndex, stepId, 'title', isBook ? "The Design of Everyday Things" : "Understanding Cognitive Load");
     updateStep(weekIndex, stepId, 'author', isBook ? "Don Norman" : "Jane Doe");
     updateStep(weekIndex, stepId, 'creationDate', "2023-05-15");
@@ -1453,20 +1767,20 @@ export default function SyllabindEditor() {
     if (formData.id < 0) return;
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/syllabinds/${formData.id}`, {
+      const response = await fetch(`/api/binders/${formData.id}`, {
         method: 'DELETE',
         credentials: 'include'
       });
-      if (!response.ok) throw new Error('Failed to delete syllabind');
+      if (!response.ok) throw new Error('Failed to delete binder');
       toast({
-        title: "Syllabind Deleted",
-        description: "Your syllabind has been permanently deleted.",
+        title: "Binder Deleted",
+        description: "Your binder has been permanently deleted.",
       });
-      setLocation('/creator');
+      setLocation('/curator');
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to delete syllabind. Please try again.",
+        description: "Failed to delete binder. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -1481,7 +1795,7 @@ export default function SyllabindEditor() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // Deduplicate weeks by index — prevents ghost tabs if duplicate indexes exist
+  // Deduplicate weeks by index -- prevents ghost tabs if duplicate indexes exist
   const uniqueWeeks = useMemo(() => {
     const seen = new Set<number>();
     return (formData.weeks || []).filter(w => {
@@ -1513,50 +1827,101 @@ export default function SyllabindEditor() {
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
          <div className="flex items-center gap-3 sm:gap-4">
-            <Button variant="ghost" size="icon" onClick={() => setLocation('/creator')} className="shrink-0">
+            <Button variant="ghost" size="icon" onClick={() => setLocation('/curator')} className="shrink-0">
                <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-xl sm:text-2xl font-display">{isNew ? 'Create New Syllabind' : 'Edit Syllabind'}</h1>
+            <h1 className="text-xl sm:text-2xl font-display">{isNew ? 'Create New Binder' : 'Edit Binder'}</h1>
          </div>
-         <div className="flex flex-wrap gap-2 items-center">
+         <div className="flex flex-wrap gap-1.5 items-center">
+            <TooltipProvider delayDuration={300}>
+            {isGuestMode ? (
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                {isDemoMode ? (
+                  <span className="hidden sm:inline">Demo</span>
+                ) : (formData.title.trim() || formData.description.trim()) ? (
+                  <>
+                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                    <span className="hidden sm:inline">Progress not saved</span>
+                  </>
+                ) : null}
+              </span>
+            ) : (
+              <SaveStatus isSaving={isSaving} lastSaved={lastSaved} />
+            )}
             {!isNew && (
               <>
-                <Button variant="outline" size="sm" onClick={handleShareDraft} className="gap-2">
-                  <Share2 className="h-4 w-4" /> <span className="hidden sm:inline">Share Draft</span>
-                </Button>
-                <Link href={`/creator/syllabind/${params?.id}/analytics`}>
-                  <Button variant="ghost" size="sm">
-                    <BarChart2 className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Analytics</span>
-                  </Button>
-                </Link>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleShareDraft}>
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Share Draft</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link href={`/curator/binder/${params?.id}/analytics`}>
+                      <Button variant="outline" size="icon" className="h-8 w-8">
+                        <BarChart2 className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>Analytics</TooltipContent>
+                </Tooltip>
               </>
             )}
-            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-              {isSaving ? (
-                <>
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  <span className="hidden sm:inline">Saving...</span>
-                </>
-              ) : lastSaved ? (
-                <>
-                  <CheckCircle2 className="h-3 w-3 text-green-500/70" />
-                  <span className="hidden sm:inline">Saved</span>
-                </>
-              ) : null}
-            </span>
             {!isNew && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowDeleteDialog(true)}
-                disabled={isDeleting}
-                className="gap-1.5 border-destructive text-destructive hover:bg-destructive/10"
-              >
-                {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} <span className="hidden sm:inline">{isDeleting ? 'Deleting...' : 'Delete'}</span>
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 border-destructive text-destructive hover:bg-destructive/10"
+                    onClick={() => setShowDeleteDialog(true)}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{isDeleting ? 'Deleting...' : 'Delete'}</TooltipContent>
+              </Tooltip>
             )}
-            {formData.status === 'published' ? (
+            {isGuestMode && hasBinderContent && !isGenerating && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={handleFormReset}>
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Start Over</TooltipContent>
+              </Tooltip>
+            )}
+            {isGuestMode && hasBinderContent && !isGenerating && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => {
+                      sessionStorage.setItem('guestBinderPreview', JSON.stringify(formData));
+                      setLocation('/create/preview');
+                    }}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Preview</TooltipContent>
+              </Tooltip>
+            )}
+            {isGuestMode ? (
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>Sign up</Button>
+            ) : formData.status === 'published' ? (
               <Button variant="secondary" size="sm" onClick={() => setShowUnpublishDialog(true)}>Unpublish</Button>
+            ) : formData.status === 'pending_review' && !user?.isAdmin ? (
+              <>
+                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Pending Review</Badge>
+                <Button variant="secondary" size="sm" onClick={() => handlePublishAction('withdraw')}>Withdraw from Review</Button>
+              </>
             ) : (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -1565,15 +1930,15 @@ export default function SyllabindEditor() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuItem onClick={() => handleSave('published', 'public')}>
+                  <DropdownMenuItem onClick={() => user?.isAdmin ? handleSave('published', 'public') : (() => { setPendingVisibility('public'); setShowReviewConfirmDialog(true); })()}>
                     <Globe className="h-4 w-4 mr-2" /> Public
-                    <span className="ml-auto text-xs text-muted-foreground">Catalog</span>
+                    <span className="ml-auto text-xs text-muted-foreground">{user?.isAdmin ? 'Catalog' : 'To be featured'}</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleSave('published', 'unlisted')}>
+                  <DropdownMenuItem onClick={() => user?.isAdmin ? handleSave('published', 'unlisted') : handlePublishAction('unlisted')}>
                     <EyeOff className="h-4 w-4 mr-2" /> Unlisted
                     <span className="ml-auto text-xs text-muted-foreground">Link only</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleSave('published', 'private')}>
+                  <DropdownMenuItem onClick={() => user?.isAdmin ? handleSave('published', 'private') : handlePublishAction('private')}>
                     <Lock className="h-4 w-4 mr-2" /> Private
                     <span className="ml-auto text-xs text-muted-foreground">Only you</span>
                   </DropdownMenuItem>
@@ -1581,19 +1946,47 @@ export default function SyllabindEditor() {
               </DropdownMenu>
             )}
             {!isNew && (
-              <Link href={`/creator/syllabind/${params?.id}/learners`}>
-                <Button variant="outline" size="sm" className="gap-2">
-                   <Users className="h-4 w-4" /> <span className="hidden sm:inline">Learners</span>
-                </Button>
-              </Link>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href={formData.status === 'published' ? `/binder/${params?.id}` : `/binder/${params?.id}?preview=true`}>
+                    <Button variant="outline" size="icon" className="h-8 w-8">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>Preview</TooltipContent>
+              </Tooltip>
             )}
+            {!isNew && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href={`/curator/binder/${params?.id}/readers`}>
+                    <Button variant="outline" size="icon" className="h-8 w-8">
+                      <Users className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>Readers</TooltipContent>
+              </Tooltip>
+            )}
+            </TooltipProvider>
          </div>
       </div>
+
+      {formData.reviewNote && formData.status === 'draft' && (
+        <div className="review-feedback-banner flex items-start gap-3 p-4 rounded-lg border border-amber-200 bg-amber-50 text-amber-900">
+          <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-medium text-sm">Feedback from admin review</p>
+            <p className="text-sm mt-1">{formData.reviewNote}</p>
+          </div>
+        </div>
+      )}
 
       {isLoadingContent ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Loading syllabind...</p>
+          <p className="text-sm text-muted-foreground">Loading binder...</p>
         </div>
       ) : (
       <>
@@ -1610,6 +2003,20 @@ export default function SyllabindEditor() {
               placeholder="e.g. Intro to Stoicism"
               className="text-base md:text-lg"
             />
+            {isGuestMode && demoBinders.length > 0 && !hasBinderContent && !isGenerating && (
+              <div className="demo-topic-chips flex flex-wrap items-center gap-2 pt-1">
+                <span className="text-xs text-muted-foreground">Try a demo:</span>
+                {demoBinders.map((demo) => (
+                  <button
+                    key={demo.id}
+                    onClick={() => handleDemoGenerate(demo)}
+                    className="text-xs px-2.5 py-1 rounded-full border border-primary/30 text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                  >
+                    {demo.title}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="space-y-2">
             <Label className="text-sm">Description</Label>
@@ -1619,6 +2026,7 @@ export default function SyllabindEditor() {
               placeholder="What will they learn?"
               isSaving={isSaving}
               lastSaved={lastSaved}
+              onCreditUsed={refreshGenerationInfo}
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
@@ -1644,14 +2052,22 @@ export default function SyllabindEditor() {
               >
                 <SelectTrigger className="text-base md:text-lg"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">1 Week</SelectItem>
-                  <SelectItem value="2">2 Weeks</SelectItem>
-                  <SelectItem value="3">3 Weeks</SelectItem>
-                  <SelectItem value="4">4 Weeks</SelectItem>
-                  <SelectItem value="5">5 Weeks</SelectItem>
-                  <SelectItem value="6">6 Weeks</SelectItem>
-                  <SelectItem value="7">7 Weeks</SelectItem>
-                  <SelectItem value="8">8 Weeks</SelectItem>
+                  {[1, 2, 3, 4, 5, 6].map(n => (
+                    <SelectItem key={n} value={n.toString()}>
+                      <span className="flex items-center gap-2">
+                        {n} {n === 1 ? 'Week' : 'Weeks'}
+                        {isGuestMode && n === 4 && (
+                          <Badge className="ml-1 bg-green-600 text-white text-[10px] py-0 px-1.5 leading-tight">Free Sign Up</Badge>
+                        )}
+                        {isGuestMode && n > 4 && (
+                          <Badge className="ml-1 bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                        )}
+                        {!isGuestMode && n > 4 && isFreeTier && (
+                          <Badge className="ml-1 bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                        )}
+                      </span>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -1688,8 +2104,8 @@ export default function SyllabindEditor() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-sm">Tags ({syllabindTags.length}/5)</Label>
-              {syllabindTags.length < 5 && (
+              <Label className="text-sm">Tags ({binderTags.length}/5)</Label>
+              {binderTags.length < 5 && (
                 <div className="relative">
                   <Input
                     value={tagInput}
@@ -1718,9 +2134,9 @@ export default function SyllabindEditor() {
                   )}
                 </div>
               )}
-              {syllabindTags.length > 0 && (
+              {binderTags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
-                  {syllabindTags.map(tag => (
+                  {binderTags.map(tag => (
                     <Badge key={tag.id} variant="secondary" className="gap-1 pr-1">
                       {tag.name}
                       <button
@@ -1739,7 +2155,7 @@ export default function SyllabindEditor() {
           <div className="pt-4 space-y-3">
             <div className="flex items-center justify-between gap-3">
               <Button
-                variant={isLoadingContent || hasSyllabindContent ? "secondary" : "default"}
+                variant={isLoadingContent || hasBinderContent ? "secondary" : "default"}
                 onClick={handleAutogenerateClick}
                 disabled={isGenerating || !formData.title || !formData.description}
                 className="gap-2"
@@ -1747,11 +2163,14 @@ export default function SyllabindEditor() {
                 <Wand2 className="h-4 w-4" />
                 {isGenerating
                   ? 'Generating...'
-                  : hasSyllabindContent
+                  : hasBinderContent
                     ? 'Regenerate with AI'
                     : 'Autogenerate with AI'}
+                {hasBinderContent && isFreeTier && (
+                  <Badge className="ml-1 bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Free</Badge>
+                )}
               </Button>
-              {/* Scheduling link toggle — only shown when creator has a scheduling URL */}
+              {/* Scheduling link toggle -- only shown when curator has a scheduling URL */}
               {user?.schedulingUrl && (
                 <div className="scheduling-link-toggle flex items-center gap-2">
                   <Switch
@@ -1762,7 +2181,7 @@ export default function SyllabindEditor() {
                       setFormData(prev => ({ ...prev, showSchedulingLink: val }));
                       // Persist immediately (don't wait for debounce)
                       if (formData.id > 0) {
-                        fetch(`/api/syllabinds/${formData.id}`, {
+                        fetch(`/api/binders/${formData.id}`, {
                           method: 'PUT',
                           headers: { 'Content-Type': 'application/json' },
                           credentials: 'include',
@@ -1784,7 +2203,40 @@ export default function SyllabindEditor() {
                   </Link>
                 </div>
               )}
+              {/* Admin-only: Mark as Demo toggle */}
+              {user?.isAdmin && !isNew && formData.id > 0 && (
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="is-demo"
+                    checked={formData.isDemo ?? false}
+                    onCheckedChange={(checked) => {
+                      const val = checked as boolean;
+                      setFormData(prev => ({ ...prev, isDemo: val }));
+                      fetch(`/api/binders/${formData.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ isDemo: val }),
+                      }).catch(() => {});
+                    }}
+                  />
+                  <label htmlFor="is-demo" className="text-sm font-medium leading-none cursor-pointer select-none whitespace-nowrap">
+                    Demo binder
+                  </label>
+                </div>
+              )}
             </div>
+            {/* Credit info for authenticated users */}
+            {!isGuestMode && generationInfo && !generationInfo.isAdmin && (
+              <p className="text-xs text-muted-foreground">
+                {generationInfo.creditBalance !== undefined && (
+                  <>
+                    {generationInfo.creditBalance} credits available
+                    {generationInfo.costs && ` · Generation cost: ${formData.durationWeeks * generationInfo.costs.per_week} credits`}
+                  </>
+                )}
+              </p>
+            )}
             {isGenerating && (
               <Card className="mt-4 border-primary/20 bg-primary/5">
                 <CardContent className="p-4">
@@ -1801,16 +2253,16 @@ export default function SyllabindEditor() {
                         </span>
                         {generationProgress.currentWeek > 0 && (
                           <span className="text-xs text-muted-foreground">
-                            {Math.round((completedWeeks.size / formData.durationWeeks) * 100)}%
+                            {Math.round(10 + ((completedWeeks.size + 0.5 * generatingWeeks.size) / formData.durationWeeks) * 90)}%
                           </span>
                         )}
                       </div>
                       <Progress
                         value={generationProgress.currentWeek === 0
                           ? 5
-                          : (completedWeeks.size / formData.durationWeeks) * 100}
+                          : 10 + ((completedWeeks.size + 0.5 * generatingWeeks.size) / formData.durationWeeks) * 90}
                         className="h-2 bg-secondary"
-                        indicatorClassName="bg-foreground"
+                        indicatorClassName="bg-foreground transition-all duration-500"
                       />
                     </div>
                   </div>
@@ -1835,8 +2287,9 @@ export default function SyllabindEditor() {
         </CardContent>
       </Card>
 
+      {/* Binder weeks */}
       <div className="space-y-4">
-        <h2 className="text-lg sm:text-xl font-medium">Syllabind</h2>
+        <h2 className="text-lg sm:text-xl font-medium">Binder</h2>
         <Tabs value={activeWeekTab} onValueChange={setActiveWeekTab} className="w-full">
           <TabsList className="w-auto flex-wrap h-auto p-1 justify-start">
             {uniqueWeeks.map(w => {
@@ -1920,6 +2373,7 @@ export default function SyllabindEditor() {
                           placeholder="What is the theme for this week?"
                           isSaving={isSaving}
                           lastSaved={lastSaved}
+                          onCreditUsed={refreshGenerationInfo}
                        />
                        {/* Regenerate Week Button */}
                        {!isNew && formData.id > 0 && (
@@ -1928,6 +2382,10 @@ export default function SyllabindEditor() {
                              variant="secondary"
                              size="sm"
                              onClick={(e) => {
+                               if (isFreeTier) {
+                                 setShowUpgrade(true);
+                                 return;
+                               }
                                const useMock = e.metaKey || e.ctrlKey;
                                const hasWeekContent = week.steps.length > 0 || week.title || week.description;
                                if (hasWeekContent) {
@@ -1943,6 +2401,9 @@ export default function SyllabindEditor() {
                              {regeneratingWeekIndex === week.index
                                ? 'Regenerating...'
                                : 'Regenerate Week'}
+                             {isFreeTier && (
+                               <Badge className="ml-1 bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                             )}
                            </Button>
                          </div>
                        )}
@@ -1963,6 +2424,7 @@ export default function SyllabindEditor() {
                           handleAutoFill={handleAutoFill}
                           isSaving={isSaving}
                           lastSaved={lastSaved}
+                          onCreditUsed={refreshGenerationInfo}
                         />
                       ))}
                     </div>
@@ -1985,12 +2447,12 @@ export default function SyllabindEditor() {
           })}
         </Tabs>
       </div>
-      
+
       {!isNew && (
         <div className="space-y-4 pt-6 sm:pt-8 border-t">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
              <h2 className="text-lg sm:text-xl font-medium">Recent Submissions</h2>
-             <Link href={`/creator/syllabind/${params?.id}/learners`}>
+             <Link href={`/curator/binder/${params?.id}/readers`}>
                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
                  View All <ArrowLeft className="h-4 w-4 ml-2 rotate-180" />
                </Button>
@@ -2034,7 +2496,7 @@ export default function SyllabindEditor() {
                                 <span className="shrink-0">• {new Date(sub.submittedAt).toLocaleDateString()}</span>
                              </div>
                           </div>
-                          <Link href={`/creator/syllabind/${formData.id}/learners`}>
+                          <Link href={`/curator/binder/${formData.id}/readers`}>
                              <Button size="sm" variant="secondary" className="w-full sm:w-auto">Review</Button>
                           </Link>
                        </CardContent>
@@ -2047,15 +2509,37 @@ export default function SyllabindEditor() {
       )}
 
 
+      {/* Bottom action bar for guest mode */}
+      {isGuestMode && hasBinderContent && !isGenerating && (
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-4 pb-2 border-t">
+          <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={handleFormReset}>
+            <RefreshCw className="h-3.5 w-3.5" /> Start Over
+          </Button>
+          <Button
+            size="sm"
+            className="gap-1.5"
+            onClick={() => {
+              sessionStorage.setItem('guestBinderPreview', JSON.stringify(formData));
+              setLocation('/create/preview');
+            }}
+          >
+            <Eye className="h-4 w-4" /> Preview
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>
+            Sign up
+          </Button>
+        </div>
+      )}
+
       </>
       )}
 
       <AlertDialog open={showRegenerateDialog} onOpenChange={setShowRegenerateDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Regenerate Syllabind?</AlertDialogTitle>
+            <AlertDialogTitle>Regenerate Binder?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will replace your existing Syllabind content with newly generated material.
+              This will replace your existing Binder content with newly generated material.
               All current weeks, steps, and descriptions will be deleted. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -2075,9 +2559,9 @@ export default function SyllabindEditor() {
       <AlertDialog open={showUnpublishDialog} onOpenChange={setShowUnpublishDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Unpublish Syllabind?</AlertDialogTitle>
+            <AlertDialogTitle>Unpublish Binder?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove "{formData.title || 'this syllabind'}" from the Catalog. It will no longer be visible to new learners. Current students' progress will be kept and restored if you republish.
+              This will remove "{formData.title || 'this binder'}" from the Catalog. It will no longer be visible to new readers. Current readers' progress will be kept and restored if you republish.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2094,12 +2578,42 @@ export default function SyllabindEditor() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={showReviewConfirmDialog} onOpenChange={(open) => { if (!open) { setShowReviewConfirmDialog(false); setReviewChecks({ expert: false, vetted: false }); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Submit for Review</AlertDialogTitle>
+            <AlertDialogDescription>
+              Public binders are reviewed by an admin before being featured in the catalog.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3 py-2">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <Checkbox checked={reviewChecks.expert} onCheckedChange={(v) => setReviewChecks(prev => ({ ...prev, expert: !!v }))} />
+              <span className="text-sm">I am knowledgeable in this domain</span>
+            </label>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <Checkbox checked={reviewChecks.vetted} onCheckedChange={(v) => setReviewChecks(prev => ({ ...prev, vetted: !!v }))} />
+              <span className="text-sm">The content and resources are hand-crafted and vetted</span>
+            </label>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!reviewChecks.expert || !reviewChecks.vetted}
+              onClick={() => { handlePublishAction(pendingVisibility); setShowReviewConfirmDialog(false); setReviewChecks({ expert: false, vetted: false }); }}
+            >
+              Submit for Review
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={showDeleteDialog} onOpenChange={(open) => { if (!isDeleting) setShowDeleteDialog(open); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Syllabind?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Binder?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete "{formData.title || 'this syllabind'}" and all its weeks, steps, enrollments, and submissions.
+              This will permanently delete "{formData.title || 'this binder'}" and all its weeks, steps, enrollments, and submissions.
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -2137,6 +2651,39 @@ export default function SyllabindEditor() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <UpgradePrompt open={showUpgrade} onOpenChange={setShowUpgrade} variant="pro-feature" />
+
+      {/* Waitlist popup for guest mode */}
+      <Dialog open={showWaitlist} onOpenChange={setShowWaitlist}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Join the Waitlist</DialogTitle>
+            <DialogDescription>
+              Sign up to get 2 free AI-generated binders with readings, exercises, and curated resources.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setShowWaitlist(false)}>
+              Maybe Later
+            </Button>
+            <Button
+              onClick={() => {
+                if (waitlistUrl) {
+                  window.open(waitlistUrl, '_blank');
+                } else {
+                  const titleParam = formData.title?.trim() ? `?title=${encodeURIComponent(formData.title.trim())}` : '';
+                  const redirect = encodeURIComponent(`/curator/binder/new${titleParam}`);
+                  setLocation(`/login?mode=signup&redirect=${redirect}`);
+                }
+                setShowWaitlist(false);
+              }}
+            >
+              Join Waitlist
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

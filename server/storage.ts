@@ -1,25 +1,26 @@
 import {
   type User, type InsertUser,
-  type Syllabus, type InsertSyllabus,
+  type Binder, type InsertBinder,
   type Enrollment, type InsertEnrollment,
   type Week, type InsertWeek,
   type Step, type InsertStep,
   type Submission, type InsertSubmission,
   type CompletedStep, type InsertCompletedStep,
   type Subscription, type InsertSubscription,
-  type Category, type Tag, type SyllabindTag,
-  users, syllabinds, enrollments, weeks, steps, submissions, completedSteps, subscriptions, siteSettings,
-  categories, tags, syllabindTags
+  type CreditTransaction, type InsertCreditTransaction,
+  type Category, type Tag, type BinderTag,
+  users, binders, enrollments, weeks, steps, submissions, completedSteps, subscriptions, siteSettings,
+  categories, tags, binderTags, creditTransactions
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql, asc, desc, inArray, ilike, count } from "drizzle-orm";
+import { eq, and, or, sql, asc, desc, inArray, ilike, count, gt, isNotNull } from "drizzle-orm";
 
 // Extended types for nested data
 export interface WeekWithSteps extends Week {
   steps: Step[];
 }
 
-export interface SyllabusWithContent extends Syllabus {
+export interface BinderWithContent extends Binder {
   weeks: WeekWithSteps[];
 }
 
@@ -29,13 +30,14 @@ export interface CatalogSearchParams {
   category?: string | string[]; // category slug(s)
   level?: string; // audience level
   visibility?: string; // 'public' | 'unlisted' | 'private' (default: 'public')
+  curator?: string[]; // filter by curator username(s)
   sort?: 'newest' | 'popular' | 'relevance';
   limit?: number;
   offset?: number;
 }
 
 export interface CatalogSearchResult {
-  syllabinds: any[];
+  binders: any[];
   total: number;
 }
 
@@ -48,23 +50,23 @@ export interface IStorage {
   updateUser(id: string, user: Partial<User>): Promise<User>;
   deleteUser(id: string): Promise<void>;
 
-  // Syllabus operations
-  getSyllabus(id: number): Promise<Syllabus | undefined>;
-  getSyllabusWithContent(id: number): Promise<SyllabusWithContent | undefined>;
-  listSyllabinds(): Promise<Syllabus[]>;
-  listPublishedSyllabinds(): Promise<Syllabus[]>;
-  getSyllabindsByCreator(username: string): Promise<Syllabus[]>;
-  createSyllabus(syllabus: InsertSyllabus): Promise<Syllabus>;
-  updateSyllabus(id: number, syllabus: Partial<Syllabus>): Promise<Syllabus>;
-  deleteSyllabus(id: number): Promise<void>;
-  batchDeleteSyllabinds(ids: number[]): Promise<void>;
+  // Binder operations
+  getBinder(id: number): Promise<Binder | undefined>;
+  getBinderWithContent(id: number): Promise<BinderWithContent | undefined>;
+  listBinders(): Promise<Binder[]>;
+  listPublishedBinders(): Promise<Binder[]>;
+  getBindersByCurator(username: string): Promise<Binder[]>;
+  createBinder(binder: InsertBinder): Promise<Binder>;
+  updateBinder(id: number, binder: Partial<Binder>): Promise<Binder>;
+  deleteBinder(id: number): Promise<void>;
+  batchDeleteBinders(ids: number[]): Promise<void>;
 
   // Bulk content operations
-  saveWeeksAndSteps(syllabusId: number, weeksData: Array<{ index: number; title?: string; description?: string; steps: Array<Omit<InsertStep, 'weekId'>> }>): Promise<WeekWithSteps[]>;
+  saveWeeksAndSteps(binderId: number, weeksData: Array<{ index: number; title?: string; description?: string; steps: Array<Omit<InsertStep, 'weekId'>> }>): Promise<WeekWithSteps[]>;
 
   // Week operations
   createWeek(week: InsertWeek): Promise<Week>;
-  getWeeksBySyllabusId(syllabusId: number): Promise<Week[]>;
+  getWeeksByBinderId(binderId: number): Promise<Week[]>;
   updateWeek(weekId: number, updates: Partial<Week>): Promise<Week>;
 
   // Step operations
@@ -75,7 +77,7 @@ export interface IStorage {
   updateStep(stepId: number, updates: Partial<Step>): Promise<Step>;
   deleteStep(stepId: number): Promise<void>;
   deleteStepsByWeekId(weekId: number): Promise<void>;
-  deleteWeeksBySyllabusId(syllabusId: number): Promise<void>;
+  deleteWeeksByBinderId(binderId: number): Promise<void>;
 
   // Week operations (single)
   getWeek(weekId: number): Promise<Week | undefined>;
@@ -86,14 +88,14 @@ export interface IStorage {
   getSubmissionsByEnrollmentId(enrollmentId: number): Promise<Submission[]>;
   updateSubmissionFeedback(id: number, feedback: string, grade: string, rubricUrl?: string): Promise<Submission>;
 
-  // Learner operations
-  getLearnersBySyllabusId(syllabusId: number): Promise<any[]>;
-  getClassmatesBySyllabusId(syllabusId: number): Promise<{ classmates: any[]; totalEnrolled: number }>;
+  // Reader operations
+  getReadersByBinderId(binderId: number): Promise<any[]>;
+  getClassmatesByBinderId(binderId: number): Promise<{ classmates: any[]; totalEnrolled: number }>;
   updateEnrollmentShareProfile(enrollmentId: number, shareProfile: boolean): Promise<Enrollment>;
 
   // Enrollment operations
-  getEnrollment(studentId: string, syllabusId: number): Promise<Enrollment | undefined>;
-  getUserEnrollments(studentId: string): Promise<Enrollment[]>;
+  getEnrollment(readerId: string, binderId: number): Promise<Enrollment | undefined>;
+  getUserEnrollments(readerId: string): Promise<Enrollment[]>;
   getEnrollmentById(id: number): Promise<Enrollment | undefined>;
   createEnrollment(enrollment: InsertEnrollment): Promise<Enrollment>;
   updateEnrollment(id: number, enrollment: Partial<Enrollment>): Promise<Enrollment>;
@@ -105,8 +107,8 @@ export interface IStorage {
   isStepCompleted(enrollmentId: number, stepId: number): Promise<boolean>;
 
   // Analytics
-  getStepCompletionRates(syllabusId: number): Promise<Array<{ stepId: number; completionCount: number; completionRate: number }>>;
-  getAverageCompletionTimes(syllabusId: number): Promise<Array<{ stepId: number; avgMinutes: number }>>;
+  getStepCompletionRates(binderId: number): Promise<Array<{ stepId: number; completionCount: number; completionRate: number }>>;
+  getAverageCompletionTimes(binderId: number): Promise<Array<{ stepId: number; avgMinutes: number }>>;
 
 
   // Subscription operations
@@ -114,7 +116,7 @@ export interface IStorage {
   getSubscriptionByStripeId(stripeSubscriptionId: string): Promise<Subscription | undefined>;
   upsertSubscription(data: InsertSubscription): Promise<Subscription>;
   updateSubscriptionByStripeId(stripeSubscriptionId: string, updates: Partial<Subscription>): Promise<Subscription | undefined>;
-  countSyllabindsByCreator(username: string): Promise<number>;
+  countBindersByCurator(username: string): Promise<number>;
 
   // Site settings
   getSiteSetting(key: string): Promise<string | null>;
@@ -122,18 +124,42 @@ export interface IStorage {
 
   // Category operations
   listCategories(): Promise<Category[]>;
+  initializeDefaultCategories(): Promise<void>;
 
   // Tag operations
   listTags(query?: string): Promise<Tag[]>;
-  getTagsBySyllabindId(syllabusId: number): Promise<Tag[]>;
+  getTagsByBinderId(binderId: number): Promise<Tag[]>;
   findOrCreateTag(name: string): Promise<Tag>;
-  setSyllabindTags(syllabusId: number, tagNames: string[]): Promise<Tag[]>;
+  setBinderTags(binderId: number, tagNames: string[]): Promise<Tag[]>;
 
   // Catalog search
   searchCatalog(params: CatalogSearchParams): Promise<CatalogSearchResult>;
 
   // Search vector
-  refreshSearchVector(syllabusId: number): Promise<void>;
+  refreshSearchVector(binderId: number): Promise<void>;
+
+  // Generation tracking
+  incrementGenerationCount(username: string): Promise<void>;
+  getGenerationInfo(username: string): Promise<{ generationCount: number; lastGeneratedAt: Date | null }>;
+
+  // Credit operations
+  getCreditBalance(userId: string): Promise<number>;
+  getCreditTransactions(userId: string, limit?: number, offset?: number): Promise<CreditTransaction[]>;
+  deductCredits(userId: string, amount: number, type: string, description: string, metadata?: string): Promise<{ transactionId: number; newBalance: number }>;
+  grantCredits(userId: string, amount: number, type: string, description: string, metadata?: string): Promise<{ transactionId: number; newBalance: number }>;
+  countActiveEnrollments(username: string): Promise<number>;
+  countManualBinders(username: string): Promise<number>;
+
+  // Binder review queue
+  getBindersByStatus(status: string): Promise<any[]>;
+
+  // Demo binders
+  getDemoBinders(): Promise<BinderWithContent[]>;
+
+  // Notification methods
+  getCuratorUnreadNotifications(username: string, ackedAt: Date | null): Promise<Array<{ binderId: number; title: string; status: string; reviewNote: string | null }>>;
+  getAdminUnreadCount(ackedAt: Date | null): Promise<number>;
+  acknowledgeNotifications(userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -171,97 +197,98 @@ export class DatabaseStorage implements IStorage {
     await db.delete(users).where(eq(users.id, id));
   }
 
-  async getSyllabus(id: number): Promise<Syllabus | undefined> {
-    const [syllabus] = await db.select().from(syllabinds).where(eq(syllabinds.id, id));
-    return syllabus;
+  async getBinder(id: number): Promise<Binder | undefined> {
+    const [binder] = await db.select().from(binders).where(eq(binders.id, id));
+    return binder;
   }
 
-  async listSyllabinds(): Promise<Syllabus[]> {
+  async listBinders(): Promise<Binder[]> {
     const rows = await db
       .select({
-        syllabus: syllabinds,
-        creatorName: users.name,
-        creatorUsername: users.username,
-        creatorAvatarUrl: users.avatarUrl,
-        creatorBio: users.bio,
-        creatorExpertise: users.expertise,
-        creatorProfileTitle: users.profileTitle,
-        creatorLinkedin: users.linkedin,
-        creatorTwitter: users.twitter,
-        creatorThreads: users.threads,
-        creatorWebsite: users.website,
-        creatorSchedulingUrl: users.schedulingUrl,
+        binder: binders,
+        curatorName: users.name,
+        curatorUsername: users.username,
+        curatorAvatarUrl: users.avatarUrl,
+        curatorBio: users.bio,
+        curatorExpertise: users.expertise,
+        curatorProfileTitle: users.profileTitle,
+        curatorLinkedin: users.linkedin,
+        curatorTwitter: users.twitter,
+        curatorThreads: users.threads,
+        curatorWebsite: users.website,
+        curatorSchedulingUrl: users.schedulingUrl,
       })
-      .from(syllabinds)
-      .leftJoin(users, eq(syllabinds.creatorId, users.username));
+      .from(binders)
+      .leftJoin(users, eq(binders.curatorId, users.username));
 
     return rows.map(row => ({
-      ...row.syllabus,
-      creator: row.creatorUsername ? {
-        name: row.creatorName,
-        username: row.creatorUsername,
-        avatarUrl: row.creatorAvatarUrl,
-        bio: row.creatorBio,
-        expertise: row.creatorExpertise,
-        profileTitle: row.creatorProfileTitle,
-        linkedin: row.creatorLinkedin,
-        twitter: row.creatorTwitter,
-        threads: row.creatorThreads,
-        website: row.creatorWebsite,
-        schedulingUrl: row.creatorSchedulingUrl,
+      ...row.binder,
+      curator: row.curatorUsername ? {
+        name: row.curatorName,
+        username: row.curatorUsername,
+        avatarUrl: row.curatorAvatarUrl,
+        bio: row.curatorBio,
+        expertise: row.curatorExpertise,
+        profileTitle: row.curatorProfileTitle,
+        linkedin: row.curatorLinkedin,
+        twitter: row.curatorTwitter,
+        threads: row.curatorThreads,
+        website: row.curatorWebsite,
+        // Only expose scheduling URL for published binders
+        schedulingUrl: row.binder.status === 'published' ? row.curatorSchedulingUrl : null,
       } : undefined,
     }));
   }
 
-  async listPublishedSyllabinds(): Promise<Syllabus[]> {
-    return await db.select().from(syllabinds).where(
-      and(eq(syllabinds.status, 'published'), eq(syllabinds.visibility, 'public'))
+  async listPublishedBinders(): Promise<Binder[]> {
+    return await db.select().from(binders).where(
+      and(eq(binders.status, 'published'), eq(binders.visibility, 'public'))
     );
   }
 
-  async getSyllabindsByCreator(username: string): Promise<Syllabus[]> {
-    return await db.select().from(syllabinds).where(eq(syllabinds.creatorId, username));
+  async getBindersByCurator(username: string): Promise<Binder[]> {
+    return await db.select().from(binders).where(eq(binders.curatorId, username));
   }
 
-  async createSyllabus(insertSyllabus: InsertSyllabus): Promise<Syllabus> {
-    const [syllabus] = await db.insert(syllabinds).values(insertSyllabus).returning();
-    return syllabus;
+  async createBinder(insertBinder: InsertBinder): Promise<Binder> {
+    const [binder] = await db.insert(binders).values(insertBinder).returning();
+    return binder;
   }
 
-  async updateSyllabus(id: number, update: Partial<Syllabus>): Promise<Syllabus> {
-    // Filter out immutable fields (id, creatorId), readonly fields, and nested objects
-    const { id: _id, creatorId: _creatorId, createdAt, updatedAt, weeks, ...updateData } = update as Partial<Syllabus> & { weeks?: unknown };
+  async updateBinder(id: number, update: Partial<Binder>): Promise<Binder> {
+    // Filter out immutable fields (id, curatorId), readonly fields, and nested objects
+    const { id: _id, curatorId: _curatorId, createdAt, updatedAt, weeks, ...updateData } = update as Partial<Binder> & { weeks?: unknown };
 
     // Automatically set updatedAt to current time
-    const [syllabus] = await db.update(syllabinds).set({
+    const [binder] = await db.update(binders).set({
       ...updateData,
       updatedAt: new Date()
-    }).where(eq(syllabinds.id, id)).returning();
-    return syllabus;
+    }).where(eq(binders.id, id)).returning();
+    return binder;
   }
 
-  async deleteSyllabus(id: number): Promise<void> {
-    await db.delete(syllabinds).where(eq(syllabinds.id, id));
+  async deleteBinder(id: number): Promise<void> {
+    await db.delete(binders).where(eq(binders.id, id));
   }
 
-  async batchDeleteSyllabinds(ids: number[]): Promise<void> {
+  async batchDeleteBinders(ids: number[]): Promise<void> {
     if (ids.length === 0) return;
-    await db.delete(syllabinds).where(inArray(syllabinds.id, ids));
+    await db.delete(binders).where(inArray(binders.id, ids));
   }
 
-  async getEnrollment(studentId: string, syllabusId: number): Promise<Enrollment | undefined> {
+  async getEnrollment(readerId: string, binderId: number): Promise<Enrollment | undefined> {
     const [enrollment] = await db.select().from(enrollments).where(
-      and(eq(enrollments.studentId, studentId), eq(enrollments.syllabusId, syllabusId))
+      and(eq(enrollments.readerId, readerId), eq(enrollments.binderId, binderId))
     );
     return enrollment;
   }
 
-  async getUserEnrollments(studentId: string): Promise<Enrollment[]> {
+  async getUserEnrollments(readerId: string): Promise<Enrollment[]> {
     // Return only active enrollments (exclude dropped)
     return await db.select()
       .from(enrollments)
       .where(and(
-        eq(enrollments.studentId, studentId),
+        eq(enrollments.readerId, readerId),
         sql`${enrollments.status} != 'dropped'`
       ));
   }
@@ -276,21 +303,21 @@ export class DatabaseStorage implements IStorage {
     return enrollment;
   }
 
-  // Mark all in-progress enrollments for a user as dropped (used when switching syllabinds)
-  async dropActiveEnrollments(studentId: string, exceptSyllabusId?: number): Promise<void> {
-    if (exceptSyllabusId) {
+  // Mark all in-progress enrollments for a user as dropped (used when switching binders)
+  async dropActiveEnrollments(readerId: string, exceptBinderId?: number): Promise<void> {
+    if (exceptBinderId) {
       await db.update(enrollments)
         .set({ status: 'dropped' })
         .where(and(
-          eq(enrollments.studentId, studentId),
+          eq(enrollments.readerId, readerId),
           eq(enrollments.status, 'in-progress'),
-          sql`${enrollments.syllabusId} != ${exceptSyllabusId}`
+          sql`${enrollments.binderId} != ${exceptBinderId}`
         ));
     } else {
       await db.update(enrollments)
         .set({ status: 'dropped' })
         .where(and(
-          eq(enrollments.studentId, studentId),
+          eq(enrollments.readerId, readerId),
           eq(enrollments.status, 'in-progress')
         ));
     }
@@ -340,10 +367,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Analytics methods
-  async getStepCompletionRates(syllabusId: number): Promise<Array<{ stepId: number; completionCount: number; completionRate: number }>> {
+  async getStepCompletionRates(binderId: number): Promise<Array<{ stepId: number; completionCount: number; completionRate: number }>> {
     const totalEnrollments = await db.select({ count: sql<number>`cast(count(*) as int)` })
       .from(enrollments)
-      .where(eq(enrollments.syllabusId, syllabusId));
+      .where(eq(enrollments.binderId, binderId));
 
     const stepCompletions = await db.select({
       stepId: completedSteps.stepId,
@@ -351,7 +378,7 @@ export class DatabaseStorage implements IStorage {
     })
     .from(completedSteps)
     .innerJoin(enrollments, eq(completedSteps.enrollmentId, enrollments.id))
-    .where(eq(enrollments.syllabusId, syllabusId))
+    .where(eq(enrollments.binderId, binderId))
     .groupBy(completedSteps.stepId);
 
     const total = totalEnrollments[0]?.count || 1;
@@ -363,14 +390,14 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getAverageCompletionTimes(syllabusId: number): Promise<Array<{ stepId: number; avgMinutes: number }>> {
+  async getAverageCompletionTimes(binderId: number): Promise<Array<{ stepId: number; avgMinutes: number }>> {
     const result = await db.select({
       stepId: completedSteps.stepId,
       avgMinutes: sql<number>`cast(AVG(EXTRACT(EPOCH FROM (${completedSteps.completedAt} - ${enrollments.joinedAt})) / 60) as float)`
     })
     .from(completedSteps)
     .innerJoin(enrollments, eq(completedSteps.enrollmentId, enrollments.id))
-    .where(eq(enrollments.syllabusId, syllabusId))
+    .where(eq(enrollments.binderId, binderId))
     .groupBy(completedSteps.stepId);
 
     return result;
@@ -382,8 +409,8 @@ export class DatabaseStorage implements IStorage {
     return week;
   }
 
-  async getWeeksBySyllabusId(syllabusId: number): Promise<Week[]> {
-    return await db.select().from(weeks).where(eq(weeks.syllabusId, syllabusId));
+  async getWeeksByBinderId(binderId: number): Promise<Week[]> {
+    return await db.select().from(weeks).where(eq(weeks.binderId, binderId));
   }
 
   async getWeek(weekId: number): Promise<Week | undefined> {
@@ -448,16 +475,16 @@ export class DatabaseStorage implements IStorage {
     return submission;
   }
 
-  // Syllabus with content operations
-  async getSyllabusWithContent(id: number): Promise<SyllabusWithContent | undefined> {
-    // Get syllabus
-    const syllabus = await this.getSyllabus(id);
-    if (!syllabus) return undefined;
+  // Binder with content operations
+  async getBinderWithContent(id: number): Promise<BinderWithContent | undefined> {
+    // Get binder
+    const binder = await this.getBinder(id);
+    if (!binder) return undefined;
 
-    // Get weeks for this syllabus
+    // Get weeks for this binder
     const weeksData = await db.select()
       .from(weeks)
-      .where(eq(weeks.syllabusId, id))
+      .where(eq(weeks.binderId, id))
       .orderBy(asc(weeks.index));
 
     // Deduplicate weeks by index — keep only the latest (highest ID) per index.
@@ -483,23 +510,23 @@ export class DatabaseStorage implements IStorage {
       })
     );
 
-    return { ...syllabus, weeks: weeksWithSteps };
+    return { ...binder, weeks: weeksWithSteps };
   }
 
-  // Learner operations
-  async getLearnersBySyllabusId(syllabusId: number): Promise<any[]> {
-    // Get all active enrollments for this syllabus (exclude dropped)
+  // Reader operations
+  async getReadersByBinderId(binderId: number): Promise<any[]> {
+    // Get all active enrollments for this binder (exclude dropped)
     const enrollmentsData = await db.select()
       .from(enrollments)
       .where(and(
-        eq(enrollments.syllabusId, syllabusId),
+        eq(enrollments.binderId, binderId),
         sql`${enrollments.status} != 'dropped'`
       ));
 
     // Get user data for each enrollment
-    const learners = await Promise.all(
+    const readers = await Promise.all(
       enrollmentsData.map(async (enrollment) => {
-        const user = await this.getUserByUsername(enrollment.studentId!);
+        const user = await this.getUserByUsername(enrollment.readerId!);
         return {
           user,
           status: enrollment.status,
@@ -509,15 +536,15 @@ export class DatabaseStorage implements IStorage {
       })
     );
 
-    return learners;
+    return readers;
   }
 
-  async getClassmatesBySyllabusId(syllabusId: number): Promise<{ classmates: any[]; totalEnrolled: number }> {
+  async getClassmatesByBinderId(binderId: number): Promise<{ classmates: any[]; totalEnrolled: number }> {
     // Get total active enrollment count (including private users)
     const [countResult] = await db.select({ count: sql<number>`count(*)` })
       .from(enrollments)
       .where(and(
-        eq(enrollments.syllabusId, syllabusId),
+        eq(enrollments.binderId, binderId),
         sql`${enrollments.status} != 'dropped'`
       ));
     const totalEnrolled = Number(countResult?.count || 0);
@@ -526,14 +553,14 @@ export class DatabaseStorage implements IStorage {
     const enrollmentsData = await db.select()
       .from(enrollments)
       .where(and(
-        eq(enrollments.syllabusId, syllabusId),
+        eq(enrollments.binderId, binderId),
         eq(enrollments.shareProfile, true),
         sql`${enrollments.status} != 'dropped'`
       ));
 
     const classmates = await Promise.all(
       enrollmentsData.map(async (enrollment) => {
-        const user = await this.getUserByUsername(enrollment.studentId!);
+        const user = await this.getUserByUsername(enrollment.readerId!);
         if (!user) return null;
         return {
           user: {
@@ -565,37 +592,37 @@ export class DatabaseStorage implements IStorage {
     return enrollment;
   }
 
-  // Comprehensive analytics for a syllabus
-  async getSyllabusAnalytics(syllabusId: number): Promise<{
-    learnersStarted: number;
-    learnersCompleted: number;
+  // Comprehensive analytics for a binder
+  async getBinderAnalytics(binderId: number): Promise<{
+    readersStarted: number;
+    readersCompleted: number;
     completionRate: number;
     averageProgress: number;
-    weekReach: Array<{ week: string; weekIndex: number; percentage: number; learnerCount: number; learnerNames: string[] }>;
+    weekReach: Array<{ week: string; weekIndex: number; percentage: number; readerCount: number; readerNames: string[] }>;
     stepDropoff: Array<{ stepId: number; weekIndex: number; stepTitle: string; dropoffRate: number; completionCount: number }>;
     topDropoutStep: { weekIndex: number; stepTitle: string; dropoffRate: number } | null;
   }> {
-    // Get all active enrollments for this syllabus (exclude dropped)
-    const syllabusEnrollments = await db.select()
+    // Get all active enrollments for this binder (exclude dropped)
+    const binderEnrollments = await db.select()
       .from(enrollments)
       .where(and(
-        eq(enrollments.syllabusId, syllabusId),
+        eq(enrollments.binderId, binderId),
         sql`${enrollments.status} != 'dropped'`
       ));
 
-    const learnersStarted = syllabusEnrollments.length;
-    const learnersCompleted = syllabusEnrollments.filter(e => e.status === 'completed').length;
-    const completionRate = learnersStarted > 0 ? Math.round((learnersCompleted / learnersStarted) * 100) : 0;
+    const readersStarted = binderEnrollments.length;
+    const readersCompleted = binderEnrollments.filter(e => e.status === 'completed').length;
+    const completionRate = readersStarted > 0 ? Math.round((readersCompleted / readersStarted) * 100) : 0;
 
-    // Get syllabus content structure
-    const syllabusWeeks = await db.select()
+    // Get binder content structure
+    const binderWeeks = await db.select()
       .from(weeks)
-      .where(eq(weeks.syllabusId, syllabusId))
+      .where(eq(weeks.binderId, binderId))
       .orderBy(asc(weeks.index));
 
     // Get all steps with their week info
     const allSteps: Array<{ stepId: number; weekId: number; weekIndex: number; stepTitle: string; position: number }> = [];
-    for (const week of syllabusWeeks) {
+    for (const week of binderWeeks) {
       const weekSteps = await db.select()
         .from(steps)
         .where(eq(steps.weekId, week.id))
@@ -616,26 +643,26 @@ export class DatabaseStorage implements IStorage {
     // Get completion data for each enrollment
     let totalProgressSum = 0;
     const weekReachCounts: Record<number, number> = {};
-    const weekCurrentLearners: Record<number, string[]> = {}; // Learners currently AT this week
+    const weekCurrentReaders: Record<number, string[]> = {}; // Readers currently AT this week
     const stepCompletionCounts: Record<number, number> = {};
 
-    // Initialize counts and learner arrays
-    for (const week of syllabusWeeks) {
+    // Initialize counts and reader arrays
+    for (const week of binderWeeks) {
       weekReachCounts[week.index] = 0;
-      weekCurrentLearners[week.index] = [];
+      weekCurrentReaders[week.index] = [];
     }
     for (const step of allSteps) {
       stepCompletionCounts[step.stepId] = 0;
     }
 
     // Calculate progress for each enrollment
-    for (const enrollment of syllabusEnrollments) {
+    for (const enrollment of binderEnrollments) {
       const completedStepIds = await this.getCompletedSteps(enrollment.id);
       const completedCount = completedStepIds.length;
 
-      // Get learner name for this enrollment
-      const learner = await this.getUserByUsername(enrollment.studentId!);
-      const learnerName = learner?.name || enrollment.studentId || 'Unknown';
+      // Get reader name for this enrollment
+      const reader = await this.getUserByUsername(enrollment.readerId!);
+      const readerName = reader?.name || enrollment.readerId || 'Unknown';
 
       // Calculate individual progress
       const progress = totalSteps > 0 ? (completedCount / totalSteps) * 100 : 0;
@@ -650,32 +677,32 @@ export class DatabaseStorage implements IStorage {
 
       // Determine which weeks were reached (at least started)
       const completedStepSet = new Set(completedStepIds);
-      for (const week of syllabusWeeks) {
+      for (const week of binderWeeks) {
         const weekSteps = allSteps.filter(s => s.weekIndex === week.index);
         const hasAnyStepInWeek = weekSteps.some(s => completedStepSet.has(s.stepId));
-        // Count if learner has reached this week
+        // Count if reader has reached this week
         if (hasAnyStepInWeek || (enrollment.currentWeekIndex && enrollment.currentWeekIndex >= week.index)) {
           weekReachCounts[week.index]++;
         }
       }
 
-      // Track which week the learner is currently on (their active position)
+      // Track which week the reader is currently on (their active position)
       // Only show in the week they're currently at, not all weeks they've passed
       const currentWeek = enrollment.currentWeekIndex || 1;
-      if (weekCurrentLearners[currentWeek]) {
-        weekCurrentLearners[currentWeek].push(learnerName);
+      if (weekCurrentReaders[currentWeek]) {
+        weekCurrentReaders[currentWeek].push(readerName);
       }
     }
 
-    const averageProgress = learnersStarted > 0 ? Math.round(totalProgressSum / learnersStarted) : 0;
+    const averageProgress = readersStarted > 0 ? Math.round(totalProgressSum / readersStarted) : 0;
 
     // Build week reach data
-    const weekReach = syllabusWeeks.map(week => ({
+    const weekReach = binderWeeks.map(week => ({
       week: `Week ${week.index}`,
       weekIndex: week.index,
-      percentage: learnersStarted > 0 ? Math.round((weekReachCounts[week.index] / learnersStarted) * 100) : 0,
-      learnerCount: weekReachCounts[week.index],
-      learnerNames: weekCurrentLearners[week.index] // Learners currently AT this week
+      percentage: readersStarted > 0 ? Math.round((weekReachCounts[week.index] / readersStarted) * 100) : 0,
+      readerCount: weekReachCounts[week.index],
+      readerNames: weekCurrentReaders[week.index] // Readers currently AT this week
     }));
 
     // Calculate step dropoff rates
@@ -683,7 +710,7 @@ export class DatabaseStorage implements IStorage {
       const completionCount = stepCompletionCounts[step.stepId];
       const previousStepCompletion = index > 0
         ? stepCompletionCounts[allSteps[index - 1].stepId]
-        : learnersStarted;
+        : readersStarted;
 
       const dropoffRate = previousStepCompletion > 0
         ? Math.round(((previousStepCompletion - completionCount) / previousStepCompletion) * 100)
@@ -705,8 +732,8 @@ export class DatabaseStorage implements IStorage {
       : null;
 
     return {
-      learnersStarted,
-      learnersCompleted,
+      readersStarted,
+      readersCompleted,
       completionRate,
       averageProgress,
       weekReach,
@@ -732,23 +759,23 @@ export class DatabaseStorage implements IStorage {
     await db.delete(steps).where(eq(steps.id, stepId));
   }
 
-  async deleteWeeksBySyllabusId(syllabusId: number): Promise<void> {
+  async deleteWeeksByBinderId(binderId: number): Promise<void> {
     // Steps are deleted via CASCADE when weeks are deleted
-    await db.delete(weeks).where(eq(weeks.syllabusId, syllabusId));
+    await db.delete(weeks).where(eq(weeks.binderId, binderId));
   }
 
   async saveWeeksAndSteps(
-    syllabusId: number,
+    binderId: number,
     weeksData: Array<{ index: number; title?: string; description?: string; steps: Array<Omit<InsertStep, 'weekId'>> }>
   ): Promise<WeekWithSteps[]> {
     // Delete existing weeks (steps cascade)
-    await this.deleteWeeksBySyllabusId(syllabusId);
+    await this.deleteWeeksByBinderId(binderId);
 
     const result: WeekWithSteps[] = [];
 
     for (const weekData of weeksData) {
       const [week] = await db.insert(weeks).values({
-        syllabusId,
+        binderId,
         index: weekData.index,
         title: weekData.title || null,
         description: weekData.description || null,
@@ -776,7 +803,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Refresh search vector with new week content
-    await this.refreshSearchVector(syllabusId);
+    await this.refreshSearchVector(binderId);
 
     return result;
   }
@@ -820,10 +847,10 @@ export class DatabaseStorage implements IStorage {
     return sub;
   }
 
-  async countSyllabindsByCreator(username: string): Promise<number> {
+  async countBindersByCurator(username: string): Promise<number> {
     const [result] = await db.select({ count: sql<number>`cast(count(*) as int)` })
-      .from(syllabinds)
-      .where(eq(syllabinds.creatorId, username));
+      .from(binders)
+      .where(eq(binders.curatorId, username));
     return result?.count || 0;
   }
 
@@ -846,6 +873,22 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(categories).orderBy(asc(categories.displayOrder));
   }
 
+  async initializeDefaultCategories(): Promise<void> {
+    const existing = await db.select({ id: categories.id }).from(categories).limit(1);
+    if (existing.length > 0) return;
+    await db.insert(categories).values([
+      { name: 'Design', slug: 'design', description: 'Visual design, UX, product design, and design thinking', displayOrder: 1 },
+      { name: 'Technology', slug: 'technology', description: 'Software engineering, AI, data science, and emerging tech', displayOrder: 2 },
+      { name: 'Business', slug: 'business', description: 'Strategy, entrepreneurship, management, and leadership', displayOrder: 3 },
+      { name: 'Science', slug: 'science', description: 'Natural sciences, research methods, and scientific thinking', displayOrder: 4 },
+      { name: 'Arts & Culture', slug: 'arts-culture', description: 'Literature, history, art, music, and cultural studies', displayOrder: 5 },
+      { name: 'Social Sciences', slug: 'social-sciences', description: 'Psychology, sociology, economics, and political science', displayOrder: 6 },
+      { name: 'Humanities', slug: 'humanities', description: 'Philosophy, history, languages, and the study of human culture', displayOrder: 7 },
+      { name: 'Personal Development', slug: 'personal-development', description: 'Productivity, communication, habits, and self-improvement', displayOrder: 8 },
+      { name: 'Other', slug: 'other', description: "Topics that don't fit neatly into other categories", displayOrder: 9 },
+    ]).onConflictDoNothing();
+  }
+
   // Tag operations
   async listTags(query?: string): Promise<any[]> {
     const baseQuery = db
@@ -854,28 +897,28 @@ export class DatabaseStorage implements IStorage {
         name: tags.name,
         slug: tags.slug,
         createdAt: tags.createdAt,
-        usageCount: sql<number>`cast(count(${syllabindTags.syllabusId}) as int)`,
+        usageCount: sql<number>`cast(count(${binderTags.binderId}) as int)`,
       })
       .from(tags)
-      .leftJoin(syllabindTags, eq(tags.id, syllabindTags.tagId))
+      .leftJoin(binderTags, eq(tags.id, binderTags.tagId))
       .groupBy(tags.id, tags.name, tags.slug, tags.createdAt);
 
     if (query) {
       return await baseQuery
         .where(ilike(tags.name, `%${query}%`))
-        .orderBy(sql`count(${syllabindTags.syllabusId}) DESC`, asc(tags.name))
+        .orderBy(sql`count(${binderTags.binderId}) DESC`, asc(tags.name))
         .limit(20);
     }
     return await baseQuery
-      .orderBy(sql`count(${syllabindTags.syllabusId}) DESC`, asc(tags.name))
+      .orderBy(sql`count(${binderTags.binderId}) DESC`, asc(tags.name))
       .limit(50);
   }
 
-  async getTagsBySyllabindId(syllabusId: number): Promise<Tag[]> {
+  async getTagsByBinderId(binderId: number): Promise<Tag[]> {
     const rows = await db.select({ tag: tags })
-      .from(syllabindTags)
-      .innerJoin(tags, eq(syllabindTags.tagId, tags.id))
-      .where(eq(syllabindTags.syllabusId, syllabusId));
+      .from(binderTags)
+      .innerJoin(tags, eq(binderTags.tagId, tags.id))
+      .where(eq(binderTags.binderId, binderId));
     return rows.map(r => r.tag);
   }
 
@@ -887,12 +930,12 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async setSyllabindTags(syllabusId: number, tagNames: string[]): Promise<Tag[]> {
+  async setBinderTags(binderId: number, tagNames: string[]): Promise<Tag[]> {
     // Enforce max 5 tags
     const trimmed = tagNames.slice(0, 5);
 
     // Delete existing tags
-    await db.delete(syllabindTags).where(eq(syllabindTags.syllabusId, syllabusId));
+    await db.delete(binderTags).where(eq(binderTags.binderId, binderId));
 
     if (trimmed.length === 0) return [];
 
@@ -901,13 +944,13 @@ export class DatabaseStorage implements IStorage {
     for (const name of trimmed) {
       const tag = await this.findOrCreateTag(name);
       resultTags.push(tag);
-      await db.insert(syllabindTags)
-        .values({ syllabusId, tagId: tag.id })
+      await db.insert(binderTags)
+        .values({ binderId, tagId: tag.id })
         .onConflictDoNothing();
     }
 
     // Refresh search vector to include new tag names
-    await this.refreshSearchVector(syllabusId);
+    await this.refreshSearchVector(binderId);
 
     return resultTags;
   }
@@ -919,6 +962,7 @@ export class DatabaseStorage implements IStorage {
       category,
       level,
       visibility = 'public',
+      curator,
       sort = 'newest',
       limit: resultLimit = 20,
       offset: resultOffset = 0
@@ -926,8 +970,8 @@ export class DatabaseStorage implements IStorage {
 
     // Build WHERE conditions: always filter published; visibility is configurable
     const conditions: any[] = [
-      sql`${syllabinds.status} = 'published'`,
-      sql`${syllabinds.visibility} = ${visibility}`,
+      sql`${binders.status} = 'published'`,
+      sql`${binders.visibility} = ${visibility}`,
     ];
 
     if (category) {
@@ -936,17 +980,19 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (level) {
-      conditions.push(sql`${syllabinds.audienceLevel} = ${level}`);
+      conditions.push(sql`${binders.audienceLevel} = ${level}`);
+    }
+
+    if (curator && curator.length > 0) {
+      conditions.push(sql`${binders.curatorId} IN ${curator}`);
     }
 
     // Full-text search with ILIKE fallback for stop-word-only queries (e.g. "how to")
     if (query) {
-      // We can't easily check at query-build time, so use a combined condition:
-      // try tsvector match first; if tsquery is empty, fall back to ILIKE on title
       conditions.push(sql`(
-        (plainto_tsquery('english', ${query})::text != '' AND ${syllabinds.searchVector} @@ plainto_tsquery('english', ${query}))
+        (plainto_tsquery('english', ${query})::text != '' AND ${binders.searchVector} @@ plainto_tsquery('english', ${query}))
         OR
-        (plainto_tsquery('english', ${query})::text = '' AND (${syllabinds.title} ILIKE ${'%' + query + '%'} OR ${syllabinds.description} ILIKE ${'%' + query + '%'}))
+        (plainto_tsquery('english', ${query})::text = '' AND (${binders.title} ILIKE ${'%' + query + '%'} OR ${binders.description} ILIKE ${'%' + query + '%'}))
       )`);
     }
 
@@ -955,92 +1001,261 @@ export class DatabaseStorage implements IStorage {
     // Determine ORDER BY
     let orderByClause;
     if (sort === 'relevance' && query) {
-      orderByClause = sql`ts_rank(${syllabinds.searchVector}, plainto_tsquery('english', ${query})) DESC`;
+      orderByClause = sql`ts_rank(${binders.searchVector}, plainto_tsquery('english', ${query})) DESC`;
     } else if (sort === 'popular') {
-      orderByClause = sql`${syllabinds.studentActive} DESC NULLS LAST, ${syllabinds.createdAt} DESC`;
+      orderByClause = sql`${binders.readerActive} DESC NULLS LAST, ${binders.createdAt} DESC`;
     } else {
-      orderByClause = sql`${syllabinds.createdAt} DESC`;
+      orderByClause = sql`${binders.createdAt} DESC`;
     }
 
     // Count query
     const [countResult] = await db
       .select({ total: sql<number>`cast(count(*) as int)` })
-      .from(syllabinds)
-      .leftJoin(categories, eq(syllabinds.categoryId, categories.id))
+      .from(binders)
+      .leftJoin(categories, eq(binders.categoryId, categories.id))
       .where(whereClause);
 
     const total = countResult?.total || 0;
 
-    // Main data query with creator join
+    // Main data query with curator join
     const rows = await db
       .select({
-        syllabus: syllabinds,
+        binder: binders,
         categoryName: categories.name,
         categorySlug: categories.slug,
-        creatorName: users.name,
-        creatorUsername: users.username,
-        creatorAvatarUrl: users.avatarUrl,
-        creatorBio: users.bio,
-        creatorExpertise: users.expertise,
-        creatorProfileTitle: users.profileTitle,
-        creatorLinkedin: users.linkedin,
-        creatorTwitter: users.twitter,
-        creatorThreads: users.threads,
-        creatorWebsite: users.website,
-        creatorSchedulingUrl: users.schedulingUrl,
+        curatorName: users.name,
+        curatorUsername: users.username,
+        curatorAvatarUrl: users.avatarUrl,
+        curatorBio: users.bio,
+        curatorExpertise: users.expertise,
+        curatorProfileTitle: users.profileTitle,
+        curatorLinkedin: users.linkedin,
+        curatorTwitter: users.twitter,
+        curatorThreads: users.threads,
+        curatorWebsite: users.website,
+        curatorSchedulingUrl: users.schedulingUrl,
       })
-      .from(syllabinds)
-      .leftJoin(categories, eq(syllabinds.categoryId, categories.id))
-      .leftJoin(users, eq(syllabinds.creatorId, users.username))
+      .from(binders)
+      .leftJoin(categories, eq(binders.categoryId, categories.id))
+      .leftJoin(users, eq(binders.curatorId, users.username))
       .where(whereClause)
       .orderBy(orderByClause)
       .limit(resultLimit)
       .offset(resultOffset);
 
-    // Fetch tags for each syllabind
-    const syllabindsList = await Promise.all(rows.map(async (row) => {
-      const syllabindTags = await this.getTagsBySyllabindId(row.syllabus.id);
+    // Fetch tags for each binder
+    const bindersList = await Promise.all(rows.map(async (row) => {
+      const rowBinderTags = await this.getTagsByBinderId(row.binder.id);
       return {
-        ...row.syllabus,
+        ...row.binder,
         category: row.categoryName ? { name: row.categoryName, slug: row.categorySlug } : null,
-        tags: syllabindTags,
-        creator: row.creatorUsername ? {
-          name: row.creatorName,
-          username: row.creatorUsername,
-          avatarUrl: row.creatorAvatarUrl,
-          bio: row.creatorBio,
-          expertise: row.creatorExpertise,
-          profileTitle: row.creatorProfileTitle,
-          linkedin: row.creatorLinkedin,
-          twitter: row.creatorTwitter,
-          threads: row.creatorThreads,
-          website: row.creatorWebsite,
-          schedulingUrl: row.creatorSchedulingUrl,
+        tags: rowBinderTags,
+        curator: row.curatorUsername ? {
+          name: row.curatorName,
+          username: row.curatorUsername,
+          avatarUrl: row.curatorAvatarUrl,
+          bio: row.curatorBio,
+          expertise: row.curatorExpertise,
+          profileTitle: row.curatorProfileTitle,
+          linkedin: row.curatorLinkedin,
+          twitter: row.curatorTwitter,
+          threads: row.curatorThreads,
+          website: row.curatorWebsite,
+          // Only expose scheduling URL for published binders
+          schedulingUrl: row.binder.status === 'published' ? row.curatorSchedulingUrl : null,
         } : undefined,
       };
     }));
 
-    return { syllabinds: syllabindsList, total };
+    return { binders: bindersList, total };
   }
 
-  // Refresh search vector for a syllabind (includes week content and tag names)
-  async refreshSearchVector(syllabusId: number): Promise<void> {
-    // Get syllabind basic info (trigger handles title/description on save)
-    // Here we add week titles + tag names
-    const weekRows = await db.select({ title: weeks.title, description: weeks.description })
-      .from(weeks).where(eq(weeks.syllabusId, syllabusId));
+  // Generation tracking
+  async incrementGenerationCount(username: string): Promise<void> {
+    await db.update(users)
+      .set({
+        generationCount: sql`${users.generationCount} + 1`,
+        lastGeneratedAt: new Date(),
+      })
+      .where(eq(users.username, username));
+  }
 
-    const tagRows = await this.getTagsBySyllabindId(syllabusId);
+  async getGenerationInfo(username: string): Promise<{ generationCount: number; lastGeneratedAt: Date | null }> {
+    const [user] = await db.select({
+      generationCount: users.generationCount,
+      lastGeneratedAt: users.lastGeneratedAt,
+    }).from(users).where(eq(users.username, username));
+    return {
+      generationCount: user?.generationCount ?? 0,
+      lastGeneratedAt: user?.lastGeneratedAt ?? null,
+    };
+  }
+
+  // Binder review queue
+  async getBindersByStatus(status: string): Promise<any[]> {
+    const rows = await db
+      .select({
+        binder: binders,
+        curatorName: users.name,
+        curatorUsername: users.username,
+        curatorAvatarUrl: users.avatarUrl,
+      })
+      .from(binders)
+      .leftJoin(users, eq(binders.curatorId, users.username))
+      .where(eq(binders.status, status))
+      .orderBy(asc(binders.submittedAt));
+
+    return rows.map(row => ({
+      ...row.binder,
+      curator: row.curatorUsername ? {
+        name: row.curatorName,
+        username: row.curatorUsername,
+        avatarUrl: row.curatorAvatarUrl,
+      } : undefined,
+    }));
+  }
+
+  // Demo binders
+  async getDemoBinders(): Promise<BinderWithContent[]> {
+    const demoBinders = await db.select().from(binders).where(eq(binders.isDemo, true));
+    const results = await Promise.all(demoBinders.map(b => this.getBinderWithContent(b.id)));
+    return results.filter((b): b is BinderWithContent => b !== undefined);
+  }
+
+  // Notification methods
+  async getCuratorUnreadNotifications(username: string, ackedAt: Date | null): Promise<Array<{ binderId: number; title: string; status: string; reviewNote: string | null }>> {
+    const conditions = [
+      eq(binders.curatorId, username),
+      isNotNull(binders.reviewedAt),
+    ];
+
+    if (ackedAt) {
+      conditions.push(gt(binders.reviewedAt, ackedAt));
+    }
+
+    const rows = await db.select({
+      binderId: binders.id,
+      title: binders.title,
+      status: binders.status,
+      reviewNote: binders.reviewNote,
+    })
+    .from(binders)
+    .where(and(...conditions));
+
+    return rows;
+  }
+
+  async getAdminUnreadCount(ackedAt: Date | null): Promise<number> {
+    const conditions: any[] = [
+      eq(binders.status, 'pending_review'),
+    ];
+
+    if (ackedAt) {
+      conditions.push(gt(binders.submittedAt, ackedAt));
+    }
+
+    const [result] = await db.select({ count: sql<number>`cast(count(*) as int)` })
+      .from(binders)
+      .where(and(...conditions));
+
+    return result?.count || 0;
+  }
+
+  async acknowledgeNotifications(userId: string): Promise<void> {
+    await db.update(users)
+      .set({ notificationsAckedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  // Credit operations
+  async getCreditBalance(userId: string): Promise<number> {
+    const [user] = await db.select({ creditBalance: users.creditBalance }).from(users).where(eq(users.id, userId));
+    return user?.creditBalance ?? 0;
+  }
+
+  async getCreditTransactions(userId: string, limit = 50, offset = 0): Promise<CreditTransaction[]> {
+    return db.select().from(creditTransactions)
+      .where(eq(creditTransactions.userId, userId))
+      .orderBy(desc(creditTransactions.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async deductCredits(userId: string, amount: number, type: string, description: string, metadata?: string): Promise<{ transactionId: number; newBalance: number }> {
+    // Atomic deduction with row lock via raw SQL
+    const result = await db.execute(sql`
+      WITH updated AS (
+        UPDATE users SET credit_balance = credit_balance - ${amount}
+        WHERE id = ${userId} AND credit_balance >= ${amount}
+        RETURNING credit_balance
+      )
+      INSERT INTO credit_transactions (user_id, amount, balance, type, description, metadata)
+      SELECT ${userId}, ${-amount}, updated.credit_balance, ${type}, ${description}, ${metadata ?? null}
+      FROM updated
+      RETURNING id, balance
+    `);
+    const row = (result as any).rows?.[0];
+    if (!row) {
+      throw new Error('INSUFFICIENT_CREDITS');
+    }
+    return { transactionId: row.id, newBalance: row.balance };
+  }
+
+  async grantCredits(userId: string, amount: number, type: string, description: string, metadata?: string): Promise<{ transactionId: number; newBalance: number }> {
+    const result = await db.execute(sql`
+      WITH updated AS (
+        UPDATE users SET credit_balance = credit_balance + ${amount}
+        WHERE id = ${userId}
+        RETURNING credit_balance
+      )
+      INSERT INTO credit_transactions (user_id, amount, balance, type, description, metadata)
+      SELECT ${userId}, ${amount}, updated.credit_balance, ${type}, ${description}, ${metadata ?? null}
+      FROM updated
+      RETURNING id, balance
+    `);
+    const row = (result as any).rows?.[0];
+    if (!row) {
+      throw new Error('User not found');
+    }
+    return { transactionId: row.id, newBalance: row.balance };
+  }
+
+  async countActiveEnrollments(username: string): Promise<number> {
+    const [result] = await db.select({ count: sql<number>`cast(count(*) as int)` })
+      .from(enrollments)
+      .where(and(
+        eq(enrollments.readerId, username),
+        eq(enrollments.status, 'in-progress')
+      ));
+    return result?.count ?? 0;
+  }
+
+  async countManualBinders(username: string): Promise<number> {
+    const [result] = await db.select({ count: sql<number>`cast(count(*) as int)` })
+      .from(binders)
+      .where(and(
+        eq(binders.curatorId, username),
+        eq(binders.isAiGenerated, false)
+      ));
+    return result?.count ?? 0;
+  }
+
+  // Refresh search vector for a binder (includes week content and tag names)
+  async refreshSearchVector(binderId: number): Promise<void> {
+    const weekRows = await db.select({ title: weeks.title, description: weeks.description })
+      .from(weeks).where(eq(weeks.binderId, binderId));
+
+    const tagRows = await this.getTagsByBinderId(binderId);
     const tagText = tagRows.map(t => t.name).join(' ');
     const weekText = weekRows.map(w => [w.title || '', w.description || ''].join(' ')).join(' ');
 
     await db.execute(sql`
-      UPDATE syllabi SET search_vector =
+      UPDATE binders SET search_vector =
         setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
         setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
         setweight(to_tsvector('english', ${weekText}), 'C') ||
         setweight(to_tsvector('english', ${tagText}), 'D')
-      WHERE id = ${syllabusId}
+      WHERE id = ${binderId}
     `);
   }
 

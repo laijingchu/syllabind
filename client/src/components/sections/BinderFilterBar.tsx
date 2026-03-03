@@ -4,7 +4,7 @@ import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Category } from '@/lib/types';
 
-interface SyllabindFilterBarProps {
+interface BinderFilterBarProps {
   // Search (always shown)
   searchQuery: string;
   onSearchChange: (q: string) => void;
@@ -40,10 +40,10 @@ const pillClass = (active: boolean) =>
       : "bg-muted text-muted-foreground hover:bg-muted/80"
   );
 
-export function SyllabindFilterBar({
+export function BinderFilterBar({
   searchQuery,
   onSearchChange,
-  searchPlaceholder = 'Search syllabinds...',
+  searchPlaceholder = 'Search binders...',
   visibility,
   onVisibilityChange,
   visibilityOptions = DEFAULT_VISIBILITY_OPTIONS,
@@ -55,7 +55,7 @@ export function SyllabindFilterBar({
   onCategoriesChange,
   resultCount,
   isLoading,
-}: SyllabindFilterBarProps) {
+}: BinderFilterBarProps) {
   const toggleCategory = (slug: string) => {
     if (!onCategoriesChange || !selectedCategories) return;
     onCategoriesChange(
@@ -66,7 +66,7 @@ export function SyllabindFilterBar({
   };
 
   return (
-    <div className="syllabind-filter-bar space-y-4">
+    <div className="binder-filter-bar space-y-4">
       {/* Top row: Visibility pills + Sort + Search */}
       <div className="catalog-search-row flex flex-col sm:flex-row sm:items-center gap-3">
         {onVisibilityChange && visibility !== undefined && (
@@ -96,7 +96,7 @@ export function SyllabindFilterBar({
             </SelectContent>
           </Select>
         )}
-        <div className="relative sm:w-64 sm:ml-auto">
+        <div className="relative sm:flex-1 sm:ml-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={searchQuery}
@@ -131,7 +131,7 @@ export function SyllabindFilterBar({
       {/* Result count */}
       {resultCount !== undefined && (
         <div className="text-sm text-muted-foreground">
-          {isLoading ? 'Searching...' : `${resultCount} syllabind${resultCount !== 1 ? 's' : ''} found`}
+          {isLoading ? 'Searching...' : `${resultCount} binder${resultCount !== 1 ? 's' : ''} found`}
         </div>
       )}
     </div>

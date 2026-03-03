@@ -1,6 +1,6 @@
 import request from 'supertest';
 import express from 'express';
-import { resetAllMocks, mockStorage, mockUser, mockCreator } from './setup/mocks';
+import { resetAllMocks, mockStorage, mockUser, mockCurator } from './setup/mocks';
 
 describe('User Routes', () => {
   let app: express.Express;
@@ -61,8 +61,8 @@ describe('User Routes', () => {
       res.json(userWithoutPassword);
     });
 
-    // POST /api/users/me/toggle-creator — toggle creator mode (auth required)
-    a.post('/api/users/me/toggle-creator', (req, res, next) => {
+    // POST /api/users/me/toggle-curator — toggle curator mode (auth required)
+    a.post('/api/users/me/toggle-curator', (req, res, next) => {
       if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
       next();
     }, async (req, res) => {
@@ -70,7 +70,7 @@ describe('User Routes', () => {
       const user = await mockStorage.getUser(userId);
       if (!user) return res.status(404).json({ message: 'User not found' });
 
-      const updated = await mockStorage.updateUser(userId, { isCreator: !user.isCreator });
+      const updated = await mockStorage.updateUser(userId, { isCurator: !user.isCurator });
       const { password, ...userWithoutPassword } = updated;
       res.json(userWithoutPassword);
     });
@@ -105,13 +105,13 @@ describe('User Routes', () => {
     });
 
     it('should return full public profile when shareProfile is true', async () => {
-      const publicUser = { ...mockCreator, password: 'hashed', email: 'creator@example.com', shareProfile: true };
+      const publicUser = { ...mockCurator, password: 'hashed', email: 'curator@example.com', shareProfile: true };
       mockStorage.getUserByUsername.mockResolvedValue(publicUser);
 
-      const res = await request(app).get('/api/users/testcreator').expect(200);
+      const res = await request(app).get('/api/users/testcurator').expect(200);
 
-      expect(res.body.username).toBe('testcreator');
-      expect(res.body.bio).toBe('Test creator bio');
+      expect(res.body.username).toBe('testcurator');
+      expect(res.body.bio).toBe('Test curator bio');
       expect(res.body.password).toBeUndefined();
       expect(res.body.email).toBeUndefined();
     });
@@ -158,18 +158,18 @@ describe('User Routes', () => {
     });
   });
 
-  describe('POST /api/users/me/toggle-creator', () => {
-    it('should toggle isCreator flag', async () => {
-      const userWithPassword = { ...mockUser, password: 'hashed', isCreator: false };
+  describe('POST /api/users/me/toggle-curator', () => {
+    it('should toggle isCurator flag', async () => {
+      const userWithPassword = { ...mockUser, password: 'hashed', isCurator: false };
       mockStorage.getUser.mockResolvedValue(userWithPassword);
-      mockStorage.updateUser.mockResolvedValue({ ...userWithPassword, isCreator: true });
+      mockStorage.updateUser.mockResolvedValue({ ...userWithPassword, isCurator: true });
 
       const res = await request(authedApp)
-        .post('/api/users/me/toggle-creator')
+        .post('/api/users/me/toggle-curator')
         .expect(200);
 
-      expect(mockStorage.updateUser).toHaveBeenCalledWith(mockUser.id, { isCreator: true });
-      expect(res.body.isCreator).toBe(true);
+      expect(mockStorage.updateUser).toHaveBeenCalledWith(mockUser.id, { isCurator: true });
+      expect(res.body.isCurator).toBe(true);
       expect(res.body.password).toBeUndefined();
     });
 
@@ -177,13 +177,13 @@ describe('User Routes', () => {
       mockStorage.getUser.mockResolvedValue(null);
 
       await request(authedApp)
-        .post('/api/users/me/toggle-creator')
+        .post('/api/users/me/toggle-curator')
         .expect(404);
     });
 
     it('should return 401 when not authenticated', async () => {
       await request(app)
-        .post('/api/users/me/toggle-creator')
+        .post('/api/users/me/toggle-curator')
         .expect(401);
     });
   });

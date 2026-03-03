@@ -33,97 +33,97 @@ const testUsers = [
     username: "testuser1",
     email: "testuser1@example.com",
     name: "Test User One",
-    isCreator: false,
+    isCurator: false,
     bio: "Test account for development",
     // Enrolled in Design System Aware Vibe Coding - Week 2, some steps done
-    enrollment: { syllabusId: 10, currentWeek: 2, completedWeeks: 1, partialSteps: 2 },
+    enrollment: { binderId: 10, currentWeek: 2, completedWeeks: 1, partialSteps: 2 },
   },
   {
     id: TEST_USER_IDS.user2,
     username: "testuser2",
     email: "testuser2@example.com",
     name: "Test User Two",
-    isCreator: false,
+    isCurator: false,
     bio: "Test account for development",
     // Enrolled in AI for Product Builders - Week 3, mostly done
-    enrollment: { syllabusId: 11, currentWeek: 3, completedWeeks: 2, partialSteps: 3 },
+    enrollment: { binderId: 11, currentWeek: 3, completedWeeks: 2, partialSteps: 3 },
   },
   {
     id: TEST_USER_IDS.user3,
     username: "testuser3",
     email: "testuser3@example.com",
     name: "Test User Three",
-    isCreator: true,
+    isCurator: true,
     bio: "Test creator account",
     // Enrolled in Visual Design Fundamentals - Week 1, just started
-    enrollment: { syllabusId: 13, currentWeek: 1, completedWeeks: 0, partialSteps: 1 },
+    enrollment: { binderId: 13, currentWeek: 1, completedWeeks: 0, partialSteps: 1 },
   },
   {
     id: TEST_USER_IDS.user4,
     username: "testuser4",
     email: "testuser4@example.com",
     name: "Test User Four",
-    isCreator: false,
+    isCurator: false,
     // Enrolled in Tech Entrepreneurship - Week 4, nearly complete
-    enrollment: { syllabusId: 14, currentWeek: 4, completedWeeks: 3, partialSteps: 4 },
+    enrollment: { binderId: 14, currentWeek: 4, completedWeeks: 3, partialSteps: 4 },
   },
   {
     id: TEST_USER_IDS.user5,
     username: "testuser5",
     email: "testuser5@example.com",
     name: "Test User Five",
-    isCreator: false,
+    isCurator: false,
     // Enrolled in Playful Frontend - Week 2
-    enrollment: { syllabusId: 15, currentWeek: 2, completedWeeks: 1, partialSteps: 2 },
+    enrollment: { binderId: 15, currentWeek: 2, completedWeeks: 1, partialSteps: 2 },
   },
   {
     id: TEST_USER_IDS.user6,
-    username: "testcreator",
-    email: "creator@example.com",
-    name: "Test Creator",
-    isCreator: true,
-    bio: "Another test creator account",
+    username: "testcurator",
+    email: "curator@example.com",
+    name: "Test Curator",
+    isCurator: true,
+    bio: "Another test curator account",
     // Enrolled in American Democracy - Week 3
-    enrollment: { syllabusId: 12, currentWeek: 3, completedWeeks: 2, partialSteps: 3 },
+    enrollment: { binderId: 12, currentWeek: 3, completedWeeks: 2, partialSteps: 3 },
   },
   {
     id: TEST_USER_IDS.user7,
     username: "demouser",
     email: "demo@example.com",
     name: "Demo User",
-    isCreator: false,
+    isCurator: false,
     bio: "Demo account for presentations",
     // Enrolled in Education in AI Era - Week 2
-    enrollment: { syllabusId: 16, currentWeek: 2, completedWeeks: 1, partialSteps: 1 },
+    enrollment: { binderId: 16, currentWeek: 2, completedWeeks: 1, partialSteps: 1 },
   },
   {
     id: TEST_USER_IDS.user8,
     username: "admin",
     email: "admin@example.com",
     name: "Admin User",
-    isCreator: true,
+    isCurator: true,
     bio: "Admin test account",
     // Enrolled in Philosophy of Education - Week 4, completed
-    enrollment: { syllabusId: 17, currentWeek: 4, completedWeeks: 4, partialSteps: 0, status: 'completed' as const },
+    enrollment: { binderId: 17, currentWeek: 4, completedWeeks: 4, partialSteps: 0, status: 'completed' as const },
   },
   {
     id: TEST_USER_IDS.user9,
     username: "reviewer",
     email: "reviewer@example.com",
     name: "Reviewer Account",
-    isCreator: false,
+    isCurator: false,
     // Enrolled in Design System Aware Vibe Coding - Week 3
-    enrollment: { syllabusId: 10, currentWeek: 3, completedWeeks: 2, partialSteps: 4 },
+    enrollment: { binderId: 10, currentWeek: 3, completedWeeks: 2, partialSteps: 4 },
   },
   {
     id: TEST_USER_IDS.user10,
     username: "tester",
     email: "tester@example.com",
     name: "QA Tester",
-    isCreator: false,
+    isCurator: false,
     bio: "QA testing account",
     // Enrolled in AI for Product Builders - Week 1, just started
-    enrollment: { syllabusId: 11, currentWeek: 1, completedWeeks: 0, partialSteps: 2 },
+    enrollment: { binderId: 11, currentWeek: 1, completedWeeks: 0, partialSteps: 2 },
   },
 ];
 
@@ -164,28 +164,28 @@ async function addTestUsers() {
       if (enrollment) {
         try {
           const [newEnrollment] = await db.insert(enrollments).values({
-            studentId: username,
-            syllabusId: enrollment.syllabusId,
+            readerId: username,
+            binderId: enrollment.binderId,
             status: enrollment.status || 'in-progress',
             currentWeekIndex: enrollment.currentWeek,
             shareProfile: true,
             joinedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Random date in last 30 days
           }).returning();
 
-          console.log(`   📚 Enrolled in syllabus ${enrollment.syllabusId} (week ${enrollment.currentWeek})`);
+          console.log(`   📚 Enrolled in binder ${enrollment.binderId} (week ${enrollment.currentWeek})`);
           enrollmentsCreated++;
 
-          // Get weeks for this syllabus and mark steps as completed
-          const syllabusWeeks = await db.select()
+          // Get weeks for this binder and mark steps as completed
+          const binderWeeks = await db.select()
             .from(weeks)
-            .where(eq(weeks.syllabusId, enrollment.syllabusId))
+            .where(eq(weeks.binderId, enrollment.binderId))
             .orderBy(weeks.index);
 
           // Complete all steps in fully completed weeks
-          for (let i = 0; i < enrollment.completedWeeks && i < syllabusWeeks.length; i++) {
+          for (let i = 0; i < enrollment.completedWeeks && i < binderWeeks.length; i++) {
             const weekSteps = await db.select()
               .from(steps)
-              .where(eq(steps.weekId, syllabusWeeks[i].id))
+              .where(eq(steps.weekId, binderWeeks[i].id))
               .orderBy(steps.position);
 
             for (const step of weekSteps) {
@@ -202,8 +202,8 @@ async function addTestUsers() {
           }
 
           // Complete partial steps in current week
-          if (enrollment.partialSteps > 0 && enrollment.currentWeek <= syllabusWeeks.length) {
-            const currentWeekData = syllabusWeeks.find(w => w.index === enrollment.currentWeek);
+          if (enrollment.partialSteps > 0 && enrollment.currentWeek <= binderWeeks.length) {
+            const currentWeekData = binderWeeks.find(w => w.index === enrollment.currentWeek);
             if (currentWeekData) {
               const weekSteps = await db.select()
                 .from(steps)
@@ -227,7 +227,7 @@ async function addTestUsers() {
           stepsCompleted = 0; // Reset for next user display
         } catch (error: any) {
           if (error.code === '23505') {
-            console.log(`   ⏭️  Already enrolled in syllabus ${enrollment.syllabusId}`);
+            console.log(`   ⏭️  Already enrolled in binder ${enrollment.binderId}`);
           } else {
             console.error(`   ❌ Enrollment error:`, error.message);
           }

@@ -1,5 +1,5 @@
 // DEPRECATED: This file is no longer used.
-// The Syllabind generator now uses Claude's native web search (web_search_20250305).
+// The Binder generator now uses Claude's native web search (web_search_20250305).
 // Keeping for reference only.
 //
 // Background:

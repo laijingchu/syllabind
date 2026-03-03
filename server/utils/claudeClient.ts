@@ -12,9 +12,9 @@ export const CLAUDE_MODEL_GENERATION = 'claude-sonnet-4-5-20250929';
 
 export { client };
 
-const PLAN_CURRICULUM_TOOL: Anthropic.Tool = {
-  name: 'plan_curriculum',
-  description: 'Plan the full curriculum outline with distinct week titles and descriptions. Call once with ALL weeks.',
+const PLAN_OUTLINE_TOOL: Anthropic.Tool = {
+  name: 'plan_outline',
+  description: 'Plan the full binder outline with distinct week titles and descriptions. Call once with ALL weeks.',
   input_schema: {
     type: 'object',
     properties: {
@@ -38,7 +38,7 @@ const PLAN_CURRICULUM_TOOL: Anthropic.Tool = {
 
 const FINALIZE_WEEK_TOOL: Anthropic.Tool = {
   name: 'finalize_week',
-  description: 'Finalize a week\'s Syllabind. MUST have exactly 4 steps: 3 readings followed by 1 exercise.',
+  description: 'Finalize a week\'s Binder. MUST have exactly 4 steps: 3 readings followed by 1 exercise.',
   input_schema: {
     type: 'object',
     properties: {
@@ -74,9 +74,9 @@ const FINALIZE_WEEK_TOOL: Anthropic.Tool = {
   }
 };
 
-/** Returns planning tools for curriculum outline generation (no web search needed). */
+/** Returns planning tools for binder outline generation (no web search needed). */
 export function getPlanningTools(): Anthropic.Tool[] {
-  return [PLAN_CURRICULUM_TOOL];
+  return [PLAN_OUTLINE_TOOL];
 }
 
 /** Returns generation tools with 8 web searches per batch (~4/week for 2-week batches). */
@@ -129,7 +129,7 @@ export async function executeToolCall(
         handled_by_api: true
       };
 
-    case 'plan_curriculum':
+    case 'plan_outline':
       return {
         weeks: toolInput.weeks
       };

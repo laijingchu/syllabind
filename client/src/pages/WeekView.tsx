@@ -15,12 +15,12 @@ import { sanitizeHtml } from '@/lib/sanitize';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Syllabus } from '@/lib/types';
+import { Binder } from '@/lib/types';
 
 export default function WeekView() {
-  const [match, params] = useRoute('/syllabind/:id/week/:index');
+  const [match, params] = useRoute('/binder/:id/week/:index');
   const {
-    getSyllabusById,
+    getBinderById,
     enrollment,
     markStepComplete,
     markStepIncomplete,
@@ -33,7 +33,7 @@ export default function WeekView() {
   const [location, setLocation] = useLocation();
 
   // All state hooks at the top
-  const [syllabus, setSyllabus] = useState<Syllabus | undefined>(undefined);
+  const [binder, setBinder] = useState<Binder | undefined>(undefined);
   const [exerciseText, setExerciseText] = useState<Record<number, string>>({});
   const [isShared, setIsShared] = useState<Record<number, boolean>>({});
   const [showShareDialog, setShowShareDialog] = useState(false);
@@ -42,47 +42,47 @@ export default function WeekView() {
   const [loading, setLoading] = useState(true);
   const [submittingStepId, setSubmittingStepId] = useState<number | null>(null);
   const [slackUrl, setSlackUrl] = useState<string | null>(null);
-  const [creator, setCreator] = useState<any>(undefined);
+  const [curator, setCurator] = useState<any>(undefined);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [upgradeVariant, setUpgradeVariant] = useState<'enrollment-gate' | 'pro-feature'>('enrollment-gate');
 
-  const syllabusId = params?.id ? parseInt(params.id) : undefined;
+  const binderId = params?.id ? parseInt(params.id) : undefined;
   const weekIndex = parseInt(params?.index || '1');
 
-  // Fetch full syllabus with weeks and steps
+  // Fetch full binder with weeks and steps
   useEffect(() => {
-    if (syllabusId) {
+    if (binderId) {
       setLoading(true);
-      fetch(`/api/syllabinds/${syllabusId}`, {
+      fetch(`/api/binders/${binderId}`, {
         credentials: 'include'
       })
         .then(res => {
-          if (!res.ok) throw new Error(`Failed to fetch syllabus: ${res.status}`);
+          if (!res.ok) throw new Error(`Failed to fetch binder: ${res.status}`);
           return res.json();
         })
-        .then(data => setSyllabus(data))
+        .then(data => setBinder(data))
         .catch(err => {
-          console.error('Failed to fetch syllabus:', err);
-          setSyllabus(undefined);
+          console.error('Failed to fetch binder:', err);
+          setBinder(undefined);
         })
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
-  }, [syllabusId]);
+  }, [binderId]);
 
-  // Fetch enrollment for this specific syllabus
+  // Fetch enrollment for this specific binder
   useEffect(() => {
-    if (syllabusId && currentUser) {
+    if (binderId && currentUser) {
       fetch('/api/enrollments', { credentials: 'include' })
         .then(res => res.ok ? res.json() : [])
         .then((data: any[]) => {
-          const match = data.find((e: any) => e.syllabusId === syllabusId);
+          const match = data.find((e: any) => e.binderId === binderId);
           if (match) setLocalEnrollmentId(match.id);
         })
         .catch(() => {});
     }
-  }, [syllabusId, currentUser]);
+  }, [binderId, currentUser]);
 
   // Fetch completed steps for this specific enrollment
   useEffect(() => {
@@ -94,15 +94,15 @@ export default function WeekView() {
     }
   }, [localEnrollmentId]);
 
-  // Fetch creator info for scheduling URL
+  // Fetch curator info for scheduling URL
   useEffect(() => {
-    if (syllabus?.creatorId) {
-      fetch(`/api/users/${syllabus.creatorId}`, { credentials: 'include' })
+    if (binder?.curatorId) {
+      fetch(`/api/users/${binder.curatorId}`, { credentials: 'include' })
         .then(res => res.ok ? res.json() : null)
-        .then(data => setCreator(data))
+        .then(data => setCurator(data))
         .catch(() => {});
     }
-  }, [syllabus?.creatorId]);
+  }, [binder?.curatorId]);
 
   // Fetch Slack community URL
   useEffect(() => {
@@ -112,8 +112,8 @@ export default function WeekView() {
       .catch(() => {});
   }, []);
 
-  const week = syllabus?.weeks.find(w => w.index === weekIndex);
-  const sortedWeeks = syllabus?.weeks ? [...syllabus.weeks].sort((a, b) => a.index - b.index) : [];
+  const week = binder?.weeks.find(w => w.index === weekIndex);
+  const sortedWeeks = binder?.weeks ? [...binder.weeks].sort((a, b) => a.index - b.index) : [];
   const weekPosition = sortedWeeks.findIndex(w => w.index === weekIndex);
   const prevWeek = weekPosition > 0 ? sortedWeeks[weekPosition - 1] : null;
   const nextWeek = weekPosition >= 0 && weekPosition < sortedWeeks.length - 1 ? sortedWeeks[weekPosition + 1] : null;
@@ -133,9 +133,9 @@ export default function WeekView() {
     setLocalCompletedStepIds(prev => prev.filter(id => id !== stepId));
   };
 
-  // Local helper to compute week progress using local syllabus state
+  // Local helper to compute week progress using local binder state
   const getWeekProgress = (weekIdx: number) => {
-    const wk = syllabus?.weeks.find(w => w.index === weekIdx);
+    const wk = binder?.weeks.find(w => w.index === weekIdx);
     if (!wk || wk.steps.length === 0) return 0;
 
     const weekStepIds = wk.steps.map(step => step.id);
@@ -162,11 +162,11 @@ export default function WeekView() {
     );
   }
 
-  if (!syllabus) return <div>Not found</div>;
+  if (!binder) return <div>Not found</div>;
 
   // If week doesn't exist (navigated past the last week), redirect to completion page
   if (!week) {
-    setLocation(`/syllabind/${syllabus.id}/completed`);
+    setLocation(`/binder/${binder.id}/completed`);
     return null;
   }
 
@@ -174,7 +174,7 @@ export default function WeekView() {
 
   const handleBookCall = () => {
     if (!currentUser) {
-      setLocation(`/login?returnTo=${encodeURIComponent(`/syllabind/${syllabus.id}/week/${weekIndex}`)}`);
+      setLocation(`/login?returnTo=${encodeURIComponent(`/binder/${binder.id}/week/${weekIndex}`)}`);
       return;
     }
     if (!isPro) {
@@ -182,14 +182,14 @@ export default function WeekView() {
       setShowUpgradePrompt(true);
       return;
     }
-    if (creator?.schedulingUrl) {
-      window.open(creator.schedulingUrl, '_blank', 'noopener,noreferrer');
+    if (curator?.schedulingUrl) {
+      window.open(curator.schedulingUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
   const handleJoinSlack = () => {
     if (!currentUser) {
-      setLocation(`/login?returnTo=${encodeURIComponent(`/syllabind/${syllabus.id}/week/${weekIndex}`)}`);
+      setLocation(`/login?returnTo=${encodeURIComponent(`/binder/${binder.id}/week/${weekIndex}`)}`);
       return;
     }
     if (!isPro) {
@@ -233,7 +233,7 @@ export default function WeekView() {
         <h2 className="text-xl sm:text-2xl font-display">{week?.title || pluralize(weekIndex, 'Week')} is Locked</h2>
         <p className="text-sm sm:text-base text-muted-foreground">Complete all steps in {prevWeek?.title || `the previous week`} to unlock this content.</p>
         {prevWeek && (
-          <Link href={`/syllabind/${syllabus.id}/week/${prevWeek.index}`}>
+          <Link href={`/binder/${binder.id}/week/${prevWeek.index}`}>
             <Button className="w-full sm:w-auto">Go to {prevWeek.title || `Week ${prevWeek.index}`}</Button>
           </Link>
         )}
@@ -245,16 +245,16 @@ export default function WeekView() {
   const allReadingsDone = week.steps
     .filter(s => s.type === 'reading' && s.url)
     .every(s => isStepCompleted(s.id));
-  
+
   const allDone = allReadingsDone;
 
   return (
     <div className="max-w-3xl mx-auto pb-20 px-4 sm:px-0">
       <header className="mb-6 sm:mb-10">
         <div className="flex justify-between items-center mb-4">
-          <Link href={`/syllabind/${syllabus.id}`}>
+          <Link href={`/binder/${binder.id}`}>
             <a className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors">
-              <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Back to Syllabind Overview</span><span className="sm:hidden">Back</span>
+              <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Back to Binder Overview</span><span className="sm:hidden">Back</span>
             </a>
           </Link>
           <Button variant="ghost" size="sm" onClick={() => setShowShareDialog(true)}>
@@ -263,7 +263,7 @@ export default function WeekView() {
         </div>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 sm:gap-4 mb-4">
           <div className="min-w-0">
-            <h2 className="text-xs sm:text-sm font-medium text-primary uppercase tracking-wider mb-1 truncate">{syllabus.title}</h2>
+            <h2 className="text-xs sm:text-sm font-medium text-primary uppercase tracking-wider mb-1 truncate">{binder.title}</h2>
             <h1 className="text-2xl sm:text-3xl font-display">{week.title || pluralize(week.index, 'Week')}</h1>
             {week.description && (
               <div
@@ -278,7 +278,7 @@ export default function WeekView() {
           </div>
         </div>
         <Progress value={progress} className="h-2" />
-        {(slackUrl || (creator?.schedulingUrl && syllabus?.showSchedulingLink !== false)) && (
+        {(slackUrl || (curator?.schedulingUrl && binder?.showSchedulingLink !== false)) && (
           <div className="flex flex-wrap gap-3 mt-4">
             {slackUrl && (
               <Button variant="outline" size="sm" onClick={handleJoinSlack} className="gap-2">
@@ -292,7 +292,7 @@ export default function WeekView() {
                 )}
               </Button>
             )}
-            {creator?.schedulingUrl && syllabus?.showSchedulingLink !== false && (
+            {curator?.schedulingUrl && binder?.showSchedulingLink !== false && (
               <Button variant="outline" size="sm" onClick={handleBookCall} className="gap-2">
                 <CalendarDays className="h-4 w-4" />
                 1:1 Office Hour
@@ -312,12 +312,12 @@ export default function WeekView() {
         {week.steps.length === 0 && (
            <div className="text-center py-10 text-muted-foreground italic">No steps for this week yet.</div>
         )}
-        
+
         {week.steps
           .filter(step => step.type !== 'reading' || step.url)
           .map((step, idx) => {
           const isDone = isStepCompleted(step.id);
-          
+
           return (
             <motion.div
               key={step.id}
@@ -384,18 +384,18 @@ export default function WeekView() {
                       )}
                     </div>
                   </div>
-                  
+
                   {step.note && (
-                    <div 
+                    <div
                       className="text-muted-foreground text-sm prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 max-w-none"
                       dangerouslySetInnerHTML={{ __html: sanitizeHtml(step.note) }}
                     />
                   )}
-                  
+
                   {step.type === 'reading' && step.url && (
-                    <a 
-                      href={step.url} 
-                      target="_blank" 
+                    <a
+                      href={step.url}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center text-sm font-medium text-primary hover:underline mt-2"
                       onClick={() => !isDone && handleMarkComplete(step.id)} // Optional: auto-complete on click
@@ -406,26 +406,26 @@ export default function WeekView() {
 
                   {step.type === 'exercise' && (
                     <div className="mt-4 space-y-3">
-                      <div 
+                      <div
                         className="text-sm font-medium mb-2 prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 max-w-none"
                         dangerouslySetInnerHTML={{ __html: sanitizeHtml(step.promptText || '') }}
                       />
                       {!isDone ? (
                         <div className="space-y-4">
-                          <Input 
-                            placeholder="Paste your link here (e.g., https://...)" 
+                          <Input
+                            placeholder="Paste your link here (e.g., https://...)"
                             className="bg-background"
                             value={exerciseText[step.id] || ''}
                             onChange={(e) => handleExerciseChange(step.id, e.target.value)}
                           />
                           <div className="flex items-center space-x-2">
-                             <Checkbox 
-                                id={`share-${step.id}`} 
+                             <Checkbox
+                                id={`share-${step.id}`}
                                 checked={isShared[step.id] || false}
                                 onCheckedChange={(c) => handleShareChange(step.id, c as boolean)}
                              />
                              <Label htmlFor={`share-${step.id}`} className="text-sm text-muted-foreground font-normal cursor-pointer select-none">
-                               Share submission with Creator for feedback
+                               Share submission with Curator for feedback
                              </Label>
                           </div>
                           <Button
@@ -457,15 +457,15 @@ export default function WeekView() {
                                 </div>
                               </div>
                            </div>
-                           
+
                            {getSubmission(step.id)?.grade && (
                              <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg space-y-2">
                                 <div className="flex justify-between items-center">
-                                  <h4 className="font-semibold text-sm">Creator Feedback</h4>
+                                  <h4 className="font-semibold text-sm">Curator Feedback</h4>
                                   <Badge>{getSubmission(step.id)?.grade}</Badge>
                                 </div>
                                 {getSubmission(step.id)?.feedback && (
-                                   <div 
+                                   <div
                                      className="text-sm prose dark:prose-invert max-w-none"
                                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(getSubmission(step.id)?.feedback || '') }}
                                    />
@@ -492,7 +492,7 @@ export default function WeekView() {
 
       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t">
          {prevWeek ? (
-           <Link href={`/syllabind/${syllabus.id}/week/${prevWeek.index}`}>
+           <Link href={`/binder/${binder.id}/week/${prevWeek.index}`}>
              <Button variant="ghost" className="w-full sm:w-auto justify-center">
                <ChevronLeft className="mr-2 h-4 w-4" /> Previous Week
              </Button>
@@ -503,13 +503,13 @@ export default function WeekView() {
 
          {allDone && (
            isLastWeek ? (
-             <Link href={`/syllabind/${syllabus.id}/completed`}>
+             <Link href={`/binder/${binder.id}/completed`}>
                <Button size="lg" className="animate-pulse w-full sm:w-auto justify-center">
-                 Finish Syllabind <CheckCircle className="ml-2 h-4 w-4" />
+                 Finish Binder <CheckCircle className="ml-2 h-4 w-4" />
                </Button>
              </Link>
            ) : nextWeek ? (
-             <Link href={`/syllabind/${syllabus.id}/week/${nextWeek.index}`}>
+             <Link href={`/binder/${binder.id}/week/${nextWeek.index}`}>
                <Button className="w-full sm:w-auto justify-center">
                  Next Week <ChevronRight className="ml-2 h-4 w-4" />
                </Button>
@@ -528,7 +528,7 @@ export default function WeekView() {
         open={showUpgradePrompt}
         onOpenChange={setShowUpgradePrompt}
         variant={upgradeVariant}
-        returnTo={`/syllabind/${syllabus.id}/week/${weekIndex}`}
+        returnTo={`/binder/${binder.id}/week/${weekIndex}`}
       />
     </div>
   );

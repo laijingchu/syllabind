@@ -3,7 +3,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { registerRoutes } from '../routes';
 import { storage } from '../storage';
-import { resetAllMocks, mockUser, mockCreator, mockProUser, mockAdmin } from './setup/mocks';
+import { resetAllMocks, mockUser, mockCurator, mockProUser, mockAdmin } from './setup/mocks';
 
 const mockStorage = storage as unknown as Record<string, jest.Mock>;
 
@@ -33,95 +33,95 @@ describe('Visibility Enforcement', () => {
     return a;
   }
 
-  // ========== PRIVATE SYLLABIND ACCESS ==========
+  // ========== PRIVATE BINDER ACCESS ==========
 
-  describe('Private syllabind access', () => {
-    const privateSyllabus = {
+  describe('Private binder access', () => {
+    const privateBinder = {
       id: 1,
       title: 'Private Course',
       visibility: 'private',
       status: 'published',
-      creatorId: mockCreator.username,
+      curatorId: mockCurator.username,
       weeks: [],
     };
 
-    it('returns 404 for unauthenticated user viewing private syllabind', async () => {
-      mockStorage.getSyllabusWithContent.mockResolvedValue(privateSyllabus);
-      const res = await request(app).get('/api/syllabinds/1');
+    it('returns 404 for unauthenticated user viewing private binder', async () => {
+      mockStorage.getBinderWithContent.mockResolvedValue(privateBinder);
+      const res = await request(app).get('/api/binders/1');
       expect(res.status).toBe(404);
     });
 
-    it('returns 404 for non-creator viewing private syllabind', async () => {
+    it('returns 404 for non-curator viewing private binder', async () => {
       const authed = await createAuthedApp(mockUser);
-      mockStorage.getSyllabusWithContent.mockResolvedValue(privateSyllabus);
-      const res = await request(authed).get('/api/syllabinds/1');
+      mockStorage.getBinderWithContent.mockResolvedValue(privateBinder);
+      const res = await request(authed).get('/api/binders/1');
       expect(res.status).toBe(404);
     });
 
-    it('allows creator to view their own private syllabind', async () => {
-      const authed = await createAuthedApp(mockCreator);
-      mockStorage.getSyllabusWithContent.mockResolvedValue(privateSyllabus);
-      mockStorage.getTagsBySyllabindId.mockResolvedValue([]);
+    it('allows curator to view their own private binder', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinderWithContent.mockResolvedValue(privateBinder);
+      mockStorage.getTagsByBinderId.mockResolvedValue([]);
       mockStorage.listCategories.mockResolvedValue([]);
 
-      const res = await request(authed).get('/api/syllabinds/1');
+      const res = await request(authed).get('/api/binders/1');
       expect(res.status).toBe(200);
       expect(res.body.title).toBe('Private Course');
     });
   });
 
-  // ========== UNLISTED SYLLABIND ACCESS ==========
+  // ========== UNLISTED BINDER ACCESS ==========
 
-  describe('Unlisted syllabind access', () => {
-    const unlistedSyllabus = {
+  describe('Unlisted binder access', () => {
+    const unlistedBinder = {
       id: 2,
       title: 'Unlisted Course',
       visibility: 'unlisted',
       status: 'published',
-      creatorId: mockCreator.username,
+      curatorId: mockCurator.username,
       weeks: [],
     };
 
-    it('allows unauthenticated user to view unlisted syllabind by link', async () => {
-      mockStorage.getSyllabusWithContent.mockResolvedValue(unlistedSyllabus);
-      mockStorage.getTagsBySyllabindId.mockResolvedValue([]);
+    it('allows unauthenticated user to view unlisted binder by link', async () => {
+      mockStorage.getBinderWithContent.mockResolvedValue(unlistedBinder);
+      mockStorage.getTagsByBinderId.mockResolvedValue([]);
       mockStorage.listCategories.mockResolvedValue([]);
 
-      const res = await request(app).get('/api/syllabinds/2');
+      const res = await request(app).get('/api/binders/2');
       expect(res.status).toBe(200);
       expect(res.body.title).toBe('Unlisted Course');
     });
 
-    it('allows any authenticated user to view unlisted syllabind by link', async () => {
+    it('allows any authenticated user to view unlisted binder by link', async () => {
       const authed = await createAuthedApp(mockUser);
-      mockStorage.getSyllabusWithContent.mockResolvedValue(unlistedSyllabus);
-      mockStorage.getTagsBySyllabindId.mockResolvedValue([]);
+      mockStorage.getBinderWithContent.mockResolvedValue(unlistedBinder);
+      mockStorage.getTagsByBinderId.mockResolvedValue([]);
       mockStorage.listCategories.mockResolvedValue([]);
 
-      const res = await request(authed).get('/api/syllabinds/2');
+      const res = await request(authed).get('/api/binders/2');
       expect(res.status).toBe(200);
       expect(res.body.title).toBe('Unlisted Course');
     });
   });
 
-  // ========== PUBLIC SYLLABIND ACCESS ==========
+  // ========== PUBLIC BINDER ACCESS ==========
 
-  describe('Public syllabind access', () => {
-    const publicSyllabus = {
+  describe('Public binder access', () => {
+    const publicBinder = {
       id: 3,
       title: 'Public Course',
       visibility: 'public',
       status: 'published',
-      creatorId: mockCreator.username,
+      curatorId: mockCurator.username,
       weeks: [],
     };
 
-    it('allows anyone to view public syllabind', async () => {
-      mockStorage.getSyllabusWithContent.mockResolvedValue(publicSyllabus);
-      mockStorage.getTagsBySyllabindId.mockResolvedValue([]);
+    it('allows anyone to view public binder', async () => {
+      mockStorage.getBinderWithContent.mockResolvedValue(publicBinder);
+      mockStorage.getTagsByBinderId.mockResolvedValue([]);
       mockStorage.listCategories.mockResolvedValue([]);
 
-      const res = await request(app).get('/api/syllabinds/3');
+      const res = await request(app).get('/api/binders/3');
       expect(res.status).toBe(200);
       expect(res.body.title).toBe('Public Course');
     });
@@ -129,64 +129,64 @@ describe('Visibility Enforcement', () => {
 
   // ========== ENROLLMENT BLOCKED ON PRIVATE ==========
 
-  describe('Enrollment on private syllabinds', () => {
-    it('blocks enrollment on private syllabind for non-creator', async () => {
+  describe('Enrollment on private binders', () => {
+    it('blocks enrollment on private binder for non-curator', async () => {
       const authed = await createAuthedApp(mockProUser);
-      mockStorage.getSyllabus.mockResolvedValue({
-        id: 1, visibility: 'private', creatorId: 'other-creator',
+      mockStorage.getBinder.mockResolvedValue({
+        id: 1, visibility: 'private', curatorId: 'other-curator',
       });
 
       const res = await request(authed).post('/api/enrollments').send({
-        syllabusId: 1, status: 'in-progress',
+        binderId: 1, status: 'in-progress',
       });
       expect(res.status).toBe(404);
-      expect(res.body.message).toBe('Syllabind not found');
+      expect(res.body.message).toBe('Binder not found');
     });
 
-    it('allows creator to enroll in their own private syllabind', async () => {
-      // Creator with Pro subscription
-      const proCreator = { ...mockCreator, subscriptionStatus: 'pro', stripeCustomerId: 'cus_123' };
-      const authed = await createAuthedApp(proCreator);
-      mockStorage.getSyllabus.mockResolvedValue({
-        id: 1, visibility: 'private', creatorId: mockCreator.username,
+    it('allows curator to enroll in their own private binder', async () => {
+      // Curator with Pro subscription
+      const proCurator = { ...mockCurator, subscriptionStatus: 'pro', stripeCustomerId: 'cus_123' };
+      const authed = await createAuthedApp(proCurator);
+      mockStorage.getBinder.mockResolvedValue({
+        id: 1, visibility: 'private', curatorId: mockCurator.username,
       });
       mockStorage.getEnrollment.mockResolvedValue(null);
       mockStorage.dropActiveEnrollments.mockResolvedValue(undefined);
-      mockStorage.createEnrollment.mockResolvedValue({ id: 1, syllabusId: 1, status: 'in-progress' });
+      mockStorage.createEnrollment.mockResolvedValue({ id: 1, binderId: 1, status: 'in-progress' });
 
       const res = await request(authed).post('/api/enrollments').send({
-        syllabusId: 1, status: 'in-progress', shareProfile: false,
+        binderId: 1, status: 'in-progress', shareProfile: false,
       });
       expect(res.status).toBe(200);
       expect(res.body.id).toBe(1);
     });
 
-    it('allows enrollment on unlisted syllabind', async () => {
+    it('allows enrollment on unlisted binder', async () => {
       const authed = await createAuthedApp(mockProUser);
-      mockStorage.getSyllabus.mockResolvedValue({
-        id: 2, visibility: 'unlisted', creatorId: 'other-creator',
+      mockStorage.getBinder.mockResolvedValue({
+        id: 2, visibility: 'unlisted', curatorId: 'other-curator',
       });
       mockStorage.getEnrollment.mockResolvedValue(null);
       mockStorage.dropActiveEnrollments.mockResolvedValue(undefined);
-      mockStorage.createEnrollment.mockResolvedValue({ id: 2, syllabusId: 2, status: 'in-progress' });
+      mockStorage.createEnrollment.mockResolvedValue({ id: 2, binderId: 2, status: 'in-progress' });
 
       const res = await request(authed).post('/api/enrollments').send({
-        syllabusId: 2, status: 'in-progress', shareProfile: false,
+        binderId: 2, status: 'in-progress', shareProfile: false,
       });
       expect(res.status).toBe(200);
     });
 
-    it('allows enrollment on public syllabind', async () => {
+    it('allows enrollment on public binder', async () => {
       const authed = await createAuthedApp(mockProUser);
-      mockStorage.getSyllabus.mockResolvedValue({
-        id: 3, visibility: 'public', creatorId: 'other-creator',
+      mockStorage.getBinder.mockResolvedValue({
+        id: 3, visibility: 'public', curatorId: 'other-curator',
       });
       mockStorage.getEnrollment.mockResolvedValue(null);
       mockStorage.dropActiveEnrollments.mockResolvedValue(undefined);
-      mockStorage.createEnrollment.mockResolvedValue({ id: 3, syllabusId: 3, status: 'in-progress' });
+      mockStorage.createEnrollment.mockResolvedValue({ id: 3, binderId: 3, status: 'in-progress' });
 
       const res = await request(authed).post('/api/enrollments').send({
-        syllabusId: 3, status: 'in-progress', shareProfile: false,
+        binderId: 3, status: 'in-progress', shareProfile: false,
       });
       expect(res.status).toBe(200);
     });

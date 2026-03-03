@@ -53,6 +53,8 @@ module.exports = {
     '!server/static.ts',
     '!server/db.ts',
     '!server/utils/syllabindGenerator.ts',
+    '!server/utils/binderGenerator.ts',
+    '!server/migrate.ts',
     '!server/websocket/**',
     '!server/vite.ts',
     '!server/auth/googleAuth.ts',
