@@ -351,7 +351,10 @@ Use for patterns repeated across multiple pages.
 2. In databases, Avoid the use of JSONB Column and use normalized schema by default. Explicitly ask for permission if JSONB is determined to be a superior solution for a given problem.
 3. Keep commented out dev notes consolidated and readable. Do not spell out entire thought process.
 4. No need to keep asking for permission for reading files or running commands
-5. **Testing Protocol:**
+5. **Design System:**
+   - Whenever a new UI component is created or an existing unused component is first used in the app, add a corresponding documentation page to the design system site (`client/src/pages/design-system/`). Follow the existing page template: description, when to use, live demo, states, design tokens, code snippet, accessibility notes, and usage in the product.
+   - **Single source of truth:** The design system is the centralized control center for the entire Syllabind frontend. All UI components (`client/src/components/ui/`) and components (`client/src/components/` + pages) must use shared design tokens, component variants, and patterns defined in the design system. When modifying a component's default styles, variants, or behavior, the change must be made in the component source file itself — not overridden per-page. This ensures that tweaking an element in the design system automatically applies the same change across the entire platform. Never duplicate styling decisions; always trace visual choices back to tokens or component defaults.
+6. **Testing Protocol:**
    - After making any non-trivial change to backend code, run `npm test`
    - If tests fail, fix the code and re-run tests until they pass
    - Always write or update tests for new features or modified functionality

@@ -1,12 +1,10 @@
 import { useStore } from '@/lib/store';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit2, BarChart2, Trash2, BookOpen, Shield, ChevronDown, Globe, EyeOff, Lock, Eye, Loader2, CheckCircle2, XCircle, Pencil } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Plus, Trash2, BookOpen, Shield, Loader2, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,35 +15,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { BinderFilterBar } from '@/components/sections/BinderFilterBar';
 import { pluralize } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { formatDistanceToNow } from 'date-fns';
 import { AnimatedPage, AnimatedCard } from '@/components/ui/animated-container';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { ReviewQueueCard } from '@/components/ReviewQueueCard';
+import type { ReviewQueueBinder } from '@/components/ReviewQueueCard';
+import { CuratorBinderCard } from '@/components/CuratorBinderCard';
 import type { Binder, Category } from '@/lib/types';
-
-interface QueueBinder {
-  id: number;
-  title: string;
-  description: string;
-  audienceLevel: string;
-  durationWeeks: number;
-  visibility: string;
-  submittedAt: string | null;
-  curator?: {
-    name: string | null;
-    username: string;
-    avatarUrl: string | null;
-  };
-}
 
 export default function CuratorDashboard() {
   const { binders, user, getReadersForBinder, batchDeleteBinders, subscriptionLimits, refreshBinders, notificationItems, acknowledgeNotifications, refreshNotifications, pendingReviewCount } = useStore();
@@ -77,7 +56,7 @@ export default function CuratorDashboard() {
   const [allBinders, setAllBinders] = useState<Binder[]>([]);
 
   // Review queue state (admin only)
-  const [reviewQueue, setReviewQueue] = useState<QueueBinder[]>([]);
+  const [reviewQueue, setReviewQueue] = useState<ReviewQueueBinder[]>([]);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectBinderId, setRejectBinderId] = useState<number | null>(null);
@@ -441,71 +420,16 @@ export default function CuratorDashboard() {
           ) : (
             <div className="space-y-3">
               {reviewQueue.map(binder => (
-                <Card key={binder.id}>
-                  <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      {binder.curator && (
-                        <Avatar className="h-10 w-10 shrink-0">
-                          <AvatarImage src={binder.curator.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${binder.curator.name}`} />
-                          <AvatarFallback>{binder.curator.name?.charAt(0) || '?'}</AvatarFallback>
-                        </Avatar>
-                      )}
-                      <div className="min-w-0">
-                        <h3 className="font-medium text-sm sm:text-base leading-tight truncate">{binder.title}</h3>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          <span className="text-xs text-muted-foreground">
-                            by {binder.curator?.name || 'Unknown'}
-                          </span>
-                          <Badge variant="outline" className="text-xs">{binder.visibility}</Badge>
-                          <Badge variant="outline" className="text-xs">{binder.audienceLevel}</Badge>
-                          {binder.submittedAt && (
-                            <span className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(binder.submittedAt), { addSuffix: true })}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Link href={`/curator/binder/${binder.id}/edit`}>
-                        <Button variant="outline" size="icon" className="h-8 w-8">
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Link href={`/binder/${binder.id}?preview=true`}>
-                        <Button variant="outline" size="sm" className="gap-1.5">
-                          <Eye className="h-4 w-4" /> Preview
-                        </Button>
-                      </Link>
-                      <Button
-                        size="sm"
-                        onClick={() => handleReviewApprove(binder.id)}
-                        disabled={reviewActionInProgress === binder.id}
-                        className="gap-1.5"
-                      >
-                        {reviewActionInProgress === binder.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <CheckCircle2 className="h-4 w-4" />
-                        )}
-                        Approve
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => {
-                          setRejectBinderId(binder.id);
-                          setRejectDialogOpen(true);
-                        }}
-                        disabled={reviewActionInProgress === binder.id}
-                        className="gap-1.5"
-                      >
-                        <XCircle className="h-4 w-4" /> Reject
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <ReviewQueueCard
+                  key={binder.id}
+                  binder={binder}
+                  actionInProgress={reviewActionInProgress === binder.id}
+                  onApprove={handleReviewApprove}
+                  onReject={(id) => {
+                    setRejectBinderId(id);
+                    setRejectDialogOpen(true);
+                  }}
+                />
               ))}
             </div>
           )}
@@ -582,129 +506,23 @@ export default function CuratorDashboard() {
             </AnimatedCard>
           ) : (
             <div className="grid gap-4">
-              {displayedBinders.map((binder, index) => {
-              const isOtherCurator = adminView === 'others' && binder.curatorId !== user?.username;
-              return (
+              {displayedBinders.map((binder, index) => (
               <AnimatedCard key={binder.id} delay={0.05 * index}>
-                <Card className={`relative hover:shadow-md transition-shadow cursor-pointer ${selectedIds.includes(binder.id) ? 'ring-2 ring-primary' : ''}`}>
-                  <Link href={`/curator/binder/${binder.id}/edit`} className="absolute inset-0 z-0" aria-label={`Edit ${binder.title}`} />
-                  <CardContent className="p-3 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-                    <div className="relative z-10 flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
-                      <Checkbox
-                        checked={selectedIds.includes(binder.id)}
-                        onCheckedChange={() => handleToggleSelect(binder.id)}
-                        className="mt-1 shrink-0"
-                      />
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {binder.status === 'published' ? (
-                            binder.visibility === 'unlisted' ? (
-                              <Badge variant="secondary" className="shrink-0">
-                                Unlisted
-                              </Badge>
-                            ) : binder.visibility === 'private' ? (
-                              <Badge variant="secondary" className="shrink-0">
-                                Private
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="shrink-0">
-                                Published
-                              </Badge>
-                            )
-                          ) : binder.status === 'pending_review' ? (
-                            <Badge variant="outline" className="shrink-0 bg-amber-50 text-amber-700 border-amber-200">
-                              Pending Review
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="shrink-0">
-                              Draft
-                            </Badge>
-                          )}
-                          {isOtherCurator && (
-                            <Badge variant="outline" className="text-xs">
-                              by {binder.curator?.name || binder.curatorId}
-                            </Badge>
-                          )}
-                        </div>
-                        <h3 className="font-medium text-sm sm:text-lg leading-tight">{binder.title}</h3>
-                        <div className="text-xs sm:text-sm text-muted-foreground">
-                          {pluralize(binder.durationWeeks, 'week')} • {binder.audienceLevel}
-                          <span className="hidden sm:inline"> • Updated {binder.updatedAt ? formatDistanceToNow(new Date(binder.updatedAt), { addSuffix: true }) : 'recently'}</span>
-                        </div>
-                        {binder.reviewNote && binder.status === 'draft' && (
-                          <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 mt-1">
-                            Review feedback: {binder.reviewNote}
-                          </div>
-                        )}
-                        {binder.status === 'published' && notificationItems.some(n => n.binderId === binder.id && n.type === 'approved') && (
-                          <div className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1 mt-1">
-                            Approved and published!
-                          </div>
-                        )}
-                        {/* Mobile reader count */}
-                        <div className="text-xs text-muted-foreground sm:hidden md:hidden">
-                          {pluralize(readerCounts[binder.id]?.total || 0, 'Reader')} • {pluralize(readerCounts[binder.id]?.active || 0, 'Active')}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="relative z-10 flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto sm:ml-0">
-                      <div className="mr-2 sm:mr-4 text-right hidden md:block">
-                        <div className="text-sm font-medium">{pluralize(readerCounts[binder.id]?.total || 0, 'Reader')}</div>
-                        <div className="text-xs text-muted-foreground">{pluralize(readerCounts[binder.id]?.active || 0, 'Active')}</div>
-                      </div>
-                      {binder.status === 'published' ? (
-                        <Button variant="secondary" size="sm" className="h-8 px-3" onClick={() => handleUnpublish(binder.id)}>
-                          Unpublish
-                        </Button>
-                      ) : binder.status === 'pending_review' && !isAdmin ? (
-                        <Button variant="secondary" size="sm" className="h-8 px-3" onClick={() => handleWithdraw(binder.id)}>
-                          Withdraw from Review
-                        </Button>
-                      ) : (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button size="sm" className="h-8 px-2 sm:px-3 gap-1.5">
-                              Publish <ChevronDown className="h-3.5 w-3.5 opacity-60" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-52">
-                            <DropdownMenuItem onClick={() => isAdmin ? handlePublish(binder.id, 'public') : (() => { setPendingPublishId(binder.id); setShowReviewConfirmDialog(true); })()}>
-                              <Globe className="h-4 w-4 mr-2" /> Public
-                              <span className="ml-auto text-xs text-muted-foreground">{isAdmin ? 'Catalog' : 'To be featured'}</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handlePublish(binder.id, 'unlisted')}>
-                              <EyeOff className="h-4 w-4 mr-2" /> Unlisted
-                              <span className="ml-auto text-xs text-muted-foreground">Link only</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handlePublish(binder.id, 'private')}>
-                              <Lock className="h-4 w-4 mr-2" /> Private
-                              <span className="ml-auto text-xs text-muted-foreground">Only you</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                      <Link href={`/curator/binder/${binder.id}/edit`}>
-                        <Button variant="outline" size="icon" className="h-8 w-8">
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Link href={binder.status === 'published' ? `/binder/${binder.id}` : `/binder/${binder.id}?preview=true`}>
-                        <Button variant="outline" size="icon" className="h-8 w-8">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Link href={`/curator/binder/${binder.id}/analytics`}>
-                        <Button variant="outline" size="icon" className="h-8 w-8">
-                          <BarChart2 className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
+                <CuratorBinderCard
+                  binder={binder}
+                  selected={selectedIds.includes(binder.id)}
+                  onToggleSelect={handleToggleSelect}
+                  readerCount={readerCounts[binder.id]}
+                  isAdmin={isAdmin}
+                  isOtherCurator={adminView === 'others' && binder.curatorId !== user?.username}
+                  hasApprovalNotification={notificationItems.some(n => n.binderId === binder.id && n.type === 'approved')}
+                  onPublish={handlePublish}
+                  onUnpublish={handleUnpublish}
+                  onWithdraw={handleWithdraw}
+                  onRequestReview={(id) => { setPendingPublishId(id); setShowReviewConfirmDialog(true); }}
+                />
               </AnimatedCard>
-              );
-            })}
+              ))}
             </div>
           )}
         </>

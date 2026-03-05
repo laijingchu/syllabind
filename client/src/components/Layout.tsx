@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
-import { BookOpen, User, LogOut, Menu, X, Bug, Settings, CreditCard, Loader2 } from 'lucide-react';
+import { BookOpen, User, LogOut, Menu, X, Bug, Settings, CreditCard, Loader2, Sun, Moon } from 'lucide-react';
+import { useTheme } from '@/hooks/use-theme';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -23,6 +24,7 @@ import {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, logout, isLoggingOut, hasUnreadNotifications } = useStore();
+  const { theme, toggleTheme } = useTheme();
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [bugReportUrl, setBugReportUrl] = useState<string | null>(null);
@@ -191,6 +193,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-9 w-9 text-muted-foreground hover:text-primary" title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
+              {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+            </Button>
             {isAuthenticated && user ? (
               <>
               {bugReportUrl && (
@@ -210,7 +215,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 bg-[#ffffff]" align="end" forceMount>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">{user.name}</p>
@@ -237,12 +242,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     </DropdownMenuItem>
                   </Link>
                   {user.isAdmin && (
-                    <Link href="/admin/settings">
-                      <DropdownMenuItem className="cursor-pointer">
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>Admin Settings</span>
-                      </DropdownMenuItem>
-                    </Link>
+                    <>
+                      <Link href="/admin/settings">
+                        <DropdownMenuItem className="cursor-pointer">
+                          <Settings className="mr-2 h-4 w-4" />
+                          <span>Admin Settings</span>
+                        </DropdownMenuItem>
+                      </Link>
+                    </>
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={logout}>
@@ -275,16 +282,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="container mx-auto px-4 py-8 md:py-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <main className={cn("container mx-auto px-4 animate-in fade-in slide-in-from-bottom-4 duration-700", location.startsWith('/design-system') ? "pt-0 pb-0" : "py-8 md:py-12")}>
         {children}
       </main>
-      <footer className="site-footer border-t border-border/40 mt-12">
+      <footer className={cn("site-footer border-t border-border/40", location.startsWith('/design-system') ? "mt-0" : "mt-12")}>
         <div className="container mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} Syllabind. All rights reserved.</p>
-          <nav className="footer-links flex items-center gap-4">
+          <nav className="footer-links flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
             <a href={termsUrl || "/terms"} {...(termsUrl ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="hover:text-foreground transition-colors">Terms of Service</a>
             <a href={privacyUrl || "/privacy"} {...(privacyUrl ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="hover:text-foreground transition-colors">Privacy Policy</a>
             <a href="mailto:hello@syllabind.com" className="hover:text-foreground transition-colors">Contact Us</a>
+            <Link href="/design-system" className="hover:text-foreground transition-colors">Design System</Link>
           </nav>
         </div>
       </footer>

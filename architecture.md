@@ -596,6 +596,14 @@ These components are specific to Syllabind's functionality and compose the UI pr
   - Curator avatar with name; hover tooltip shows bio, expertise, and social links (same pattern as classmates)
   - CTA button (Enroll/Resume/View)
 
+- **`CuratorBinderCard.tsx`**: Row card for the curator studio binder list
+  - Status badge (draft/pending/published/unlisted/private), title, metadata, reader counts
+  - Publish dropdown, edit/preview/analytics action buttons, multi-select checkbox
+
+- **`ReviewQueueCard.tsx`**: Card for admin review queue
+  - Curator avatar, binder title, visibility/level badges, submission time
+  - Edit, Preview, Approve, Reject action buttons with loading state
+
 - **`AvatarUpload.tsx`**: Profile picture upload component
   - Image preview with remove option
   - File upload handling
@@ -667,6 +675,7 @@ Components for presenting data and information to users, including tables, chart
 
 - `table.tsx` - Table component
 - `badge.tsx` - Status badge
+- `pill.tsx` - Rounded toggle button for filters and selection (default/outline variants, sm/default sizes)
 - `avatar.tsx` - User avatar
 - `progress.tsx` - Progress bar
 - `skeleton.tsx` - Loading skeleton

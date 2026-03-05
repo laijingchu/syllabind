@@ -22,8 +22,8 @@ export function SearchBar({
   className = '',
 }: SearchBarProps) {
   return (
-    <div className={`search-bar ${className}`}>
-      <div className="search-bar-input-group">
+    <div className={`search-bar flex items-center gap-3 ${className}`}>
+      <div className="search-bar-input-group flex items-center gap-2 flex-1">
         <Input
           placeholder={placeholder}
           value={value}
@@ -40,7 +40,7 @@ export function SearchBar({
         </Button>
       </div>
       {count !== undefined && (
-        <div className="search-bar-count">
+        <div className="search-bar-count text-sm text-muted-foreground shrink-0">
           {count} {countLabel}
         </div>
       )}

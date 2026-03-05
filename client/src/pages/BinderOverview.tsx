@@ -500,7 +500,7 @@ export default function BinderOverview() {
                     value={`week-${week.index}`}
                     className="border-none"
                   >
-                    <AccordionTrigger className="hover:no-underline py-4 px-4 rounded-lg hover:bg-muted/50 transition-colors [&[data-state=open]>div]:bg-transparent">
+                    <AccordionTrigger className="py-4 px-4 rounded-lg hover:bg-muted/50 transition-colors [&[data-state=open]>div]:bg-transparent">
                       <div
                         className={cn(
                           "flex gap-4 items-start w-full text-left transition-colors",

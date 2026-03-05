@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Pill } from '@/components/ui/pill';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Trash2, Plus, GripVertical, Save, ArrowLeft, BarChart2, Share2, CheckCircle2, AlertTriangle, Users, ExternalLink, Wand2, Loader2, X, Pencil, ChevronDown, Globe, EyeOff, Lock, Eye, Crown, RefreshCw } from 'lucide-react';
@@ -2007,13 +2008,14 @@ export default function BinderEditor() {
               <div className="demo-topic-chips flex flex-wrap items-center gap-2 pt-1">
                 <span className="text-xs text-muted-foreground">Try a demo:</span>
                 {demoBinders.map((demo) => (
-                  <button
+                  <Pill
                     key={demo.id}
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleDemoGenerate(demo)}
-                    className="text-xs px-2.5 py-1 rounded-full border border-primary/30 text-primary hover:bg-primary/10 transition-colors cursor-pointer"
                   >
                     {demo.title}
-                  </button>
+                  </Pill>
                 ))}
               </div>
             )}

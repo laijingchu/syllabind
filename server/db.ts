@@ -1,6 +1,9 @@
 import dns from "dns";
+import { createRequire } from "module";
 import { Agent, setGlobalDispatcher } from "undici";
 import * as schema from "@shared/schema";
+
+const require = createRequire(import.meta.url);
 
 // Force IPv4 for all connections — fixes broken IPv6 routing on some networks
 dns.setDefaultResultOrder("ipv4first");
