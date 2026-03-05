@@ -82,16 +82,16 @@ export default function ElementsOverview() {
             In code, tokens live in a single CSS file. Here's what the mapping looks like — the token name
             on the left is what engineers use, the value on the right is what you see:
           </p>
-          <CodeBlock>{`/* Token name        → Value (light mode) */
---primary:           240 5.9% 10%      /* Near-black for primary actions */
---background:        0 0% 100%         /* White page background */
---muted-foreground:  240 3.8% 46.1%    /* Grey for secondary text */
+          <CodeBlock>{`/* Token name        → Value (dark mode, default) */
+--primary:           0 0% 98%          /* Near-white for primary actions */
+--background:        240 10% 12%       /* Dark page background */
+--muted-foreground:  240 5% 64.9%      /* Grey for secondary text */
 --radius:            0.5rem            /* 8px corner radius */
 
-/* Dark mode swaps only the values, not the names */
-.dark {
-  --primary:         0 0% 98%          /* Near-white */
-  --background:      240 10% 3.9%      /* Near-black */
+/* Light mode swaps only the values, not the names */
+.light {
+  --primary:         240 5.9% 10%      /* Near-black */
+  --background:      0 0% 100%         /* White */
 }`}</CodeBlock>
         </section>
 

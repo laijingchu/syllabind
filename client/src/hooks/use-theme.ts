@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 
 const STORAGE_KEY = 'syllabind-ds-theme';
+const CHOSEN_KEY = 'syllabind-ds-theme-chosen';
 
 type Theme = 'light' | 'dark';
 
 function applyTheme(theme: Theme) {
   const root = document.documentElement;
-  if (theme === 'dark') {
-    root.classList.add('dark');
+  if (theme === 'light') {
+    root.classList.add('light');
   } else {
-    root.classList.remove('dark');
+    root.classList.remove('light');
   }
   localStorage.setItem(STORAGE_KEY, theme);
 }
@@ -17,7 +18,9 @@ function applyTheme(theme: Theme) {
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'light' || stored === 'dark') return stored;
+    const chosen = localStorage.getItem(CHOSEN_KEY);
+    // Only honor stored preference if user explicitly chose it
+    if (chosen && (stored === 'light' || stored === 'dark')) return stored;
     return 'dark';
   });
 
@@ -28,6 +31,7 @@ export function useTheme() {
 
   const toggleTheme = useCallback(() => {
     const next: Theme = theme === 'light' ? 'dark' : 'light';
+    localStorage.setItem(CHOSEN_KEY, '1');
 
     // Use View Transition API for the shimmer wipe effect
     if (document.startViewTransition) {

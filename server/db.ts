@@ -31,7 +31,8 @@ if (isNeon) {
   // Standard PostgreSQL (Replit, etc.)
   const pg = require("pg");
   const { drizzle } = require("drizzle-orm/node-postgres");
-  pool = new pg.default.Pool({ connectionString: process.env.DATABASE_URL });
+  const Pool = pg.default?.Pool ?? pg.Pool;
+  pool = new Pool({ connectionString: process.env.DATABASE_URL });
   db = drizzle(pool, { schema });
 }
 

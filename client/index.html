@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <script>
+      // Dark mode is the default. Only apply light if user explicitly chose it.
+      // Migration: clear stale 'light' value from pre-dark-default era
+      try {
+        var t = localStorage.getItem('syllabind-ds-theme');
+        var c = localStorage.getItem('syllabind-ds-theme-chosen');
+        if (t === 'light' && c) document.documentElement.classList.add('light');
+        else if (t === 'light' && !c) localStorage.removeItem('syllabind-ds-theme');
+      } catch(e) {}
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
 
