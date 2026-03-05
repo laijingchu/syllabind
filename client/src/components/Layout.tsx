@@ -300,7 +300,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <nav className="footer-links flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
             <a href={termsUrl || "/terms"} {...(termsUrl ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="hover:text-foreground transition-colors">Terms of Service</a>
             <a href={privacyUrl || "/privacy"} {...(privacyUrl ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="hover:text-foreground transition-colors">Privacy Policy</a>
-            <a href="mailto:hello@syllabind.com" className="hover:text-foreground transition-colors">Contact Us</a>
+            <a href="mailto:support@syllabind.com" className="hover:text-foreground transition-colors">Contact Us</a>
             <Link href="/design-system" className="hover:text-foreground transition-colors">Design System</Link>
           </nav>
         </div>
