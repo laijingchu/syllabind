@@ -3,19 +3,22 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 
 async function fetchUser(): Promise<User | null> {
-  const response = await fetch("/api/auth/me", {
-    credentials: "include",
-  });
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 1000);
 
-  if (response.status === 401) {
+    const response = await fetch("/api/auth/me", {
+      credentials: "include",
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!response.ok) return null;
+
+    return response.json();
+  } catch {
     return null;
   }
-
-  if (!response.ok) {
-    throw new Error(`${response.status}: ${response.statusText}`);
-  }
-
-  return response.json();
 }
 
 async function logout(): Promise<void> {

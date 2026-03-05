@@ -1,8 +1,10 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import pg from "pg";
+import dns from "dns";
+import { Agent, setGlobalDispatcher } from "undici";
 import * as schema from "@shared/schema";
 
-const { Pool } = pg;
+// Force IPv4 for all connections — fixes broken IPv6 routing on some networks
+dns.setDefaultResultOrder("ipv4first");
+setGlobalDispatcher(new Agent({ connect: { autoSelectFamily: true, autoSelectFamilyAttemptTimeout: 3000 } }));
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -10,5 +12,24 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle(pool, { schema });
+export const isNeon = process.env.DATABASE_URL.includes("neon.tech");
+
+let pool: any;
+let db: any;
+
+if (isNeon) {
+  // Neon: use HTTP adapter (fetch-based) to avoid port 5432 issues
+  const { neon } = await import("@neondatabase/serverless");
+  const { drizzle } = await import("drizzle-orm/neon-http");
+  const sql = neon(process.env.DATABASE_URL);
+  db = drizzle(sql, { schema });
+  pool = null;
+} else {
+  // Standard PostgreSQL (Replit, etc.)
+  const pg = (await import("pg")).default;
+  const { drizzle } = await import("drizzle-orm/node-postgres");
+  pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+  db = drizzle(pool, { schema });
+}
+
+export { pool, db };
