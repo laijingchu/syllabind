@@ -981,6 +981,7 @@ These features enhance the user experience across the application, providing vis
 - Responsive design (mobile/desktop)
 - Toast notifications for user actions
 - Loading skeletons for async content
+- Warm off-white light mode surfaces (hue 40°, slight saturation) for a softer feel; dark mode unaffected
 
 ---
 

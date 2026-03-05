@@ -112,7 +112,9 @@ function Router() {
   return (
     <Layout>
       <Switch>
-        <Route path="/welcome" component={Catalog} />
+        <Route path="/welcome">
+          {import.meta.env.PROD && !user ? <Redirect to="/login?mode=signup" /> : <Catalog />}
+        </Route>
         <Route path="/login" component={Login} />
 
         <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />

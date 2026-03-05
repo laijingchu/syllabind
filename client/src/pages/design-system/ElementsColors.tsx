@@ -90,9 +90,10 @@ export default function ElementsColors() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Surface & Text Colors</h2>
           <p className="text-base text-muted-foreground">
-            These set the overall tone of the interface. Background defines the page canvas, foreground
-            defines the default text. Card and popover surfaces sit on top of the background with their
-            own text colors for contrast.
+            These set the overall tone of the interface. In light mode, surfaces use a warm off-white
+            (hue 40°, slight saturation) instead of pure white for a softer, creamier feel. Background
+            is the page canvas, card and popover surfaces sit slightly brighter on top, and the sidebar
+            is slightly darker for depth. Foreground defines the default text color.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {coreColors.map(c => (
