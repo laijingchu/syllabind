@@ -19,16 +19,16 @@ let db: any;
 
 if (isNeon) {
   // Neon: use HTTP adapter (fetch-based) to avoid port 5432 issues
-  const { neon } = require("@neondatabase/serverless");
-  const { drizzle } = require("drizzle-orm/neon-http");
-  const sql = neon(process.env.DATABASE_URL);
+  const { neon } = await import("@neondatabase/serverless");
+  const { drizzle } = await import("drizzle-orm/neon-http");
+  const sql = neon(process.env.DATABASE_URL!);
   db = drizzle(sql, { schema });
   pool = null;
 } else {
   // Standard PostgreSQL (Replit, etc.)
-  const pg = require("pg");
-  const { drizzle } = require("drizzle-orm/node-postgres");
-  pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+  const pg = await import("pg");
+  const { drizzle } = await import("drizzle-orm/node-postgres");
+  pool = new pg.default.Pool({ connectionString: process.env.DATABASE_URL });
   db = drizzle(pool, { schema });
 }
 

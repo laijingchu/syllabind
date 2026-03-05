@@ -19,7 +19,7 @@ Syllabind is a full-stack learning platform connecting curators who build curate
 
 ```bash
 # Start development (runs both client and server)
-npm run dev              # Server on port 5000 (default)
+npm run dev              # Server on port 3000 (default)
 npm run dev:client       # Client only (if needed separately)
 
 # Build for production
@@ -280,7 +280,7 @@ Step IDs are integers (serial), not UUIDs. Historical migrations changed this fr
 
 ### Port Configuration
 
-The server **must** run on the port specified in `process.env.PORT` (default 5000). Other ports are firewalled in the Replit environment. The single port serves both API and client.
+The server **must** run on the port specified in `process.env.PORT` (default 3000). The single port serves both API and client.
 
 ### Development vs Production
 
@@ -292,7 +292,7 @@ The server **must** run on the port specified in `process.env.PORT` (default 500
 
 Required environment variables:
 - `DATABASE_URL` - PostgreSQL connection string
-- `PORT` - Server port (default: 5000)
+- `PORT` - Server port (default: 3000)
 - `NODE_ENV` - development | production
 - Authentication provider credentials (depending on provider used)
 

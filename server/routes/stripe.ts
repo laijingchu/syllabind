@@ -114,7 +114,7 @@ export async function registerStripeRoutes(app: Express) {
       }
 
       // Build success/cancel URLs
-      const port = process.env.PORT || '5000';
+      const port = process.env.PORT || '3000';
       const origin = process.env.FRONTEND_URL || `http://localhost:${port}`;
       const successPath = returnTo
         ? `${returnTo}${returnTo.includes('?') ? '&' : '?'}subscription=success`
@@ -167,7 +167,7 @@ export async function registerStripeRoutes(app: Express) {
         await storage.updateUser(userId, { stripeCustomerId: customerId });
       }
 
-      const port = process.env.PORT || '5000';
+      const port = process.env.PORT || '3000';
       const portalSession = await stripe.billingPortal.sessions.create({
         customer: customerId,
         return_url: `${process.env.FRONTEND_URL || `http://localhost:${port}`}/profile`,

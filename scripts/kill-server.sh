@@ -19,11 +19,11 @@ else
   ps aux | grep -E "tsx server/index.ts|node.*server/index" | grep -v grep
 fi
 
-# Check if port 5000 is still in use
+# Check if port 3000 is still in use
 sleep 1
-if ss -tuln 2>/dev/null | grep -q ":5000 "; then
-  echo "⚠️  Port 5000 still in use"
-  ss -tuln | grep ":5000 "
+if ss -tuln 2>/dev/null | grep -q ":3000 "; then
+  echo "⚠️  Port 3000 still in use"
+  ss -tuln | grep ":3000 "
 else
-  echo "✅ Port 5000 is free"
+  echo "✅ Port 3000 is free"
 fi
