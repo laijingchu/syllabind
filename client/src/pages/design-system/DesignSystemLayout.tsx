@@ -223,11 +223,11 @@ export default function DesignSystemLayout({ children }: { children: React.React
   return (
     <div className="design-system-layout flex gap-8 max-w-7xl" style={{ height: 'calc(100vh - 7.5rem)' }}>
       {/* Desktop sidebar */}
-      <aside ref={sidebarRef} onScroll={handleSidebarScroll} className="design-system-nav w-56 shrink-0 hidden md:block overflow-y-auto -ml-2 pt-4">
+      <aside ref={sidebarRef} onScroll={handleSidebarScroll} className="design-system-nav w-56 shrink-0 hidden md:block overflow-y-auto -ml-2 py-16">
         <SidebarNav location={location} />
       </aside>
 
-      <main className="design-system-content flex-1 min-w-0 overflow-y-auto overflow-x-hidden pt-4">
+      <main className="design-system-content flex-1 min-w-0 overflow-y-auto overflow-x-hidden py-16">
         {/* Mobile nav trigger — aligned with page heading */}
         <div className="md:hidden flex justify-start mb-2">
           <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
