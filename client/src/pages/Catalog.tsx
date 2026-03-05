@@ -109,38 +109,45 @@ export default function Catalog() {
     <>
       {/* Hero section - logged out only */}
       {!user && (
-        <div className="hero-section flex flex-col items-center gap-5 max-w-xl mx-auto py-32">
-          <h1 className="font-display text-7xl text-foreground">Syllabind</h1>
-          <p className="text-lg text-muted-foreground">Create your own knowledge binder on any topic</p>
-          <div className="create-binder-bar group relative w-full flex items-center rounded-full border border-border/80 bg-background shadow-sm hover:shadow-md focus-within:shadow-md transition-shadow px-5 py-2">
-            <Sparkles className="h-4 w-4 text-muted-foreground/60 flex-shrink-0" />
-            <input
-              value={newBinderTitle}
-              onChange={e => setNewBinderTitle(e.target.value)}
-              placeholder="e.g. Intro to Systems Thinking"
-              className="flex-1 bg-transparent border-0 outline-none text-base px-3 py-1 placeholder:text-muted-foreground/50"
-              onKeyDown={e => e.key === 'Enter' && newBinderTitle.trim() && handleCreate()}
-            />
-            {newBinderTitle.trim() && (
-              <Button
-                size="sm"
-                onClick={handleCreate}
-                className="rounded-full h-8 px-4 text-sm"
-              >
-                Create
-              </Button>
-            )}
+        import.meta.env.PROD ? (
+          <div className="hero-section flex flex-col items-center gap-5 max-w-xl mx-auto py-32">
+            <h1 className="font-display text-7xl text-foreground">Coming soon</h1>
           </div>
-          <a
-            href="/create"
-            onClick={e => { e.preventDefault(); setLocation('/create'); }}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
-          >
-            See how it works <ArrowRight className="h-3.5 w-3.5" />
-          </a>
-        </div>
+        ) : (
+          <div className="hero-section flex flex-col items-center gap-5 max-w-xl mx-auto py-32">
+            <h1 className="font-display text-7xl text-foreground">Syllabind</h1>
+            <p className="text-lg text-muted-foreground">Create your own knowledge binder on any topic</p>
+            <div className="create-binder-bar group relative w-full flex items-center rounded-full border border-border/80 bg-background shadow-sm hover:shadow-md focus-within:shadow-md transition-shadow px-5 py-2">
+              <Sparkles className="h-4 w-4 text-muted-foreground/60 flex-shrink-0" />
+              <input
+                value={newBinderTitle}
+                onChange={e => setNewBinderTitle(e.target.value)}
+                placeholder="e.g. Intro to Systems Thinking"
+                className="flex-1 bg-transparent border-0 outline-none text-base px-3 py-1 placeholder:text-muted-foreground/50"
+                onKeyDown={e => e.key === 'Enter' && newBinderTitle.trim() && handleCreate()}
+              />
+              {newBinderTitle.trim() && (
+                <Button
+                  size="sm"
+                  onClick={handleCreate}
+                  className="rounded-full h-8 px-4 text-sm"
+                >
+                  Create
+                </Button>
+              )}
+            </div>
+            <a
+              href="/create"
+              onClick={e => { e.preventDefault(); setLocation('/create'); }}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+            >
+              See how it works <ArrowRight className="h-3.5 w-3.5" />
+            </a>
+          </div>
+        )
       )}
-      <AnimatedPage className="max-w-6xl mx-auto space-y-8">
+      {/* Hide catalog for logged-out users in production */}
+      {(user || !import.meta.env.PROD) && <AnimatedPage className="max-w-6xl mx-auto space-y-8">
         <div className="text-center max-w-2xl mx-auto space-y-4">
           <h1 className="text-4xl font-display text-foreground">📒 Featured binders</h1>
           <p className="text-lg text-muted-foreground">Handcrafted by experts, vetted for quality. </p>
@@ -204,7 +211,7 @@ export default function Catalog() {
             )}
           </>
         )}
-      </AnimatedPage>
+      </AnimatedPage>}
     </>
   );
 }

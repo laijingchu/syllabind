@@ -193,9 +193,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   </span>
                 </>
               )}
-              <Link href="/pricing" className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/pricing" ? "text-primary" : "text-muted-foreground")}>
-                Pricing
-              </Link>
+              {(user || !import.meta.env.PROD) && (
+                <Link href="/pricing" className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/pricing" ? "text-primary" : "text-muted-foreground")}>
+                  Pricing
+                </Link>
+              )}
             </nav>
           </div>
 
