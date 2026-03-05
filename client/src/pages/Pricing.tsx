@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useStore } from '@/lib/store';
 
 export default function Pricing() {
-  const [annual, setAnnual] = useState(false);
+  const [annual, setAnnual] = useState(true);
   const [loading, setLoading] = useState<string | null>(null);
   const { toast } = useToast();
   const { isAuthenticated, isPro, subscriptionTier } = useStore();

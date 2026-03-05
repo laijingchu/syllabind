@@ -31,6 +31,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [termsUrl, setTermsUrl] = useState<string | null>(null);
   const [privacyUrl, setPrivacyUrl] = useState<string | null>(null);
   const [getPaidToTeachUrl, setGetPaidToTeachUrl] = useState<string | null>(null);
+  const [wipBadgeUrl, setWipBadgeUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -46,11 +47,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
       fetch('/api/site-settings/terms_of_service_url').then(r => r.json()),
       fetch('/api/site-settings/privacy_policy_url').then(r => r.json()),
       fetch('/api/site-settings/get_paid_to_teach_url').then(r => r.json()),
+      fetch('/api/site-settings/wip_badge_url').then(r => r.json()),
     ])
-      .then(([termsData, privacyData, teachData]) => {
+      .then(([termsData, privacyData, teachData, wipData]) => {
         setTermsUrl(termsData.value || null);
         setPrivacyUrl(privacyData.value || null);
         setGetPaidToTeachUrl(teachData.value || null);
+        setWipBadgeUrl(wipData.value || null);
       })
       .catch(() => {});
   }, []);
@@ -161,7 +164,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <BookOpen className="h-6 w-6 text-primary hidden md:block" />
                 <span className="flex items-center gap-2">
                   <span>Syllabind</span>
-                  <span className="text-[10px] font-text font-bold text-primary bg-primary/5 border border-primary/20 px-1.5 py-0.5 rounded-md align-middle">ALPHA</span>
+                  {wipBadgeUrl ? (
+                    <a href={wipBadgeUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[10px] font-text font-bold text-destructive bg-destructive/10 border border-destructive/30 px-1.5 py-0.5 rounded-md align-middle hover:bg-destructive/20 transition-colors">WIP</a>
+                  ) : (
+                    <span className="text-[10px] font-text font-bold text-destructive bg-destructive/10 border border-destructive/30 px-1.5 py-0.5 rounded-md align-middle">WIP</span>
+                  )}
                 </span>
               </span>
             </Link>
