@@ -9,7 +9,7 @@ export default function ComponentAvatarUpload() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">AvatarUpload</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A drag-and-drop avatar upload component with live preview, powered by react-dropzone.
             Handles file selection, upload to the server, and removal of existing avatars.
           </p>
@@ -18,7 +18,7 @@ export default function ComponentAvatarUpload() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use AvatarUpload</strong> when a user needs to set or change a profile photo. It combines a preview, a dropzone trigger, and a remove action in a single cohesive control.</p>
             <p><strong className="text-foreground">Use a plain Avatar</strong> when displaying a user's photo without editing capability.</p>
           </div>
@@ -27,7 +27,7 @@ export default function ComponentAvatarUpload() {
         {/* Anatomy */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Anatomy</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             The component cannot be rendered in this design system demo because it calls <code className="text-primary bg-primary/5 px-1 rounded">fetch('/api/upload')</code> on file drop. Below is a static representation of its layout.
           </p>
           <div className="border border-border rounded-lg p-6">
@@ -62,7 +62,7 @@ export default function ComponentAvatarUpload() {
               </div>
             </div>
           </div>
-          <div className="text-sm text-muted-foreground space-y-1">
+          <div className="text-base text-muted-foreground space-y-1">
             <p><strong className="text-foreground">Avatar preview</strong> — 96x96px (h-24 w-24) with a 2px border. Shows the uploaded image or a fallback initial/icon.</p>
             <p><strong className="text-foreground">Dropzone area</strong> — Dashed border, click or drag-and-drop to select a file. Highlights on drag-over with primary color.</p>
             <p><strong className="text-foreground">Remove button</strong> — Ghost destructive button, only visible when an avatar URL is set.</p>
@@ -111,7 +111,7 @@ export default function ComponentAvatarUpload() {
         {/* Internal Composition */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Internal Composition</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Avatar / AvatarImage / AvatarFallback</strong> — Renders the circular preview with image or initial fallback.</p>
             <p><strong className="text-foreground">Button</strong> — Ghost destructive variant for the remove action.</p>
             <p><strong className="text-foreground">react-dropzone</strong> — Provides drag-and-drop file handling, restricts to image/* with .png, .jpg, .jpeg, .gif extensions, single file only.</p>
@@ -143,7 +143,7 @@ export default function ComponentAvatarUpload() {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> The dropzone area is clickable and opens the native file picker. The remove button is focusable via Tab and activates on Enter or Space.</p>
             <p><strong className="text-foreground">Drag and drop:</strong> react-dropzone provides a hidden file input, so screen readers see a standard file input. The visible dropzone acts as a click target.</p>
             <p><strong className="text-foreground">Error feedback:</strong> Upload failures display a browser alert with a descriptive error message.</p>
@@ -154,7 +154,7 @@ export default function ComponentAvatarUpload() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Profile page:</strong> Readers use AvatarUpload to set or change their profile photo in account settings.</p>
             <p><strong className="text-foreground">CuratorProfile page:</strong> Curators upload their avatar displayed on binder pages and the curator card.</p>
           </div>

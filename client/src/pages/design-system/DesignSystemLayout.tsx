@@ -100,7 +100,7 @@ function TokenRow({ token, value, children }: { token: string; value?: string; c
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 py-3 border-b border-border/50 last:border-0">
       <code className="text-sm font-mono text-primary bg-primary/5 px-2 py-0.5 rounded min-w-[120px] md:min-w-[200px] shrink-0">{token}</code>
-      {value && <span className="text-sm text-muted-foreground shrink-0">{value}</span>}
+      {value && <span className="text-base text-muted-foreground shrink-0">{value}</span>}
       {children}
     </div>
   );
@@ -114,7 +114,7 @@ function SidebarNav({ location, onNavigate }: { location: string; onNavigate?: (
       <h2 className="font-display text-lg font-medium mb-1">Design System</h2>
 
       {/* Elements section */}
-      <p className="text-xs text-muted-foreground mb-2 mt-4 uppercase tracking-wider font-medium">Elements</p>
+      <p className="text-sm text-muted-foreground mb-2 mt-4 uppercase tracking-wider font-medium">Elements</p>
       <nav className="flex flex-col gap-0.5">
         {elementsNav.map(({ href, label, icon: Icon }) => (
           <Link key={href} href={href} onClick={onNavigate}>
@@ -132,7 +132,7 @@ function SidebarNav({ location, onNavigate }: { location: string; onNavigate?: (
       </nav>
 
       {/* UI section */}
-      <p className="text-xs text-muted-foreground mb-2 mt-6 uppercase tracking-wider font-medium">UI Components</p>
+      <p className="text-sm text-muted-foreground mb-2 mt-6 uppercase tracking-wider font-medium">UI Components</p>
       <nav className="flex flex-col gap-3">
         <Link href="/design-system/ui" onClick={onNavigate}>
           <span className={cn(
@@ -146,7 +146,7 @@ function SidebarNav({ location, onNavigate }: { location: string; onNavigate?: (
         </Link>
         {uiNav.map(({ category, items }) => (
           <div key={category}>
-            <p className="text-xs text-muted-foreground/70 px-3 mb-1">{category}</p>
+            <p className="text-sm text-muted-foreground/70 px-3 mb-1">{category}</p>
             <div className="flex flex-col gap-0.5">
               {items.map(({ href, label }) => (
                 <Link key={href} href={href} onClick={onNavigate}>
@@ -166,7 +166,7 @@ function SidebarNav({ location, onNavigate }: { location: string; onNavigate?: (
       </nav>
 
       {/* Components */}
-      <p className="text-xs text-muted-foreground mb-2 mt-6 uppercase tracking-wider font-medium">Components</p>
+      <p className="text-sm text-muted-foreground mb-2 mt-6 uppercase tracking-wider font-medium">Components</p>
       <nav className="flex flex-col gap-0.5">
         <Link href="/design-system/components" onClick={onNavigate}>
           <span className={cn(

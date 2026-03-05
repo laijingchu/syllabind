@@ -38,7 +38,7 @@ export default function SectionBinderFilterBar() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">BinderFilterBar</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A comprehensive filter bar combining search input, visibility pills, sort dropdown,
             category pills, and result count. Each feature is opt-in via props, so the bar
             adapts from a simple search to a full filtering experience.
@@ -48,7 +48,7 @@ export default function SectionBinderFilterBar() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use BinderFilterBar</strong> for pages that list binders and need filtering capabilities. It is designed to compose multiple filter dimensions in a single, consistent bar.</p>
             <p><strong className="text-foreground">Use SearchBar instead</strong> when you only need a standalone search input without visibility, sort, or category controls.</p>
           </div>
@@ -64,7 +64,7 @@ export default function SectionBinderFilterBar() {
               searchPlaceholder="Search binders..."
             />
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             At minimum, BinderFilterBar provides a search input with an inline search icon. The <code className="text-primary bg-primary/5 px-1 rounded">searchQuery</code> and <code className="text-primary bg-primary/5 px-1 rounded">onSearchChange</code> props are required.
           </p>
         </section>
@@ -80,7 +80,7 @@ export default function SectionBinderFilterBar() {
               onVisibilityChange={setVisibility}
             />
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Pass <code className="text-primary bg-primary/5 px-1 rounded">visibility</code> and <code className="text-primary bg-primary/5 px-1 rounded">onVisibilityChange</code> to show Public / Unlisted / Private pill toggles. Custom options can be provided via <code className="text-primary bg-primary/5 px-1 rounded">visibilityOptions</code>.
           </p>
         </section>
@@ -97,7 +97,7 @@ export default function SectionBinderFilterBar() {
               sortOptions={SORT_OPTIONS}
             />
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Pass <code className="text-primary bg-primary/5 px-1 rounded">sortBy</code>, <code className="text-primary bg-primary/5 px-1 rounded">onSortChange</code>, and <code className="text-primary bg-primary/5 px-1 rounded">sortOptions</code> to add a sort dropdown via the Select primitive.
           </p>
         </section>
@@ -120,7 +120,7 @@ export default function SectionBinderFilterBar() {
               resultCount={12}
             />
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             All features enabled: visibility pills, sort dropdown, search, category multi-select pills, and result count. Category pills include an "All" reset button.
           </p>
         </section>
@@ -149,7 +149,7 @@ export default function SectionBinderFilterBar() {
         {/* Styling Notes */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Styling Notes</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p>The bar uses semantic class names: <code className="text-primary bg-primary/5 px-1 rounded">binder-filter-bar</code>, <code className="text-primary bg-primary/5 px-1 rounded">catalog-search-row</code>, <code className="text-primary bg-primary/5 px-1 rounded">catalog-visibility</code>, and <code className="text-primary bg-primary/5 px-1 rounded">catalog-categories</code>.</p>
             <p>Pills toggle between <code className="text-primary bg-primary/5 px-1 rounded">bg-foreground text-background</code> (active) and <code className="text-primary bg-primary/5 px-1 rounded">bg-muted text-muted-foreground</code> (inactive) with a smooth transition.</p>
             <p>The search input has an inline Search icon positioned absolutely at <code className="text-primary bg-primary/5 px-1 rounded">left-3</code> with <code className="text-primary bg-primary/5 px-1 rounded">pl-10</code> padding on the input.</p>
@@ -199,7 +199,7 @@ export default function SectionBinderFilterBar() {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> All interactive elements (input, pills, dropdown) are focusable via Tab. Pills activate on Enter or Space.</p>
             <p><strong className="text-foreground">Pill toggles:</strong> Visibility and category pills are rendered as native <code className="text-primary bg-primary/5 px-1 rounded">&lt;button&gt;</code> elements. Consider adding <code className="text-primary bg-primary/5 px-1 rounded">aria-pressed</code> for toggle state communication.</p>
             <p><strong className="text-foreground">Sort dropdown:</strong> Uses the Radix Select primitive which provides full keyboard navigation, ARIA roles, and screen reader announcements out of the box.</p>
@@ -210,7 +210,7 @@ export default function SectionBinderFilterBar() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Catalog:</strong> Uses search input and category pills to help readers browse published binders.</p>
             <p><strong className="text-foreground">CuratorDashboard:</strong> Uses search input and visibility pills so curators can filter their own binders by status.</p>
           </div>

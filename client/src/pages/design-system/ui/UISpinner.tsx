@@ -8,7 +8,7 @@ export default function UISpinner() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Spinner</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             An animated loading indicator built on the Lucide <code className="text-primary bg-primary/5 px-1 rounded">Loader2</code> icon.
             Includes <code className="text-primary bg-primary/5 px-1 rounded">role="status"</code> and an accessible label for screen readers.
           </p>
@@ -17,7 +17,7 @@ export default function UISpinner() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use Spinner</strong> for indeterminate loading states — page loads, async operations, or form submissions where progress percentage is unknown.</p>
             <p><strong className="text-foreground">Use Progress</strong> instead when the completion percentage is known and can be communicated to the user.</p>
           </div>
@@ -30,20 +30,20 @@ export default function UISpinner() {
             <div className="flex flex-wrap gap-8 items-center">
               <div className="flex flex-col items-center gap-2">
                 <Spinner className="size-4" />
-                <p className="text-xs text-muted-foreground">Default (16px)</p>
+                <p className="text-sm text-muted-foreground">Default (16px)</p>
               </div>
               <div className="flex flex-col items-center gap-2">
                 <Spinner className="size-3" />
-                <p className="text-xs text-muted-foreground">Small (12px)</p>
+                <p className="text-sm text-muted-foreground">Small (12px)</p>
               </div>
               <div className="flex flex-col items-center gap-2">
                 <Spinner className="size-8" />
-                <p className="text-xs text-muted-foreground">Large (32px)</p>
+                <p className="text-sm text-muted-foreground">Large (32px)</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Spinner className="size-4" />
-              <span className="text-sm text-muted-foreground">Loading your binders...</span>
+              <span className="text-base text-muted-foreground">Loading your binders...</span>
             </div>
             <div className="flex items-center gap-3">
               <Button disabled>
@@ -65,23 +65,23 @@ export default function UISpinner() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
               <div className="flex flex-col items-center gap-2">
                 <Spinner className="size-4" />
-                <p className="text-xs text-muted-foreground">Default</p>
+                <p className="text-sm text-muted-foreground">Default</p>
               </div>
               <div className="flex flex-col items-center gap-2">
                 <Spinner className="size-4 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">Muted</p>
+                <p className="text-sm text-muted-foreground">Muted</p>
               </div>
               <div className="flex flex-col items-center gap-2">
                 <Spinner className="size-4 text-primary" />
-                <p className="text-xs text-muted-foreground">Primary</p>
+                <p className="text-sm text-muted-foreground">Primary</p>
               </div>
               <div className="flex flex-col items-center gap-2">
                 <Spinner className="size-4 text-destructive" />
-                <p className="text-xs text-muted-foreground">Destructive</p>
+                <p className="text-sm text-muted-foreground">Destructive</p>
               </div>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             The spinner inherits the current text color by default. Override with utility classes like <code className="text-primary bg-primary/5 px-1 rounded">text-muted-foreground</code> or <code className="text-primary bg-primary/5 px-1 rounded">text-primary</code> for contextual coloring.
           </p>
         </section>
@@ -128,7 +128,7 @@ export default function UISpinner() {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">ARIA role:</strong> The component sets <code className="text-primary bg-primary/5 px-1 rounded">role="status"</code> so screen readers announce the loading state.</p>
             <p><strong className="text-foreground">Accessible label:</strong> An <code className="text-primary bg-primary/5 px-1 rounded">aria-label="Loading"</code> attribute provides a text alternative for the spinning icon.</p>
             <p><strong className="text-foreground">Motion sensitivity:</strong> The CSS <code className="text-primary bg-primary/5 px-1 rounded">animate-spin</code> animation respects <code className="text-primary bg-primary/5 px-1 rounded">prefers-reduced-motion</code> when configured in Tailwind.</p>
@@ -138,7 +138,7 @@ export default function UISpinner() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Button loading states:</strong> Shown inside disabled buttons during form submissions like "Enroll", "Publish", and "Save Draft".</p>
             <p><strong className="text-foreground">Page loading:</strong> Centered spinner displayed while page data is being fetched (Dashboard, Catalog, BinderOverview).</p>
             <p><strong className="text-foreground">Form submission feedback:</strong> Replaces the submit button label during async operations to signal that the action is in progress.</p>

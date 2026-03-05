@@ -22,7 +22,7 @@ export default function ComponentsOverview() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Components</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             Domain-specific compositions that combine UI primitives with product knowledge.
             Components understand Syllabind's concepts — binders, curators, readers, enrollments —
             and encode specific product behaviors into reusable units.
@@ -32,7 +32,7 @@ export default function ComponentsOverview() {
         {/* Definition */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">What is a Component?</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             A component is a self-contained piece of product UI that combines multiple UI
             primitives into a unit with domain meaning. Unlike a generic Card or Button,
             a BinderCard knows what a binder is, what fields to display, and how enrollment
@@ -41,7 +41,7 @@ export default function ComponentsOverview() {
           </p>
           <div className="border border-border rounded-lg p-4 space-y-3">
             <h3 className="text-sm font-medium">Defining characteristics</h3>
-            <div className="space-y-2 text-sm text-muted-foreground">
+            <div className="space-y-2 text-base text-muted-foreground">
               <p>
                 <strong className="text-foreground">Domain-aware:</strong> Components know about
                 Syllabind's data model. A BinderCard accepts a binder object, not a generic title
@@ -71,11 +71,11 @@ export default function ComponentsOverview() {
         {/* How they differ */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Components vs. UI Components</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             The key distinction is domain knowledge. UI components are generic building blocks
             that could exist in any product. Components are specific to Syllabind.
           </p>
-          <div className="border border-border rounded-lg overflow-hidden text-sm">
+          <div className="border border-border rounded-lg overflow-hidden text-base">
             {[
               { layer: 'UI Component', example: 'Card', knows: 'How to render a bordered container with padding', color: 'bg-primary/15' },
               { layer: 'Component', example: 'BinderCard', knows: 'What a binder is, which fields to show, how enrollment affects display', color: 'bg-primary/5' },
@@ -97,7 +97,7 @@ export default function ComponentsOverview() {
         {/* When to create */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Create a Component</h2>
-          <div className="border border-border rounded-lg p-4 space-y-3 text-sm">
+          <div className="border border-border rounded-lg p-4 space-y-3 text-base">
             <div>
               <p className="font-medium">Extract into a component when:</p>
               <ul className="text-muted-foreground mt-1 ml-4 space-y-1 list-disc">
@@ -121,7 +121,7 @@ export default function ComponentsOverview() {
         {/* Architecture */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Architecture</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Components live alongside the pages that use them or in shared directories when
             used across multiple pages. They import from <code className="font-mono text-primary bg-primary/5 px-1.5 py-0.5 rounded">@/components/ui/</code> for
             primitives and from each other for shared patterns.
@@ -153,7 +153,7 @@ export function BinderCard({ binder, showCurator, onEnroll }: BinderCardProps) {
         {/* Catalog */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Component Catalog</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Each component page includes a live demo, prop reference, usage context, and
             the UI primitives it composes.
           </p>
@@ -162,7 +162,7 @@ export function BinderCard({ binder, showCurator, onEnroll }: BinderCardProps) {
               <Link key={c.href} href={c.href}>
                 <div className="flex flex-wrap items-start gap-4 px-4 py-3 rounded-lg border border-border hover:bg-muted transition-colors cursor-pointer">
                   <span className="font-medium text-sm w-40 md:w-52 shrink-0">{c.name}</span>
-                  <span className="text-sm text-muted-foreground">{c.desc}</span>
+                  <span className="text-base text-muted-foreground">{c.desc}</span>
                 </div>
               </Link>
             ))}

@@ -10,7 +10,7 @@ export default function UICheckbox() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Checkbox</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A Radix-based checkbox with a check indicator. Used for toggling boolean values
             or selecting multiple options from a list.
           </p>
@@ -19,7 +19,7 @@ export default function UICheckbox() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use Checkbox</strong> when users need to toggle a single boolean option or select multiple items from a list independently.</p>
             <p><strong className="text-foreground">Use RadioGroup</strong> instead when only one option can be selected from a set of mutually exclusive choices.</p>
             <p><strong className="text-foreground">Use Switch</strong> instead for instant on/off toggles where the change takes effect immediately.</p>
@@ -50,26 +50,26 @@ export default function UICheckbox() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
               <div className="space-y-2 text-center flex flex-col items-center">
                 <Checkbox />
-                <p className="text-xs text-muted-foreground">Unchecked</p>
+                <p className="text-sm text-muted-foreground">Unchecked</p>
               </div>
               <div className="space-y-2 text-center flex flex-col items-center">
                 <Checkbox checked />
-                <p className="text-xs text-muted-foreground">Checked</p>
+                <p className="text-sm text-muted-foreground">Checked</p>
               </div>
               <div className="space-y-2 text-center flex flex-col items-center">
                 <Checkbox disabled />
-                <p className="text-xs text-muted-foreground">Disabled</p>
+                <p className="text-sm text-muted-foreground">Disabled</p>
               </div>
               <div className="space-y-2 text-center flex flex-col items-center">
                 <div className="flex items-center gap-2">
                   <Checkbox id="state-label" defaultChecked />
                   <label htmlFor="state-label" className="text-sm">Label</label>
                 </div>
-                <p className="text-xs text-muted-foreground">With Label</p>
+                <p className="text-sm text-muted-foreground">With Label</p>
               </div>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Checked state fills with <code className="text-primary bg-primary/5 px-1 rounded">--primary</code> and displays a check icon in <code className="text-primary bg-primary/5 px-1 rounded">--primary-foreground</code>. Disabled state reduces opacity to 50%.
           </p>
         </section>
@@ -112,7 +112,7 @@ const [checked, setChecked] = useState(false);
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Focusable via Tab. Toggles on Space.</p>
             <p><strong className="text-foreground">Focus indicator:</strong> 1px ring using <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:ring-1</code>. Only visible on keyboard navigation.</p>
             <p><strong className="text-foreground">Disabled:</strong> Sets <code className="text-primary bg-primary/5 px-1 rounded">disabled:cursor-not-allowed</code> and <code className="text-primary bg-primary/5 px-1 rounded">disabled:opacity-50</code>.</p>
@@ -123,7 +123,7 @@ const [checked, setChecked] = useState(false);
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Settings:</strong> Notification preferences — users toggle individual notification types on or off.</p>
             <p><strong className="text-foreground">BinderEditor:</strong> Step completion toggles — curators can mark steps as required or optional.</p>
           </div>

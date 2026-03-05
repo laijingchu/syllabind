@@ -11,7 +11,7 @@ export default function UIInput() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Input</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A single-line text field with a bottom-border underline style. Uses a display font at xl size,
             designed for prominent form fields like binder titles and search.
           </p>
@@ -20,7 +20,7 @@ export default function UIInput() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use Input</strong> for single-line text entry — names, titles, emails, search queries.</p>
             <p><strong className="text-foreground">Use Textarea</strong> for multi-line content like descriptions or long-form text.</p>
             <p><strong className="text-foreground">Use Select</strong> when the user chooses from a predefined set of options.</p>
@@ -59,24 +59,24 @@ export default function UIInput() {
           <div className="border border-border rounded-lg p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-lg">
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Default</p>
+                <p className="text-sm text-muted-foreground">Default</p>
                 <Input placeholder="Placeholder text" />
               </div>
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">With value</p>
+                <p className="text-sm text-muted-foreground">With value</p>
                 <Input defaultValue="Digital Minimalism" />
               </div>
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Disabled</p>
+                <p className="text-sm text-muted-foreground">Disabled</p>
                 <Input disabled placeholder="Cannot edit" />
               </div>
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">File input</p>
+                <p className="text-sm text-muted-foreground">File input</p>
                 <Input type="file" />
               </div>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Focus state changes the bottom border to primary color via <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:border-primary</code>.
             No ring is shown — the underline style uses border-only focus indication.
           </p>
@@ -96,7 +96,7 @@ export default function UIInput() {
         {/* Styling Notes */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Styling Notes</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p>The Input uses a distinctive <strong className="text-foreground">underline style</strong> rather than a full border box:</p>
             <p>- <code className="text-primary bg-primary/5 px-1 rounded">border-b</code> only (no left/right/top borders)</p>
             <p>- <code className="text-primary bg-primary/5 px-1 rounded">rounded-none</code> to prevent border-radius on the underline</p>
@@ -138,7 +138,7 @@ const [value, setValue] = useState('');
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Label association:</strong> Always pair with a <code className="text-primary bg-primary/5 px-1 rounded">&lt;Label&gt;</code> using matching <code className="text-primary bg-primary/5 px-1 rounded">htmlFor</code>/<code className="text-primary bg-primary/5 px-1 rounded">id</code> attributes.</p>
             <p><strong className="text-foreground">Focus:</strong> Visible bottom-border color change on focus-visible. No ring to avoid doubling the underline visual.</p>
             <p><strong className="text-foreground">Disabled:</strong> Applies <code className="text-primary bg-primary/5 px-1 rounded">disabled:cursor-not-allowed</code> and <code className="text-primary bg-primary/5 px-1 rounded">disabled:opacity-50</code>.</p>
@@ -149,7 +149,7 @@ const [value, setValue] = useState('');
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">BinderEditor:</strong> Binder title input (large, underline style).</p>
             <p><strong className="text-foreground">Login/Register:</strong> Email and password fields.</p>
             <p><strong className="text-foreground">Profile:</strong> Name, bio, and social link inputs.</p>

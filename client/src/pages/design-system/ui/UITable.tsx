@@ -16,7 +16,7 @@ export default function UITable() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Table</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A semantic HTML table with styled subcomponents for displaying structured data.
             Composed of Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
             TableCaption, and TableFooter.
@@ -26,7 +26,7 @@ export default function UITable() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use Table</strong> for displaying tabular data with rows and columns, such as reader lists, analytics summaries, or any structured dataset.</p>
             <p><strong className="text-foreground">Use a list or cards</strong> instead when items don't have a consistent columnar structure or when the data is better represented as individual entries.</p>
           </div>
@@ -109,7 +109,7 @@ export default function UITable() {
               </Table>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Rows transition to <code className="text-primary bg-primary/5 px-1 rounded">bg-muted/50</code> on hover.
             Selected rows use the <code className="text-primary bg-primary/5 px-1 rounded">data-[state=selected]</code> attribute for a solid muted background.
           </p>
@@ -161,7 +161,7 @@ export default function UITable() {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Semantic HTML:</strong> Uses native <code className="text-primary bg-primary/5 px-1 rounded">&lt;table&gt;</code>, <code className="text-primary bg-primary/5 px-1 rounded">&lt;thead&gt;</code>, <code className="text-primary bg-primary/5 px-1 rounded">&lt;tbody&gt;</code>, <code className="text-primary bg-primary/5 px-1 rounded">&lt;th&gt;</code>, and <code className="text-primary bg-primary/5 px-1 rounded">&lt;td&gt;</code> elements for proper screen reader support.</p>
             <p><strong className="text-foreground">Caption:</strong> TableCaption renders a <code className="text-primary bg-primary/5 px-1 rounded">&lt;caption&gt;</code> element, providing an accessible description of the table's purpose.</p>
             <p><strong className="text-foreground">Responsive:</strong> The table wrapper uses <code className="text-primary bg-primary/5 px-1 rounded">overflow-auto</code> to allow horizontal scrolling on narrow viewports without breaking layout.</p>
@@ -171,7 +171,7 @@ export default function UITable() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">BinderReaders:</strong> Displays the list of enrolled readers with their progress, enrollment date, and completion stats.</p>
             <p><strong className="text-foreground">Analytics:</strong> Data tables showing binder performance metrics, step completion rates, and reader engagement.</p>
           </div>

@@ -29,7 +29,7 @@ export default function ComponentGeneratingWeekPlaceholder() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">GeneratingWeekPlaceholder</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A skeleton loading state shown while AI generates week content for a binder. Supports
             progressive reveal &mdash; real steps fade in as they stream from the server while
             remaining slots stay as animated skeleton placeholders.
@@ -39,7 +39,7 @@ export default function ComponentGeneratingWeekPlaceholder() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use GeneratingWeekPlaceholder</strong> as a drop-in replacement for the week editor panel while the backend is streaming AI-generated content. It provides visual feedback and progressive reveal of steps as they arrive.</p>
             <p><strong className="text-foreground">Do not use</strong> for generic loading states. Use Skeleton directly for simpler loading patterns.</p>
           </div>
@@ -48,7 +48,7 @@ export default function ComponentGeneratingWeekPlaceholder() {
         {/* Demo - Empty state */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Demo: Initial State</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             When generation begins, all fields are skeleton placeholders. The status banner shows
             the current generation phase.
           </p>
@@ -60,7 +60,7 @@ export default function ComponentGeneratingWeekPlaceholder() {
         {/* Demo - Progressive reveal */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Demo: Progressive Reveal</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             As steps stream in, they replace skeleton slots with real content. The title and
             description also fill in when available. Remaining slots keep their shimmer animation.
           </p>
@@ -142,7 +142,7 @@ export default function ComponentGeneratingWeekPlaceholder() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">BinderEditor:</strong> Rendered in place of the week editor panel during AI binder generation. Each week tab shows this placeholder while the server streams generated content. As steps arrive via the streaming response, <code className="text-primary bg-primary/5 px-1 rounded">currentSteps</code> is updated and real step cards progressively replace the skeletons.</p>
           </div>
         </section>

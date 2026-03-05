@@ -17,7 +17,7 @@ export default function UIDrawer() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Drawer</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A mobile-friendly bottom sheet powered by Vaul. Supports swipe-to-dismiss gestures
             and scales the background content for a native app-like feel.
           </p>
@@ -26,7 +26,7 @@ export default function UIDrawer() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use Drawer</strong> for mobile-first bottom panels such as action sheets, confirmation prompts, or compact forms that benefit from swipe-to-dismiss.</p>
             <p><strong className="text-foreground">Use Sheet</strong> instead when you need a side panel (left/right) or when the content is more complex and needs a full sidebar layout.</p>
             <p><strong className="text-foreground">Use Dialog</strong> instead on desktop when a centered modal is more appropriate.</p>
@@ -57,7 +57,7 @@ export default function UIDrawer() {
               </DrawerContent>
             </Drawer>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             The drawer slides up from the bottom with a drag handle at the top. Swipe down to dismiss. The background content scales down slightly when <code className="text-primary bg-primary/5 px-1 rounded">shouldScaleBackground</code> is true (the default).
           </p>
         </section>
@@ -65,7 +65,7 @@ export default function UIDrawer() {
         {/* Inline Preview */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Inline Preview</h2>
-          <p className="text-sm text-muted-foreground">Drawer content rendered directly on the page for visual reference.</p>
+          <p className="text-base text-muted-foreground">Drawer content rendered directly on the page for visual reference.</p>
           <div className="space-y-8">
             <div className="space-y-2">
               <p className="text-xs font-mono text-muted-foreground">Confirmation drawer</p>
@@ -73,7 +73,7 @@ export default function UIDrawer() {
                 <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
                 <div className="p-4 pb-0 text-center space-y-1.5">
                   <h3 className="text-lg font-semibold leading-none tracking-tight">Confirm Action</h3>
-                  <p className="text-sm text-muted-foreground">Are you sure you want to mark this binder as complete? This will update your progress.</p>
+                  <p className="text-base text-muted-foreground">Are you sure you want to mark this binder as complete? This will update your progress.</p>
                 </div>
                 <div className="p-4 space-y-2">
                   <Button className="w-full">Confirm</Button>
@@ -88,7 +88,7 @@ export default function UIDrawer() {
                 <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
                 <div className="p-4 pb-0 text-center space-y-1.5">
                   <h3 className="text-lg font-semibold leading-none tracking-tight">Choose an Option</h3>
-                  <p className="text-sm text-muted-foreground">Select one of the actions below.</p>
+                  <p className="text-base text-muted-foreground">Select one of the actions below.</p>
                 </div>
                 <div className="px-4 py-2 space-y-2">
                   <Button variant="ghost" className="w-full justify-start">Share binder</Button>
@@ -125,7 +125,7 @@ export default function UIDrawer() {
                     </DrawerFooter>
                   </DrawerContent>
                 </Drawer>
-                <p className="text-xs text-muted-foreground">Header only</p>
+                <p className="text-sm text-muted-foreground">Header only</p>
               </div>
               <div className="space-y-2 text-center">
                 <Drawer>
@@ -149,7 +149,7 @@ export default function UIDrawer() {
                     </DrawerFooter>
                   </DrawerContent>
                 </Drawer>
-                <p className="text-xs text-muted-foreground">Action sheet</p>
+                <p className="text-sm text-muted-foreground">Action sheet</p>
               </div>
               <div className="space-y-2 text-center">
                 <Drawer shouldScaleBackground={false}>
@@ -168,11 +168,11 @@ export default function UIDrawer() {
                     </DrawerFooter>
                   </DrawerContent>
                 </Drawer>
-                <p className="text-xs text-muted-foreground">shouldScaleBackground=false</p>
+                <p className="text-sm text-muted-foreground">shouldScaleBackground=false</p>
               </div>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             The drag handle (a muted rounded bar) is always rendered at the top of the drawer content. Height is determined by content — the drawer grows to fit but won't exceed the viewport.
           </p>
         </section>
@@ -226,7 +226,7 @@ export default function UIDrawer() {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Opens on Enter or Space. Closes on Escape.</p>
             <p><strong className="text-foreground">Focus trap:</strong> Focus is contained within the drawer while open.</p>
             <p><strong className="text-foreground">Touch gestures:</strong> Swipe down on the drawer or drag handle to dismiss. Built into Vaul by default.</p>
@@ -237,7 +237,7 @@ export default function UIDrawer() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Mobile action sheets:</strong> Context menus for binder actions (share, duplicate, delete) on touch devices.</p>
             <p><strong className="text-foreground">Confirmation prompts on mobile:</strong> "Mark as complete" or "Unenroll" confirmations that feel native on phones.</p>
             <p><strong className="text-foreground">Quick forms:</strong> Short input forms like adding a note or leaving feedback, presented as a bottom drawer on mobile.</p>

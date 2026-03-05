@@ -10,7 +10,7 @@ export default function UISwitch() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Switch</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A Radix-based toggle switch with h-5 w-9 sizing. Used for binary on/off settings
             where the change takes effect immediately.
           </p>
@@ -19,7 +19,7 @@ export default function UISwitch() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use Switch</strong> for settings that take effect immediately when toggled, like enabling notifications or toggling a publish state.</p>
             <p><strong className="text-foreground">Use Checkbox</strong> instead when the change requires a form submission to take effect, or when selecting from multiple independent options.</p>
           </div>
@@ -49,26 +49,26 @@ export default function UISwitch() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
               <div className="space-y-2 text-center flex flex-col items-center">
                 <Switch />
-                <p className="text-xs text-muted-foreground">Off</p>
+                <p className="text-sm text-muted-foreground">Off</p>
               </div>
               <div className="space-y-2 text-center flex flex-col items-center">
                 <Switch checked />
-                <p className="text-xs text-muted-foreground">On</p>
+                <p className="text-sm text-muted-foreground">On</p>
               </div>
               <div className="space-y-2 text-center flex flex-col items-center">
                 <Switch disabled />
-                <p className="text-xs text-muted-foreground">Disabled</p>
+                <p className="text-sm text-muted-foreground">Disabled</p>
               </div>
               <div className="space-y-2 text-center flex flex-col items-center">
                 <div className="flex items-center gap-3">
                   <Switch id="state-label" defaultChecked />
                   <label htmlFor="state-label" className="text-sm">Label</label>
                 </div>
-                <p className="text-xs text-muted-foreground">With Label</p>
+                <p className="text-sm text-muted-foreground">With Label</p>
               </div>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             The thumb slides from left to right on check. Off state uses <code className="text-primary bg-primary/5 px-1 rounded">--input</code> background; on state uses <code className="text-primary bg-primary/5 px-1 rounded">--primary</code>. The thumb uses <code className="text-primary bg-primary/5 px-1 rounded">--background</code>. Disabled state reduces opacity to 50%.
           </p>
         </section>
@@ -111,7 +111,7 @@ const [enabled, setEnabled] = useState(false);
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Role:</strong> Renders as <code className="text-primary bg-primary/5 px-1 rounded">role="switch"</code> with <code className="text-primary bg-primary/5 px-1 rounded">aria-checked</code> managed by Radix.</p>
             <p><strong className="text-foreground">Keyboard:</strong> Focusable via Tab. Toggles on Space.</p>
             <p><strong className="text-foreground">Focus indicator:</strong> 2px ring using <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:ring-2</code> with ring offset for clear visibility.</p>
@@ -123,7 +123,7 @@ const [enabled, setEnabled] = useState(false);
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Settings:</strong> Toggle preferences — email notifications, dark mode, privacy settings.</p>
             <p><strong className="text-foreground">BinderEditor:</strong> Publish toggle — curators switch a binder between draft and published state.</p>
           </div>

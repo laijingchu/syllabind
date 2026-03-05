@@ -12,7 +12,7 @@ export default function UIAccordion() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Accordion</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A vertically stacked set of collapsible sections. Built on Radix UI Accordion
             with smooth height animations and a chevron rotation indicator.
           </p>
@@ -21,7 +21,7 @@ export default function UIAccordion() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use Accordion</strong> to progressively disclose content in sections, reducing visual clutter while keeping information accessible. Ideal for FAQs, settings groups, and multi-section content.</p>
             <p><strong className="text-foreground">Use Tabs</strong> instead when sections are peer-level and the user is expected to switch between them frequently rather than expand multiple.</p>
           </div>
@@ -58,7 +58,7 @@ export default function UIAccordion() {
               </AccordionItem>
             </Accordion>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             <code className="text-primary bg-primary/5 px-1 rounded">type="single" collapsible</code> allows one section open at a time, and clicking the open section collapses it.
           </p>
         </section>
@@ -88,7 +88,7 @@ export default function UIAccordion() {
               </AccordionItem>
             </Accordion>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             <code className="text-primary bg-primary/5 px-1 rounded">type="multiple"</code> allows multiple sections to be open simultaneously.
           </p>
         </section>
@@ -96,7 +96,7 @@ export default function UIAccordion() {
         {/* States */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">States</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Collapsed:</strong> Trigger text visible with a right-aligned chevron pointing down. Bottom border separates items.</p>
             <p><strong className="text-foreground">Expanded:</strong> Content slides down with <code className="text-primary bg-primary/5 px-1 rounded">animate-accordion-down</code>. Chevron rotates 180 degrees to point up.</p>
             <p><strong className="text-foreground">Collapsing:</strong> Content slides up with <code className="text-primary bg-primary/5 px-1 rounded">animate-accordion-up</code>. Smooth height transition via <code className="text-primary bg-primary/5 px-1 rounded">overflow-hidden</code>.</p>
@@ -156,7 +156,7 @@ export default function UIAccordion() {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Arrow Up/Down moves focus between triggers. Enter or Space toggles the focused section. Home/End jump to first/last trigger.</p>
             <p><strong className="text-foreground">ARIA:</strong> Each trigger has <code className="text-primary bg-primary/5 px-1 rounded">aria-expanded</code> and <code className="text-primary bg-primary/5 px-1 rounded">aria-controls</code> linking to its content panel. Content panels have <code className="text-primary bg-primary/5 px-1 rounded">role="region"</code>.</p>
             <p><strong className="text-foreground">Focus management:</strong> Radix handles focus trapping within the accordion group, following the WAI-ARIA Accordion pattern.</p>
@@ -166,7 +166,7 @@ export default function UIAccordion() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">BinderOverview:</strong> Week sections are rendered as accordion items, letting readers expand individual weeks to see steps and readings.</p>
             <p><strong className="text-foreground">FAQ sections:</strong> Multiple-mode accordion for frequently asked questions on public pages.</p>
             <p><strong className="text-foreground">Settings groups:</strong> Collapsible preference sections in profile and account settings.</p>

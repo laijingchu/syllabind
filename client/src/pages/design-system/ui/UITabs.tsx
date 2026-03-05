@@ -7,7 +7,7 @@ export default function UITabs() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Tabs</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A set of layered panels that display one content section at a time. Built on Radix UI
             Tabs with TabsList, TabsTrigger, and TabsContent subcomponents.
           </p>
@@ -16,7 +16,7 @@ export default function UITabs() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use Tabs</strong> to organize related content into switchable views within the same page context. Ideal when content categories are parallel and users need to compare or alternate between them.</p>
             <p><strong className="text-foreground">Use separate pages</strong> instead when the content sections are unrelated or when each section is complex enough to warrant its own URL.</p>
           </div>
@@ -32,13 +32,13 @@ export default function UITabs() {
                 <TabsTrigger value="content">Content</TabsTrigger>
                 <TabsTrigger value="settings">Settings</TabsTrigger>
               </TabsList>
-              <TabsContent value="overview" className="p-4 text-sm text-muted-foreground">
+              <TabsContent value="overview" className="p-4 text-base text-muted-foreground">
                 <p>The overview panel shows a summary of the binder, including description, enrollment count, and publication status.</p>
               </TabsContent>
-              <TabsContent value="content" className="p-4 text-sm text-muted-foreground">
+              <TabsContent value="content" className="p-4 text-base text-muted-foreground">
                 <p>The content panel displays weeks and steps, allowing curators to manage learning materials and exercises.</p>
               </TabsContent>
-              <TabsContent value="settings" className="p-4 text-sm text-muted-foreground">
+              <TabsContent value="settings" className="p-4 text-base text-muted-foreground">
                 <p>The settings panel provides controls for visibility, cohort management, and binder metadata.</p>
               </TabsContent>
             </Tabs>
@@ -57,7 +57,7 @@ export default function UITabs() {
                   <TabsTrigger value="inactive">Inactive Tab</TabsTrigger>
                 </TabsList>
               </Tabs>
-              <p className="text-xs text-muted-foreground">Active trigger gets a white background with shadow; inactive triggers use muted text.</p>
+              <p className="text-sm text-muted-foreground">Active trigger gets a white background with shadow; inactive triggers use muted text.</p>
             </div>
             <div className="space-y-2">
               <p className="text-sm font-medium">Disabled trigger</p>
@@ -67,7 +67,7 @@ export default function UITabs() {
                   <TabsTrigger value="disabled" disabled>Disabled</TabsTrigger>
                 </TabsList>
               </Tabs>
-              <p className="text-xs text-muted-foreground">Disabled triggers reduce to 50% opacity and prevent interaction.</p>
+              <p className="text-sm text-muted-foreground">Disabled triggers reduce to 50% opacity and prevent interaction.</p>
             </div>
           </div>
         </section>
@@ -119,7 +119,7 @@ const [tab, setTab] = useState("overview");
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Arrow keys move focus between triggers. Tab moves focus into the active content panel. Enter or Space activates a trigger.</p>
             <p><strong className="text-foreground">ARIA:</strong> Built on Radix UI, which provides <code className="text-primary bg-primary/5 px-1 rounded">role="tablist"</code>, <code className="text-primary bg-primary/5 px-1 rounded">role="tab"</code>, and <code className="text-primary bg-primary/5 px-1 rounded">role="tabpanel"</code> automatically.</p>
             <p><strong className="text-foreground">Focus indicator:</strong> 2px ring using <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:ring-2</code> with ring offset. Only visible on keyboard navigation.</p>
@@ -130,7 +130,7 @@ const [tab, setTab] = useState("overview");
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Dashboard:</strong> Switches between reader and curator views, showing enrolled binders or managed binders respectively.</p>
             <p><strong className="text-foreground">BinderEditor:</strong> Separates content editing from settings configuration, letting curators manage weeks/steps in one tab and metadata/visibility in another.</p>
           </div>

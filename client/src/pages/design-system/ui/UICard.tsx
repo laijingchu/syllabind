@@ -8,7 +8,7 @@ export default function UICard() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Card</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A container for grouping related content with a consistent surface, border, and padding structure.
             Composed of 5 subcomponents: Header, Title, Description, Content, and Footer.
           </p>
@@ -17,7 +17,7 @@ export default function UICard() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use Card</strong> to visually group related content — a binder preview, a settings section, a stat block, or a form group.</p>
             <p><strong className="text-foreground">Skip the Card</strong> when content flows naturally on the page without needing a visual boundary (e.g., inline text sections).</p>
           </div>
@@ -34,7 +34,7 @@ export default function UICard() {
                 <CardDescription>A 4-week guided exploration of intentional technology use.</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">12 steps across 4 weeks. Created by janesmith.</p>
+                <p className="text-base text-muted-foreground">12 steps across 4 weeks. Created by janesmith.</p>
               </CardContent>
               <CardFooter className="gap-2">
                 <Button size="sm">Enroll</Button>
@@ -54,11 +54,11 @@ export default function UICard() {
         {/* Subcomponents */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Subcomponents</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Card</strong> — Outer container. <code className="text-primary bg-primary/5 px-1 rounded">rounded-xl border bg-card</code>.</p>
             <p><strong className="text-foreground">CardHeader</strong> — Top section with vertical spacing. <code className="text-primary bg-primary/5 px-1 rounded">p-6</code>, flex-col, gap-1.5.</p>
             <p><strong className="text-foreground">CardTitle</strong> — Heading text. Semibold, tight tracking, no explicit size (inherits).</p>
-            <p><strong className="text-foreground">CardDescription</strong> — Subtitle below title. <code className="text-primary bg-primary/5 px-1 rounded">text-sm text-muted-foreground</code>.</p>
+            <p><strong className="text-foreground">CardDescription</strong> — Subtitle below title. <code className="text-primary bg-primary/5 px-1 rounded">text-base text-muted-foreground</code>.</p>
             <p><strong className="text-foreground">CardContent</strong> — Main body area. <code className="text-primary bg-primary/5 px-1 rounded">p-6 pt-0</code> (no top padding, butts against header).</p>
             <p><strong className="text-foreground">CardFooter</strong> — Bottom action row. <code className="text-primary bg-primary/5 px-1 rounded">flex items-center p-6 pt-0</code>.</p>
           </div>
@@ -89,7 +89,7 @@ export default function UICard() {
               </Card>
             </div>
           </div>
-          <div className="text-sm text-muted-foreground space-y-1">
+          <div className="text-base text-muted-foreground space-y-1">
             <p><strong className="text-foreground">Stat card</strong> — Reverse Title/Description order, larger title text.</p>
             <p><strong className="text-foreground">Settings card</strong> — Smaller title, description, and footer action.</p>
           </div>
@@ -144,7 +144,7 @@ export default function UICard() {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Semantic HTML:</strong> Card renders as a <code className="text-primary bg-primary/5 px-1 rounded">&lt;div&gt;</code>. For landmark semantics, wrap in <code className="text-primary bg-primary/5 px-1 rounded">&lt;section&gt;</code> or <code className="text-primary bg-primary/5 px-1 rounded">&lt;article&gt;</code> as needed.</p>
             <p><strong className="text-foreground">Heading levels:</strong> CardTitle renders as a div — add an explicit heading tag inside if the card introduces a new content section for screen reader navigation.</p>
           </div>
@@ -153,7 +153,7 @@ export default function UICard() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Catalog:</strong> Binder preview cards in the grid layout.</p>
             <p><strong className="text-foreground">Dashboard:</strong> Enrollment cards with progress indicators.</p>
             <p><strong className="text-foreground">BinderOverview:</strong> Enrollment sidebar CTA card.</p>

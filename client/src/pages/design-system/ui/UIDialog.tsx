@@ -19,7 +19,7 @@ export default function UIDialog() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Dialog</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A modal overlay that focuses the user's attention on a single task or piece of content.
             Built on Radix UI, it traps focus, blocks background interaction, and supports
             accessible close via the X button, Escape key, or overlay click.
@@ -29,7 +29,7 @@ export default function UIDialog() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use Dialog</strong> for collecting input, showing details, or confirming non-destructive actions that require the user's full attention before proceeding.</p>
             <p><strong className="text-foreground">Use AlertDialog</strong> instead for destructive or irreversible confirmations where the user must explicitly choose an action (no dismiss via overlay click).</p>
           </div>
@@ -99,7 +99,7 @@ export default function UIDialog() {
         {/* Inline Preview */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Inline Preview</h2>
-          <p className="text-sm text-muted-foreground">Dialog content rendered directly on the page for visual reference.</p>
+          <p className="text-base text-muted-foreground">Dialog content rendered directly on the page for visual reference.</p>
           <div className="space-y-8">
             <div className="space-y-2">
               <p className="text-xs font-mono text-muted-foreground">Dialog with form</p>
@@ -110,7 +110,7 @@ export default function UIDialog() {
                 </button>
                 <div className="space-y-1.5">
                   <h3 className="text-lg font-semibold leading-none tracking-tight">Edit profile</h3>
-                  <p className="text-sm text-muted-foreground">Make changes to your profile here. Click save when you're done.</p>
+                  <p className="text-base text-muted-foreground">Make changes to your profile here. Click save when you're done.</p>
                 </div>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
@@ -138,7 +138,7 @@ export default function UIDialog() {
                 </button>
                 <div className="space-y-1.5">
                   <h3 className="text-lg font-semibold leading-none tracking-tight">Binder published</h3>
-                  <p className="text-sm text-muted-foreground">Your binder "Digital Minimalism" has been published and is now visible in the catalog. Readers can enroll immediately.</p>
+                  <p className="text-base text-muted-foreground">Your binder "Digital Minimalism" has been published and is now visible in the catalog. Readers can enroll immediately.</p>
                 </div>
                 <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
                   <Button>Got it</Button>
@@ -165,11 +165,11 @@ export default function UIDialog() {
                     </DialogHeader>
                   </DialogContent>
                 </Dialog>
-                <p className="text-xs text-muted-foreground">Open</p>
+                <p className="text-sm text-muted-foreground">Open</p>
               </div>
               <div className="space-y-2 text-center">
                 <Button variant="outline" size="sm" disabled>Trigger disabled</Button>
-                <p className="text-xs text-muted-foreground">Disabled trigger</p>
+                <p className="text-sm text-muted-foreground">Disabled trigger</p>
               </div>
               <div className="space-y-2 text-center">
                 <Dialog>
@@ -189,11 +189,11 @@ export default function UIDialog() {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
-                <p className="text-xs text-muted-foreground">With footer</p>
+                <p className="text-sm text-muted-foreground">With footer</p>
               </div>
             </div>
           </div>
-          <div className="text-sm text-muted-foreground space-y-1">
+          <div className="text-base text-muted-foreground space-y-1">
             <p><strong className="text-foreground">Open</strong> — Content animates in with fade and zoom. Overlay fades in with <code className="text-primary bg-primary/5 px-1 rounded">bg-black/80</code>.</p>
             <p><strong className="text-foreground">Closing</strong> — Reverse animation with slide-out-to-bottom and fade-out.</p>
             <p><strong className="text-foreground">Close button</strong> — X icon in top-right corner, always present via <code className="text-primary bg-primary/5 px-1 rounded">DialogContent</code>.</p>
@@ -269,7 +269,7 @@ const [open, setOpen] = useState(false);
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Focus trap:</strong> Focus is constrained to the dialog while open. Tab cycles through interactive elements.</p>
             <p><strong className="text-foreground">Keyboard:</strong> Escape closes the dialog. Enter/Space activates buttons.</p>
             <p><strong className="text-foreground">ARIA:</strong> Radix applies <code className="text-primary bg-primary/5 px-1 rounded">role="dialog"</code>, <code className="text-primary bg-primary/5 px-1 rounded">aria-labelledby</code> (from DialogTitle), and <code className="text-primary bg-primary/5 px-1 rounded">aria-describedby</code> (from DialogDescription) automatically.</p>
@@ -280,7 +280,7 @@ const [open, setOpen] = useState(false);
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">BinderEditor:</strong> Confirm publish action, edit binder metadata, and manage week settings.</p>
             <p><strong className="text-foreground">Profile:</strong> Edit profile details such as display name, bio, and social links.</p>
             <p><strong className="text-foreground">Settings:</strong> Confirmation dialogs for non-destructive account changes.</p>

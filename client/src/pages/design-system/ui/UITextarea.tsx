@@ -7,7 +7,7 @@ export default function UITextarea() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Textarea</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A multi-line text input with an underline border-bottom style matching the Input component.
             Uses the display font at xl size for a clean, editorial feel.
           </p>
@@ -16,7 +16,7 @@ export default function UITextarea() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use Textarea</strong> for multi-line content entry: descriptions, bios, long-form responses, and exercise submissions.</p>
             <p><strong className="text-foreground">Use Input</strong> instead for single-line values like names, emails, or titles.</p>
           </div>
@@ -27,11 +27,11 @@ export default function UITextarea() {
           <h2 className="font-display text-xl font-medium">Demo</h2>
           <div className="border border-border rounded-lg p-6 space-y-6">
             <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">With placeholder</p>
+              <p className="text-sm text-muted-foreground">With placeholder</p>
               <Textarea placeholder="Describe your binder..." />
             </div>
             <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">With value</p>
+              <p className="text-sm text-muted-foreground">With value</p>
               <Textarea defaultValue="A 4-week deep dive into digital minimalism, exploring how to build a more intentional relationship with technology." />
             </div>
           </div>
@@ -44,23 +44,23 @@ export default function UITextarea() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Textarea placeholder="Default state" />
-                <p className="text-xs text-muted-foreground">Default</p>
+                <p className="text-sm text-muted-foreground">Default</p>
               </div>
               <div className="space-y-2">
                 <Textarea placeholder="Click to focus" />
-                <p className="text-xs text-muted-foreground">Focus (click to see)</p>
+                <p className="text-sm text-muted-foreground">Focus (click to see)</p>
               </div>
               <div className="space-y-2">
                 <Textarea defaultValue="Some existing content" />
-                <p className="text-xs text-muted-foreground">With value</p>
+                <p className="text-sm text-muted-foreground">With value</p>
               </div>
               <div className="space-y-2">
                 <Textarea disabled placeholder="Cannot edit" />
-                <p className="text-xs text-muted-foreground">Disabled</p>
+                <p className="text-sm text-muted-foreground">Disabled</p>
               </div>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             The underline style uses <code className="text-primary bg-primary/5 px-1 rounded">border-b border-input</code> at rest and transitions to <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:border-primary</code> on focus. No box shadow or ring is applied. Disabled state reduces opacity to 50%.
           </p>
         </section>
@@ -108,7 +108,7 @@ const [value, setValue] = useState('');
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Focusable via Tab. Standard text editing keys work (Enter for newline, etc.).</p>
             <p><strong className="text-foreground">Focus indicator:</strong> Bottom border changes to primary color via <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:border-primary</code>. Ring is suppressed with <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:ring-0</code>.</p>
             <p><strong className="text-foreground">Disabled:</strong> Sets <code className="text-primary bg-primary/5 px-1 rounded">disabled:cursor-not-allowed</code> and <code className="text-primary bg-primary/5 px-1 rounded">disabled:opacity-50</code>.</p>
@@ -119,7 +119,7 @@ const [value, setValue] = useState('');
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">BinderEditor:</strong> Binder description and week summary fields.</p>
             <p><strong className="text-foreground">Profile:</strong> User bio editing in profile settings.</p>
             <p><strong className="text-foreground">Submissions:</strong> Reader responses to exercise prompts within binder steps.</p>

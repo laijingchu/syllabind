@@ -13,7 +13,7 @@ export default function ComponentShareDialog() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">ShareDialog</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A dialog for sharing the current page URL with one-click copy-to-clipboard. Built on
             Dialog, Input, and Button primitives with toast feedback and PostHog analytics tracking.
           </p>
@@ -22,7 +22,7 @@ export default function ComponentShareDialog() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use ShareDialog</strong> when a page has sharable content and the user should be able to copy its URL. Pair with a trigger button (typically ghost or outline variant with a Share icon).</p>
             <p><strong className="text-foreground">Use a direct copy button</strong> instead if the share action is inline and a dialog would be too heavy (e.g. sharing a single step link).</p>
           </div>
@@ -37,14 +37,14 @@ export default function ComponentShareDialog() {
               Share this page
             </Button>
             <ShareDialog open={open} onOpenChange={setOpen} />
-            <p className="text-xs text-muted-foreground">Click the button to open the share dialog. It will display the current page URL with a copy button.</p>
+            <p className="text-sm text-muted-foreground">Click the button to open the share dialog. It will display the current page URL with a copy button.</p>
           </div>
 
-          <p className="text-xs text-muted-foreground">Inline preview of the dialog content:</p>
+          <p className="text-sm text-muted-foreground">Inline preview of the dialog content:</p>
           <div className="border border-border rounded-lg bg-background p-6 max-w-md space-y-4 shadow-lg">
             <div className="space-y-1.5">
               <h3 className="text-lg font-semibold leading-none tracking-tight">Share this page</h3>
-              <p className="text-sm text-muted-foreground">Share this link with a friend to invite them to learn together.</p>
+              <p className="text-base text-muted-foreground">Share this link with a friend to invite them to learn together.</p>
             </div>
             <div className="flex items-center space-x-2">
               <Input
@@ -99,7 +99,7 @@ export default function ComponentShareDialog() {
         {/* Styling Notes */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Styling Notes</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Max width:</strong> Dialog content is constrained to <code className="text-primary bg-primary/5 px-1 rounded">sm:max-w-md</code> for a compact, focused layout.</p>
             <p><strong className="text-foreground">Copy button state:</strong> The copy button switches from outline variant to default (filled) variant after a successful copy, with the icon changing from Copy to Check for 2 seconds.</p>
             <p><strong className="text-foreground">URL input:</strong> A read-only Input displaying <code className="text-primary bg-primary/5 px-1 rounded">window.location.href</code>. The user can still select and manually copy if the clipboard API fails.</p>
@@ -157,7 +157,7 @@ function MyPage() {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Dialog semantics:</strong> Built on Radix Dialog which provides <code className="text-primary bg-primary/5 px-1 rounded">role="dialog"</code>, <code className="text-primary bg-primary/5 px-1 rounded">aria-labelledby</code> (title), and <code className="text-primary bg-primary/5 px-1 rounded">aria-describedby</code> (description) automatically.</p>
             <p><strong className="text-foreground">Focus management:</strong> Focus is trapped within the dialog when open. On close, focus returns to the trigger element.</p>
             <p><strong className="text-foreground">Keyboard:</strong> Escape closes the dialog. Tab cycles through the URL input and copy button. Enter or Space activates the copy button.</p>
@@ -168,7 +168,7 @@ function MyPage() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">BinderOverview:</strong> Share button in the page header opens the dialog with the binder's public URL.</p>
             <p><strong className="text-foreground">WeekView:</strong> Share button lets readers share a specific week's URL with classmates or friends.</p>
           </div>

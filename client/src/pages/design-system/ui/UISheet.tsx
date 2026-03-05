@@ -19,7 +19,7 @@ export default function UISheet() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Sheet</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A panel that slides in from an edge of the screen, built on Radix UI Dialog.
             Useful for supplementary content that doesn't require a full page navigation,
             such as forms, filters, or detail views.
@@ -29,7 +29,7 @@ export default function UISheet() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use Sheet</strong> for side panels that contain forms, navigation menus, or detail views that should overlay the current page without replacing it.</p>
             <p><strong className="text-foreground">Use Dialog</strong> instead when the content is centered and not tied to a screen edge.</p>
             <p><strong className="text-foreground">Use Drawer</strong> instead on mobile for bottom-sliding panels with swipe-to-dismiss behavior.</p>
@@ -72,7 +72,7 @@ export default function UISheet() {
               </SheetContent>
             </Sheet>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Default side is <code className="text-primary bg-primary/5 px-1 rounded">right</code>. The sheet slides in with animation and includes a dark overlay behind it. A close button (X) is automatically rendered in the top-right corner.
           </p>
         </section>
@@ -80,7 +80,7 @@ export default function UISheet() {
         {/* Inline Preview */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Inline Preview</h2>
-          <p className="text-sm text-muted-foreground">Sheet content rendered directly on the page for visual reference.</p>
+          <p className="text-base text-muted-foreground">Sheet content rendered directly on the page for visual reference.</p>
           <div className="space-y-2">
             <p className="text-xs font-mono text-muted-foreground">Right sheet with form</p>
             <div className="border border-l-2 border-border rounded-lg bg-background p-6 max-w-sm space-y-4 shadow-lg relative">
@@ -90,7 +90,7 @@ export default function UISheet() {
               </button>
               <div className="space-y-1.5">
                 <h3 className="text-lg font-semibold leading-none tracking-tight">Edit Profile</h3>
-                <p className="text-sm text-muted-foreground">Make changes to your profile here. Click save when you're done.</p>
+                <p className="text-base text-muted-foreground">Make changes to your profile here. Click save when you're done.</p>
               </div>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -127,7 +127,7 @@ export default function UISheet() {
                     </SheetHeader>
                   </SheetContent>
                 </Sheet>
-                <p className="text-xs text-muted-foreground">side="right"</p>
+                <p className="text-sm text-muted-foreground">side="right"</p>
               </div>
               <div className="space-y-2 text-center">
                 <Sheet>
@@ -141,7 +141,7 @@ export default function UISheet() {
                     </SheetHeader>
                   </SheetContent>
                 </Sheet>
-                <p className="text-xs text-muted-foreground">side="left"</p>
+                <p className="text-sm text-muted-foreground">side="left"</p>
               </div>
               <div className="space-y-2 text-center">
                 <Sheet>
@@ -155,7 +155,7 @@ export default function UISheet() {
                     </SheetHeader>
                   </SheetContent>
                 </Sheet>
-                <p className="text-xs text-muted-foreground">side="top"</p>
+                <p className="text-sm text-muted-foreground">side="top"</p>
               </div>
               <div className="space-y-2 text-center">
                 <Sheet>
@@ -169,11 +169,11 @@ export default function UISheet() {
                     </SheetHeader>
                   </SheetContent>
                 </Sheet>
-                <p className="text-xs text-muted-foreground">side="bottom"</p>
+                <p className="text-sm text-muted-foreground">side="bottom"</p>
               </div>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             The <code className="text-primary bg-primary/5 px-1 rounded">side</code> prop controls the edge the sheet slides from. Left and right sheets are constrained to <code className="text-primary bg-primary/5 px-1 rounded">w-3/4 sm:max-w-sm</code>. Top and bottom sheets span the full width.
           </p>
         </section>
@@ -226,7 +226,7 @@ export default function UISheet() {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Opens on Enter or Space when trigger is focused. Closes on Escape.</p>
             <p><strong className="text-foreground">Focus trap:</strong> Focus is trapped inside the sheet while open, preventing interaction with the page behind it.</p>
             <p><strong className="text-foreground">Close button:</strong> An X button with <code className="text-primary bg-primary/5 px-1 rounded">sr-only</code> "Close" label is automatically included.</p>
@@ -237,7 +237,7 @@ export default function UISheet() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Mobile navigation:</strong> The main nav menu slides in from the left on small screens.</p>
             <p><strong className="text-foreground">Filters panel:</strong> Catalog filter options in a right-side sheet on mobile viewports.</p>
             <p><strong className="text-foreground">Detail views on mobile:</strong> Binder or step details shown in a slide-over panel instead of navigating to a new page.</p>

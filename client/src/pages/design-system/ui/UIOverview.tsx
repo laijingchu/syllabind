@@ -22,7 +22,7 @@ export default function UIOverview() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">UI Components</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             The atomic building blocks of the interface. UI components are generic, reusable
             primitives that carry no domain-specific knowledge — they don't know what a "binder"
             or a "curator" is. They only know how to render a button, display a card, or collect
@@ -33,7 +33,7 @@ export default function UIOverview() {
         {/* Definition */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">What is a UI Component?</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             A UI component is a self-contained, context-free element that implements a single
             interaction pattern. It accepts props for content and behavior but never fetches data,
             calls APIs, or contains business logic. Think of them as the words in your design
@@ -41,7 +41,7 @@ export default function UIOverview() {
           </p>
           <div className="border border-border rounded-lg p-4 space-y-3">
             <h3 className="text-sm font-medium">Defining characteristics</h3>
-            <div className="space-y-2 text-sm text-muted-foreground">
+            <div className="space-y-2 text-base text-muted-foreground">
               <p>
                 <strong className="text-foreground">Context-free:</strong> A Button doesn't know
                 if it enrolls a reader or deletes a binder. It just renders a clickable element
@@ -69,11 +69,11 @@ export default function UIOverview() {
         {/* How they differ from Sections and Components */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">UI Components vs. Sections vs. Components</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             The design system has three layers of abstraction. Understanding where each lives
             prevents duplication and keeps the codebase organized.
           </p>
-          <div className="border border-border rounded-lg overflow-hidden text-sm">
+          <div className="border border-border rounded-lg overflow-hidden text-base">
             {[
               { layer: 'UI Components', desc: 'Generic primitives. A Button, a Card, an Input. No domain knowledge. Used everywhere.', path: 'client/src/components/ui/' },
               { layer: 'Sections', desc: 'Reusable layout patterns. A PageHeader, an EmptyState. Standardize recurring page structures.', path: 'client/src/components/sections/' },
@@ -84,7 +84,7 @@ export default function UIOverview() {
                   <span className="font-medium w-28 md:w-40 shrink-0">{l.layer}</span>
                   <span className="text-muted-foreground flex-1">{l.desc}</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1 md:ml-40 md:pl-4">
+                <p className="text-sm text-muted-foreground mt-1 md:ml-40 md:pl-4">
                   <code className="font-mono">{l.path}</code>
                 </p>
               </div>
@@ -95,7 +95,7 @@ export default function UIOverview() {
         {/* Architecture */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Architecture</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             UI components are built on <strong>shadcn/ui</strong> — a copy-paste component library
             that lives inside the codebase rather than in node_modules. Each component is a single
             file that wraps a Radix UI primitive with Tailwind styling and design tokens.
@@ -117,7 +117,7 @@ const DialogContent = forwardRef(({ className, ...props }, ref) => (
     {...props}
   />
 ))`}</CodeBlock>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Because the components are owned code, any aspect can be modified — default styles,
             animation behavior, prop interfaces — without waiting on library updates.
           </p>
@@ -126,7 +126,7 @@ const DialogContent = forwardRef(({ className, ...props }, ref) => (
         {/* Component catalog */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Component Catalog</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Each component page includes a live demo, variant breakdown, relevant design tokens,
             a code snippet, accessibility notes, and where it's used in the product.
           </p>
@@ -136,7 +136,7 @@ const DialogContent = forwardRef(({ className, ...props }, ref) => (
           {categories.map(cat => (
             <section key={cat.name} className="space-y-3">
               <h2 className="font-display text-xl font-medium">{cat.name}</h2>
-              <p className="text-sm text-muted-foreground">{cat.desc}</p>
+              <p className="text-base text-muted-foreground">{cat.desc}</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {cat.items.map(item => (
                   <Link key={item} href={`/design-system/ui/${slugify(item)}`}>

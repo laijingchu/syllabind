@@ -18,7 +18,7 @@ export default function UIAlertDialog() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Alert Dialog</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A modal confirmation dialog for destructive or irreversible actions. Unlike Dialog,
             it cannot be dismissed by clicking the overlay or pressing Escape — the user must
             explicitly choose Cancel or the confirm action.
@@ -28,7 +28,7 @@ export default function UIAlertDialog() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use AlertDialog</strong> for destructive actions like deleting a binder, removing an account, or any operation that cannot be undone. The user must make an explicit choice.</p>
             <p><strong className="text-foreground">Use Dialog</strong> instead for non-destructive interactions like editing a profile or viewing information, where dismissing via overlay click is acceptable.</p>
           </div>
@@ -90,14 +90,14 @@ export default function UIAlertDialog() {
         {/* Inline Preview */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Inline Preview</h2>
-          <p className="text-sm text-muted-foreground">Alert dialog content rendered directly on the page for visual reference.</p>
+          <p className="text-base text-muted-foreground">Alert dialog content rendered directly on the page for visual reference.</p>
           <div className="space-y-8">
             <div className="space-y-2">
               <p className="text-xs font-mono text-muted-foreground">Destructive confirmation</p>
               <div className="border border-border rounded-lg bg-background p-6 max-w-md space-y-4 shadow-lg">
                 <div className="space-y-1.5">
                   <h3 className="text-lg font-semibold leading-none tracking-tight">Are you absolutely sure?</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-base text-muted-foreground">
                     This action cannot be undone. This will permanently delete your binder
                     "Digital Minimalism" and remove all associated weeks, steps, and reader
                     enrollments.
@@ -115,7 +115,7 @@ export default function UIAlertDialog() {
               <div className="border border-border rounded-lg bg-background p-6 max-w-md space-y-4 shadow-lg">
                 <div className="space-y-1.5">
                   <h3 className="text-lg font-semibold leading-none tracking-tight">Unpublish this binder?</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-base text-muted-foreground">
                     This will remove the binder from the public catalog. Existing readers will
                     retain access, but no new enrollments will be accepted until you publish again.
                   </p>
@@ -150,7 +150,7 @@ export default function UIAlertDialog() {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-                <p className="text-xs text-muted-foreground">Destructive action</p>
+                <p className="text-sm text-muted-foreground">Destructive action</p>
               </div>
               <div className="space-y-2 text-center">
                 <AlertDialog>
@@ -168,15 +168,15 @@ export default function UIAlertDialog() {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-                <p className="text-xs text-muted-foreground">Standard confirm</p>
+                <p className="text-sm text-muted-foreground">Standard confirm</p>
               </div>
               <div className="space-y-2 text-center">
                 <Button variant="outline" size="sm" disabled>Disabled trigger</Button>
-                <p className="text-xs text-muted-foreground">Disabled</p>
+                <p className="text-sm text-muted-foreground">Disabled</p>
               </div>
             </div>
           </div>
-          <div className="text-sm text-muted-foreground space-y-1">
+          <div className="text-base text-muted-foreground space-y-1">
             <p><strong className="text-foreground">Open</strong> — Overlay fades in with <code className="text-primary bg-primary/5 px-1 rounded">bg-black/80</code>. Content animates with zoom and slide from bottom.</p>
             <p><strong className="text-foreground">No dismiss on overlay:</strong> Unlike Dialog, clicking the overlay does not close AlertDialog. The user must use Cancel or the action button.</p>
             <p><strong className="text-foreground">Action button:</strong> Uses <code className="text-primary bg-primary/5 px-1 rounded">buttonVariants()</code> by default. Override with destructive styling for delete actions.</p>
@@ -264,7 +264,7 @@ const [open, setOpen] = useState(false);
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Focus trap:</strong> Focus is constrained to the alert dialog. Tab cycles between Cancel and Action buttons.</p>
             <p><strong className="text-foreground">Keyboard:</strong> Escape does not close the dialog (unlike Dialog). The user must press Cancel or the action button.</p>
             <p><strong className="text-foreground">ARIA:</strong> Radix applies <code className="text-primary bg-primary/5 px-1 rounded">role="alertdialog"</code>, <code className="text-primary bg-primary/5 px-1 rounded">aria-labelledby</code>, and <code className="text-primary bg-primary/5 px-1 rounded">aria-describedby</code> automatically.</p>
@@ -275,7 +275,7 @@ const [open, setOpen] = useState(false);
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">BinderEditor:</strong> Confirm deleting a binder, removing a week, or discarding unsaved changes.</p>
             <p><strong className="text-foreground">Settings:</strong> Confirm account deletion or resetting profile data.</p>
             <p><strong className="text-foreground">CuratorDashboard:</strong> Confirm archiving or unpublishing a binder.</p>

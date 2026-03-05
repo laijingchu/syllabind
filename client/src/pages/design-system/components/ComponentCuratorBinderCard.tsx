@@ -60,7 +60,7 @@ export default function ComponentCuratorBinderCard() {
       <div className="space-y-12 max-w-4xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">CuratorBinderCard</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A row component for the curator studio binder list. Displays status badge, title, metadata,
             reader counts, and action buttons (publish, edit, preview, analytics). Supports multi-select
             for batch operations.
@@ -70,7 +70,7 @@ export default function ComponentCuratorBinderCard() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use CuratorBinderCard</strong> in the curator studio dashboard to display each binder the curator owns or manages. It handles all status states (draft, pending review, published) and their corresponding actions.</p>
             <p><strong className="text-foreground">Use BinderCard</strong> instead for reader-facing surfaces like the catalog or dashboard where binders are shown as browsable grid cards.</p>
           </div>
@@ -97,7 +97,7 @@ export default function ComponentCuratorBinderCard() {
               />
             ))}
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Click the checkbox to select rows. The entire card is a link to the binder editor, with action buttons elevated above via z-index.
           </p>
         </section>
@@ -105,7 +105,7 @@ export default function ComponentCuratorBinderCard() {
         {/* States */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">States</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Draft:</strong> Shows "Draft" secondary badge. Publish dropdown with Public/Unlisted/Private options. Review feedback banner if present.</p>
             <p><strong className="text-foreground">Pending Review:</strong> Amber "Pending Review" badge. Non-admin curators see "Withdraw from Review" button.</p>
             <p><strong className="text-foreground">Published:</strong> "Published", "Unlisted", or "Private" badge. "Unpublish" button replaces the publish dropdown. Green approval notification if just approved.</p>
@@ -116,27 +116,27 @@ export default function ComponentCuratorBinderCard() {
         {/* Anatomy */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Anatomy</h2>
-          <div className="border border-border rounded-lg p-6 space-y-4 text-sm">
+          <div className="border border-border rounded-lg p-6 space-y-4 text-base">
             <div className="space-y-3">
               <div className="border-l-2 border-primary/30 pl-4 space-y-1">
                 <p className="font-medium text-foreground">1. Selection checkbox</p>
-                <p className="text-muted-foreground">Enables batch operations (delete). Sits at the left edge of the content area.</p>
+                <p className="text-lg text-muted-foreground">Enables batch operations (delete). Sits at the left edge of the content area.</p>
               </div>
               <div className="border-l-2 border-primary/30 pl-4 space-y-1">
                 <p className="font-medium text-foreground">2. Status badge row</p>
-                <p className="text-muted-foreground">Badge showing current status + optional "by curator" badge for admin view of other curators' binders.</p>
+                <p className="text-lg text-muted-foreground">Badge showing current status + optional "by curator" badge for admin view of other curators' binders.</p>
               </div>
               <div className="border-l-2 border-primary/30 pl-4 space-y-1">
                 <p className="font-medium text-foreground">3. Title + metadata</p>
-                <p className="text-muted-foreground">Binder title, duration, audience level, and last updated time. Review feedback banner shown when applicable.</p>
+                <p className="text-lg text-muted-foreground">Binder title, duration, audience level, and last updated time. Review feedback banner shown when applicable.</p>
               </div>
               <div className="border-l-2 border-primary/30 pl-4 space-y-1">
                 <p className="font-medium text-foreground">4. Reader count (desktop)</p>
-                <p className="text-muted-foreground">Total readers and active readers, right-aligned. Hidden on mobile; shown inline below metadata on small screens.</p>
+                <p className="text-lg text-muted-foreground">Total readers and active readers, right-aligned. Hidden on mobile; shown inline below metadata on small screens.</p>
               </div>
               <div className="border-l-2 border-primary/30 pl-4 space-y-1">
                 <p className="font-medium text-foreground">5. Action buttons</p>
-                <p className="text-muted-foreground">Publish/Unpublish/Withdraw + Edit (pencil) + Preview (eye) + Analytics (bar chart). All elevated above the card link via z-index.</p>
+                <p className="text-lg text-muted-foreground">Publish/Unpublish/Withdraw + Edit (pencil) + Preview (eye) + Analytics (bar chart). All elevated above the card link via z-index.</p>
               </div>
             </div>
           </div>
@@ -207,7 +207,7 @@ export default function ComponentCuratorBinderCard() {
         {/* Internal Composition */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Internal Composition</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Card, CardContent</strong> — Structural container with hover shadow and selection ring.</p>
             <p><strong className="text-foreground">Checkbox</strong> — Multi-select for batch operations.</p>
             <p><strong className="text-foreground">Badge</strong> — Status indicator (outline/secondary variants).</p>
@@ -220,7 +220,7 @@ export default function ComponentCuratorBinderCard() {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Card link:</strong> The entire card is wrapped in a background Link with an <code className="text-primary bg-primary/5 px-1 rounded">aria-label</code> describing the target.</p>
             <p><strong className="text-foreground">Z-index layering:</strong> Interactive controls (checkbox, buttons) are elevated above the card link so they remain independently clickable.</p>
             <p><strong className="text-foreground">Keyboard:</strong> All interactive elements are natively focusable (checkbox, buttons, links).</p>
@@ -230,7 +230,7 @@ export default function ComponentCuratorBinderCard() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Curator Studio:</strong> Primary list view for "My Binders" and admin "Others" tabs. Used with AnimatedCard wrapper for staggered entrance animations.</p>
           </div>
         </section>

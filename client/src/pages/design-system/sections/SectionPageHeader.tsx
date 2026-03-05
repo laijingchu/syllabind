@@ -9,7 +9,7 @@ export default function SectionPageHeader() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">PageHeader</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A consistent page-level header used across all top-level views. Provides a title,
             optional subtitle, optional back navigation, and an actions slot for contextual buttons.
           </p>
@@ -18,7 +18,7 @@ export default function SectionPageHeader() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use PageHeader</strong> at the top of every page-level view to establish hierarchy and provide consistent navigation. It standardizes the title area so pages feel unified.</p>
             <p><strong className="text-foreground">Use a custom header</strong> instead when the page needs a highly specialized layout (e.g., the marketing landing page hero).</p>
           </div>
@@ -142,7 +142,7 @@ export default function SectionPageHeader() {
             <TokenRow token=".page-header-back" value="Ghost button with ArrowLeft icon" />
             <TokenRow token=".page-header-actions" value="Actions slot aligned to the end" />
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             PageHeader uses semantic class names (no Tailwind layout utilities on the root) so page-level layout can be controlled via the design system stylesheet. The title uses <code className="text-primary bg-primary/5 px-1 rounded">font-display</code> at 3xl.
           </p>
         </section>
@@ -194,7 +194,7 @@ import { Plus } from 'lucide-react';
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Heading hierarchy:</strong> Renders an <code className="text-primary bg-primary/5 px-1 rounded">h1</code> element, so there should only be one PageHeader per page to maintain proper document structure.</p>
             <p><strong className="text-foreground">Back navigation:</strong> The back button is a ghost Button wrapped in a Link, fully keyboard accessible via Tab and Enter.</p>
             <p><strong className="text-foreground">Actions slot:</strong> Buttons placed in the actions slot inherit standard Button accessibility (focus ring, keyboard activation).</p>
@@ -204,13 +204,13 @@ import { Plus } from 'lucide-react';
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Dashboard:</strong> Title with "New Binder" action button.</p>
             <p><strong className="text-foreground">CuratorDashboard:</strong> "Binder Builder" title with subtitle and create action.</p>
             <p><strong className="text-foreground">BinderEditor:</strong> Binder name as title, back link to dashboard, publish/settings actions.</p>
             <p><strong className="text-foreground">Profile pages:</strong> "Your Profile" title with optional edit action.</p>
           </div>
-          <p className="text-sm text-muted-foreground italic">
+          <p className="text-base text-muted-foreground italic">
             Note: PageHeader is a ready-to-use section component not yet imported in any pages. It is designed to replace ad-hoc header patterns across the app.
           </p>
         </section>

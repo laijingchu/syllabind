@@ -11,7 +11,7 @@ export default function UIToast() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Toast</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A non-blocking notification that appears temporarily at the bottom-right of the viewport.
             Built on Radix UI Toast primitives with slide-in/out animations and swipe-to-dismiss.
           </p>
@@ -20,7 +20,7 @@ export default function UIToast() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use Toast</strong> for transient success confirmations, error feedback, or undo prompts that don't require the user to take action before continuing.</p>
             <p><strong className="text-foreground">Use Alert or Dialog</strong> instead when the message is critical and the user must acknowledge it before proceeding.</p>
           </div>
@@ -66,14 +66,14 @@ export default function UIToast() {
                 Toast with Action
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">Click the buttons above to trigger live toasts.</p>
+            <p className="text-sm text-muted-foreground">Click the buttons above to trigger live toasts.</p>
           </div>
         </section>
 
         {/* States */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">States</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Default:</strong> White/dark background with standard border. Used for success and informational messages.</p>
             <p><strong className="text-foreground">Destructive:</strong> Red background with destructive-foreground text. Used for errors and failure states.</p>
             <p><strong className="text-foreground">With action:</strong> Includes an inline action button (e.g., "Undo") rendered to the right of the message.</p>
@@ -130,7 +130,7 @@ function MyComponent() {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">ARIA role:</strong> Toasts use <code className="text-primary bg-primary/5 px-1 rounded">role="status"</code> and <code className="text-primary bg-primary/5 px-1 rounded">aria-live="polite"</code> so screen readers announce them without interrupting the current task.</p>
             <p><strong className="text-foreground">Keyboard:</strong> The close button is focusable and activates on Enter or Space. Action buttons are also keyboard-accessible.</p>
             <p><strong className="text-foreground">Swipe to dismiss:</strong> Radix handles swipe gestures on touch devices, allowing users to dismiss by swiping right.</p>
@@ -141,7 +141,7 @@ function MyComponent() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">RichTextEditor:</strong> "Writing improved" success toast after AI text enhancement; destructive toast on failure.</p>
             <p><strong className="text-foreground">BinderEditor:</strong> Save confirmation and publish success toasts.</p>
             <p><strong className="text-foreground">Enrollment:</strong> Success confirmation when a reader enrolls in a binder.</p>

@@ -8,7 +8,7 @@ export default function UIButton() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Button</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             The primary interactive element for triggering actions. Supports 6 visual variants
             and 4 sizes, with a flat elevation system for hover and active feedback.
           </p>
@@ -17,7 +17,7 @@ export default function UIButton() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use Button</strong> for actions that change state, submit data, or navigate to a new context. Choose the variant based on emphasis level.</p>
             <p><strong className="text-foreground">Use a link</strong> instead when the action is purely navigational and doesn't change application state.</p>
           </div>
@@ -36,7 +36,7 @@ export default function UIButton() {
               <Button variant="link">Link</Button>
             </div>
           </div>
-          <div className="text-sm text-muted-foreground space-y-1">
+          <div className="text-base text-muted-foreground space-y-1">
             <p><strong className="text-foreground">default</strong> — Filled primary background. Main CTAs, "Enroll", form submissions.</p>
             <p><strong className="text-foreground">secondary</strong> — Muted fill. Supporting actions beside a primary button.</p>
             <p><strong className="text-foreground">outline</strong> — Transparent with border. "Cancel", filter toggles, secondary actions.</p>
@@ -57,7 +57,7 @@ export default function UIButton() {
               <Button size="icon"><Plus className="h-4 w-4" /></Button>
             </div>
           </div>
-          <div className="text-sm text-muted-foreground space-y-1">
+          <div className="text-base text-muted-foreground space-y-1">
             <p><strong className="text-foreground">sm</strong> — min-h-8, px-3, text-xs. Compact contexts like table rows.</p>
             <p><strong className="text-foreground">default</strong> — min-h-9, px-4, py-2. Standard button size.</p>
             <p><strong className="text-foreground">lg</strong> — min-h-10, px-8. Hero CTAs, onboarding flows.</p>
@@ -72,23 +72,23 @@ export default function UIButton() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="space-y-2 text-center">
                 <Button>Default</Button>
-                <p className="text-xs text-muted-foreground">Resting</p>
+                <p className="text-sm text-muted-foreground">Resting</p>
               </div>
               <div className="space-y-2 text-center">
                 <Button disabled>Disabled</Button>
-                <p className="text-xs text-muted-foreground">Disabled</p>
+                <p className="text-sm text-muted-foreground">Disabled</p>
               </div>
               <div className="space-y-2 text-center">
                 <Button disabled><Loader2 className="h-4 w-4 animate-spin" />Loading</Button>
-                <p className="text-xs text-muted-foreground">Loading</p>
+                <p className="text-sm text-muted-foreground">Loading</p>
               </div>
               <div className="space-y-2 text-center">
                 <Button><Download className="h-4 w-4" />With Icon</Button>
-                <p className="text-xs text-muted-foreground">With Icon</p>
+                <p className="text-sm text-muted-foreground">With Icon</p>
               </div>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Hover and active states use the elevation overlay system (<code className="text-primary bg-primary/5 px-1 rounded">hover-elevate</code> and <code className="text-primary bg-primary/5 px-1 rounded">active-elevate-2</code>) rather than color shifts. Disabled buttons reduce opacity to 50%.
           </p>
         </section>
@@ -104,7 +104,7 @@ export default function UIButton() {
               <Button variant="ghost" size="icon"><Plus className="h-4 w-4" /></Button>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Icons inside buttons are automatically sized to 16px and flex-shrunk via the <code className="text-primary bg-primary/5 px-1 rounded">[&_svg]:size-4</code> selector.
           </p>
         </section>
@@ -160,7 +160,7 @@ export default function UIButton() {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Focusable via Tab. Activates on Enter or Space.</p>
             <p><strong className="text-foreground">Focus indicator:</strong> 1px ring using <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:ring-1</code>. Only visible on keyboard navigation.</p>
             <p><strong className="text-foreground">Disabled:</strong> Sets <code className="text-primary bg-primary/5 px-1 rounded">disabled:pointer-events-none</code> and <code className="text-primary bg-primary/5 px-1 rounded">disabled:opacity-50</code>.</p>
@@ -171,7 +171,7 @@ export default function UIButton() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">BinderOverview:</strong> "Enroll" CTA (default), "Preview" (outline).</p>
             <p><strong className="text-foreground">BinderEditor:</strong> "Publish" (default), "Save Draft" (secondary), "Delete Binder" (destructive).</p>
             <p><strong className="text-foreground">Dashboard:</strong> "Create New Binder" (default with Plus icon).</p>

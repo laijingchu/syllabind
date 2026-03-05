@@ -10,7 +10,7 @@ export default function UIRadioGroup() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">RadioGroup</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A Radix-based radio group with circular indicators. Used for selecting exactly
             one option from a set of mutually exclusive choices.
           </p>
@@ -19,7 +19,7 @@ export default function UIRadioGroup() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use RadioGroup</strong> when users must pick exactly one option from a small, visible set of choices (2-5 options).</p>
             <p><strong className="text-foreground">Use Select</strong> instead when the list of options is long (6+) or space is limited.</p>
             <p><strong className="text-foreground">Use Checkbox</strong> instead when users can select multiple options independently.</p>
@@ -44,7 +44,7 @@ export default function UIRadioGroup() {
                 <label htmlFor="demo-spacious" className="text-sm cursor-pointer select-none">Spacious</label>
               </div>
             </RadioGroup>
-            <p className="text-xs text-muted-foreground">Selected: {value}</p>
+            <p className="text-sm text-muted-foreground">Selected: {value}</p>
           </div>
         </section>
 
@@ -57,19 +57,19 @@ export default function UIRadioGroup() {
                 <RadioGroup>
                   <RadioGroupItem value="unselected" />
                 </RadioGroup>
-                <p className="text-xs text-muted-foreground">Unselected</p>
+                <p className="text-sm text-muted-foreground">Unselected</p>
               </div>
               <div className="space-y-2 text-center flex flex-col items-center">
                 <RadioGroup defaultValue="selected">
                   <RadioGroupItem value="selected" />
                 </RadioGroup>
-                <p className="text-xs text-muted-foreground">Selected</p>
+                <p className="text-sm text-muted-foreground">Selected</p>
               </div>
               <div className="space-y-2 text-center flex flex-col items-center">
                 <RadioGroup disabled>
                   <RadioGroupItem value="disabled" />
                 </RadioGroup>
-                <p className="text-xs text-muted-foreground">Disabled</p>
+                <p className="text-sm text-muted-foreground">Disabled</p>
               </div>
               <div className="space-y-2 text-center flex flex-col items-center">
                 <RadioGroup defaultValue="labeled">
@@ -78,11 +78,11 @@ export default function UIRadioGroup() {
                     <label htmlFor="state-label" className="text-sm">Label</label>
                   </div>
                 </RadioGroup>
-                <p className="text-xs text-muted-foreground">With Label</p>
+                <p className="text-sm text-muted-foreground">With Label</p>
               </div>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Selected state shows a filled <code className="text-primary bg-primary/5 px-1 rounded">--primary</code> circle indicator. The outer ring uses <code className="text-primary bg-primary/5 px-1 rounded">--border</code> via the border-primary class. Disabled state reduces opacity to 50%.
           </p>
         </section>
@@ -136,7 +136,7 @@ const [value, setValue] = useState('option-1');
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Role:</strong> Renders as <code className="text-primary bg-primary/5 px-1 rounded">role="radiogroup"</code> with individual items as <code className="text-primary bg-primary/5 px-1 rounded">role="radio"</code>.</p>
             <p><strong className="text-foreground">Keyboard:</strong> Tab focuses the group. Arrow keys move between options. Space selects the focused option.</p>
             <p><strong className="text-foreground">Focus indicator:</strong> 1px ring using <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:ring-1</code>. Only visible on keyboard navigation.</p>
@@ -148,7 +148,7 @@ const [value, setValue] = useState('option-1');
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Settings:</strong> Theme selection — users choose between light, dark, or system theme.</p>
             <p><strong className="text-foreground">BinderEditor:</strong> Visibility options — curators select public, unlisted, or private for their binder.</p>
           </div>

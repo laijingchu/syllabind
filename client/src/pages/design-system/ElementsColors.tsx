@@ -62,7 +62,7 @@ export default function ElementsColors() {
       <div className="space-y-12">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Colors</h1>
-          <p className="text-muted-foreground max-w-2xl">
+          <p className="text-lg text-muted-foreground max-w-2xl">
             The color system is built around named roles, not specific hex values. Each role describes
             <em> what the color is for</em> — "primary" for main actions, "muted" for de-emphasized areas —
             so the palette can evolve without updating individual components.
@@ -72,7 +72,7 @@ export default function ElementsColors() {
         {/* How it works */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">How Color Tokens Work</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Colors are stored as HSL values (hue, saturation, lightness) in named tokens. This format
             makes it easy to adjust a color's brightness or create transparent variants for overlays
             and backgrounds. When you see a color in the UI, it always traces back to one of these token names.
@@ -89,7 +89,7 @@ export default function ElementsColors() {
         {/* Core Colors */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Surface & Text Colors</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             These set the overall tone of the interface. Background defines the page canvas, foreground
             defines the default text. Card and popover surfaces sit on top of the background with their
             own text colors for contrast.
@@ -100,7 +100,7 @@ export default function ElementsColors() {
                 <ColorSwatch name={c.name} token={c.token} />
                 <div>
                   <p className="text-sm font-medium">{c.name}</p>
-                  <p className="text-xs text-muted-foreground">{c.desc}</p>
+                  <p className="text-sm text-muted-foreground">{c.desc}</p>
                   <code className="text-xs font-mono text-primary">{c.tw}</code>
                 </div>
               </div>
@@ -111,7 +111,7 @@ export default function ElementsColors() {
         {/* Semantic Colors */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Semantic Colors</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             These colors carry meaning. Each one maps to a specific type of UI element or user action.
             Every semantic color comes in a pair: the fill color and a foreground color for text placed on top.
           </p>
@@ -132,7 +132,7 @@ export default function ElementsColors() {
                   <span className="text-sm opacity-80">{fg.name}</span>
                 </div>
                 <div className="p-3 text-xs space-y-1 bg-card">
-                  <p className="text-muted-foreground">{bg.desc}</p>
+                  <p className="text-lg text-muted-foreground">{bg.desc}</p>
                   <p className="font-mono text-primary">{bg.tw} / {fg.tw}</p>
                 </div>
               </div>
@@ -143,7 +143,7 @@ export default function ElementsColors() {
         {/* Border Colors */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Border & Focus Colors</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Borders define edges and separation. Some are set manually (like the default border),
             while others are auto-generated from their parent color — for example, a primary button's
             border is automatically a slightly darker shade of primary, ensuring it always looks correct
@@ -173,7 +173,7 @@ export default function ElementsColors() {
         {/* Chart Colors */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Data Visualization</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             A five-color palette for charts, graphs, and progress indicators. These are selected for
             sufficient contrast between adjacent data series and work in both light and dark modes.
             Currently used in binder analytics and reader progress views.
@@ -194,7 +194,7 @@ export default function ElementsColors() {
         {/* Overlay & Elevation Tokens */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Overlay & Interaction Tokens</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             These semi-transparent values are used for subtle outlines and interactive feedback.
             They use black (light mode) or white (dark mode) at very low opacities, so they work
             on any background without introducing new hues.
@@ -216,13 +216,13 @@ export default function ElementsColors() {
         {/* Dark mode */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Light & Dark Mode</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             The color system supports both modes automatically. Components never reference
             specific light or dark values — they reference token names like "primary" and "background",
             which resolve to the correct value based on the active mode. This means a design specified
             using token names works in both modes without any extra work.
           </p>
-          <div className="border border-border rounded-lg p-4 text-sm text-muted-foreground">
+          <div className="border border-border rounded-lg p-4 text-base text-muted-foreground">
             <p>
               <strong className="text-foreground">Design tip:</strong> When specifying colors in mockups,
               use token names (primary, muted, destructive) rather than hex values. This ensures the

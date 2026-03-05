@@ -28,7 +28,7 @@ export default function UIDropdownMenu() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Dropdown Menu</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A contextual menu triggered by a button press. Built on Radix UI, it supports items,
             checkbox items, radio groups, sub-menus, labels, separators, and keyboard shortcuts.
           </p>
@@ -37,7 +37,7 @@ export default function UIDropdownMenu() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use DropdownMenu</strong> when you need to present a list of actions or options that don't need to be visible at all times. Ideal for overflow menus, user account menus, and contextual actions.</p>
             <p><strong className="text-foreground">Use a Select</strong> instead when the user is choosing a single value for a form field.</p>
           </div>
@@ -105,7 +105,7 @@ export default function UIDropdownMenu() {
         {/* Inline Preview */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Inline Preview</h2>
-          <p className="text-sm text-muted-foreground">The dropdown menu rendered statically for visual reference. Shows items, icons, shortcuts, a sub-menu indicator, and disabled state.</p>
+          <p className="text-base text-muted-foreground">The dropdown menu rendered statically for visual reference. Shows items, icons, shortcuts, a sub-menu indicator, and disabled state.</p>
           <div className="border border-border rounded-lg p-6">
             <div className="w-56 rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
               <div className="px-2 py-1.5 text-sm font-semibold">My Account</div>
@@ -179,11 +179,11 @@ export default function UIDropdownMenu() {
                 </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <p className="text-xs text-muted-foreground mt-3">
+            <p className="text-sm text-muted-foreground mt-3">
               Status Bar: {showStatusBar ? 'on' : 'off'}, Activity Bar: {showActivityBar ? 'on' : 'off'}, Panel: {showPanel ? 'on' : 'off'}
             </p>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Checkbox items maintain their own checked state. Use <code className="text-primary bg-primary/5 px-1 rounded">onCheckedChange</code> to update local state.
           </p>
           <div className="border border-border rounded-lg p-6">
@@ -230,7 +230,7 @@ export default function UIDropdownMenu() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <div className="text-sm text-muted-foreground space-y-1">
+          <div className="text-base text-muted-foreground space-y-1">
             <p><strong className="text-foreground">Focus</strong> — Items highlight with <code className="text-primary bg-primary/5 px-1 rounded">bg-accent</code> on hover or keyboard focus.</p>
             <p><strong className="text-foreground">Disabled</strong> — Reduces opacity to 50% and prevents interaction.</p>
             <p><strong className="text-foreground">Checked</strong> — Checkbox and radio items show a check/circle indicator on the left.</p>
@@ -324,7 +324,7 @@ export default function UIDropdownMenu() {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Opens with Enter/Space on trigger. Arrow keys navigate items. Enter selects. Escape closes.</p>
             <p><strong className="text-foreground">Focus management:</strong> Focus is trapped within the menu while open. Focus returns to trigger on close.</p>
             <p><strong className="text-foreground">ARIA:</strong> Radix provides <code className="text-primary bg-primary/5 px-1 rounded">role="menu"</code>, <code className="text-primary bg-primary/5 px-1 rounded">role="menuitem"</code>, and <code className="text-primary bg-primary/5 px-1 rounded">role="menuitemcheckbox"</code> automatically.</p>
@@ -335,7 +335,7 @@ export default function UIDropdownMenu() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Layout header:</strong> User account menu with profile, settings, and logout options.</p>
             <p><strong className="text-foreground">BinderEditor:</strong> "More actions" overflow menu for duplicate, archive, and export.</p>
             <p><strong className="text-foreground">CuratorDashboard:</strong> Per-binder action menus for edit, analytics, and delete.</p>

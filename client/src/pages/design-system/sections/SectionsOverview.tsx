@@ -14,7 +14,7 @@ export default function SectionsOverview() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Sections</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             Reusable layout patterns that standardize how recurring page structures look and
             behave. Sections sit between UI components and full pages — they compose multiple
             UI primitives into a consistent, recognizable pattern.
@@ -24,7 +24,7 @@ export default function SectionsOverview() {
         {/* Definition */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">What is a Section?</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             A section is a reusable layout fragment that solves a specific structural problem
             repeated across multiple pages. While UI components are individual elements (a button,
             an input), sections are arrangements of those elements into a recognizable pattern —
@@ -32,7 +32,7 @@ export default function SectionsOverview() {
           </p>
           <div className="border border-border rounded-lg p-4 space-y-3">
             <h3 className="text-sm font-medium">Defining characteristics</h3>
-            <div className="space-y-2 text-sm text-muted-foreground">
+            <div className="space-y-2 text-base text-muted-foreground">
               <p>
                 <strong className="text-foreground">Layout-focused:</strong> Sections define
                 spatial relationships — where the title goes relative to the back button, how
@@ -63,11 +63,11 @@ export default function SectionsOverview() {
         {/* When to create a section vs. inline code */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Create a Section</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Not every repeated pattern needs to become a section. The threshold is intentionally
             high to prevent premature abstraction.
           </p>
-          <div className="border border-border rounded-lg p-4 space-y-3 text-sm">
+          <div className="border border-border rounded-lg p-4 space-y-3 text-base">
             <div>
               <p className="font-medium">Create a section when:</p>
               <ul className="text-muted-foreground mt-1 ml-4 space-y-1 list-disc">
@@ -90,7 +90,7 @@ export default function SectionsOverview() {
         {/* How sections differ */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Sections vs. UI Components vs. Components</h2>
-          <div className="border border-border rounded-lg overflow-hidden text-sm">
+          <div className="border border-border rounded-lg overflow-hidden text-base">
             {[
               { q: 'Does it know about binders, readers, or curators?', ui: 'No', section: 'No', component: 'Yes' },
               { q: 'Does it compose multiple UI primitives?', ui: 'Rarely', section: 'Always', component: 'Always' },
@@ -105,7 +105,7 @@ export default function SectionsOverview() {
                 <span className="px-4 py-2.5 text-center">{row.component}</span>
               </div>
             ))}
-            <div className="grid grid-cols-4 bg-muted/30 text-xs text-muted-foreground">
+            <div className="grid grid-cols-4 bg-muted/30 text-sm text-muted-foreground">
               <span className="px-4 py-2"></span>
               <span className="px-4 py-2 text-center">UI Component</span>
               <span className="px-4 py-2 text-center font-medium">Section</span>
@@ -117,7 +117,7 @@ export default function SectionsOverview() {
         {/* Architecture */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Architecture</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             All sections live in <code className="font-mono text-primary bg-primary/5 px-1.5 py-0.5 rounded">client/src/components/sections/</code>.
             They follow a consistent prop pattern: required content props, optional layout
             modifiers, and a className escape hatch.
@@ -131,7 +131,7 @@ interface PageHeaderProps {
   actions?: ReactNode;     // Slot: right-aligned action buttons
   className?: string;      // Escape hatch: additional styling
 }`}</CodeBlock>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Sections use semantic class names (e.g. <code className="font-mono text-xs">page-header</code>,
             <code className="font-mono text-xs"> empty-state</code>) as their first className for
             easy identification in devtools and design prompts.
@@ -146,7 +146,7 @@ interface PageHeaderProps {
               <Link key={s.href} href={s.href}>
                 <div className="flex flex-wrap items-start gap-4 px-4 py-3 rounded-lg border border-border hover:bg-muted transition-colors cursor-pointer">
                   <span className="font-medium text-sm w-28 md:w-40 shrink-0">{s.name}</span>
-                  <span className="text-sm text-muted-foreground">{s.desc}</span>
+                  <span className="text-base text-muted-foreground">{s.desc}</span>
                 </div>
               </Link>
             ))}

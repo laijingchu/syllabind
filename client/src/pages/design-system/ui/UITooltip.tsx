@@ -9,7 +9,7 @@ export default function UITooltip() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Tooltip</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A small overlay that displays additional context when hovering or focusing a trigger element.
             Built on Radix UI Tooltip with animated entry/exit and directional awareness.
           </p>
@@ -18,7 +18,7 @@ export default function UITooltip() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use Tooltip</strong> to label icon-only buttons, explain truncated text, or surface keyboard shortcuts. Tooltips are supplemental and should never contain essential information.</p>
             <p><strong className="text-foreground">Use a Popover</strong> instead when the overlay needs interactive content like links, buttons, or forms.</p>
           </div>
@@ -68,7 +68,7 @@ export default function UITooltip() {
               </div>
             </TooltipProvider>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Hover or focus any icon button above to see the tooltip. The <code className="text-primary bg-primary/5 px-1 rounded">sideOffset</code> prop controls the gap between trigger and tooltip (default 4px).
           </p>
         </section>
@@ -76,7 +76,7 @@ export default function UITooltip() {
         {/* Inline Preview */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Inline Preview</h2>
-          <p className="text-sm text-muted-foreground">Tooltip rendered directly on the page for visual reference.</p>
+          <p className="text-base text-muted-foreground">Tooltip rendered directly on the page for visual reference.</p>
           <div className="border border-border rounded-lg p-6 flex items-center justify-center min-h-[100px]">
             <div className="flex flex-col items-center gap-2">
               <div className="bg-primary text-primary-foreground px-3 py-1.5 rounded-md text-sm shadow-md animate-in fade-in-0 zoom-in-95">
@@ -86,7 +86,7 @@ export default function UITooltip() {
               <Button variant="outline" size="icon"><Info className="h-4 w-4" /></Button>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             The tooltip uses <code className="text-primary bg-primary/5 px-1 rounded">--primary</code> as background and <code className="text-primary bg-primary/5 px-1 rounded">--primary-foreground</code> as text color. The arrow points toward the trigger element.
           </p>
         </section>
@@ -135,7 +135,7 @@ export default function UITooltip() {
               </div>
             </TooltipProvider>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Use the <code className="text-primary bg-primary/5 px-1 rounded">side</code> prop to control placement. The tooltip will automatically flip if there is not enough room.
           </p>
         </section>
@@ -153,7 +153,7 @@ export default function UITooltip() {
                     </TooltipTrigger>
                     <TooltipContent><p>Hover me</p></TooltipContent>
                   </Tooltip>
-                  <p className="text-xs text-muted-foreground">Closed (default)</p>
+                  <p className="text-sm text-muted-foreground">Closed (default)</p>
                 </div>
                 <div className="space-y-2 text-center">
                   <Tooltip defaultOpen>
@@ -162,7 +162,7 @@ export default function UITooltip() {
                     </TooltipTrigger>
                     <TooltipContent><p>Visible</p></TooltipContent>
                   </Tooltip>
-                  <p className="text-xs text-muted-foreground">Open</p>
+                  <p className="text-sm text-muted-foreground">Open</p>
                 </div>
                 <div className="space-y-2 text-center">
                   <Tooltip>
@@ -171,12 +171,12 @@ export default function UITooltip() {
                     </TooltipTrigger>
                     <TooltipContent><p>Disabled trigger</p></TooltipContent>
                   </Tooltip>
-                  <p className="text-xs text-muted-foreground">Disabled trigger</p>
+                  <p className="text-sm text-muted-foreground">Disabled trigger</p>
                 </div>
               </div>
             </TooltipProvider>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Tooltips animate in with <code className="text-primary bg-primary/5 px-1 rounded">fade-in</code> and <code className="text-primary bg-primary/5 px-1 rounded">zoom-in-95</code>, and slide from the opposite side of their placement.
           </p>
         </section>
@@ -221,7 +221,7 @@ export default function UITooltip() {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Tooltip opens on focus and closes on blur. No additional keyboard interaction needed.</p>
             <p><strong className="text-foreground">Screen readers:</strong> The tooltip content is associated with the trigger via <code className="text-primary bg-primary/5 px-1 rounded">aria-describedby</code>, automatically managed by Radix.</p>
             <p><strong className="text-foreground">Timing:</strong> TooltipProvider accepts a <code className="text-primary bg-primary/5 px-1 rounded">delayDuration</code> prop (default 700ms) to prevent accidental triggers.</p>
@@ -232,7 +232,7 @@ export default function UITooltip() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Icon buttons:</strong> Labeling icon-only actions like "Settings", "Delete", "Copy link" across the app.</p>
             <p><strong className="text-foreground">Truncated text:</strong> Showing full binder titles or curator names when text is clipped with ellipsis.</p>
             <p><strong className="text-foreground">Keyboard shortcuts:</strong> Displaying shortcut hints alongside toolbar actions in the Binder Editor.</p>

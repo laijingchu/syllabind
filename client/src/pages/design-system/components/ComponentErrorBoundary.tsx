@@ -8,7 +8,7 @@ export default function ComponentErrorBoundary() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">ErrorBoundary</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A React class component that catches JavaScript errors in its child component tree,
             logs them, and renders a fallback UI instead of crashing the entire application.
           </p>
@@ -17,7 +17,7 @@ export default function ComponentErrorBoundary() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use ErrorBoundary</strong> to wrap component subtrees that might throw during rendering. It prevents a single broken component from taking down the whole page.</p>
             <p><strong className="text-foreground">Use at the app root</strong> as a last-resort catch-all. Use around specific subtrees (e.g., a binder editor, a data visualization) for more granular recovery.</p>
             <p><strong className="text-foreground">Use useErrorHandler</strong> to surface async errors from functional components into the nearest ErrorBoundary.</p>
@@ -27,7 +27,7 @@ export default function ComponentErrorBoundary() {
         {/* Anatomy / Demo */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Fallback UI</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             The ErrorBoundary cannot be demonstrated live without triggering an actual error. Below is a static replica of the default fallback UI that appears when an error is caught.
           </p>
           <div className="border border-border rounded-lg p-6 bg-background">
@@ -65,7 +65,7 @@ export default function ComponentErrorBoundary() {
               </CardContent>
             </Card>
           </div>
-          <div className="text-sm text-muted-foreground space-y-1">
+          <div className="text-base text-muted-foreground space-y-1">
             <p><strong className="text-foreground">Error message</strong> — Shown in a destructive-tinted box with monospace font.</p>
             <p><strong className="text-foreground">Stack trace</strong> — Collapsed by default inside a details/summary element. Only rendered when <code className="text-primary bg-primary/5 px-1 rounded">NODE_ENV === 'development'</code>.</p>
             <p><strong className="text-foreground">Recovery actions</strong> — "Reload Page" calls <code className="text-primary bg-primary/5 px-1 rounded">window.location.reload()</code>. "Go Back" calls <code className="text-primary bg-primary/5 px-1 rounded">window.history.back()</code>.</p>
@@ -103,7 +103,7 @@ export default function ComponentErrorBoundary() {
         {/* useErrorHandler Hook */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">useErrorHandler Hook</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p>
               The module also exports a <code className="text-primary bg-primary/5 px-1 rounded">useErrorHandler</code> hook for functional components.
               It returns a <code className="text-primary bg-primary/5 px-1 rounded">setError</code> function that, when called with an Error, re-throws it during render so the nearest ErrorBoundary catches it.
@@ -152,7 +152,7 @@ function DataLoader() {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Focus management:</strong> When the fallback UI renders, the "Reload Page" and "Go Back" buttons are immediately focusable via Tab.</p>
             <p><strong className="text-foreground">Semantic structure:</strong> The default fallback uses Card with CardTitle (heading) and CardDescription for screen reader context.</p>
             <p><strong className="text-foreground">Stack trace disclosure:</strong> Uses native <code className="text-primary bg-primary/5 px-1 rounded">&lt;details&gt;</code> / <code className="text-primary bg-primary/5 px-1 rounded">&lt;summary&gt;</code> elements, which are natively accessible and keyboard-operable.</p>
@@ -163,7 +163,7 @@ function DataLoader() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">App.tsx:</strong> Wraps the entire application at the root level as a last-resort error catch. Prevents a white screen if any page throws during render.</p>
             <p><strong className="text-foreground">Component subtrees:</strong> Can be placed around any isolated feature (editor, dashboard widget) to contain failures without affecting the rest of the page.</p>
           </div>

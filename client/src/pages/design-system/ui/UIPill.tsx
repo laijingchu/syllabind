@@ -20,7 +20,7 @@ export default function UIPill() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Pill</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A compact, rounded toggle button for filtering and selection. Pills use <code className="text-primary bg-primary/5 px-1 rounded">rounded-full</code> styling
             with a high-contrast active state to clearly indicate selection. Available in default (solid) and outline variants.
           </p>
@@ -29,7 +29,7 @@ export default function UIPill() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use Pill</strong> for inline filter controls where the user selects one or more options from a visible set. Pills work best with short labels (1-2 words) and small option counts (under ~10).</p>
             <p><strong className="text-foreground">Use Badge</strong> instead for non-interactive status indicators.</p>
             <p><strong className="text-foreground">Use Tabs</strong> instead for switching between content panels.</p>
@@ -40,7 +40,7 @@ export default function UIPill() {
         {/* Demo: Single-select */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Single-Select</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Click a pill to select it. Only one pill is active at a time.
           </p>
           <div className="border border-border rounded-lg p-6">
@@ -61,7 +61,7 @@ export default function UIPill() {
         {/* Demo: Multi-select */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Multi-Select</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Multiple pills can be active simultaneously. Clicking toggles each independently.
           </p>
           <div className="border border-border rounded-lg p-6">
@@ -98,7 +98,7 @@ export default function UIPill() {
               </div>
             </div>
           </div>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Default:</strong> Solid fill. Active = <code className="text-primary bg-primary/5 px-1 rounded">bg-foreground text-background</code>, Inactive = <code className="text-primary bg-primary/5 px-1 rounded">bg-muted text-muted-foreground</code>. Used for primary filter controls.</p>
             <p><strong className="text-foreground">Outline:</strong> Bordered. Active = <code className="text-primary bg-primary/5 px-1 rounded">bg-primary/15 border-primary/60</code>, Inactive = <code className="text-primary bg-primary/5 px-1 rounded">border-primary/30 text-primary</code>. Used for secondary actions like demo topic chips.</p>
           </div>
@@ -227,7 +227,7 @@ export default function UIPill() {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">aria-pressed:</strong> Each pill sets <code className="text-primary bg-primary/5 px-1 rounded">aria-pressed</code> based on its <code className="text-primary bg-primary/5 px-1 rounded">active</code> prop, enabling screen readers to announce toggle state.</p>
             <p><strong className="text-foreground">data-state:</strong> Exposes <code className="text-primary bg-primary/5 px-1 rounded">data-state="on"</code> or <code className="text-primary bg-primary/5 px-1 rounded">"off"</code> for CSS targeting.</p>
             <p><strong className="text-foreground">Focus ring:</strong> Visible focus ring via <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:ring-1 focus-visible:ring-ring</code>.</p>
@@ -275,7 +275,7 @@ export default function UIPill() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">BinderFilterBar:</strong> Visibility filter pills (single-select: All/Public/Unlisted/Private) and category filter pills (multi-select).</p>
             <p><strong className="text-foreground">Binder Editor:</strong> Demo topic chips (outline variant, sm size) for guest users to quick-start with a template.</p>
           </div>

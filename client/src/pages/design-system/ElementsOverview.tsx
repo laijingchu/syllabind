@@ -6,7 +6,7 @@ export default function ElementsOverview() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Design System Overview</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             This guide explains how visual decisions in the design system translate into code.
             Whether you're reviewing a mockup, specifying a new component, or auditing consistency,
             this is the shared vocabulary between design and engineering.
@@ -16,7 +16,7 @@ export default function ElementsOverview() {
         {/* Philosophy */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Design Philosophy</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Syllabind's visual language is intentionally restrained. The interface uses a flat, borderless
             depth model with subtle overlays instead of drop shadows, a neutral color palette that stays
             out of the reader's way, and two typefaces that balance personality with readability.
@@ -27,12 +27,12 @@ export default function ElementsOverview() {
         {/* How it all connects */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">How Design Becomes Code</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             The design system is built in layers. Each layer handles a different concern, and they
             all connect so that a design decision made at the token level automatically ripples
             through every component and page.
           </p>
-          <div className="border border-border rounded-lg overflow-hidden text-sm">
+          <div className="border border-border rounded-lg overflow-hidden text-base">
             {[
               { layer: 'Design Tokens', desc: 'The source of truth. Colors, fonts, spacing, and radius values defined as named variables.', detail: 'One CSS file defines every visual primitive.', color: 'bg-primary/20' },
               { layer: 'Tailwind CSS', desc: 'Translates tokens into usable style utilities. When a token changes, every utility updates.', detail: 'No config file needed — reads tokens directly.', color: 'bg-primary/17' },
@@ -46,7 +46,7 @@ export default function ElementsOverview() {
                   <span className="font-medium w-32 md:w-48 shrink-0">{l.layer}</span>
                   <span className="text-muted-foreground flex-1">{l.desc}</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1 md:ml-48 md:pl-4">{l.detail}</p>
+                <p className="text-sm text-muted-foreground mt-1 md:ml-48 md:pl-4">{l.detail}</p>
               </div>
             ))}
           </div>
@@ -55,14 +55,14 @@ export default function ElementsOverview() {
         {/* Token system for designers */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Design Tokens: The Single Source of Truth</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Every color, font, spacing value, and corner radius in the product traces back to a named
             <strong> design token</strong>. Tokens are like Figma styles or variables — they give a meaningful
             name to a specific value, so everyone refers to the same thing.
           </p>
           <div className="border border-border rounded-lg p-4 space-y-3">
             <h3 className="text-sm font-medium">Why this matters for designers</h3>
-            <div className="space-y-2 text-sm text-muted-foreground">
+            <div className="space-y-2 text-base text-muted-foreground">
               <p>
                 <strong className="text-foreground">Consistency:</strong> When you say "use the primary color,"
                 every engineer references the same token. No hex codes to copy, no mismatches.
@@ -78,7 +78,7 @@ export default function ElementsOverview() {
               </p>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             In code, tokens live in a single CSS file. Here's what the mapping looks like — the token name
             on the left is what engineers use, the value on the right is what you see:
           </p>
@@ -98,14 +98,14 @@ export default function ElementsOverview() {
         {/* Component model */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Component Model</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             The UI is built from <strong>shadcn/ui</strong> components — a library of 50+ pre-built elements
             (buttons, cards, dialogs, form inputs) that have been customized for Syllabind's visual language.
             Unlike external UI kits, these components live inside our codebase and can be freely modified.
           </p>
           <div className="border border-border rounded-lg p-4 space-y-3">
             <h3 className="text-sm font-medium">How components work in practice</h3>
-            <div className="space-y-2 text-sm text-muted-foreground">
+            <div className="space-y-2 text-base text-muted-foreground">
               <p>
                 <strong className="text-foreground">Variants</strong> map directly to design intent.
                 A Button has variants like <em>default</em> (filled, high-emphasis),
@@ -124,7 +124,7 @@ export default function ElementsOverview() {
               </p>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Here's what a Button looks like under the hood — each variant is a named set of visual properties
             drawn from the design tokens:
           </p>
@@ -152,12 +152,12 @@ export default function ElementsOverview() {
         {/* Interaction model */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Interaction & Depth Model</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Instead of drop shadows to convey depth, Syllabind uses a <strong>flat elevation system</strong>.
             Interactive elements respond to hover and press with subtle brightness shifts — a light
             overlay appears on top of the element, making it slightly brighter (dark mode) or dimmer (light mode).
           </p>
-          <div className="border border-border rounded-lg p-4 space-y-2 text-sm text-muted-foreground">
+          <div className="border border-border rounded-lg p-4 space-y-2 text-base text-muted-foreground">
             <p>
               <strong className="text-foreground">Hover:</strong> A barely-visible overlay tells the user
               "this is clickable" without changing layout or color.
@@ -180,10 +180,10 @@ export default function ElementsOverview() {
         {/* Key files */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Where Things Live</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             A quick reference for design/engineering conversations about where to find or change things:
           </p>
-          <div className="space-y-1 text-sm">
+          <div className="space-y-1 text-base">
             {[
               { file: 'client/src/index.css', desc: 'All design tokens — colors, fonts, spacing, radius, animations. The single source of truth.' },
               { file: 'client/src/components/ui/', desc: '50+ UI components — buttons, cards, dialogs, inputs. Each one is a self-contained, customizable file.' },
@@ -201,34 +201,34 @@ export default function ElementsOverview() {
         {/* Making changes */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Requesting Design Changes</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             When specifying changes, it helps to frame them in terms of the system:
           </p>
-          <div className="border border-border rounded-lg p-4 space-y-3 text-sm">
+          <div className="border border-border rounded-lg p-4 space-y-3 text-base">
             <div>
               <p className="font-medium">Changing a color globally</p>
-              <p className="text-muted-foreground">
+              <p className="text-lg text-muted-foreground">
                 "Update the primary color" — one token change, every component updates instantly.
                 No need to list every place it's used.
               </p>
             </div>
             <div>
               <p className="font-medium">Adjusting roundness across the product</p>
-              <p className="text-muted-foreground">
+              <p className="text-lg text-muted-foreground">
                 "Make everything slightly rounder" — a single radius token controls all four size tiers.
                 Change one number, all corners update.
               </p>
             </div>
             <div>
               <p className="font-medium">Adding a new color role</p>
-              <p className="text-muted-foreground">
+              <p className="text-lg text-muted-foreground">
                 "We need a 'success' color" — define what it looks like in light and dark mode,
                 and an engineer adds two token values. Then it's available everywhere.
               </p>
             </div>
             <div>
               <p className="font-medium">Modifying a specific component</p>
-              <p className="text-muted-foreground">
+              <p className="text-lg text-muted-foreground">
                 "Make the outline button have a visible shadow" — each component's variants can be
                 adjusted individually without affecting others.
               </p>

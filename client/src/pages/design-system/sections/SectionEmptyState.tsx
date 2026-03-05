@@ -9,7 +9,7 @@ export default function SectionEmptyState() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">EmptyState</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A centered placeholder shown when a list, page, or section has no content to display.
             Combines an optional icon, title, description, and action to guide the user toward their next step.
           </p>
@@ -18,7 +18,7 @@ export default function SectionEmptyState() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use EmptyState</strong> whenever a content area is empty -- no binders, no enrollments, no search results. It prevents blank screens and tells the user what to do next.</p>
             <p><strong className="text-foreground">Use inline text</strong> instead for minor empty sections within a larger populated page (e.g., "No comments yet" inside a discussion thread).</p>
           </div>
@@ -129,7 +129,7 @@ export default function SectionEmptyState() {
             <TokenRow token="--primary/10" value="Default icon badge background opacity" />
             <TokenRow token="--primary" value="Default icon color" />
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             The icon renders at 32px (<code className="text-primary bg-primary/5 px-1 rounded">h-8 w-8</code>) inside a padded badge. The description is constrained to <code className="text-primary bg-primary/5 px-1 rounded">max-w-md</code> for comfortable reading width. Use <code className="text-primary bg-primary/5 px-1 rounded">iconClassName</code> to swap the badge color for contextual states (e.g., muted for search, destructive for errors).
           </p>
         </section>
@@ -172,7 +172,7 @@ import { BookOpen, Inbox, Search } from 'lucide-react';
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Heading level:</strong> Uses <code className="text-primary bg-primary/5 px-1 rounded">h2</code> for the title, appropriate as a section-level heading within a page that already has an h1.</p>
             <p><strong className="text-foreground">Icon:</strong> The icon is decorative and does not need alt text since the title conveys the message.</p>
             <p><strong className="text-foreground">Action slot:</strong> When an action button is present, it provides a clear next step, improving the experience for keyboard and screen reader users.</p>
@@ -182,12 +182,12 @@ import { BookOpen, Inbox, Search } from 'lucide-react';
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Empty dashboard:</strong> Shown when a reader has no enrollments, with a "Browse Catalog" CTA.</p>
             <p><strong className="text-foreground">Empty search results:</strong> Displayed in the catalog when filters return no binders.</p>
             <p><strong className="text-foreground">No enrollments:</strong> Curator analytics page when a binder has zero readers.</p>
           </div>
-          <p className="text-sm text-muted-foreground italic">
+          <p className="text-base text-muted-foreground italic">
             Note: EmptyState is a ready-to-use section component not yet imported in any pages. It is designed to replace ad-hoc empty state patterns across the app.
           </p>
         </section>

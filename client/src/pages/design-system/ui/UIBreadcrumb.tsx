@@ -15,7 +15,7 @@ export default function UIBreadcrumb() {
       <div className="space-y-12 max-w-3xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Breadcrumb</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A semantic navigation component that shows the user's current location within a
             page hierarchy. Composed of Breadcrumb, BreadcrumbList, BreadcrumbItem,
             BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage, and BreadcrumbEllipsis.
@@ -25,7 +25,7 @@ export default function UIBreadcrumb() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use Breadcrumb</strong> on pages that are nested more than one level deep, providing a trail back to parent pages. Helps readers understand where they are in the binder structure.</p>
             <p><strong className="text-foreground">Use a back button</strong> instead when the hierarchy is simple (one level) or when the user's path is linear rather than hierarchical.</p>
           </div>
@@ -95,7 +95,7 @@ export default function UIBreadcrumb() {
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
-              <p className="text-xs text-muted-foreground">Links use muted-foreground and transition to foreground on hover. The current page renders in foreground with aria-current="page".</p>
+              <p className="text-sm text-muted-foreground">Links use muted-foreground and transition to foreground on hover. The current page renders in foreground with aria-current="page".</p>
             </div>
           </div>
         </section>
@@ -148,7 +148,7 @@ export default function UIBreadcrumb() {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Landmark:</strong> Renders as a <code className="text-primary bg-primary/5 px-1 rounded">&lt;nav&gt;</code> element with <code className="text-primary bg-primary/5 px-1 rounded">aria-label="breadcrumb"</code> for screen reader identification.</p>
             <p><strong className="text-foreground">Current page:</strong> The final item uses <code className="text-primary bg-primary/5 px-1 rounded">aria-current="page"</code> and <code className="text-primary bg-primary/5 px-1 rounded">aria-disabled="true"</code> to indicate the current location.</p>
             <p><strong className="text-foreground">Separators:</strong> Chevron separators are marked with <code className="text-primary bg-primary/5 px-1 rounded">role="presentation"</code> and <code className="text-primary bg-primary/5 px-1 rounded">aria-hidden="true"</code> so they are skipped by screen readers.</p>
@@ -159,7 +159,7 @@ export default function UIBreadcrumb() {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">WeekView:</strong> Shows the trail from Dashboard to Binder to the current Week, letting readers navigate back up the hierarchy.</p>
             <p><strong className="text-foreground">Nested page navigation:</strong> Used in deeply nested curator pages (e.g., Binder Builder &gt; Week &gt; Step editing) to maintain orientation.</p>
           </div>

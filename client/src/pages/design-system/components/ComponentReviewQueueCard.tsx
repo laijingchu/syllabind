@@ -31,7 +31,7 @@ export default function ComponentReviewQueueCard() {
       <div className="space-y-12 max-w-4xl">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">ReviewQueueCard</h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             A card for the admin review queue showing a binder awaiting approval. Displays curator avatar,
             binder title, metadata badges, and action buttons for editing, previewing, approving, or rejecting.
           </p>
@@ -40,7 +40,7 @@ export default function ComponentReviewQueueCard() {
         {/* When to Use */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Use ReviewQueueCard</strong> in the admin review queue tab of the curator studio. Each card represents a binder submitted for public catalog inclusion.</p>
             <p><strong className="text-foreground">Use CuratorBinderCard</strong> instead for the curator's own binder list where they manage drafts, publishing, and analytics.</p>
           </div>
@@ -60,7 +60,7 @@ export default function ComponentReviewQueueCard() {
               />
             ))}
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             The card shows curator identity prominently with avatar, name, visibility and audience badges, and submission timestamp. Action buttons are right-aligned on desktop and wrap below on mobile.
           </p>
         </section>
@@ -68,7 +68,7 @@ export default function ComponentReviewQueueCard() {
         {/* States */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">States</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Default:</strong> All action buttons enabled. Approve uses primary style, Reject uses destructive.</p>
             <p><strong className="text-foreground">Action in progress:</strong> Both Approve and Reject buttons are disabled. Approve shows a spinner icon instead of the checkmark.</p>
           </div>
@@ -77,19 +77,19 @@ export default function ComponentReviewQueueCard() {
         {/* Anatomy */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Anatomy</h2>
-          <div className="border border-border rounded-lg p-6 space-y-4 text-sm">
+          <div className="border border-border rounded-lg p-6 space-y-4 text-base">
             <div className="space-y-3">
               <div className="border-l-2 border-primary/30 pl-4 space-y-1">
                 <p className="font-medium text-foreground">1. Curator avatar</p>
-                <p className="text-muted-foreground">10x10 Avatar with DiceBear fallback. Only shown when curator data is present.</p>
+                <p className="text-lg text-muted-foreground">10x10 Avatar with DiceBear fallback. Only shown when curator data is present.</p>
               </div>
               <div className="border-l-2 border-primary/30 pl-4 space-y-1">
                 <p className="font-medium text-foreground">2. Title + metadata row</p>
-                <p className="text-muted-foreground">Binder title (truncated), "by curator" text, visibility badge, audience level badge, and relative submission time.</p>
+                <p className="text-lg text-muted-foreground">Binder title (truncated), "by curator" text, visibility badge, audience level badge, and relative submission time.</p>
               </div>
               <div className="border-l-2 border-primary/30 pl-4 space-y-1">
                 <p className="font-medium text-foreground">3. Action buttons</p>
-                <p className="text-muted-foreground">Edit (pencil icon), Preview (outline with label), Approve (primary with checkmark), Reject (destructive with X icon).</p>
+                <p className="text-lg text-muted-foreground">Edit (pencil icon), Preview (outline with label), Approve (primary with checkmark), Reject (destructive with X icon).</p>
               </div>
             </div>
           </div>
@@ -163,7 +163,7 @@ interface ReviewQueueBinder {
         {/* Internal Composition */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Internal Composition</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Card, CardContent</strong> — Structural container.</p>
             <p><strong className="text-foreground">Avatar + AvatarImage + AvatarFallback</strong> — Curator identity with DiceBear fallback.</p>
             <p><strong className="text-foreground">Badge (outline)</strong> — Visibility and audience level indicators.</p>
@@ -175,7 +175,7 @@ interface ReviewQueueBinder {
         {/* Accessibility */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Button states:</strong> Disabled buttons during action progress prevent double-submission. Spinner provides visual feedback for async operations.</p>
             <p><strong className="text-foreground">Responsive layout:</strong> Stacks vertically on mobile with buttons below content, side-by-side on desktop.</p>
           </div>
@@ -184,7 +184,7 @@ interface ReviewQueueBinder {
         {/* In the Product */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Admin Review Queue:</strong> The "Review" tab in the curator studio displays all binders submitted for public catalog review. Admins approve or reject with optional feedback.</p>
           </div>
         </section>

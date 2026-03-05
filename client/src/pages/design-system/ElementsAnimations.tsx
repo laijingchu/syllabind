@@ -12,7 +12,7 @@ export default function ElementsAnimations() {
       <div className="space-y-12">
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Motion & Animation</h1>
-          <p className="text-muted-foreground max-w-2xl">
+          <p className="text-lg text-muted-foreground max-w-2xl">
             Motion in Syllabind is functional, not decorative. Animations communicate system status
             (loading, generating, processing), guide attention to new content, and provide micro-feedback
             for interactions. Everything moves quickly — most durations are under 400ms — so the
@@ -23,7 +23,7 @@ export default function ElementsAnimations() {
         {/* Shimmer */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Shimmer — Content Loading</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Shimmer replaces content while it loads. The sweeping gradient tells users that data is
             being fetched and gives an approximate sense of what the content will look like (text lines,
             cards). It's used wherever content loads asynchronously — binder lists, step content, profiles.
@@ -36,7 +36,7 @@ export default function ElementsAnimations() {
               Restart
             </Button>
           </div>
-          <div className="border border-border rounded-lg p-4 text-sm text-muted-foreground">
+          <div className="border border-border rounded-lg p-4 text-base text-muted-foreground">
             <p>
               <strong className="text-foreground">When to use:</strong> Any time content is loading and you
               can predict the approximate shape (text block, card grid, header). Prefer shimmer over
@@ -48,7 +48,7 @@ export default function ElementsAnimations() {
         {/* Pulse Border */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Pulse Border — Active Generation</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             A pulsing glow around an element's border indicates active AI generation or a long-running
             process. Unlike shimmer (which replaces content), pulse border wraps existing content to
             show it's being worked on. Currently used in the binder editor when AI generates step content.
@@ -56,10 +56,10 @@ export default function ElementsAnimations() {
           <div className="border border-border rounded-lg p-6 bg-card">
             <div className="animate-generating border-2 rounded-lg p-6 text-center">
               <p className="text-sm font-medium">Generating step content</p>
-              <p className="text-xs text-muted-foreground mt-1">The border breathes between subtle and visible</p>
+              <p className="text-sm text-muted-foreground mt-1">The border breathes between subtle and visible</p>
             </div>
           </div>
-          <div className="border border-border rounded-lg p-4 text-sm text-muted-foreground">
+          <div className="border border-border rounded-lg p-4 text-base text-muted-foreground">
             <p>
               <strong className="text-foreground">When to use:</strong> Processes that produce a result inside
               a container — AI content generation, import processing, batch operations. The pulsing rhythm
@@ -71,7 +71,7 @@ export default function ElementsAnimations() {
         {/* Step Slide In */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Step Slide-In — Sequential Reveal</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Items slide up and fade in with staggered timing, creating a cascade effect.
             This draws attention to newly added items and gives a sense of progression. Used when
             steps are revealed inside a binder week view and when streaming content arrives from the server.
@@ -91,7 +91,7 @@ export default function ElementsAnimations() {
               Replay
             </Button>
           </div>
-          <div className="border border-border rounded-lg p-4 text-sm text-muted-foreground">
+          <div className="border border-border rounded-lg p-4 text-base text-muted-foreground">
             <p>
               <strong className="text-foreground">When to use:</strong> Lists of items appearing as a group
               (page load, expanding a section) or one-by-one (streaming). The stagger should feel brisk —
@@ -103,7 +103,7 @@ export default function ElementsAnimations() {
         {/* Animated Ellipsis */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Animated Ellipsis — Inline Loading</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             A lightweight, text-level indicator for short waits. Three dots cycle after a label
             to show something is in progress without taking up visual space. Used in the logout
             transition ("Come back soon...") and inline loading states.
@@ -122,7 +122,7 @@ export default function ElementsAnimations() {
               <span className="animate-ellipsis" />
             </div>
           </div>
-          <div className="border border-border rounded-lg p-4 text-sm text-muted-foreground">
+          <div className="border border-border rounded-lg p-4 text-base text-muted-foreground">
             <p>
               <strong className="text-foreground">When to use:</strong> Short inline messages where a
               spinner would be too heavy. Best for conversational moments ("Saving...", "Processing...")
@@ -134,7 +134,7 @@ export default function ElementsAnimations() {
         {/* Tailwind Built-ins */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Standard Spinners & Indicators</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Built-in animation utilities for common loading and attention patterns. The spin animation
             is the most-used — it appears on the Loader2 icon inside buttons during form submissions
             and page transitions.
@@ -146,7 +146,7 @@ export default function ElementsAnimations() {
               </div>
               <div>
                 <p className="text-xs font-medium">Spin</p>
-                <p className="text-xs text-muted-foreground">Button loading, page transitions</p>
+                <p className="text-sm text-muted-foreground">Button loading, page transitions</p>
               </div>
             </div>
             <div className="border border-border rounded-lg p-4 text-center space-y-3">
@@ -155,7 +155,7 @@ export default function ElementsAnimations() {
               </div>
               <div>
                 <p className="text-xs font-medium">Pulse</p>
-                <p className="text-xs text-muted-foreground">Subtle attention draw, skeleton placeholders</p>
+                <p className="text-sm text-muted-foreground">Subtle attention draw, skeleton placeholders</p>
               </div>
             </div>
             <div className="border border-border rounded-lg p-4 text-center space-y-3">
@@ -164,7 +164,7 @@ export default function ElementsAnimations() {
               </div>
               <div>
                 <p className="text-xs font-medium">Bounce</p>
-                <p className="text-xs text-muted-foreground">Playful emphasis (use sparingly)</p>
+                <p className="text-sm text-muted-foreground">Playful emphasis (use sparingly)</p>
               </div>
             </div>
             <div className="border border-border rounded-lg p-4 text-center space-y-3">
@@ -173,7 +173,7 @@ export default function ElementsAnimations() {
               </div>
               <div>
                 <p className="text-xs font-medium">Ping</p>
-                <p className="text-xs text-muted-foreground">Notification dots, unread indicators</p>
+                <p className="text-sm text-muted-foreground">Notification dots, unread indicators</p>
               </div>
             </div>
           </div>
@@ -182,7 +182,7 @@ export default function ElementsAnimations() {
         {/* Accordion */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accordion Expand/Collapse</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Accordions open and close with a smooth height transition (0.2s ease-out). This motion
             helps users understand where content came from and where it went — without it, the sudden
             appearance/disappearance of content can be disorienting. Used in binder week sections on
@@ -219,17 +219,17 @@ export default function ElementsAnimations() {
         {/* Motion principles */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Motion Principles</h2>
-          <div className="border border-border rounded-lg p-4 space-y-3 text-sm">
+          <div className="border border-border rounded-lg p-4 space-y-3 text-base">
             <div>
               <p className="font-medium">Motion should inform, not entertain</p>
-              <p className="text-muted-foreground">
+              <p className="text-lg text-muted-foreground">
                 Every animation answers a question: "Is it loading?", "Where did that come from?",
                 "Did my action register?" If an animation doesn't serve one of these, it shouldn't exist.
               </p>
             </div>
             <div>
               <p className="font-medium">Fast by default</p>
-              <p className="text-muted-foreground">
+              <p className="text-lg text-muted-foreground">
                 Most transitions are 200–400ms. The interface should feel instant. Loading
                 indicators (shimmer, ellipsis) are the exception — they run continuously until
                 content arrives.
@@ -237,14 +237,14 @@ export default function ElementsAnimations() {
             </div>
             <div>
               <p className="font-medium">Ease-out for entering, ease-in for exiting</p>
-              <p className="text-muted-foreground">
+              <p className="text-lg text-muted-foreground">
                 Content that appears should decelerate into place (ease-out). Content that disappears
                 should accelerate away (ease-in). This matches how physical objects move and feels natural.
               </p>
             </div>
             <div>
               <p className="font-medium">Stagger for groups, instant for singles</p>
-              <p className="text-muted-foreground">
+              <p className="text-lg text-muted-foreground">
                 When multiple items appear together, stagger them for a cascade effect. When a single
                 element updates, it should change immediately without added motion.
               </p>
