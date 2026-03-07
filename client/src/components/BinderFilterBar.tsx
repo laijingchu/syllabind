@@ -1,7 +1,7 @@
 import { Input } from '@/components/ui/input';
+import { Pill } from '@/components/ui/pill';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import type { Category } from '@/lib/types';
 
 interface BinderFilterBarProps {
@@ -31,14 +31,6 @@ const DEFAULT_VISIBILITY_OPTIONS = [
   { value: 'unlisted', label: 'Unlisted' },
   { value: 'private', label: 'Private' },
 ];
-
-const pillClass = (active: boolean) =>
-  cn(
-    "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
-    active
-      ? "bg-foreground text-background"
-      : "bg-muted text-muted-foreground hover:bg-muted/80"
-  );
 
 export function BinderFilterBar({
   searchQuery,
@@ -72,13 +64,13 @@ export function BinderFilterBar({
         {onVisibilityChange && visibility !== undefined && (
           <div className="catalog-visibility flex gap-1.5 shrink-0">
             {visibilityOptions.map(opt => (
-              <button
+              <Pill
                 key={opt.value}
+                active={visibility === opt.value}
                 onClick={() => onVisibilityChange(opt.value)}
-                className={pillClass(visibility === opt.value)}
               >
                 {opt.label}
-              </button>
+              </Pill>
             ))}
           </div>
         )}
@@ -110,20 +102,20 @@ export function BinderFilterBar({
       {/* Category pills (multi-select) */}
       {onCategoriesChange && categories && selectedCategories && (
         <div className="catalog-categories flex gap-1.5 flex-wrap">
-          <button
+          <Pill
+            active={selectedCategories.length === 0}
             onClick={() => onCategoriesChange([])}
-            className={pillClass(selectedCategories.length === 0)}
           >
             All
-          </button>
+          </Pill>
           {categories.map(cat => (
-            <button
+            <Pill
               key={cat.slug}
+              active={selectedCategories.includes(cat.slug)}
               onClick={() => toggleCategory(cat.slug)}
-              className={pillClass(selectedCategories.includes(cat.slug))}
             >
               {cat.name}
-            </button>
+            </Pill>
           ))}
         </div>
       )}

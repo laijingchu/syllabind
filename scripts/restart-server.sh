@@ -10,21 +10,21 @@ pkill -9 -f "node.*server/index" 2>/dev/null
 sleep 2
 
 # Check if port is free
-if ss -tuln 2>/dev/null | grep -q ":5000 "; then
-  echo "❌ Port 5000 is still in use!"
-  ss -tuln | grep ":5000 "
+if ss -tuln 2>/dev/null | grep -q ":3000 "; then
+  echo "❌ Port 3000 is still in use!"
+  ss -tuln | grep ":3000 "
   echo "⚠️  Waiting 3 more seconds..."
   sleep 3
 fi
 
 # Final check
-if ss -tuln 2>/dev/null | grep -q ":5000 "; then
-  echo "❌ Port 5000 still occupied. Please check manually:"
-  ss -tulnp | grep ":5000 "
+if ss -tuln 2>/dev/null | grep -q ":3000 "; then
+  echo "❌ Port 3000 still occupied. Please check manually:"
+  ss -tulnp | grep ":3000 "
   exit 1
 fi
 
-echo "✅ Port 5000 is free"
+echo "✅ Port 3000 is free"
 echo "🚀 Starting server..."
 
 # Start the server

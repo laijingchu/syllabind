@@ -137,7 +137,7 @@ async function seed() {
     ];
 
     const readers = await db.insert(users).values(readersData).returning();
-    readers.forEach(reader => {
+    readers.forEach((reader: any) => {
       console.log(`✅ Created reader: ${reader.username}`);
     });
     console.log();
@@ -396,7 +396,7 @@ async function seed() {
     const createdTags = await db.insert(tags).values(tagData).onConflictDoNothing().returning();
     const allTags = createdTags.length > 0 ? createdTags : await db.select().from(tags);
 
-    const getTagId = (slug: string) => allTags.find(t => t.slug === slug)?.id;
+    const getTagId = (slug: string) => allTags.find((t: any) => t.slug === slug)?.id;
 
     // Digital Minimalism tags
     const dmTags = ['focus', 'productivity', 'digital-wellness'].map(getTagId).filter(Boolean);

@@ -25,6 +25,59 @@ import AdminSettings from "@/pages/AdminSettings";
 import Settings from "@/pages/Settings";
 import Billing from "@/pages/Billing";
 import Pricing from "@/pages/Pricing";
+import ElementsOverview from "@/pages/design-system/ElementsOverview";
+import ElementsColors from "@/pages/design-system/ElementsColors";
+import ElementsTypography from "@/pages/design-system/ElementsTypography";
+import ElementsSpacing from "@/pages/design-system/ElementsSpacing";
+import ElementsShadows from "@/pages/design-system/ElementsShadows";
+import ElementsAnimations from "@/pages/design-system/ElementsAnimations";
+import UIOverview from "@/pages/design-system/ui/UIOverview";
+import UIButton from "@/pages/design-system/ui/UIButton";
+import UICard from "@/pages/design-system/ui/UICard";
+import UIInput from "@/pages/design-system/ui/UIInput";
+import UIBadge from "@/pages/design-system/ui/UIBadge";
+import UIPill from "@/pages/design-system/ui/UIPill";
+import UITextarea from "@/pages/design-system/ui/UITextarea";
+import UILabel from "@/pages/design-system/ui/UILabel";
+import UICheckbox from "@/pages/design-system/ui/UICheckbox";
+import UISwitch from "@/pages/design-system/ui/UISwitch";
+import UIRadioGroup from "@/pages/design-system/ui/UIRadioGroup";
+import UISelect from "@/pages/design-system/ui/UISelect";
+import UICalendar from "@/pages/design-system/ui/UICalendar";
+import UISeparator from "@/pages/design-system/ui/UISeparator";
+import UITable from "@/pages/design-system/ui/UITable";
+import UITabs from "@/pages/design-system/ui/UITabs";
+import UIBreadcrumb from "@/pages/design-system/ui/UIBreadcrumb";
+import UIDropdownMenu from "@/pages/design-system/ui/UIDropdownMenu";
+import UIDialog from "@/pages/design-system/ui/UIDialog";
+import UIAlertDialog from "@/pages/design-system/ui/UIAlertDialog";
+import UIPopover from "@/pages/design-system/ui/UIPopover";
+import UISheet from "@/pages/design-system/ui/UISheet";
+import UIOverlay from "@/pages/design-system/ui/UIOverlay";
+import UIDrawer from "@/pages/design-system/ui/UIDrawer";
+import UITooltip from "@/pages/design-system/ui/UITooltip";
+import UIAvatar from "@/pages/design-system/ui/UIAvatar";
+import UISkeleton from "@/pages/design-system/ui/UISkeleton";
+import UIProgress from "@/pages/design-system/ui/UIProgress";
+import UISpinner from "@/pages/design-system/ui/UISpinner";
+import UIAlert from "@/pages/design-system/ui/UIAlert";
+import UIToast from "@/pages/design-system/ui/UIToast";
+import UIAccordion from "@/pages/design-system/ui/UIAccordion";
+import UIAnimatedContainer from "@/pages/design-system/ui/UIAnimatedContainer";
+import UIRichTextEditor from "@/pages/design-system/ui/UIRichTextEditor";
+import ComponentPageHeader from "@/pages/design-system/components/ComponentPageHeader";
+import ComponentEmptyState from "@/pages/design-system/components/ComponentEmptyState";
+import ComponentSearchBar from "@/pages/design-system/components/ComponentSearchBar";
+import ComponentBinderFilterBar from "@/pages/design-system/components/ComponentBinderFilterBar";
+import ComponentsOverview from "@/pages/design-system/components/ComponentsOverview";
+import ComponentBinderCard from "@/pages/design-system/components/ComponentBinderCard";
+import ComponentShareDialog from "@/pages/design-system/components/ComponentShareDialog";
+import ComponentAvatarUpload from "@/pages/design-system/components/ComponentAvatarUpload";
+import ComponentUpgradePrompt from "@/pages/design-system/components/ComponentUpgradePrompt";
+import ComponentGeneratingWeekPlaceholder from "@/pages/design-system/components/ComponentGeneratingWeekPlaceholder";
+import ComponentErrorBoundary from "@/pages/design-system/components/ComponentErrorBoundary";
+import ComponentCuratorBinderCard from "@/pages/design-system/components/ComponentCuratorBinderCard";
+import ComponentReviewQueueCard from "@/pages/design-system/components/ComponentReviewQueueCard";
 
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
@@ -59,7 +112,9 @@ function Router() {
   return (
     <Layout>
       <Switch>
-        <Route path="/welcome" component={Catalog} />
+        <Route path="/welcome">
+          {import.meta.env.PROD && !user ? <Redirect to="/login?mode=signup" /> : <Catalog />}
+        </Route>
         <Route path="/login" component={Login} />
 
         <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
@@ -79,8 +134,64 @@ function Router() {
         <Route path="/curator/profile" component={() => <ProtectedRoute component={CuratorProfile} />} />
         <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
         <Route path="/billing" component={() => <ProtectedRoute component={Billing} />} />
-        <Route path="/pricing" component={Pricing} />
+        {(user || !import.meta.env.PROD) && <Route path="/pricing" component={Pricing} />}
         <Route path="/admin/settings" component={() => <ProtectedRoute component={AdminSettings} />} />
+
+        <Route path="/design-system" component={ElementsOverview} />
+        <Route path="/design-system/colors" component={ElementsColors} />
+        <Route path="/design-system/typography" component={ElementsTypography} />
+        <Route path="/design-system/spacing" component={ElementsSpacing} />
+        <Route path="/design-system/shadows" component={ElementsShadows} />
+        <Route path="/design-system/animations" component={ElementsAnimations} />
+
+        <Route path="/design-system/ui" component={UIOverview} />
+        <Route path="/design-system/ui/button" component={UIButton} />
+        <Route path="/design-system/ui/badge" component={UIBadge} />
+        <Route path="/design-system/ui/pill" component={UIPill} />
+        <Route path="/design-system/ui/input" component={UIInput} />
+        <Route path="/design-system/ui/textarea" component={UITextarea} />
+        <Route path="/design-system/ui/label" component={UILabel} />
+        <Route path="/design-system/ui/checkbox" component={UICheckbox} />
+        <Route path="/design-system/ui/switch" component={UISwitch} />
+        <Route path="/design-system/ui/radio-group" component={UIRadioGroup} />
+        <Route path="/design-system/ui/select" component={UISelect} />
+        <Route path="/design-system/ui/calendar" component={UICalendar} />
+        <Route path="/design-system/ui/card" component={UICard} />
+        <Route path="/design-system/ui/separator" component={UISeparator} />
+        <Route path="/design-system/ui/table" component={UITable} />
+        <Route path="/design-system/ui/tabs" component={UITabs} />
+        <Route path="/design-system/ui/breadcrumb" component={UIBreadcrumb} />
+        <Route path="/design-system/ui/dropdown-menu" component={UIDropdownMenu} />
+        <Route path="/design-system/ui/overlay" component={UIOverlay} />
+        <Route path="/design-system/ui/dialog" component={UIDialog} />
+        <Route path="/design-system/ui/alert-dialog" component={UIAlertDialog} />
+        <Route path="/design-system/ui/popover" component={UIPopover} />
+        <Route path="/design-system/ui/sheet" component={UISheet} />
+        <Route path="/design-system/ui/drawer" component={UIDrawer} />
+        <Route path="/design-system/ui/tooltip" component={UITooltip} />
+        <Route path="/design-system/ui/avatar" component={UIAvatar} />
+        <Route path="/design-system/ui/skeleton" component={UISkeleton} />
+        <Route path="/design-system/ui/progress" component={UIProgress} />
+        <Route path="/design-system/ui/spinner" component={UISpinner} />
+        <Route path="/design-system/ui/alert" component={UIAlert} />
+        <Route path="/design-system/ui/toast" component={UIToast} />
+        <Route path="/design-system/ui/accordion" component={UIAccordion} />
+        <Route path="/design-system/ui/animated-container" component={UIAnimatedContainer} />
+        <Route path="/design-system/ui/rich-text-editor" component={UIRichTextEditor} />
+
+        <Route path="/design-system/components" component={ComponentsOverview} />
+        <Route path="/design-system/components/page-header" component={ComponentPageHeader} />
+        <Route path="/design-system/components/empty-state" component={ComponentEmptyState} />
+        <Route path="/design-system/components/search-bar" component={ComponentSearchBar} />
+        <Route path="/design-system/components/binder-filter-bar" component={ComponentBinderFilterBar} />
+        <Route path="/design-system/components/binder-card" component={ComponentBinderCard} />
+        <Route path="/design-system/components/share-dialog" component={ComponentShareDialog} />
+        <Route path="/design-system/components/avatar-upload" component={ComponentAvatarUpload} />
+        <Route path="/design-system/components/upgrade-prompt" component={ComponentUpgradePrompt} />
+        <Route path="/design-system/components/generating-week-placeholder" component={ComponentGeneratingWeekPlaceholder} />
+        <Route path="/design-system/components/error-boundary" component={ComponentErrorBoundary} />
+        <Route path="/design-system/components/curator-binder-card" component={ComponentCuratorBinderCard} />
+        <Route path="/design-system/components/review-queue-card" component={ComponentReviewQueueCard} />
 
         <Route component={NotFound} />
       </Switch>

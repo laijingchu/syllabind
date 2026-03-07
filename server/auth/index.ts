@@ -9,7 +9,7 @@ import { registerEmailAuthRoutes } from "./emailAuth";
 import { registerGoogleAuthRoutes } from "./googleAuth";
 import { registerAppleAuthRoutes } from "./appleAuth";
 import { isAdminUser } from "./admin";
-import { db } from "../db";
+import { db, isNeon } from "../db";
 import { users } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 import { createRateLimiter } from "../utils/rateLimiter";
@@ -31,19 +31,22 @@ if (process.env.SESSION_SECRET) {
 export function setupCustomAuth(app: Express): void {
   // Session configuration
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  const pgStore = connectPg(session);
 
-  const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
-    ttl: sessionTtl,
-    tableName: "sessions",
-  });
+  let sessionStore: session.Store | undefined;
+  if (!isNeon) {
+    const pgStore = connectPg(session);
+    sessionStore = new pgStore({
+      conString: process.env.DATABASE_URL,
+      createTableIfMissing: false,
+      ttl: sessionTtl,
+      tableName: "sessions",
+    });
+  }
 
   app.set("trust proxy", 1);
 
   app.use(session({
-    store: sessionStore,
+    ...(sessionStore ? { store: sessionStore } : {}),
     secret: resolvedSessionSecret,
     resave: false,
     saveUninitialized: false,

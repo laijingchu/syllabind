@@ -64,8 +64,8 @@ describe('Stripe Routes', () => {
         customer: customerId,
         line_items: [{ price: sessionPriceId, quantity: 1 }],
         mode: 'payment',
-        success_url: 'http://localhost:5000/profile?subscription=success',
-        cancel_url: 'http://localhost:5000/profile?subscription=canceled',
+        success_url: 'http://localhost:3000/profile?subscription=success',
+        cancel_url: 'http://localhost:3000/profile?subscription=canceled',
         metadata: { userId: user.id },
       });
 
@@ -97,7 +97,7 @@ describe('Stripe Routes', () => {
 
       const portalSession = await stripe.billingPortal.sessions.create({
         customer: customerId,
-        return_url: 'http://localhost:5000/profile',
+        return_url: 'http://localhost:3000/profile',
       });
       res.json({ url: portalSession.url });
     });

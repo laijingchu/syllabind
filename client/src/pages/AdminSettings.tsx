@@ -18,6 +18,7 @@ export default function AdminSettings() {
   const [termsUrl, setTermsUrl] = useState('');
   const [privacyUrl, setPrivacyUrl] = useState('');
   const [getPaidToTeachUrl, setGetPaidToTeachUrl] = useState('');
+  const [wipBadgeUrl, setWipBadgeUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [waitlistSaving, setWaitlistSaving] = useState(false);
@@ -25,6 +26,7 @@ export default function AdminSettings() {
   const [termsSaving, setTermsSaving] = useState(false);
   const [privacySaving, setPrivacySaving] = useState(false);
   const [getPaidToTeachSaving, setGetPaidToTeachSaving] = useState(false);
+  const [wipBadgeSaving, setWipBadgeSaving] = useState(false);
 
   // Redirect non-admin users
   useEffect(() => {
@@ -42,14 +44,16 @@ export default function AdminSettings() {
       fetch('/api/site-settings/terms_of_service_url').then(r => r.json()),
       fetch('/api/site-settings/privacy_policy_url').then(r => r.json()),
       fetch('/api/site-settings/get_paid_to_teach_url').then(r => r.json()),
+      fetch('/api/site-settings/wip_badge_url').then(r => r.json()),
     ])
-      .then(([slackData, waitlistData, bugReportData, termsData, privacyData, getPaidToTeachData]) => {
+      .then(([slackData, waitlistData, bugReportData, termsData, privacyData, getPaidToTeachData, wipBadgeData]) => {
         setSlackUrl(slackData.value || '');
         setWaitlistUrl(waitlistData.value || '');
         setBugReportUrl(bugReportData.value || '');
         setTermsUrl(termsData.value || '');
         setPrivacyUrl(privacyData.value || '');
         setGetPaidToTeachUrl(getPaidToTeachData.value || '');
+        setWipBadgeUrl(wipBadgeData.value || '');
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -160,6 +164,24 @@ export default function AdminSettings() {
       toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
     } finally {
       setGetPaidToTeachSaving(false);
+    }
+  };
+
+  const handleWipBadgeSave = async () => {
+    setWipBadgeSaving(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ key: 'wip_badge_url', value: wipBadgeUrl }),
+      });
+      if (!res.ok) throw new Error('Failed to save');
+      toast({ title: 'Settings saved', description: 'WIP badge URL has been updated.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
+    } finally {
+      setWipBadgeSaving(false);
     }
   };
 
@@ -350,6 +372,36 @@ export default function AdminSettings() {
               />
               <Button onClick={handlePrivacySave} disabled={privacySaving}>
                 {privacySaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>WIP Badge Link</CardTitle>
+          <CardDescription>
+            URL opened when users tap the "WIP" badge next to the Syllabind logo in the header.
+            Leave empty to make the badge non-clickable.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading...
+            </div>
+          ) : (
+            <>
+              <Input
+                placeholder="https://example.com/roadmap"
+                value={wipBadgeUrl}
+                onChange={(e) => setWipBadgeUrl(e.target.value)}
+              />
+              <Button onClick={handleWipBadgeSave} disabled={wipBadgeSaving}>
+                {wipBadgeSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save
               </Button>
             </>

@@ -21,21 +21,21 @@ export function PageHeader({
   className = '',
 }: PageHeaderProps) {
   return (
-    <div className={`page-header ${className}`}>
-      <div className="page-header-content">
+    <div className={`page-header flex items-start justify-between gap-4 mb-6 ${className}`}>
+      <div className="page-header-content space-y-2">
         {backHref && (
           <Link href={backHref}>
-            <Button variant="ghost" className="page-header-back">
+            <Button variant="ghost" className="page-header-back -ml-3">
               <ArrowLeft className="mr-2 h-4 w-4" /> {backLabel}
             </Button>
           </Link>
         )}
-        <div className="page-header-titles">
+        <div className="page-header-titles space-y-1">
           <h1 className="text-3xl font-display text-foreground">{title}</h1>
           {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
         </div>
       </div>
-      {actions && <div className="page-header-actions">{actions}</div>}
+      {actions && <div className="page-header-actions shrink-0">{actions}</div>}
     </div>
   );
 }

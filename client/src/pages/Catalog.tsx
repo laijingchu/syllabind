@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import { BinderCard } from '@/components/BinderCard';
 import { AnimatedPage, AnimatedCard } from '@/components/ui/animated-container';
 import { Button } from '@/components/ui/button';
-import { BinderFilterBar } from '@/components/sections/BinderFilterBar';
+import { BinderFilterBar } from '@/components/BinderFilterBar';
 import { Loader2, Sparkles, ArrowRight } from 'lucide-react';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useAuth } from '@/hooks/use-auth';
@@ -46,8 +46,8 @@ export default function Catalog() {
   // Fetch categories on mount
   useEffect(() => {
     fetch('/api/categories')
-      .then(res => res.json())
-      .then(data => setCategories(data))
+      .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+      .then(data => setCategories(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, []);
 
@@ -81,16 +81,18 @@ export default function Catalog() {
 
     try {
       const res = await fetch(`/api/binders?${p.toString()}`);
+      if (!res.ok) throw new Error(`${res.status}`);
       const data = await res.json();
       if (loadMore) {
-        setBinders(prev => [...prev, ...data.binders]);
+        setBinders(prev => [...prev, ...(data.binders ?? [])]);
         setOffset(currentOffset);
       } else {
-        setBinders(data.binders);
+        setBinders(data.binders ?? []);
       }
-      setTotal(data.total);
+      setTotal(data.total ?? 0);
     } catch (err) {
       console.error('Failed to fetch catalog:', err);
+      if (!loadMore) setBinders([]);
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);

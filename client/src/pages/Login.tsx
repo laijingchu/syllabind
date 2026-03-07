@@ -120,7 +120,7 @@ export default function Login() {
         <div className="text-center space-y-2">
           <BookOpen className="mx-auto h-10 w-10 text-primary" />
           <h1 className="text-2xl font-display font-medium">Welcome to Syllabind</h1>
-          <p className="text-muted-foreground">Focus on one learning journey at a time.</p>
+          <p className="text-muted-foreground">Goodbye tutorial hell - hello active learning.</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -209,16 +209,11 @@ export default function Login() {
                 <CardDescription>Syllabind is in private alpha. Request early access below.</CardDescription>
               </CardHeader>
               <CardContent className="pt-2 pb-8 text-center space-y-6">
-                {waitlistUrlLoading ? (
-                  <div className="flex items-center justify-center gap-2 text-muted-foreground py-4">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading...
-                  </div>
-                ) : waitlistUrl ? (
+                {waitlistUrl || waitlistUrlLoading ? (
                   <>
                     <p className="text-muted-foreground">Fill out a short form and we'll reach out when it's your turn.</p>
-                    <Button asChild size="lg" className="w-full">
-                      <a href={waitlistUrl} target="_blank" rel="noopener noreferrer">
+                    <Button asChild size="lg" className="w-full" disabled={waitlistUrlLoading}>
+                      <a href={waitlistUrl || '#'} target="_blank" rel="noopener noreferrer">
                         Join Waitlist
                         <ExternalLink className="ml-2 h-4 w-4" />
                       </a>

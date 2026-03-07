@@ -221,7 +221,7 @@ export class DatabaseStorage implements IStorage {
       .from(binders)
       .leftJoin(users, eq(binders.curatorId, users.username));
 
-    return rows.map(row => ({
+    return rows.map((row: any) => ({
       ...row.binder,
       curator: row.curatorUsername ? {
         name: row.curatorName,
@@ -352,7 +352,7 @@ export class DatabaseStorage implements IStorage {
     const completions = await db.select({ stepId: completedSteps.stepId })
       .from(completedSteps)
       .where(eq(completedSteps.enrollmentId, enrollmentId));
-    return completions.map(c => c.stepId);
+    return completions.map((c: any) => c.stepId);
   }
 
   async isStepCompleted(enrollmentId: number, stepId: number): Promise<boolean> {
@@ -383,7 +383,7 @@ export class DatabaseStorage implements IStorage {
 
     const total = totalEnrollments[0]?.count || 1;
 
-    return stepCompletions.map(s => ({
+    return stepCompletions.map((s: any) => ({
       stepId: s.stepId,
       completionCount: s.completionCount,
       completionRate: (s.completionCount / total) * 100
@@ -525,7 +525,7 @@ export class DatabaseStorage implements IStorage {
 
     // Get user data for each enrollment
     const readers = await Promise.all(
-      enrollmentsData.map(async (enrollment) => {
+      enrollmentsData.map(async (enrollment: any) => {
         const user = await this.getUserByUsername(enrollment.readerId!);
         return {
           user,
@@ -559,7 +559,7 @@ export class DatabaseStorage implements IStorage {
       ));
 
     const classmates = await Promise.all(
-      enrollmentsData.map(async (enrollment) => {
+      enrollmentsData.map(async (enrollment: any) => {
         const user = await this.getUserByUsername(enrollment.readerId!);
         if (!user) return null;
         return {
@@ -611,7 +611,7 @@ export class DatabaseStorage implements IStorage {
       ));
 
     const readersStarted = binderEnrollments.length;
-    const readersCompleted = binderEnrollments.filter(e => e.status === 'completed').length;
+    const readersCompleted = binderEnrollments.filter((e: any) => e.status === 'completed').length;
     const completionRate = readersStarted > 0 ? Math.round((readersCompleted / readersStarted) * 100) : 0;
 
     // Get binder content structure
@@ -697,7 +697,7 @@ export class DatabaseStorage implements IStorage {
     const averageProgress = readersStarted > 0 ? Math.round(totalProgressSum / readersStarted) : 0;
 
     // Build week reach data
-    const weekReach = binderWeeks.map(week => ({
+    const weekReach = binderWeeks.map((week: any) => ({
       week: `Week ${week.index}`,
       weekIndex: week.index,
       percentage: readersStarted > 0 ? Math.round((weekReachCounts[week.index] / readersStarted) * 100) : 0,
@@ -919,7 +919,7 @@ export class DatabaseStorage implements IStorage {
       .from(binderTags)
       .innerJoin(tags, eq(binderTags.tagId, tags.id))
       .where(eq(binderTags.binderId, binderId));
-    return rows.map(r => r.tag);
+    return rows.map((r: any) => r.tag);
   }
 
   async findOrCreateTag(name: string): Promise<Tag> {
@@ -1044,7 +1044,7 @@ export class DatabaseStorage implements IStorage {
       .offset(resultOffset);
 
     // Fetch tags for each binder
-    const bindersList = await Promise.all(rows.map(async (row) => {
+    const bindersList = await Promise.all(rows.map(async (row: any) => {
       const rowBinderTags = await this.getTagsByBinderId(row.binder.id);
       return {
         ...row.binder,
@@ -1105,7 +1105,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(binders.status, status))
       .orderBy(asc(binders.submittedAt));
 
-    return rows.map(row => ({
+    return rows.map((row: any) => ({
       ...row.binder,
       curator: row.curatorUsername ? {
         name: row.curatorName,
@@ -1118,7 +1118,7 @@ export class DatabaseStorage implements IStorage {
   // Demo binders
   async getDemoBinders(): Promise<BinderWithContent[]> {
     const demoBinders = await db.select().from(binders).where(eq(binders.isDemo, true));
-    const results = await Promise.all(demoBinders.map(b => this.getBinderWithContent(b.id)));
+    const results = await Promise.all(demoBinders.map((b: any) => this.getBinderWithContent(b.id)));
     return results.filter((b): b is BinderWithContent => b !== undefined);
   }
 
@@ -1247,7 +1247,7 @@ export class DatabaseStorage implements IStorage {
 
     const tagRows = await this.getTagsByBinderId(binderId);
     const tagText = tagRows.map(t => t.name).join(' ');
-    const weekText = weekRows.map(w => [w.title || '', w.description || ''].join(' ')).join(' ');
+    const weekText = weekRows.map((w: any) => [w.title || '', w.description || ''].join(' ')).join(' ');
 
     await db.execute(sql`
       UPDATE binders SET search_vector =
