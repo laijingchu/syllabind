@@ -140,7 +140,7 @@ function Router() {
         <Route path="/curator/profile" component={() => <ProtectedRoute component={CuratorProfile} />} />
         <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
         <Route path="/billing" component={() => <ProtectedRoute component={Billing} />} />
-        {(user || !import.meta.env.PROD) && <Route path="/pricing" component={Pricing} />}
+        <Route path="/pricing" component={Pricing} />
         <Route path="/admin/settings" component={() => <ProtectedRoute component={AdminSettings} />} />
 
         <Route path="/design-system" component={ElementsOverview} />
