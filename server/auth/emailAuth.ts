@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { Express } from "express";
 import { db } from "../db";
 import { users, type InsertUser, type User, passwordSchema } from "@shared/schema";
@@ -6,6 +7,8 @@ import { eq } from "drizzle-orm";
 import { isAdminUser } from "./admin";
 import { logSecurity } from "../lib/audit";
 import { grantSignupCredits } from "../utils/creditService";
+import { sendEmail } from "../lib/brevo";
+import { buildPasswordResetEmail } from "../lib/emailTemplates";
 
 const SALT_ROUNDS = 10;
 
@@ -149,6 +152,90 @@ export function registerEmailAuthRoutes(app: Express): void {
     } catch (error) {
       console.error("Get user error:", error);
       res.status(500).json({ message: "Failed to get user" });
+    }
+  });
+
+  // Request password reset
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      // Always return success to prevent email enumeration
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      if (!user || !user.password) {
+        return res.json({ message: "If an account exists with that email, a reset link has been sent." });
+      }
+
+      // Generate token and hash it for storage
+      const token = crypto.randomBytes(32).toString('base64url');
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      await db.update(users).set({
+        passwordResetToken: tokenHash,
+        passwordResetExpiresAt: expiresAt,
+      }).where(eq(users.id, user.id));
+
+      // Build reset URL
+      const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+      const resetUrl = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+      const { subject, html, text } = buildPasswordResetEmail({ name: user.name || 'there', resetUrl });
+      const fromEmail = process.env.BREVO_FROM || 'noreply@syllabind.com';
+      await sendEmail({ to: email, from: fromEmail, subject, html, text });
+
+      res.json({ message: "If an account exists with that email, a reset link has been sent." });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ message: "Something went wrong. Please try again." });
+    }
+  });
+
+  // Reset password with token
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { email, token, newPassword } = req.body;
+      if (!email || !token || !newPassword) {
+        return res.status(400).json({ message: "Email, token, and new password are required" });
+      }
+
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired reset link" });
+      }
+
+      // Verify token
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+      if (!user.passwordResetToken || user.passwordResetToken !== tokenHash) {
+        return res.status(400).json({ message: "Invalid or expired reset link" });
+      }
+
+      // Check expiry
+      if (!user.passwordResetExpiresAt || new Date() > user.passwordResetExpiresAt) {
+        return res.status(400).json({ message: "This reset link has expired. Please request a new one." });
+      }
+
+      // Validate password
+      const pwResult = passwordSchema.safeParse(newPassword);
+      if (!pwResult.success) {
+        return res.status(400).json({ message: pwResult.error.errors[0].message });
+      }
+
+      // Update password and clear reset token
+      const hashed = await hashPassword(newPassword);
+      await db.update(users).set({
+        password: hashed,
+        passwordResetToken: null,
+        passwordResetExpiresAt: null,
+        mustChangePassword: false,
+      }).where(eq(users.id, user.id));
+
+      res.json({ message: "Password has been reset. You can now log in." });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Something went wrong. Please try again." });
     }
   });
 

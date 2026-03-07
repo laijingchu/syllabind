@@ -7,7 +7,10 @@ import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { StoreProvider } from "@/lib/store";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import NotFound from "@/pages/not-found";
+import ForcePasswordChange from "@/components/ForcePasswordChange";
 
 import Dashboard from "@/pages/Dashboard";
 import Catalog from "@/pages/Catalog";
@@ -111,11 +114,14 @@ function Router() {
 
   return (
     <Layout>
+      {user?.mustChangePassword && <ForcePasswordChange />}
       <Switch>
         <Route path="/welcome">
           {import.meta.env.PROD && !user ? <Redirect to="/login?mode=signup" /> : <Catalog />}
         </Route>
         <Route path="/login" component={Login} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/reset-password" component={ResetPassword} />
 
         <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
         <Route path="/catalog" component={Catalog} />

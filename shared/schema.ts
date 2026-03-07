@@ -58,6 +58,9 @@ export const users = pgTable("users", {
   generationCount: integer("generation_count").notNull().default(0),
   lastGeneratedAt: timestamp("last_generated_at"),
   notificationsAckedAt: timestamp("notifications_acked_at"),
+  mustChangePassword: boolean("must_change_password").default(false),
+  passwordResetToken: text("password_reset_token"),
+  passwordResetExpiresAt: timestamp("password_reset_expires_at"),
   // Credit system
   creditBalance: integer("credit_balance").notNull().default(0),
   subscriptionTier: text("subscription_tier").notNull().default('free'), // 'free' | 'pro_monthly' | 'pro_annual' | 'lifetime'

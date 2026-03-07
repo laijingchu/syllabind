@@ -156,6 +156,8 @@ export interface User {
   // Generation tracking (legacy)
   generationCount?: number;
   lastGeneratedAt?: string | null;
+  // Admin-created accounts
+  mustChangePassword?: boolean;
 }
 
 export interface CreditTransaction {

@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Loader2, Settings } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, Loader2, Settings, UserPlus } from 'lucide-react';
 import { Link } from 'wouter';
 
 export default function AdminSettings() {
@@ -27,6 +28,11 @@ export default function AdminSettings() {
   const [privacySaving, setPrivacySaving] = useState(false);
   const [getPaidToTeachSaving, setGetPaidToTeachSaving] = useState(false);
   const [wipBadgeSaving, setWipBadgeSaving] = useState(false);
+
+  // Create User state
+  const [createName, setCreateName] = useState('');
+  const [createEmail, setCreateEmail] = useState('');
+  const [creating, setCreating] = useState(false);
 
   // Redirect non-admin users
   useEffect(() => {
@@ -201,6 +207,72 @@ export default function AdminSettings() {
         </h1>
         <p className="text-muted-foreground">Configure platform-wide settings.</p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserPlus className="h-5 w-5" />
+            Create User Account
+          </CardTitle>
+          <CardDescription>
+            Create a new user account and send a welcome email with a temporary password.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="create-name">Name</Label>
+            <Input
+              id="create-name"
+              placeholder="Jane Doe"
+              value={createName}
+              onChange={(e) => setCreateName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="create-email">Email</Label>
+            <Input
+              id="create-email"
+              type="email"
+              placeholder="jane@example.com"
+              value={createEmail}
+              onChange={(e) => setCreateEmail(e.target.value)}
+            />
+          </div>
+          <Button
+            onClick={async () => {
+              if (!createName.trim() || !createEmail.trim()) {
+                toast({ title: 'Error', description: 'Name and email are required.', variant: 'destructive' });
+                return;
+              }
+              setCreating(true);
+              try {
+                const res = await fetch('/api/admin/create-user', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify({ name: createName.trim(), email: createEmail.trim() }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed to create user');
+                toast({
+                  title: data.resent ? 'Welcome email resent' : 'Account created',
+                  description: `Username: ${data.username}. ${data.emailSent ? 'Welcome email sent.' : 'Email could not be sent — share credentials manually.'}`,
+                });
+                setCreateName('');
+                setCreateEmail('');
+              } catch (err: any) {
+                toast({ title: 'Error', description: err.message, variant: 'destructive' });
+              } finally {
+                setCreating(false);
+              }
+            }}
+            disabled={creating}
+          >
+            {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Create Account & Send Email
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

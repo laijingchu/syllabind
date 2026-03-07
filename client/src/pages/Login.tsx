@@ -166,6 +166,14 @@ export default function Login() {
                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Mail className="h-4 w-4 mr-2" />}
                     Log In with Email
                   </Button>
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors underline"
+                    onClick={() => setLocation('/forgot-password')}
+                  >
+                    Forgot password?
+                  </button>
 
                   <div className="relative w-full">
                     <div className="absolute inset-0 flex items-center">
@@ -227,20 +235,7 @@ export default function Login() {
           </TabsContent>
         </Tabs>
 
-        <div className="text-center">
-          <Button variant="link" onClick={() => setLocation('/welcome')} data-testid="link-back-home">
-            Back to Home
-          </Button>
-        </div>
 
-        {(termsUrl || privacyUrl) && (
-          <p className="auth-legal text-center text-xs text-muted-foreground">
-            By signing in, you agree to our{' '}
-            {termsUrl && <a href={termsUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Terms of Service</a>}
-            {termsUrl && privacyUrl && ' and '}
-            {privacyUrl && <a href={privacyUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Privacy Policy</a>}.
-          </p>
-        )}
       </div>
     </div>
   );
