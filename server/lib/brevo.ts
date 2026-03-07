@@ -22,6 +22,7 @@ function getClient(): BrevoClient | null {
 interface EmailParams {
   to: string;
   from: string;
+  fromName?: string;
   subject: string;
   text?: string;
   html?: string;
@@ -36,7 +37,7 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
     }
 
     await brevo.transactionalEmails.sendTransacEmail({
-      sender: { email: params.from },
+      sender: { email: params.from, name: params.fromName || 'Syllabind' },
       to: [{ email: params.to }],
       subject: params.subject,
       htmlContent: params.html,

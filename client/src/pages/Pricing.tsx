@@ -185,8 +185,7 @@ export default function Pricing() {
       </div>
 
       {/* Credit Packages */}
-      {isPro && (
-        <div className="max-w-2xl mx-auto space-y-4">
+      <div className="max-w-2xl mx-auto space-y-4">
           <h2 className="text-2xl font-display font-medium text-center">Credit Packages</h2>
           <p className="text-center text-muted-foreground text-sm">Need more credits? Purchase additional packages anytime.</p>
           <div className="grid grid-cols-3 gap-4">
@@ -209,7 +208,6 @@ export default function Pricing() {
             ))}
           </div>
         </div>
-      )}
 
       <p className="text-center text-sm text-muted-foreground">
         Questions?{' '}
