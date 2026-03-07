@@ -203,7 +203,7 @@ async function addTestUsers() {
 
           // Complete partial steps in current week
           if (enrollment.partialSteps > 0 && enrollment.currentWeek <= binderWeeks.length) {
-            const currentWeekData = binderWeeks.find(w => w.index === enrollment.currentWeek);
+            const currentWeekData = binderWeeks.find((w: any) => w.index === enrollment.currentWeek);
             if (currentWeekData) {
               const weekSteps = await db.select()
                 .from(steps)
