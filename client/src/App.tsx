@@ -65,10 +65,10 @@ import UIToast from "@/pages/design-system/ui/UIToast";
 import UIAccordion from "@/pages/design-system/ui/UIAccordion";
 import UIAnimatedContainer from "@/pages/design-system/ui/UIAnimatedContainer";
 import UIRichTextEditor from "@/pages/design-system/ui/UIRichTextEditor";
-import SectionPageHeader from "@/pages/design-system/sections/SectionPageHeader";
-import SectionEmptyState from "@/pages/design-system/sections/SectionEmptyState";
-import SectionSearchBar from "@/pages/design-system/sections/SectionSearchBar";
-import SectionBinderFilterBar from "@/pages/design-system/sections/SectionBinderFilterBar";
+import ComponentPageHeader from "@/pages/design-system/components/ComponentPageHeader";
+import ComponentEmptyState from "@/pages/design-system/components/ComponentEmptyState";
+import ComponentSearchBar from "@/pages/design-system/components/ComponentSearchBar";
+import ComponentBinderFilterBar from "@/pages/design-system/components/ComponentBinderFilterBar";
 import ComponentsOverview from "@/pages/design-system/components/ComponentsOverview";
 import ComponentBinderCard from "@/pages/design-system/components/ComponentBinderCard";
 import ComponentShareDialog from "@/pages/design-system/components/ComponentShareDialog";
@@ -180,10 +180,10 @@ function Router() {
         <Route path="/design-system/ui/rich-text-editor" component={UIRichTextEditor} />
 
         <Route path="/design-system/components" component={ComponentsOverview} />
-        <Route path="/design-system/components/page-header" component={SectionPageHeader} />
-        <Route path="/design-system/components/empty-state" component={SectionEmptyState} />
-        <Route path="/design-system/components/search-bar" component={SectionSearchBar} />
-        <Route path="/design-system/components/binder-filter-bar" component={SectionBinderFilterBar} />
+        <Route path="/design-system/components/page-header" component={ComponentPageHeader} />
+        <Route path="/design-system/components/empty-state" component={ComponentEmptyState} />
+        <Route path="/design-system/components/search-bar" component={ComponentSearchBar} />
+        <Route path="/design-system/components/binder-filter-bar" component={ComponentBinderFilterBar} />
         <Route path="/design-system/components/binder-card" component={ComponentBinderCard} />
         <Route path="/design-system/components/share-dialog" component={ComponentShareDialog} />
         <Route path="/design-system/components/avatar-upload" component={ComponentAvatarUpload} />

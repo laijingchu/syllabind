@@ -57,7 +57,8 @@
       "Bash(git remote:*)",
       "Bash(npm test:*)",
       "Bash(printf %d\\\\n:*)",
-      "Bash(PORT=3000 npm run:*)"
+      "Bash(PORT=3000 npm run:*)",
+      "Bash(sed:*)"
     ]
   }
 }

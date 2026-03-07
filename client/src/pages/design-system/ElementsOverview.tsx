@@ -187,7 +187,7 @@ export default function ElementsOverview() {
             {[
               { file: 'client/src/index.css', desc: 'All design tokens — colors, fonts, spacing, radius, animations. The single source of truth.' },
               { file: 'client/src/components/ui/', desc: '50+ UI components — buttons, cards, dialogs, inputs. Each one is a self-contained, customizable file.' },
-              { file: 'client/src/components/sections/', desc: 'Reusable page sections — PageHeader, EmptyState, SearchBar. Larger building blocks for layouts.' },
+              { file: 'client/src/components/', desc: 'Reusable components — PageHeader, EmptyState, BinderCard, SearchBar. Domain-specific compositions and layout patterns.' },
               { file: 'client/src/pages/', desc: 'Full page layouts — Dashboard, Catalog, BinderOverview, etc. Where components are composed into features.' },
             ].map(f => (
               <div key={f.file} className="flex gap-4 py-2 border-b border-border/50 last:border-0">

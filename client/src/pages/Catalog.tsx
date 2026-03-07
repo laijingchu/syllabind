@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import { BinderCard } from '@/components/BinderCard';
 import { AnimatedPage, AnimatedCard } from '@/components/ui/animated-container';
 import { Button } from '@/components/ui/button';
-import { BinderFilterBar } from '@/components/sections/BinderFilterBar';
+import { BinderFilterBar } from '@/components/BinderFilterBar';
 import { Loader2, Sparkles, ArrowRight } from 'lucide-react';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useAuth } from '@/hooks/use-auth';

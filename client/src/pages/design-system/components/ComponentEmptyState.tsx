@@ -1,9 +1,9 @@
 import DesignSystemLayout, { CodeBlock, TokenRow } from '../DesignSystemLayout';
-import { EmptyState } from '@/components/sections/EmptyState';
+import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Inbox, Search, Plus } from 'lucide-react';
 
-export default function SectionEmptyState() {
+export default function ComponentEmptyState() {
   return (
     <DesignSystemLayout>
       <div className="space-y-12 max-w-3xl">
@@ -137,7 +137,7 @@ export default function SectionEmptyState() {
         {/* Code */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Code</h2>
-          <CodeBlock>{`import { EmptyState } from '@/components/sections/EmptyState';
+          <CodeBlock>{`import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Inbox, Search } from 'lucide-react';
 
@@ -188,7 +188,7 @@ import { BookOpen, Inbox, Search } from 'lucide-react';
             <p><strong className="text-foreground">No enrollments:</strong> Curator analytics page when a binder has zero readers.</p>
           </div>
           <p className="text-base text-muted-foreground italic">
-            Note: EmptyState is a ready-to-use section component not yet imported in any pages. It is designed to replace ad-hoc empty state patterns across the app.
+            Note: EmptyState is a ready-to-use component not yet imported in any pages. It is designed to replace ad-hoc empty state patterns across the app.
           </p>
         </section>
       </div>

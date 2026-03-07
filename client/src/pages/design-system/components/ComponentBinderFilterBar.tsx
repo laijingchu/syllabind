@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import DesignSystemLayout, { CodeBlock, TokenRow } from '../DesignSystemLayout';
-import { BinderFilterBar } from '@/components/sections/BinderFilterBar';
+import { BinderFilterBar } from '@/components/BinderFilterBar';
 import type { Category } from '@/lib/types';
 
 const MOCK_CATEGORIES: Category[] = [
@@ -15,7 +15,7 @@ const SORT_OPTIONS = [
   { value: 'popular', label: 'Most Popular' },
 ];
 
-export default function SectionBinderFilterBar() {
+export default function ComponentBinderFilterBar() {
   // Search only demo
   const [searchOnly, setSearchOnly] = useState('');
 
@@ -160,7 +160,7 @@ export default function SectionBinderFilterBar() {
         {/* Code */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Code</h2>
-          <CodeBlock>{`import { BinderFilterBar } from '@/components/sections/BinderFilterBar';
+          <CodeBlock>{`import { BinderFilterBar } from '@/components/BinderFilterBar';
 
 // Search only (minimum)
 <BinderFilterBar

@@ -1,9 +1,9 @@
 import DesignSystemLayout, { CodeBlock, TokenRow } from '../DesignSystemLayout';
-import { PageHeader } from '@/components/sections/PageHeader';
+import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Plus, Settings } from 'lucide-react';
 
-export default function SectionPageHeader() {
+export default function ComponentPageHeader() {
   return (
     <DesignSystemLayout>
       <div className="space-y-12 max-w-3xl">
@@ -150,7 +150,7 @@ export default function SectionPageHeader() {
         {/* Code */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Code</h2>
-          <CodeBlock>{`import { PageHeader } from '@/components/sections/PageHeader';
+          <CodeBlock>{`import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
@@ -211,7 +211,7 @@ import { Plus } from 'lucide-react';
             <p><strong className="text-foreground">Profile pages:</strong> "Your Profile" title with optional edit action.</p>
           </div>
           <p className="text-base text-muted-foreground italic">
-            Note: PageHeader is a ready-to-use section component not yet imported in any pages. It is designed to replace ad-hoc header patterns across the app.
+            Note: PageHeader is a ready-to-use component not yet imported in any pages. It is designed to replace ad-hoc header patterns across the app.
           </p>
         </section>
       </div>

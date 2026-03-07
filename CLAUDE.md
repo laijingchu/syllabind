@@ -330,12 +330,13 @@ Page sections include semantic class names alongside Tailwind utilities for easy
 - `curator-card` - Curator profile
   - `curator-info`
 
-### Reusable Section Components
+### Reusable Components
 
-Located in `client/src/components/sections/`:
+Located in `client/src/components/`:
 - `PageHeader` - Page title with optional back button and actions
 - `EmptyState` - Empty state display with icon and action
 - `SearchBar` - Search input with count display
+- `BinderFilterBar` - Search with visibility pills, sort, and category filters
 
 Use for patterns repeated across multiple pages.
 

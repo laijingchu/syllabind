@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { BinderFilterBar } from '@/components/sections/BinderFilterBar';
+import { BinderFilterBar } from '@/components/BinderFilterBar';
 import { pluralize } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { useState, useEffect, useCallback, useMemo } from 'react';

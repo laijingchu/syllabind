@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import DesignSystemLayout, { CodeBlock, TokenRow } from '../DesignSystemLayout';
-import { SearchBar } from '@/components/sections/SearchBar';
+import { SearchBar } from '@/components/SearchBar';
 
-export default function SectionSearchBar() {
+export default function ComponentSearchBar() {
   const [basic, setBasic] = useState('');
   const [withCount, setWithCount] = useState('');
   const [custom, setCustom] = useState('');
@@ -14,7 +14,7 @@ export default function SectionSearchBar() {
           <h1 className="font-display text-3xl font-medium mb-2">SearchBar</h1>
           <p className="text-lg text-muted-foreground">
             A search input paired with an icon button and an optional result count display.
-            Designed as a reusable section component for filtering lists of content.
+            Designed as a reusable component for filtering lists of content.
           </p>
         </div>
 
@@ -103,7 +103,7 @@ export default function SectionSearchBar() {
         {/* Code */}
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Code</h2>
-          <CodeBlock>{`import { SearchBar } from '@/components/sections/SearchBar';
+          <CodeBlock>{`import { SearchBar } from '@/components/SearchBar';
 
 // Basic
 <SearchBar
@@ -144,7 +144,7 @@ export default function SectionSearchBar() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p>SearchBar is not currently imported in any page. It exists as a ready-to-use section component.</p>
+            <p>SearchBar is not currently imported in any page. It exists as a ready-to-use component.</p>
             <p><strong className="text-foreground">Catalog:</strong> Could be used for searching published binders by title or topic.</p>
             <p><strong className="text-foreground">CuratorDashboard:</strong> Could be used for filtering a curator's own binders.</p>
           </div>
