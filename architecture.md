@@ -815,6 +815,18 @@ GET    /api/site-settings/:key       - Get a site setting value
 **Admin Only:**
 ```
 PUT    /api/admin/settings           - Upsert a site setting { key, value }
+POST   /api/admin/create-user        - Create user account with temp password + welcome email
+```
+
+**Force Password Change:**
+```
+PUT    /api/users/me/set-password    - Set password (only when mustChangePassword is true)
+```
+
+**Password Reset:**
+```
+POST   /api/auth/forgot-password     - Request password reset email
+POST   /api/auth/reset-password      - Reset password with token
 ```
 
 ### Binder Endpoints
@@ -1057,6 +1069,16 @@ All user-generated HTML rendered via `dangerouslySetInnerHTML` is sanitized thro
 ### Security Event Logging
 
 `server/lib/audit.ts` provides PostHog-based security event logging (`logSecurity()`) for login failures and rate limit hits. Requires `POSTHOG_API_KEY` env var.
+
+### Email Infrastructure
+
+`server/lib/brevo.ts` — Brevo (formerly Sendinblue) email utility with lazy client init and graceful degradation (returns `false` when `BREVO_API_KEY` is not set). `server/lib/emailTemplates.ts` — branded HTML/text email builders (currently: `buildWelcomeEmail` for admin-created accounts).
+
+### Admin Account Creation
+
+**Password Reset Flow:** User submits email via `POST /api/auth/forgot-password`. A SHA-256 hashed token is stored in `password_reset_token` with a 1-hour expiry in `password_reset_expires_at`. The unhashed token is sent in the reset link. `POST /api/auth/reset-password` verifies the token, updates the password, and clears both columns. The endpoint returns the same response for valid and invalid emails to prevent enumeration.
+
+Admins can create user accounts via `POST /api/admin/create-user`. The flow: generate a temp password, create the user with `mustChangePassword: true`, grant signup credits, and send a welcome email via Brevo. On first login, a `ForcePasswordChange` dialog (rendered in `App.tsx`) blocks interaction until the user sets a permanent password via `PUT /api/users/me/set-password`, which clears the `mustChangePassword` flag. Env vars: `BREVO_API_KEY`, `BREVO_FROM`, `APP_URL`.
 
 ### Error Handler
 

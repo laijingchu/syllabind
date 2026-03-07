@@ -12,6 +12,9 @@ import {
   passwordSchema,
 } from "@shared/schema";
 import { hashPassword, comparePassword } from "./auth/emailAuth";
+import { sendEmail } from "./lib/brevo";
+import { buildWelcomeEmail } from "./lib/emailTemplates";
+import crypto from "crypto";
 import { registerStripeRoutes } from "./routes/stripe";
 import { registerWebhookRoutes } from "./routes/webhook";
 import multer from "multer";
@@ -19,7 +22,8 @@ import { client, CLAUDE_MODEL } from "./utils/claudeClient";
 import {
   CREDIT_COSTS, FREE_ENROLLMENT_LIMIT, FREE_MANUAL_BINDER_LIMIT,
   FREE_MAX_WEEKS, PRO_MAX_WEEKS,
-  reserveCredits, refundCredits, getGenerationCost, getMaxWeeks, isProTier
+  reserveCredits, refundCredits, getGenerationCost, getMaxWeeks, isProTier,
+  grantSignupCredits
 } from "./utils/creditService";
 import * as path from "path";
 import fs from "fs/promises";
@@ -172,6 +176,36 @@ export async function registerRoutes(
     }
   });
 
+  // Set password (forced change for admin-created accounts)
+  app.put("/api/users/me/set-password", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      if (!user.mustChangePassword) {
+        return res.status(403).json({ message: "Password change not required" });
+      }
+
+      const { newPassword } = req.body;
+      if (!newPassword) {
+        return res.status(400).json({ message: "New password is required" });
+      }
+
+      const pwResult = passwordSchema.safeParse(newPassword);
+      if (!pwResult.success) {
+        return res.status(400).json({ message: pwResult.error.errors[0].message });
+      }
+
+      const hashed = await hashPassword(newPassword);
+      await storage.updateUser(userId, { password: hashed, mustChangePassword: false });
+      res.json({ message: "Password set successfully" });
+    } catch (error) {
+      console.error("Set password error:", error);
+      res.status(500).json({ message: "Failed to set password" });
+    }
+  });
+
   // Delete account
   app.delete("/api/users/me", isAuthenticated, async (req, res) => {
     try {
@@ -259,6 +293,87 @@ export async function registerRoutes(
 
     await storage.setSiteSetting(key, value);
     res.json({ success: true });
+  });
+
+  // ========== ADMIN CREATE USER ==========
+
+  // Create a user account (admin only) — sends welcome email with temp password
+  app.post("/api/admin/create-user", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
+    if (!user.isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    try {
+      const { name, email } = req.body;
+
+      if (!name || !email) {
+        return res.status(400).json({ error: "Name and email are required" });
+      }
+
+      // Basic email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: "Invalid email format" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+
+      if (existingUser) {
+        // Allow resend only if user hasn't logged in yet
+        if (!existingUser.mustChangePassword) {
+          return res.status(409).json({ error: "A user with this email already exists and has already signed in" });
+        }
+
+        // Reset temp password and resend
+        const tempPassword = crypto.randomBytes(6).toString('base64url');
+        const hashedPassword = await hashPassword(tempPassword);
+        await storage.updateUser(existingUser.id, { password: hashedPassword });
+
+        const loginUrl = (process.env.APP_URL || `${req.protocol}://${req.get('host')}`) + '/login';
+        const { subject, html, text } = buildWelcomeEmail({ name: existingUser.name || name, email, tempPassword, loginUrl });
+        const fromEmail = process.env.BREVO_FROM || 'noreply@syllabind.com';
+        const emailSent = await sendEmail({ to: email, from: fromEmail, subject, html, text });
+
+        return res.json({ success: true, username: existingUser.username, emailSent, resent: true });
+      }
+
+      // Generate temp password
+      const tempPassword = crypto.randomBytes(6).toString('base64url');
+      const hashedPassword = await hashPassword(tempPassword);
+
+      // Generate username from email
+      const username = email.split('@')[0] + '_' + Date.now().toString(36);
+
+      // Create user
+      const newUser = await storage.createUser({
+        email,
+        password: hashedPassword,
+        username,
+        name,
+        authProvider: 'email',
+        mustChangePassword: true,
+      });
+
+      // Grant signup credits
+      try {
+        await grantSignupCredits(newUser.id);
+      } catch (err) {
+        console.error('[AdminCreateUser] Failed to grant signup credits:', err);
+      }
+
+      // Send welcome email
+      const loginUrl = (process.env.APP_URL || `${req.protocol}://${req.get('host')}`) + '/login';
+      const { subject, html, text } = buildWelcomeEmail({ name, email, tempPassword, loginUrl });
+      const fromEmail = process.env.BREVO_FROM || 'noreply@syllabind.com';
+      const emailSent = await sendEmail({ to: email, from: fromEmail, subject, html, text });
+
+      res.json({ success: true, username: newUser.username, emailSent });
+    } catch (error) {
+      console.error("Admin create user error:", error);
+      res.status(500).json({ error: "Failed to create user" });
+    }
   });
 
   // ========== ADMIN REVIEW QUEUE ==========
