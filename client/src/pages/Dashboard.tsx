@@ -160,10 +160,6 @@ export default function Dashboard() {
           <>
           <AnimatedCard delay={0.1}>
             <div className="relative rounded-xl outline outline-1 -outline-offset-1 outline-border bg-card text-card-foreground shadow-sm">
-            <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
-               <div className="absolute top-0 right-0 p-32 bg-primary-surface rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-            </div>
-
             {getOverallProgress(activeBinder.id) === 100 && (
               <div className="absolute -top-6 -right-6 h-28 w-28 text-foreground rounded-full flex items-center justify-center shadow-xl border-4 border-background transform rotate-12 z-20 animate-in zoom-in duration-500 bg-[#ffffff]">
                 <div className="text-center -ml-1 mt-2">
