@@ -78,7 +78,7 @@ export default function UIOverview() {
               { layer: 'UI Components', desc: 'Generic primitives. A Button, a Card, an Input. No domain knowledge. Used everywhere.', path: 'client/src/components/ui/' },
               { layer: 'Components', desc: 'Domain-specific compositions and reusable layout patterns. BinderCard, PageHeader, EmptyState, ShareDialog. Combine UI primitives with product logic.', path: 'client/src/components/' },
             ].map((l, i) => (
-              <div key={i} className={`px-4 py-3 border-b border-border/50 last:border-0 ${i % 2 === 0 ? 'bg-primary/5' : ''}`}>
+              <div key={i} className={`px-4 py-3 border-b border-border last:border-0 ${i % 2 === 0 ? 'bg-primary-surface' : ''}`}>
                 <div className="flex flex-wrap items-center gap-4">
                   <span className="font-medium w-28 md:w-40 shrink-0">{l.layer}</span>
                   <span className="text-muted-foreground flex-1">{l.desc}</span>

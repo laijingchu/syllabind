@@ -9,8 +9,8 @@ export default function UISpinner() {
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Spinner</h1>
           <p className="text-lg text-muted-foreground">
-            An animated loading indicator built on the Lucide <code className="text-primary bg-primary/5 px-1 rounded">Loader2</code> icon.
-            Includes <code className="text-primary bg-primary/5 px-1 rounded">role="status"</code> and an accessible label for screen readers.
+            An animated loading indicator built on the Lucide <code className="text-primary bg-muted px-1 rounded">Loader2</code> icon.
+            Includes <code className="text-primary bg-muted px-1 rounded">role="status"</code> and an accessible label for screen readers.
           </p>
         </div>
 
@@ -50,7 +50,7 @@ export default function UISpinner() {
                 <Spinner className="size-4" />
                 Saving...
               </Button>
-              <Button variant="outline" disabled>
+              <Button variant="secondary" disabled>
                 <Spinner className="size-4" />
                 Publishing...
               </Button>
@@ -82,7 +82,7 @@ export default function UISpinner() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            The spinner inherits the current text color by default. Override with utility classes like <code className="text-primary bg-primary/5 px-1 rounded">text-muted-foreground</code> or <code className="text-primary bg-primary/5 px-1 rounded">text-primary</code> for contextual coloring.
+            The spinner inherits the current text color by default. Override with utility classes like <code className="text-primary bg-muted px-1 rounded">text-muted-foreground</code> or <code className="text-primary bg-muted px-1 rounded">text-primary</code> for contextual coloring.
           </p>
         </section>
 
@@ -129,9 +129,9 @@ export default function UISpinner() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">ARIA role:</strong> The component sets <code className="text-primary bg-primary/5 px-1 rounded">role="status"</code> so screen readers announce the loading state.</p>
-            <p><strong className="text-foreground">Accessible label:</strong> An <code className="text-primary bg-primary/5 px-1 rounded">aria-label="Loading"</code> attribute provides a text alternative for the spinning icon.</p>
-            <p><strong className="text-foreground">Motion sensitivity:</strong> The CSS <code className="text-primary bg-primary/5 px-1 rounded">animate-spin</code> animation respects <code className="text-primary bg-primary/5 px-1 rounded">prefers-reduced-motion</code> when configured in Tailwind.</p>
+            <p><strong className="text-foreground">ARIA role:</strong> The component sets <code className="text-primary bg-muted px-1 rounded">role="status"</code> so screen readers announce the loading state.</p>
+            <p><strong className="text-foreground">Accessible label:</strong> An <code className="text-primary bg-muted px-1 rounded">aria-label="Loading"</code> attribute provides a text alternative for the spinning icon.</p>
+            <p><strong className="text-foreground">Motion sensitivity:</strong> The CSS <code className="text-primary bg-muted px-1 rounded">animate-spin</code> animation respects <code className="text-primary bg-muted px-1 rounded">prefers-reduced-motion</code> when configured in Tailwind.</p>
           </div>
         </section>
 

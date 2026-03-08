@@ -63,7 +63,7 @@ export default function UISelect() {
               </Select>
             </div>
             <p className="text-sm text-muted-foreground">
-              Selected: <code className="text-primary bg-primary/5 px-1 rounded">{value || 'none'}</code>
+              Selected: <code className="text-primary bg-muted px-1 rounded">{value || 'none'}</code>
             </p>
           </div>
         </section>
@@ -82,7 +82,7 @@ export default function UISelect() {
             <div className="w-64 rounded-md border bg-popover text-popover-foreground shadow-md">
               <div className="p-1">
                 <div className="px-2 py-1.5 text-sm font-semibold">Tropical</div>
-                <div className="relative flex w-full items-center rounded-sm py-1.5 pl-2 pr-8 text-sm bg-accent text-accent-foreground">
+                <div className="relative flex w-full items-center rounded-sm py-1.5 pl-2 pr-8 text-sm bg-highlight text-highlight-foreground">
                   Mango
                   <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
                     <Check className="h-4 w-4" />
@@ -142,7 +142,7 @@ export default function UISelect() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            The trigger shows a placeholder when no value is selected. Disabled state reduces opacity to 50% and prevents interaction. Focused items in the dropdown use <code className="text-primary bg-primary/5 px-1 rounded">bg-accent</code>.
+            The trigger shows a placeholder when no value is selected. Disabled state reduces opacity to 50% and prevents interaction. Focused items in the dropdown use <code className="text-primary bg-muted px-1 rounded">bg-highlight</code>.
           </p>
         </section>
 
@@ -152,7 +152,7 @@ export default function UISelect() {
           <div className="border border-border rounded-lg p-4">
             <TokenRow token="--popover" value="Background color for the dropdown content" />
             <TokenRow token="--popover-foreground" value="Text color inside the dropdown" />
-            <TokenRow token="--accent" value="Background on focused/hovered items" />
+            <TokenRow token="--highlight" value="Background on focused/hovered items" />
             <TokenRow token="--border" value="Trigger bottom border and content border" />
           </div>
         </section>
@@ -198,9 +198,9 @@ export default function UISelect() {
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Open with Enter, Space, or Arrow Down. Navigate items with Arrow Up/Down. Select with Enter. Close with Escape.</p>
-            <p><strong className="text-foreground">Focus indicator:</strong> Trigger shows a border color change on focus. Items highlight with accent background.</p>
-            <p><strong className="text-foreground">Disabled:</strong> Sets <code className="text-primary bg-primary/5 px-1 rounded">disabled:pointer-events-none</code> and <code className="text-primary bg-primary/5 px-1 rounded">disabled:opacity-50</code> on both trigger and individual items.</p>
-            <p><strong className="text-foreground">Screen readers:</strong> Radix provides full ARIA listbox semantics including <code className="text-primary bg-primary/5 px-1 rounded">role="listbox"</code>, <code className="text-primary bg-primary/5 px-1 rounded">aria-selected</code>, and group labels.</p>
+            <p><strong className="text-foreground">Focus indicator:</strong> Trigger shows a border color change on focus. Items highlight with highlight background.</p>
+            <p><strong className="text-foreground">Disabled:</strong> Sets <code className="text-primary bg-muted px-1 rounded">disabled:pointer-events-none</code> and <code className="text-primary bg-muted px-1 rounded">disabled:opacity-50</code> on both trigger and individual items.</p>
+            <p><strong className="text-foreground">Screen readers:</strong> Radix provides full ARIA listbox semantics including <code className="text-primary bg-muted px-1 rounded">role="listbox"</code>, <code className="text-primary bg-muted px-1 rounded">aria-selected</code>, and group labels.</p>
           </div>
         </section>
 

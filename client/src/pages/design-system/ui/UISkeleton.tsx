@@ -51,7 +51,7 @@ export default function UISkeleton() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            Use <code className="text-primary bg-primary/5 px-1 rounded">rounded-full</code> to match the avatar shape. Pair with text skeletons for user info rows.
+            Use <code className="text-primary bg-muted px-1 rounded">rounded-full</code> to match the avatar shape. Pair with text skeletons for user info rows.
           </p>
         </section>
 
@@ -97,7 +97,7 @@ export default function UISkeleton() {
                 <p className="text-sm text-muted-foreground">Pulsing (default)</p>
               </div>
               <div className="space-y-2 text-center">
-                <div className="h-10 w-full rounded-md bg-primary/10" />
+                <div className="h-10 w-full rounded-md bg-primary-surface" />
                 <p className="text-sm text-muted-foreground">Static (no animation)</p>
               </div>
               <div className="space-y-2 text-center">
@@ -107,7 +107,7 @@ export default function UISkeleton() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            The skeleton uses <code className="text-primary bg-primary/5 px-1 rounded">animate-pulse</code> by default. Override the shape with <code className="text-primary bg-primary/5 px-1 rounded">rounded-full</code> for circular elements or <code className="text-primary bg-primary/5 px-1 rounded">rounded-md</code> for card images.
+            The skeleton uses <code className="text-primary bg-muted px-1 rounded">animate-pulse</code> by default. Override the shape with <code className="text-primary bg-muted px-1 rounded">rounded-full</code> for circular elements or <code className="text-primary bg-muted px-1 rounded">rounded-md</code> for card images.
           </p>
         </section>
 
@@ -153,8 +153,8 @@ export default function UISkeleton() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Reduced motion:</strong> The <code className="text-primary bg-primary/5 px-1 rounded">animate-pulse</code> animation respects the <code className="text-primary bg-primary/5 px-1 rounded">prefers-reduced-motion</code> media query via Tailwind defaults.</p>
-            <p><strong className="text-foreground">Semantics:</strong> Skeletons are decorative divs. Wrap the loading region in an <code className="text-primary bg-primary/5 px-1 rounded">aria-busy="true"</code> container and use <code className="text-primary bg-primary/5 px-1 rounded">aria-live="polite"</code> on the parent to announce when content loads.</p>
+            <p><strong className="text-foreground">Reduced motion:</strong> The <code className="text-primary bg-muted px-1 rounded">animate-pulse</code> animation respects the <code className="text-primary bg-muted px-1 rounded">prefers-reduced-motion</code> media query via Tailwind defaults.</p>
+            <p><strong className="text-foreground">Semantics:</strong> Skeletons are decorative divs. Wrap the loading region in an <code className="text-primary bg-muted px-1 rounded">aria-busy="true"</code> container and use <code className="text-primary bg-muted px-1 rounded">aria-live="polite"</code> on the parent to announce when content loads.</p>
             <p><strong className="text-foreground">Screen readers:</strong> Consider adding a visually hidden "Loading..." text near skeleton groups for non-visual users.</p>
           </div>
         </section>

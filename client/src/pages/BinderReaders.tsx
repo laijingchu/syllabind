@@ -131,7 +131,7 @@ export default function BinderReaders() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 sm:py-8 max-w-6xl">
+      <div className="container mx-auto px-4 py-6 sm:py-8 max-w-page-max">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
              <TabsList className="w-full sm:w-auto inline-flex">
@@ -145,7 +145,7 @@ export default function BinderReaders() {
             <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 bg-card p-3 sm:p-4 rounded-lg border">
               <div className="flex gap-2 w-full sm:max-w-sm">
                 <Input placeholder="Search readers..." className="bg-background text-sm" />
-                <Button variant="outline" size="icon" className="shrink-0"><Search className="h-4 w-4" /></Button>
+                <Button variant="secondary" size="icon" className="shrink-0"><Search className="h-4 w-4" /></Button>
               </div>
               <div className="text-sm text-muted-foreground text-center sm:text-right">
                 {readers.length} Enrolled
@@ -278,12 +278,12 @@ export default function BinderReaders() {
                   </CardHeader>
                   <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
                      {binderCohorts.map(cohort => (
-                       <div key={cohort.id} className="flex items-center justify-between p-3 sm:p-4 border rounded-lg bg-card/50 hover:bg-card transition-colors">
+                       <div key={cohort.id} className="flex items-center justify-between p-3 sm:p-4 border rounded-lg bg-card hover:bg-card transition-colors">
                           <div>
                             <h3 className="font-medium text-sm sm:text-base">{cohort.name}</h3>
                             <p className="text-xs sm:text-sm text-muted-foreground">{cohort.readerIds.length} readers</p>
                           </div>
-                          <Button variant="outline" size="sm">Manage</Button>
+                          <Button variant="secondary" size="sm">Manage</Button>
                        </div>
                      ))}
                      {binderCohorts.length === 0 && (
@@ -325,12 +325,12 @@ export default function BinderReaders() {
 
                  return (
                    <div key={step.id} className="border rounded-lg overflow-hidden">
-                      <div className="bg-muted/30 px-4 sm:px-6 py-3 sm:py-4 border-b flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                      <div className="bg-muted px-4 sm:px-6 py-3 sm:py-4 border-b flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                          <div>
                            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-0.5 sm:mb-1">Week {step.weekIndex}</div>
                            <h3 className="font-medium text-sm sm:text-base">{step.title}</h3>
                          </div>
-                         <Badge variant="outline" className="w-fit text-xs">{sharedSubmissions.length} Submissions</Badge>
+                         <Badge variant="secondary" className="w-fit text-xs">{sharedSubmissions.length} Submissions</Badge>
                       </div>
 
                       <div className="divide-y">
@@ -341,7 +341,7 @@ export default function BinderReaders() {
                           if (!reader) return null;
 
                           return (
-                            <div key={idx} className="p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:gap-6 items-start hover:bg-muted/20 transition-colors">
+                            <div key={idx} className="p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:gap-6 items-start hover:bg-muted transition-colors">
                               <Avatar className="h-8 w-8 sm:h-10 sm:w-10 shrink-0">
                                 <AvatarImage src={reader.user.avatarUrl} />
                                 <AvatarFallback>{reader.user.name.charAt(0)}</AvatarFallback>
@@ -354,11 +354,11 @@ export default function BinderReaders() {
                                       <div className="text-xs text-muted-foreground">{new Date(sub.submittedAt).toLocaleDateString()}</div>
                                     </div>
                                     {sub.grade ? (
-                                      <Badge variant="secondary" className="text-xs w-fit">
+                                      <Badge variant="tertiary" className="text-xs w-fit">
                                         Grade: {sub.grade}
                                       </Badge>
                                     ) : (
-                                      <Badge variant="outline" className="text-xs w-fit">Needs Grading</Badge>
+                                      <Badge variant="secondary" className="text-xs w-fit">Needs Grading</Badge>
                                     )}
                                  </div>
 
@@ -370,7 +370,7 @@ export default function BinderReaders() {
                                  </div>
 
                                  <div className="pt-1 sm:pt-2">
-                                   <Button size="sm" variant="outline" onClick={() => openGrading(step.id, reader.user.id, sub)} className="text-xs sm:text-sm">
+                                   <Button size="sm" variant="secondary" onClick={() => openGrading(step.id, reader.user.id, sub)} className="text-xs sm:text-sm">
                                      {sub.grade ? 'Edit Feedback' : 'Grade Submission'}
                                    </Button>
                                  </div>
@@ -433,7 +433,7 @@ export default function BinderReaders() {
           </div>
 
           <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setSelectedSubmission(null)} className="w-full sm:w-auto">Cancel</Button>
+            <Button variant="secondary" onClick={() => setSelectedSubmission(null)} className="w-full sm:w-auto">Cancel</Button>
             <Button onClick={saveFeedback} className="w-full sm:w-auto">Save & Send Feedback</Button>
           </DialogFooter>
         </DialogContent>

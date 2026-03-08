@@ -51,7 +51,7 @@ export default function UIDropdownMenu() {
               <p className="text-sm font-medium">Basic menu with items</p>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
+                  <Button variant="secondary">
                     My Account <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -110,7 +110,7 @@ export default function UIDropdownMenu() {
             <div className="w-56 rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
               <div className="px-2 py-1.5 text-sm font-semibold">My Account</div>
               <div className="-mx-1 my-1 h-px bg-muted" />
-              <div className="relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm bg-accent text-accent-foreground">
+              <div className="relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm bg-highlight text-highlight-foreground">
                 <User className="h-4 w-4" />
                 Profile
                 <span className="ml-auto text-xs tracking-widest opacity-60">Shift+P</span>
@@ -152,7 +152,7 @@ export default function UIDropdownMenu() {
           <div className="border border-border rounded-lg p-6">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline">
+                <Button variant="secondary">
                   View Options <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -184,7 +184,7 @@ export default function UIDropdownMenu() {
             </p>
           </div>
           <p className="text-base text-muted-foreground">
-            Checkbox items maintain their own checked state. Use <code className="text-primary bg-primary/5 px-1 rounded">onCheckedChange</code> to update local state.
+            Checkbox items maintain their own checked state. Use <code className="text-primary bg-muted px-1 rounded">onCheckedChange</code> to update local state.
           </p>
           <div className="border border-border rounded-lg p-6">
             <div className="w-56 rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
@@ -196,7 +196,7 @@ export default function UIDropdownMenu() {
                 </span>
                 Status Bar
               </div>
-              <div className="relative flex items-center rounded-sm py-1.5 pl-8 pr-2 text-sm bg-accent text-accent-foreground">
+              <div className="relative flex items-center rounded-sm py-1.5 pl-8 pr-2 text-sm bg-highlight text-highlight-foreground">
                 <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
                   <Check className="h-4 w-4" />
                 </span>
@@ -215,7 +215,7 @@ export default function UIDropdownMenu() {
           <div className="border border-border rounded-lg p-6">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline">
+                <Button variant="secondary">
                   States Demo <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -231,7 +231,7 @@ export default function UIDropdownMenu() {
             </DropdownMenu>
           </div>
           <div className="text-base text-muted-foreground space-y-1">
-            <p><strong className="text-foreground">Focus</strong> — Items highlight with <code className="text-primary bg-primary/5 px-1 rounded">bg-accent</code> on hover or keyboard focus.</p>
+            <p><strong className="text-foreground">Focus</strong> — Items highlight with <code className="text-primary bg-muted px-1 rounded">bg-highlight</code> on hover or keyboard focus.</p>
             <p><strong className="text-foreground">Disabled</strong> — Reduces opacity to 50% and prevents interaction.</p>
             <p><strong className="text-foreground">Checked</strong> — Checkbox and radio items show a check/circle indicator on the left.</p>
           </div>
@@ -240,7 +240,7 @@ export default function UIDropdownMenu() {
               <div className="px-2 py-1.5 text-sm font-semibold">Item States</div>
               <div className="-mx-1 my-1 h-px bg-muted" />
               <div className="relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm">Normal item</div>
-              <div className="relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm bg-accent text-accent-foreground">Focused item</div>
+              <div className="relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm bg-highlight text-highlight-foreground">Focused item</div>
               <div className="relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm opacity-50">Disabled item</div>
               <div className="-mx-1 my-1 h-px bg-muted" />
               <div className="relative flex items-center rounded-sm py-1.5 pl-8 pr-2 text-sm">
@@ -260,8 +260,8 @@ export default function UIDropdownMenu() {
           <div className="border border-border rounded-lg p-4">
             <TokenRow token="--popover" value="Background color for menu content" />
             <TokenRow token="--popover-foreground" value="Text color inside the menu" />
-            <TokenRow token="--accent" value="Highlight color for focused items" />
-            <TokenRow token="--accent-foreground" value="Text color for focused items" />
+            <TokenRow token="--highlight" value="Highlight color for focused items" />
+            <TokenRow token="--highlight-foreground" value="Text color for focused items" />
             <TokenRow token="--border" value="Border color for the menu container" />
             <TokenRow token="--muted" value="Separator line color" />
             <TokenRow token="--muted-foreground" value="Shortcut and secondary text color" />
@@ -290,7 +290,7 @@ export default function UIDropdownMenu() {
 // Basic menu
 <DropdownMenu>
   <DropdownMenuTrigger asChild>
-    <Button variant="outline">Open Menu</Button>
+    <Button variant="secondary">Open Menu</Button>
   </DropdownMenuTrigger>
   <DropdownMenuContent>
     <DropdownMenuLabel>Actions</DropdownMenuLabel>
@@ -327,7 +327,7 @@ export default function UIDropdownMenu() {
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Opens with Enter/Space on trigger. Arrow keys navigate items. Enter selects. Escape closes.</p>
             <p><strong className="text-foreground">Focus management:</strong> Focus is trapped within the menu while open. Focus returns to trigger on close.</p>
-            <p><strong className="text-foreground">ARIA:</strong> Radix provides <code className="text-primary bg-primary/5 px-1 rounded">role="menu"</code>, <code className="text-primary bg-primary/5 px-1 rounded">role="menuitem"</code>, and <code className="text-primary bg-primary/5 px-1 rounded">role="menuitemcheckbox"</code> automatically.</p>
+            <p><strong className="text-foreground">ARIA:</strong> Radix provides <code className="text-primary bg-muted px-1 rounded">role="menu"</code>, <code className="text-primary bg-muted px-1 rounded">role="menuitem"</code>, and <code className="text-primary bg-muted px-1 rounded">role="menuitemcheckbox"</code> automatically.</p>
             <p><strong className="text-foreground">Sub-menus:</strong> Arrow right opens a sub-menu, arrow left closes it.</p>
           </div>
         </section>

@@ -30,7 +30,7 @@ export function BinderCard({ binder, className }: BinderCardProps) {
   const [tooltipOpen, setTooltipOpen] = useState(false);
 
   return (
-    <Card className={cn("group flex flex-col h-full overflow-hidden transition-all border-border/60", className)}>
+    <Card className={cn("group flex flex-col h-full overflow-hidden transition-all border-border", className)}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between py-1">
           {curator && (
@@ -39,10 +39,10 @@ export function BinderCard({ binder, className }: BinderCardProps) {
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    className="curator-avatar flex items-center gap-2 cursor-pointer rounded-full pr-2 hover:bg-muted/50 transition-colors"
+                    className="curator-avatar flex items-center gap-2 cursor-pointer rounded-full pr-2 hover:bg-muted transition-colors"
                     onClick={() => setTooltipOpen(prev => !prev)}
                   >
-                    <Avatar className="h-8 w-8 border border-border/50">
+                    <Avatar className="h-8 w-8 border border-border">
                       <AvatarImage src={avatarSrc} alt={curatorName} />
                       <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
                         {initial}
@@ -55,14 +55,14 @@ export function BinderCard({ binder, className }: BinderCardProps) {
                 </TooltipTrigger>
                 <TooltipContent side="top" align="start" className="p-3 w-60 bg-popover text-popover-foreground border shadow-xl">
                   <div className="flex items-start gap-3">
-                    <Avatar className="h-9 w-9 shrink-0 border border-border/50 mt-0.5">
+                    <Avatar className="h-9 w-9 shrink-0 border border-border mt-0.5">
                       <AvatarImage src={avatarSrc} />
                       <AvatarFallback>{initial}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 space-y-1.5 min-w-0">
                       <div className="space-y-0.5">
                         <p className="font-medium text-sm leading-tight truncate">{curatorName}</p>
-                        {curator.expertise && <p className="text-xs text-primary/80 leading-snug truncate">{curator.expertise}</p>}
+                        {curator.expertise && <p className="text-xs text-primary leading-snug truncate">{curator.expertise}</p>}
                         {curator.bio && <p className="text-xs text-muted-foreground line-clamp-2 leading-snug">{curator.bio}</p>}
                       </div>
                       {hasSocials && (
@@ -97,7 +97,7 @@ export function BinderCard({ binder, className }: BinderCardProps) {
           )}
         </div>
         <div className="flex justify-between items-start mt-3 mb-2">
-          <Badge variant="outline" className="font-normal">
+          <Badge variant="secondary" className="font-normal">
             {binder.audienceLevel}
           </Badge>
         </div>
@@ -113,7 +113,7 @@ export function BinderCard({ binder, className }: BinderCardProps) {
       </CardContent>
       <CardFooter className="flex items-center gap-3">
         <Link href={`/binder/${binder.id}`}>
-           <Button variant="outline" className="gap-2 group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-colors">
+           <Button variant="secondary" className="binder-card-cta gap-2 group-hover:border-primary transition-colors">
              View Binder
              <ArrowRight className="h-4 w-4 opacity-50 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
            </Button>

@@ -68,8 +68,8 @@ export function AvatarUpload({ currentAvatarUrl, name, onUpload, onRemove }: Ava
           {...getRootProps()} 
           className={`
             border-2 border-dashed rounded-md px-4 py-3 cursor-pointer transition-colors text-sm font-medium
-            flex items-center gap-2 hover:bg-muted/50 hover:border-primary/50
-            ${isDragActive ? 'border-primary bg-primary/5' : 'border-border'}
+            flex items-center gap-2 hover:bg-muted hover:border-border
+            ${isDragActive ? 'border-primary bg-primary-surface' : 'border-border'}
           `}
         >
           <input {...getInputProps()} />
@@ -82,7 +82,7 @@ export function AvatarUpload({ currentAvatarUrl, name, onUpload, onRemove }: Ava
             variant="ghost" 
             size="sm" 
             onClick={onRemove}
-            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 px-2"
+            className="text-destructive hover:text-destructive hover:bg-danger-surface h-8 px-2"
           >
             <X className="h-3 w-3 mr-1.5" /> Remove photo
           </Button>

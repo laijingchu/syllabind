@@ -34,14 +34,14 @@ export default function ElementsOverview() {
           </p>
           <div className="border border-border rounded-lg overflow-hidden text-base">
             {[
-              { layer: 'Design Tokens', desc: 'The source of truth. Colors, fonts, spacing, and radius values defined as named variables.', detail: 'One CSS file defines every visual primitive.', color: 'bg-primary/20' },
-              { layer: 'Tailwind CSS', desc: 'Translates tokens into usable style utilities. When a token changes, every utility updates.', detail: 'No config file needed — reads tokens directly.', color: 'bg-primary/17' },
-              { layer: 'Component Variants', desc: 'Each component (Button, Card, Badge) defines named variants like "primary", "outline", "ghost".', detail: 'Variants map design intent to specific token combinations.', color: 'bg-primary/14' },
-              { layer: 'Accessible Primitives', desc: 'Radix UI handles keyboard navigation, screen readers, and focus management invisibly.', detail: 'Accessibility is built in — not bolted on.', color: 'bg-primary/11' },
-              { layer: 'UI Components', desc: '50+ ready-made components combining all the above. Buttons, dialogs, accordions, forms.', detail: 'Owned code — fully customizable, not a library.', color: 'bg-primary/8' },
-              { layer: 'Pages & Features', desc: 'Compose components together with layout utilities to build complete experiences.', detail: 'Where the product takes shape.', color: 'bg-primary/5' },
+              { layer: 'Design Tokens', desc: 'The source of truth. Colors, fonts, spacing, and radius values defined as named variables.', detail: 'One CSS file defines every visual primitive.', color: 'bg-primary-surface' },
+              { layer: 'Tailwind CSS', desc: 'Translates tokens into usable style utilities. When a token changes, every utility updates.', detail: 'No config file needed — reads tokens directly.', color: 'bg-primary-surface' },
+              { layer: 'Component Variants', desc: 'Each component (Button, Card, Badge) defines named variants like "primary", "secondary", "ghost".', detail: 'Variants map design intent to specific token combinations.', color: 'bg-primary-surface' },
+              { layer: 'Accessible Primitives', desc: 'Radix UI handles keyboard navigation, screen readers, and focus management invisibly.', detail: 'Accessibility is built in — not bolted on.', color: 'bg-primary-surface' },
+              { layer: 'UI Components', desc: '50+ ready-made components combining all the above. Buttons, dialogs, accordions, forms.', detail: 'Owned code — fully customizable, not a library.', color: 'bg-primary-surface' },
+              { layer: 'Pages & Features', desc: 'Compose components together with layout utilities to build complete experiences.', detail: 'Where the product takes shape.', color: 'bg-primary-surface' },
             ].map((l, i) => (
-              <div key={i} className={`px-4 py-3 border-b border-border/50 last:border-0 ${l.color}`}>
+              <div key={i} className={`px-4 py-3 border-b border-border last:border-0 ${l.color}`}>
                 <div className="flex flex-wrap items-center gap-4">
                   <span className="font-medium w-32 md:w-48 shrink-0">{l.layer}</span>
                   <span className="text-muted-foreground flex-1">{l.desc}</span>
@@ -190,8 +190,8 @@ export default function ElementsOverview() {
               { file: 'client/src/components/', desc: 'Reusable components — PageHeader, EmptyState, BinderCard, SearchBar. Domain-specific compositions and layout patterns.' },
               { file: 'client/src/pages/', desc: 'Full page layouts — Dashboard, Catalog, BinderOverview, etc. Where components are composed into features.' },
             ].map(f => (
-              <div key={f.file} className="flex gap-4 py-2 border-b border-border/50 last:border-0">
-                <code className="text-primary font-mono text-xs bg-primary/5 px-2 py-0.5 rounded shrink-0">{f.file}</code>
+              <div key={f.file} className="flex gap-4 py-2 border-b border-border last:border-0">
+                <code className="text-primary font-mono text-xs bg-primary-surface px-2 py-0.5 rounded shrink-0">{f.file}</code>
                 <span className="text-muted-foreground">{f.desc}</span>
               </div>
             ))}

@@ -34,6 +34,7 @@ import ElementsTypography from "@/pages/design-system/ElementsTypography";
 import ElementsSpacing from "@/pages/design-system/ElementsSpacing";
 import ElementsShadows from "@/pages/design-system/ElementsShadows";
 import ElementsAnimations from "@/pages/design-system/ElementsAnimations";
+import ElementsLayout from "@/pages/design-system/ElementsLayout";
 import UIOverview from "@/pages/design-system/ui/UIOverview";
 import UIButton from "@/pages/design-system/ui/UIButton";
 import UICard from "@/pages/design-system/ui/UICard";
@@ -147,6 +148,7 @@ function Router() {
         <Route path="/design-system/colors" component={ElementsColors} />
         <Route path="/design-system/typography" component={ElementsTypography} />
         <Route path="/design-system/spacing" component={ElementsSpacing} />
+        <Route path="/design-system/layout" component={ElementsLayout} />
         <Route path="/design-system/shadows" component={ElementsShadows} />
         <Route path="/design-system/animations" component={ElementsAnimations} />
 

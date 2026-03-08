@@ -249,7 +249,7 @@ export default function WeekView() {
   const allDone = allReadingsDone;
 
   return (
-    <div className="max-w-3xl mx-auto pb-20 px-4 sm:px-0">
+    <div className="max-w-page-narrow mx-auto pb-20 px-4 sm:px-0">
       <header className="mb-6 sm:mb-10">
         <div className="flex justify-between items-center mb-4">
           <Link href={`/binder/${binder.id}`}>
@@ -281,7 +281,7 @@ export default function WeekView() {
         {(slackUrl || (curator?.schedulingUrl && binder?.showSchedulingLink !== false)) && (
           <div className="flex flex-wrap gap-3 mt-4">
             {slackUrl && (
-              <Button variant="outline" size="sm" onClick={handleJoinSlack} className="gap-2">
+              <Button variant="secondary" size="sm" onClick={handleJoinSlack} className="gap-2">
                 <Hash className="h-4 w-4" />
                 Join Slack
                 {(!currentUser || !isPro) && (
@@ -293,7 +293,7 @@ export default function WeekView() {
               </Button>
             )}
             {curator?.schedulingUrl && binder?.showSchedulingLink !== false && (
-              <Button variant="outline" size="sm" onClick={handleBookCall} className="gap-2">
+              <Button variant="secondary" size="sm" onClick={handleBookCall} className="gap-2">
                 <CalendarDays className="h-4 w-4" />
                 1:1 Office Hour
                 {(!currentUser || !isPro) && (
@@ -326,7 +326,7 @@ export default function WeekView() {
               transition={{ delay: idx * 0.1 }}
               className={cn(
                 "p-4 sm:p-6 rounded-xl border bg-card transition-all duration-300",
-                isDone ? "border-primary/20 bg-primary/5" : "border-border shadow-sm hover:shadow-md"
+                isDone ? "border-border bg-primary-surface" : "border-border shadow-sm hover:shadow-md"
               )}
             >
               <div className="flex gap-3 sm:gap-4 items-start">
@@ -357,7 +357,7 @@ export default function WeekView() {
 
                 <div className="flex-1 space-y-2 sm:space-y-3 min-w-0">
                   <div className="space-y-1">
-                    <h3 className={cn("text-base sm:text-lg font-display font-medium leading-tight", isDone && "text-muted-foreground line-through decoration-primary/30")}>
+                    <h3 className={cn("text-base sm:text-lg font-display font-medium leading-tight", isDone && "text-muted-foreground line-through decoration-border")}>
                       {step.title}
                     </h3>
                     <div className="flex flex-wrap items-center gap-2">
@@ -444,7 +444,7 @@ export default function WeekView() {
                                 <div className="min-w-0 flex-1">
                                   <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-primary flex items-center gap-2">
                                     Your Link
-                                    {getSubmission(step.id)?.isShared && <Badge variant="secondary" className="text-[10px] h-4 px-1">Shared</Badge>}
+                                    {getSubmission(step.id)?.isShared && <Badge variant="tertiary" className="text-[10px] h-4 px-1">Shared</Badge>}
                                   </div>
                                   <a
                                     href={exerciseText[step.id]?.startsWith('http') ? exerciseText[step.id] : `https://${exerciseText[step.id]}`}
@@ -459,7 +459,7 @@ export default function WeekView() {
                            </div>
 
                            {getSubmission(step.id)?.grade && (
-                             <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg space-y-2">
+                             <div className="bg-primary-surface border border-border p-4 rounded-lg space-y-2">
                                 <div className="flex justify-between items-center">
                                   <h4 className="font-semibold text-sm">Curator Feedback</h4>
                                   <Badge>{getSubmission(step.id)?.grade}</Badge>
@@ -471,7 +471,7 @@ export default function WeekView() {
                                    />
                                 )}
                                 {getSubmission(step.id)?.rubricUrl && (
-                                  <div className="pt-2 border-t border-primary/10 mt-2">
+                                  <div className="pt-2 border-t border-border mt-2">
                                     <a href={getSubmission(step.id)?.rubricUrl} target="_blank" rel="noopener noreferrer" className="text-xs flex items-center gap-1 text-primary hover:underline">
                                       <ExternalLink className="h-3 w-3" /> View Rubric
                                     </a>

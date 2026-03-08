@@ -13,15 +13,25 @@ const badgeVariants = cva(
       variant: {
         default:
           // @replit shadow-xs instead of shadow, no hover because we use hover-elevate
-          "border-transparent bg-primary text-primary-foreground shadow-xs",
-        secondary:
+          "border-transparent bg-primary-inverted text-foreground-inverted shadow-xs",
+        tertiary:
           // @replit no hover because we use hover-elevate
           "border-transparent bg-secondary text-secondary-foreground",
         destructive:
           // @replit shadow-xs instead of shadow, no hover because we use hover-elevate
-          "border-transparent bg-destructive text-destructive-foreground shadow-xs",
+          "border-transparent bg-danger-inverted text-foreground-inverted shadow-xs",
+        "danger-surface":
+          "bg-danger-surface text-destructive border-danger-border",
+        "warning-inverted":
+          "border-transparent bg-warning-inverted text-foreground-warning-inverted shadow-xs",
+        "warning-surface":
+          "bg-warning-surface text-warning border-warning-border",
+        "success-inverted":
+          "border-transparent bg-success-inverted text-foreground-success-inverted shadow-xs",
+        "success-surface":
+          "bg-success-surface text-success border-success-border",
           // @replit shadow-xs" - use badge outline variable
-        outline: "text-foreground border [border-color:var(--badge-outline)]",
+        secondary: "text-foreground border [border-color:hsl(var(--badge-outline))]",
       },
     },
     defaultVariants: {

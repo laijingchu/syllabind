@@ -59,7 +59,7 @@ export default function ComponentEmptyState() {
               iconClassName="bg-muted text-muted-foreground"
               title="No results match your search"
               description="Try adjusting your filters or searching with different keywords."
-              action={<Button variant="outline">Clear Filters</Button>}
+              action={<Button variant="secondary">Clear Filters</Button>}
             />
           </div>
         </section>
@@ -70,7 +70,7 @@ export default function ComponentEmptyState() {
           <div className="border border-border rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted/50">
+                <tr className="border-b border-border bg-muted">
                   <th className="text-left p-3 font-medium">Prop</th>
                   <th className="text-left p-3 font-medium">Type</th>
                   <th className="text-left p-3 font-medium">Default</th>
@@ -87,7 +87,7 @@ export default function ComponentEmptyState() {
                 <tr>
                   <td className="p-3 font-mono text-xs">iconClassName</td>
                   <td className="p-3 font-mono text-xs">string?</td>
-                  <td className="p-3 text-muted-foreground">"bg-primary/10 text-primary"</td>
+                  <td className="p-3 text-muted-foreground">"bg-primary-surface text-primary"</td>
                   <td className="p-3 text-muted-foreground">Custom background and color classes for the icon badge</td>
                 </tr>
                 <tr>
@@ -130,7 +130,7 @@ export default function ComponentEmptyState() {
             <TokenRow token="--primary" value="Default icon color" />
           </div>
           <p className="text-base text-muted-foreground">
-            The icon renders at 32px (<code className="text-primary bg-primary/5 px-1 rounded">h-8 w-8</code>) inside a padded badge. The description is constrained to <code className="text-primary bg-primary/5 px-1 rounded">max-w-md</code> for comfortable reading width. Use <code className="text-primary bg-primary/5 px-1 rounded">iconClassName</code> to swap the badge color for contextual states (e.g., muted for search, destructive for errors).
+            The icon renders at 32px (<code className="text-primary bg-muted px-1 rounded">h-8 w-8</code>) inside a padded badge. The description is constrained to <code className="text-primary bg-muted px-1 rounded">max-w-md</code> for comfortable reading width. Use <code className="text-primary bg-muted px-1 rounded">iconClassName</code> to swap the badge color for contextual states (e.g., muted for search, destructive for errors).
           </p>
         </section>
 
@@ -165,7 +165,7 @@ import { BookOpen, Inbox, Search } from 'lucide-react';
   iconClassName="bg-muted text-muted-foreground"
   title="No results match your search"
   description="Try different keywords."
-  action={<Button variant="outline">Clear Filters</Button>}
+  action={<Button variant="secondary">Clear Filters</Button>}
 />`}</CodeBlock>
         </section>
 
@@ -173,7 +173,7 @@ import { BookOpen, Inbox, Search } from 'lucide-react';
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Heading level:</strong> Uses <code className="text-primary bg-primary/5 px-1 rounded">h2</code> for the title, appropriate as a section-level heading within a page that already has an h1.</p>
+            <p><strong className="text-foreground">Heading level:</strong> Uses <code className="text-primary bg-muted px-1 rounded">h2</code> for the title, appropriate as a section-level heading within a page that already has an h1.</p>
             <p><strong className="text-foreground">Icon:</strong> The icon is decorative and does not need alt text since the title conveys the message.</p>
             <p><strong className="text-foreground">Action slot:</strong> When an action button is present, it provides a clear next step, improving the experience for keyboard and screen reader users.</p>
           </div>

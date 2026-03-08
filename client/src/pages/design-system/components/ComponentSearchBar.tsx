@@ -55,7 +55,7 @@ export default function ComponentSearchBar() {
             />
           </div>
           <p className="text-base text-muted-foreground">
-            Pass <code className="text-primary bg-primary/5 px-1 rounded">count</code> and <code className="text-primary bg-primary/5 px-1 rounded">countLabel</code> to display a result summary below the input.
+            Pass <code className="text-primary bg-muted px-1 rounded">count</code> and <code className="text-primary bg-muted px-1 rounded">countLabel</code> to display a result summary below the input.
           </p>
         </section>
 
@@ -95,8 +95,8 @@ export default function ComponentSearchBar() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Styling Notes</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p>SearchBar uses semantic class names (<code className="text-primary bg-primary/5 px-1 rounded">search-bar</code>, <code className="text-primary bg-primary/5 px-1 rounded">search-bar-input-group</code>, <code className="text-primary bg-primary/5 px-1 rounded">search-bar-count</code>) for easy targeting.</p>
-            <p>The input uses the <code className="text-primary bg-primary/5 px-1 rounded">Input</code> primitive with <code className="text-primary bg-primary/5 px-1 rounded">bg-background</code> styling. The search button is an <code className="text-primary bg-primary/5 px-1 rounded">outline</code> variant <code className="text-primary bg-primary/5 px-1 rounded">icon</code>-sized Button.</p>
+            <p>SearchBar uses semantic class names (<code className="text-primary bg-muted px-1 rounded">search-bar</code>, <code className="text-primary bg-muted px-1 rounded">search-bar-input-group</code>, <code className="text-primary bg-muted px-1 rounded">search-bar-count</code>) for easy targeting.</p>
+            <p>The input uses the <code className="text-primary bg-muted px-1 rounded">Input</code> primitive with <code className="text-primary bg-muted px-1 rounded">bg-background</code> styling. The search button is an <code className="text-primary bg-muted px-1 rounded">outline</code> variant <code className="text-primary bg-muted px-1 rounded">icon</code>-sized Button.</p>
           </div>
         </section>
 
@@ -135,8 +135,8 @@ export default function ComponentSearchBar() {
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Input is focusable via Tab. The search button follows in tab order and activates on Enter or Space.</p>
-            <p><strong className="text-foreground">Screen readers:</strong> The search button contains a Search icon from Lucide. Consider adding an <code className="text-primary bg-primary/5 px-1 rounded">aria-label="Search"</code> to the button for screen reader users.</p>
-            <p><strong className="text-foreground">Result count:</strong> The count display is a live text element. For real-time updates, consider wrapping it in an <code className="text-primary bg-primary/5 px-1 rounded">aria-live="polite"</code> region.</p>
+            <p><strong className="text-foreground">Screen readers:</strong> The search button contains a Search icon from Lucide. Consider adding an <code className="text-primary bg-muted px-1 rounded">aria-label="Search"</code> to the button for screen reader users.</p>
+            <p><strong className="text-foreground">Result count:</strong> The count display is a live text element. For real-time updates, consider wrapping it in an <code className="text-primary bg-muted px-1 rounded">aria-live="polite"</code> region.</p>
           </div>
         </section>
 

@@ -32,7 +32,7 @@ export default function ComponentShareDialog() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Demo</h2>
           <div className="border border-border rounded-lg p-6 space-y-4">
-            <Button variant="outline" onClick={() => setOpen(true)}>
+            <Button variant="secondary" onClick={() => setOpen(true)}>
               <Share2 className="h-4 w-4" />
               Share this page
             </Button>
@@ -52,7 +52,7 @@ export default function ComponentShareDialog() {
                 readOnly
                 className="flex-1 text-sm"
               />
-              <Button size="icon" variant="outline">
+              <Button size="icon" variant="secondary">
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
@@ -65,7 +65,7 @@ export default function ComponentShareDialog() {
           <div className="border border-border rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted/30">
+                <tr className="border-b border-border bg-muted">
                   <th className="text-left p-3 font-medium">Prop</th>
                   <th className="text-left p-3 font-medium">Type</th>
                   <th className="text-left p-3 font-medium">Default</th>
@@ -100,9 +100,9 @@ export default function ComponentShareDialog() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Styling Notes</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Max width:</strong> Dialog content is constrained to <code className="text-primary bg-primary/5 px-1 rounded">sm:max-w-md</code> for a compact, focused layout.</p>
+            <p><strong className="text-foreground">Max width:</strong> Dialog content is constrained to <code className="text-primary bg-muted px-1 rounded">sm:max-w-md</code> for a compact, focused layout.</p>
             <p><strong className="text-foreground">Copy button state:</strong> The copy button switches from outline variant to default (filled) variant after a successful copy, with the icon changing from Copy to Check for 2 seconds.</p>
-            <p><strong className="text-foreground">URL input:</strong> A read-only Input displaying <code className="text-primary bg-primary/5 px-1 rounded">window.location.href</code>. The user can still select and manually copy if the clipboard API fails.</p>
+            <p><strong className="text-foreground">URL input:</strong> A read-only Input displaying <code className="text-primary bg-muted px-1 rounded">window.location.href</code>. The user can still select and manually copy if the clipboard API fails.</p>
             <p><strong className="text-foreground">Toast feedback:</strong> Uses the app's toast system to confirm "Link Copied!" or show a destructive toast on failure.</p>
           </div>
         </section>
@@ -112,7 +112,7 @@ export default function ComponentShareDialog() {
           <h2 className="font-display text-xl font-medium">Design Tokens</h2>
           <div className="border border-border rounded-lg p-4">
             <TokenRow token="--primary" value="Copy button fill on success state" />
-            <TokenRow token="--primary-foreground" value="Check icon color on success state" />
+            <TokenRow token="--primary-inverted" value="Check icon color on success state" />
             <TokenRow token="--border" value="Input border, dialog border" />
             <TokenRow token="--background" value="Dialog content background" />
             <TokenRow token="--foreground" value="Dialog title and description text" />
@@ -133,7 +133,7 @@ function MyPage() {
 
   return (
     <>
-      <Button variant="outline" onClick={() => setShareOpen(true)}>
+      <Button variant="secondary" onClick={() => setShareOpen(true)}>
         <Share2 className="h-4 w-4" />
         Share
       </Button>
@@ -158,7 +158,7 @@ function MyPage() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Dialog semantics:</strong> Built on Radix Dialog which provides <code className="text-primary bg-primary/5 px-1 rounded">role="dialog"</code>, <code className="text-primary bg-primary/5 px-1 rounded">aria-labelledby</code> (title), and <code className="text-primary bg-primary/5 px-1 rounded">aria-describedby</code> (description) automatically.</p>
+            <p><strong className="text-foreground">Dialog semantics:</strong> Built on Radix Dialog which provides <code className="text-primary bg-muted px-1 rounded">role="dialog"</code>, <code className="text-primary bg-muted px-1 rounded">aria-labelledby</code> (title), and <code className="text-primary bg-muted px-1 rounded">aria-describedby</code> (description) automatically.</p>
             <p><strong className="text-foreground">Focus management:</strong> Focus is trapped within the dialog when open. On close, focus returns to the trigger element.</p>
             <p><strong className="text-foreground">Keyboard:</strong> Escape closes the dialog. Tab cycles through the URL input and copy button. Enter or Space activates the copy button.</p>
             <p><strong className="text-foreground">Clipboard fallback:</strong> If the Clipboard API fails (e.g. insecure context), a destructive toast prompts the user to copy manually. The read-only input remains selectable.</p>

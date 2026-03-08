@@ -24,6 +24,19 @@ import {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, logout, isLoggingOut, hasUnreadNotifications } = useStore();
+
+  // Dev-only: Ctrl+Shift+G toggles baseline grid overlay
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'G') {
+        e.preventDefault();
+        document.body.classList.toggle('debug-baseline');
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
   const { theme, toggleTheme } = useTheme();
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -64,7 +77,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-text selection:bg-primary/20">
+    <div className="min-h-screen bg-background text-foreground font-text selection:bg-primary-surface">
       {isLoggingOut && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
           <div className="flex flex-col items-center gap-4">
@@ -75,7 +88,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       )}
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/85 backdrop-blur-md">
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/85 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             {/* Mobile hamburger menu */}
@@ -99,7 +112,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       onClick={() => handleMobileNavClick("/")}
                       className={cn(
                         "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
-                        location === "/" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                        location === "/" ? "bg-primary-surface text-primary" : "hover:bg-muted"
                       )}
                     >
                       <span className="font-medium">Dashboard</span>
@@ -108,7 +121,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       onClick={() => handleMobileNavClick("/catalog")}
                       className={cn(
                         "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
-                        location === "/catalog" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                        location === "/catalog" ? "bg-primary-surface text-primary" : "hover:bg-muted"
                       )}
                     >
                       <span className="font-medium">Catalog</span>
@@ -117,7 +130,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       onClick={() => handleMobileNavClick("/curator")}
                       className={cn(
                         "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
-                        location.startsWith("/curator") ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                        location.startsWith("/curator") ? "bg-primary-surface text-primary" : "hover:bg-muted"
                       )}
                     >
                       <span className="font-medium">Curator Studio</span>
@@ -127,7 +140,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       onClick={() => handleMobileNavClick("/profile")}
                       className={cn(
                         "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
-                        location === "/profile" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                        location === "/profile" ? "bg-primary-surface text-primary" : "hover:bg-muted"
                       )}
                     >
                       <User className="h-4 w-4" />
@@ -137,7 +150,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       onClick={() => handleMobileNavClick("/settings")}
                       className={cn(
                         "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
-                        location === "/settings" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                        location === "/settings" ? "bg-primary-surface text-primary" : "hover:bg-muted"
                       )}
                     >
                       <Settings className="h-4 w-4" />
@@ -147,7 +160,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       onClick={() => handleMobileNavClick("/billing")}
                       className={cn(
                         "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
-                        location === "/billing" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                        location === "/billing" ? "bg-primary-surface text-primary" : "hover:bg-muted"
                       )}
                     >
                       <CreditCard className="h-4 w-4" />
@@ -165,9 +178,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <span className="flex items-center gap-2">
                   <span>Syllabind</span>
                   {wipBadgeUrl ? (
-                    <a href={wipBadgeUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[10px] font-text font-bold text-destructive bg-destructive/10 border border-destructive/30 px-1.5 py-0.5 rounded-md align-middle hover:bg-destructive/20 transition-colors">WIP</a>
+                    <a href={wipBadgeUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[10px] font-text font-bold text-warning bg-warning-surface border border-warning-border px-1.5 py-0.5 rounded-md align-middle hover:bg-warning-surface/80 transition-colors">WIP</a>
                   ) : (
-                    <span className="text-[10px] font-text font-bold text-destructive bg-destructive/10 border border-destructive/30 px-1.5 py-0.5 rounded-md align-middle">WIP</span>
+                    <span className="text-[10px] font-text font-bold text-warning bg-warning-surface border border-warning-border px-1.5 py-0.5 rounded-md align-middle">WIP</span>
                   )}
                 </span>
               </span>
@@ -188,7 +201,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       Curator Studio
                     </Link>
                     {hasUnreadNotifications && (
-                      <span className="absolute -top-1 -right-2 h-2 w-2 rounded-full bg-red-500" />
+                      <span className="absolute -top-1 -right-2 h-2 w-2 rounded-full bg-danger-inverted" />
                     )}
                   </span>
                 </>
@@ -217,7 +230,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-muted/50">
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-muted">
                     <Avatar className="h-9 w-9 border border-border">
                       <AvatarImage src={user.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${user.name}`} alt={user.name} />
                       <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
@@ -294,7 +307,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <main className={cn("container mx-auto px-4 animate-in fade-in slide-in-from-bottom-4 duration-700", location.startsWith('/design-system') ? "pt-0 pb-0" : "py-8 md:py-12")}>
         {children}
       </main>
-      <footer className={cn("site-footer border-t border-border/40", location.startsWith('/design-system') ? "mt-0" : "mt-12")}>
+      <footer className={cn("site-footer border-t border-border", location.startsWith('/design-system') ? "mt-0" : "mt-12")}>
         <div className="container mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} Syllabind. All rights reserved.</p>
           <nav className="footer-links flex flex-col sm:flex-row items-center gap-2 sm:gap-4">

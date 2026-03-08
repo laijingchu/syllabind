@@ -25,8 +25,8 @@ export default function UIAnimatedContainer() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">When to Use</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Use AnimatedCard</strong> to animate a single element (card, section, hero block) sliding in from below on mount. Accepts a <code className="text-primary bg-primary/5 px-1 rounded">delay</code> prop for sequencing multiple cards.</p>
-            <p><strong className="text-foreground">Use AnimatedList</strong> to animate a list of items with staggered delays. Each child fades in and slides up in sequence. Accepts <code className="text-primary bg-primary/5 px-1 rounded">staggerDelay</code> and <code className="text-primary bg-primary/5 px-1 rounded">initialDelay</code> props.</p>
+            <p><strong className="text-foreground">Use AnimatedCard</strong> to animate a single element (card, section, hero block) sliding in from below on mount. Accepts a <code className="text-primary bg-muted px-1 rounded">delay</code> prop for sequencing multiple cards.</p>
+            <p><strong className="text-foreground">Use AnimatedList</strong> to animate a list of items with staggered delays. Each child fades in and slides up in sequence. Accepts <code className="text-primary bg-muted px-1 rounded">staggerDelay</code> and <code className="text-primary bg-muted px-1 rounded">initialDelay</code> props.</p>
             <p><strong className="text-foreground">Use AnimatedPage</strong> as a lightweight page-level wrapper for a subtle fade-and-slide entrance on route transitions.</p>
             <p><strong className="text-foreground">Avoid</strong> using these for elements that are already visible or for frequent re-renders -- they animate on every mount.</p>
           </div>
@@ -36,7 +36,7 @@ export default function UIAnimatedContainer() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">AnimatedCard</h2>
           <div className="border border-border rounded-lg p-6 space-y-4">
-            <Button variant="outline" size="sm" onClick={() => setCardKey(k => k + 1)}>
+            <Button variant="secondary" size="sm" onClick={() => setCardKey(k => k + 1)}>
               <RefreshCw className="h-4 w-4" /> Replay Animation
             </Button>
             <div className="flex gap-4" key={cardKey}>
@@ -55,7 +55,7 @@ export default function UIAnimatedContainer() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            Each card slides up 20px and fades in over 400ms with an easeOutQuad curve. Use the <code className="text-primary bg-primary/5 px-1 rounded">delay</code> prop to stagger manually.
+            Each card slides up 20px and fades in over 400ms with an easeOutQuad curve. Use the <code className="text-primary bg-muted px-1 rounded">delay</code> prop to stagger manually.
           </p>
         </section>
 
@@ -63,7 +63,7 @@ export default function UIAnimatedContainer() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">AnimatedList</h2>
           <div className="border border-border rounded-lg p-6 space-y-4">
-            <Button variant="outline" size="sm" onClick={() => setListKey(k => k + 1)}>
+            <Button variant="secondary" size="sm" onClick={() => setListKey(k => k + 1)}>
               <RefreshCw className="h-4 w-4" /> Replay Animation
             </Button>
             <AnimatedList key={listKey} className="space-y-2" staggerDelay={0.1} initialDelay={0}>
@@ -75,7 +75,7 @@ export default function UIAnimatedContainer() {
             </AnimatedList>
           </div>
           <p className="text-base text-muted-foreground">
-            Children are staggered by <code className="text-primary bg-primary/5 px-1 rounded">staggerDelay</code> (default 100ms). Each child slides up 20px and fades in. The <code className="text-primary bg-primary/5 px-1 rounded">children</code> prop must be an array.
+            Children are staggered by <code className="text-primary bg-muted px-1 rounded">staggerDelay</code> (default 100ms). Each child slides up 20px and fades in. The <code className="text-primary bg-muted px-1 rounded">children</code> prop must be an array.
           </p>
         </section>
 
@@ -83,7 +83,7 @@ export default function UIAnimatedContainer() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">AnimatedPage</h2>
           <div className="border border-border rounded-lg p-6 space-y-4">
-            <Button variant="outline" size="sm" onClick={() => setPageKey(k => k + 1)}>
+            <Button variant="secondary" size="sm" onClick={() => setPageKey(k => k + 1)}>
               <RefreshCw className="h-4 w-4" /> Replay Animation
             </Button>
             <AnimatedPage key={pageKey} className="border border-border rounded-lg p-6 bg-card">
@@ -97,7 +97,7 @@ export default function UIAnimatedContainer() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">States</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Initial:</strong> Content is invisible (<code className="text-primary bg-primary/5 px-1 rounded">opacity: 0</code>) and offset downward (y: 10-20px).</p>
+            <p><strong className="text-foreground">Initial:</strong> Content is invisible (<code className="text-primary bg-muted px-1 rounded">opacity: 0</code>) and offset downward (y: 10-20px).</p>
             <p><strong className="text-foreground">Animate:</strong> Content transitions to full opacity and its final position over 300-400ms.</p>
             <p><strong className="text-foreground">Complete:</strong> No ongoing animation. The wrapper div remains in the DOM as a plain container.</p>
           </div>
@@ -148,9 +148,9 @@ export default function UIAnimatedContainer() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Reduced motion:</strong> Framer Motion respects the <code className="text-primary bg-primary/5 px-1 rounded">prefers-reduced-motion</code> media query. When enabled, animations are instant (no duration).</p>
+            <p><strong className="text-foreground">Reduced motion:</strong> Framer Motion respects the <code className="text-primary bg-muted px-1 rounded">prefers-reduced-motion</code> media query. When enabled, animations are instant (no duration).</p>
             <p><strong className="text-foreground">No layout shift:</strong> Elements animate from their final position (offset is purely visual via transform), so no CLS impact.</p>
-            <p><strong className="text-foreground">Semantic neutrality:</strong> All wrappers render plain <code className="text-primary bg-primary/5 px-1 rounded">div</code> elements with no ARIA roles, keeping the semantic structure of children intact.</p>
+            <p><strong className="text-foreground">Semantic neutrality:</strong> All wrappers render plain <code className="text-primary bg-muted px-1 rounded">div</code> elements with no ARIA roles, keeping the semantic structure of children intact.</p>
           </div>
         </section>
 

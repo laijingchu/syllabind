@@ -54,7 +54,7 @@ export default function UIToast() {
                 Destructive Toast
               </Button>
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() =>
                   toast({
                     title: 'Step removed',
@@ -75,7 +75,7 @@ export default function UIToast() {
           <h2 className="font-display text-xl font-medium">States</h2>
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Default:</strong> White/dark background with standard border. Used for success and informational messages.</p>
-            <p><strong className="text-foreground">Destructive:</strong> Red background with destructive-foreground text. Used for errors and failure states.</p>
+            <p><strong className="text-foreground">Destructive:</strong> Red background with foreground-inverted text. Used for errors and failure states.</p>
             <p><strong className="text-foreground">With action:</strong> Includes an inline action button (e.g., "Undo") rendered to the right of the message.</p>
             <p><strong className="text-foreground">Dismissed:</strong> Fades out and slides to the right on close. Swipe-to-dismiss is supported on touch devices.</p>
           </div>
@@ -88,7 +88,7 @@ export default function UIToast() {
             <TokenRow token="--background" value="Toast surface color (default variant)" />
             <TokenRow token="--foreground" value="Toast text color (default variant)" />
             <TokenRow token="--destructive" value="Background for destructive variant" />
-            <TokenRow token="--destructive-foreground" value="Text color for destructive variant" />
+            <TokenRow token="--foreground-inverted" value="Text color for destructive variant" />
             <TokenRow token="--border" value="Toast border color" />
           </div>
         </section>
@@ -131,7 +131,7 @@ function MyComponent() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">ARIA role:</strong> Toasts use <code className="text-primary bg-primary/5 px-1 rounded">role="status"</code> and <code className="text-primary bg-primary/5 px-1 rounded">aria-live="polite"</code> so screen readers announce them without interrupting the current task.</p>
+            <p><strong className="text-foreground">ARIA role:</strong> Toasts use <code className="text-primary bg-muted px-1 rounded">role="status"</code> and <code className="text-primary bg-muted px-1 rounded">aria-live="polite"</code> so screen readers announce them without interrupting the current task.</p>
             <p><strong className="text-foreground">Keyboard:</strong> The close button is focusable and activates on Enter or Space. Action buttons are also keyboard-accessible.</p>
             <p><strong className="text-foreground">Swipe to dismiss:</strong> Radix handles swipe gestures on touch devices, allowing users to dismiss by swiping right.</p>
             <p><strong className="text-foreground">Auto-dismiss:</strong> Toasts remain visible until manually closed (long timeout), ensuring users have time to read the message.</p>

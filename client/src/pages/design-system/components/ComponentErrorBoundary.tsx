@@ -39,7 +39,7 @@ export default function ComponentErrorBoundary() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                <div className="bg-danger-surface border border-danger-border rounded-lg p-4">
                   <p className="font-mono text-sm text-destructive">
                     Error: Cannot read properties of undefined (reading 'title')
                   </p>
@@ -60,15 +60,15 @@ export default function ComponentErrorBoundary() {
 
                 <div className="flex gap-3">
                   <Button disabled>Reload Page</Button>
-                  <Button variant="outline" disabled>Go Back</Button>
+                  <Button variant="secondary" disabled>Go Back</Button>
                 </div>
               </CardContent>
             </Card>
           </div>
           <div className="text-base text-muted-foreground space-y-1">
             <p><strong className="text-foreground">Error message</strong> — Shown in a destructive-tinted box with monospace font.</p>
-            <p><strong className="text-foreground">Stack trace</strong> — Collapsed by default inside a details/summary element. Only rendered when <code className="text-primary bg-primary/5 px-1 rounded">NODE_ENV === 'development'</code>.</p>
-            <p><strong className="text-foreground">Recovery actions</strong> — "Reload Page" calls <code className="text-primary bg-primary/5 px-1 rounded">window.location.reload()</code>. "Go Back" calls <code className="text-primary bg-primary/5 px-1 rounded">window.history.back()</code>.</p>
+            <p><strong className="text-foreground">Stack trace</strong> — Collapsed by default inside a details/summary element. Only rendered when <code className="text-primary bg-muted px-1 rounded">NODE_ENV === 'development'</code>.</p>
+            <p><strong className="text-foreground">Recovery actions</strong> — "Reload Page" calls <code className="text-primary bg-muted px-1 rounded">window.location.reload()</code>. "Go Back" calls <code className="text-primary bg-muted px-1 rounded">window.history.back()</code>.</p>
           </div>
         </section>
 
@@ -77,7 +77,7 @@ export default function ComponentErrorBoundary() {
           <h2 className="font-display text-xl font-medium">Props</h2>
           <div className="border border-border rounded-lg overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-muted/50">
+              <thead className="bg-muted">
                 <tr>
                   <th className="text-left p-3 font-medium">Prop</th>
                   <th className="text-left p-3 font-medium">Type</th>
@@ -105,8 +105,8 @@ export default function ComponentErrorBoundary() {
           <h2 className="font-display text-xl font-medium">useErrorHandler Hook</h2>
           <div className="text-base text-muted-foreground space-y-2">
             <p>
-              The module also exports a <code className="text-primary bg-primary/5 px-1 rounded">useErrorHandler</code> hook for functional components.
-              It returns a <code className="text-primary bg-primary/5 px-1 rounded">setError</code> function that, when called with an Error, re-throws it during render so the nearest ErrorBoundary catches it.
+              The module also exports a <code className="text-primary bg-muted px-1 rounded">useErrorHandler</code> hook for functional components.
+              It returns a <code className="text-primary bg-muted px-1 rounded">setError</code> function that, when called with an Error, re-throws it during render so the nearest ErrorBoundary catches it.
             </p>
             <p>
               This is useful for surfacing errors from async operations (API calls, event handlers) that React's error boundary lifecycle methods cannot catch on their own.
@@ -155,7 +155,7 @@ function DataLoader() {
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Focus management:</strong> When the fallback UI renders, the "Reload Page" and "Go Back" buttons are immediately focusable via Tab.</p>
             <p><strong className="text-foreground">Semantic structure:</strong> The default fallback uses Card with CardTitle (heading) and CardDescription for screen reader context.</p>
-            <p><strong className="text-foreground">Stack trace disclosure:</strong> Uses native <code className="text-primary bg-primary/5 px-1 rounded">&lt;details&gt;</code> / <code className="text-primary bg-primary/5 px-1 rounded">&lt;summary&gt;</code> elements, which are natively accessible and keyboard-operable.</p>
+            <p><strong className="text-foreground">Stack trace disclosure:</strong> Uses native <code className="text-primary bg-muted px-1 rounded">&lt;details&gt;</code> / <code className="text-primary bg-muted px-1 rounded">&lt;summary&gt;</code> elements, which are natively accessible and keyboard-operable.</p>
             <p><strong className="text-foreground">Dev-only content:</strong> Stack traces are hidden in production, reducing noise for end users and screen readers.</p>
           </div>
         </section>

@@ -9,10 +9,10 @@ export default function UIAlert() {
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Alert</h1>
           <p className="text-lg text-muted-foreground">
-            A callout component for displaying important messages. Supports two variants — <code className="text-primary bg-primary/5 px-1 rounded">default</code> for
-            informational notices and <code className="text-primary bg-primary/5 px-1 rounded">destructive</code> for errors and warnings. Composed
-            of <code className="text-primary bg-primary/5 px-1 rounded">Alert</code>, <code className="text-primary bg-primary/5 px-1 rounded">AlertTitle</code>,
-            and <code className="text-primary bg-primary/5 px-1 rounded">AlertDescription</code>.
+            A callout component for displaying important messages. Supports two variants — <code className="text-primary bg-muted px-1 rounded">default</code> for
+            informational notices and <code className="text-primary bg-muted px-1 rounded">destructive</code> for errors and warnings. Composed
+            of <code className="text-primary bg-muted px-1 rounded">Alert</code>, <code className="text-primary bg-muted px-1 rounded">AlertTitle</code>,
+            and <code className="text-primary bg-muted px-1 rounded">AlertDescription</code>.
           </p>
         </div>
 
@@ -79,8 +79,8 @@ export default function UIAlert() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            Icons are absolutely positioned to the left via <code className="text-primary bg-primary/5 px-1 rounded">{"[&>svg]:absolute"}</code> and sibling content is offset
-            with <code className="text-primary bg-primary/5 px-1 rounded">{"[&>svg~*]:pl-7"}</code>. Omitting the icon removes the left padding automatically.
+            Icons are absolutely positioned to the left via <code className="text-primary bg-muted px-1 rounded">{"[&>svg]:absolute"}</code> and sibling content is offset
+            with <code className="text-primary bg-muted px-1 rounded">{"[&>svg~*]:pl-7"}</code>. Omitting the icon removes the left padding automatically.
           </p>
         </section>
 
@@ -131,9 +131,9 @@ import { Terminal, AlertCircle } from 'lucide-react';
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">ARIA role:</strong> The component renders with <code className="text-primary bg-primary/5 px-1 rounded">role="alert"</code>, which causes screen readers to announce the content immediately when it appears.</p>
-            <p><strong className="text-foreground">Semantic heading:</strong> <code className="text-primary bg-primary/5 px-1 rounded">AlertTitle</code> renders as an <code className="text-primary bg-primary/5 px-1 rounded">&lt;h5&gt;</code>. Ensure it fits within the page heading hierarchy or override the element if needed.</p>
-            <p><strong className="text-foreground">Icon decorative:</strong> Icons inside Alert are decorative — the title and description carry the semantic meaning. Add <code className="text-primary bg-primary/5 px-1 rounded">aria-hidden="true"</code> on the icon if it duplicates the text content.</p>
+            <p><strong className="text-foreground">ARIA role:</strong> The component renders with <code className="text-primary bg-muted px-1 rounded">role="alert"</code>, which causes screen readers to announce the content immediately when it appears.</p>
+            <p><strong className="text-foreground">Semantic heading:</strong> <code className="text-primary bg-muted px-1 rounded">AlertTitle</code> renders as an <code className="text-primary bg-muted px-1 rounded">&lt;h5&gt;</code>. Ensure it fits within the page heading hierarchy or override the element if needed.</p>
+            <p><strong className="text-foreground">Icon decorative:</strong> Icons inside Alert are decorative — the title and description carry the semantic meaning. Add <code className="text-primary bg-muted px-1 rounded">aria-hidden="true"</code> on the icon if it duplicates the text content.</p>
           </div>
         </section>
 

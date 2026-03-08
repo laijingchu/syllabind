@@ -12,7 +12,7 @@ interface EmptyStateProps {
 
 export function EmptyState({
   icon: Icon,
-  iconClassName = 'bg-primary/10 text-primary',
+  iconClassName = 'bg-primary-surface text-primary',
   title,
   description,
   action,

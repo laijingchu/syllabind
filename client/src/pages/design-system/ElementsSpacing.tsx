@@ -1,3 +1,4 @@
+import { Link } from 'wouter';
 import DesignSystemLayout, { CodeBlock, TokenRow } from './DesignSystemLayout';
 
 const radiusTokens = [
@@ -36,7 +37,7 @@ export default function ElementsSpacing() {
                 <code className="text-xs font-mono text-primary w-8 text-right shrink-0">{n}</code>
                 <span className="text-sm text-muted-foreground w-20 shrink-0">{n * 4}px</span>
                 <div
-                  className="h-4 rounded-sm bg-primary/20 border border-primary/30"
+                  className="h-4 rounded-sm bg-primary-surface border border-border"
                   style={{ width: `${n * 4}px` }}
                 />
               </div>
@@ -63,7 +64,7 @@ export default function ElementsSpacing() {
             {radiusTokens.map(r => (
               <div key={r.token} className="space-y-2">
                 <div
-                  className="h-20 w-full bg-primary/10 border-2 border-primary/30 mx-auto"
+                  className="h-20 w-full bg-primary-surface border-2 border-border mx-auto"
                   style={{ borderRadius: r.resolved }}
                 />
                 <div className="text-center">
@@ -95,7 +96,7 @@ export default function ElementsSpacing() {
             ].map(r => (
               <div key={r.label} className="text-center space-y-2">
                 <div
-                  className="h-16 w-16 bg-primary/15 border border-primary/30 mx-auto"
+                  className="h-16 w-16 bg-primary-surface border border-border mx-auto"
                   style={{ borderRadius: r.radius }}
                 />
                 <p className="text-xs font-mono">{r.label}</p>
@@ -103,6 +104,17 @@ export default function ElementsSpacing() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Cross-reference to Layout page */}
+        <section className="border border-border rounded-lg p-4 text-base text-muted-foreground">
+          <p>
+            For page-width tokens and baseline grid documentation, see the{' '}
+            <Link href="/design-system/layout" className="text-primary underline underline-offset-2 hover:text-foreground transition-colors">
+              Layout Grid
+            </Link>{' '}
+            page.
+          </p>
         </section>
 
         {/* Design guidance */}

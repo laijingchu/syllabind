@@ -149,10 +149,10 @@ export default function UIBreadcrumb() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Landmark:</strong> Renders as a <code className="text-primary bg-primary/5 px-1 rounded">&lt;nav&gt;</code> element with <code className="text-primary bg-primary/5 px-1 rounded">aria-label="breadcrumb"</code> for screen reader identification.</p>
-            <p><strong className="text-foreground">Current page:</strong> The final item uses <code className="text-primary bg-primary/5 px-1 rounded">aria-current="page"</code> and <code className="text-primary bg-primary/5 px-1 rounded">aria-disabled="true"</code> to indicate the current location.</p>
-            <p><strong className="text-foreground">Separators:</strong> Chevron separators are marked with <code className="text-primary bg-primary/5 px-1 rounded">role="presentation"</code> and <code className="text-primary bg-primary/5 px-1 rounded">aria-hidden="true"</code> so they are skipped by screen readers.</p>
-            <p><strong className="text-foreground">Ellipsis:</strong> The collapsed indicator includes a <code className="text-primary bg-primary/5 px-1 rounded">sr-only</code> "More" label for assistive technology.</p>
+            <p><strong className="text-foreground">Landmark:</strong> Renders as a <code className="text-primary bg-muted px-1 rounded">&lt;nav&gt;</code> element with <code className="text-primary bg-muted px-1 rounded">aria-label="breadcrumb"</code> for screen reader identification.</p>
+            <p><strong className="text-foreground">Current page:</strong> The final item uses <code className="text-primary bg-muted px-1 rounded">aria-current="page"</code> and <code className="text-primary bg-muted px-1 rounded">aria-disabled="true"</code> to indicate the current location.</p>
+            <p><strong className="text-foreground">Separators:</strong> Chevron separators are marked with <code className="text-primary bg-muted px-1 rounded">role="presentation"</code> and <code className="text-primary bg-muted px-1 rounded">aria-hidden="true"</code> so they are skipped by screen readers.</p>
+            <p><strong className="text-foreground">Ellipsis:</strong> The collapsed indicator includes a <code className="text-primary bg-muted px-1 rounded">sr-only</code> "More" label for assistive technology.</p>
           </div>
         </section>
 

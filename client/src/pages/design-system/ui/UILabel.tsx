@@ -70,7 +70,7 @@ export default function UILabel() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            When a sibling form control is disabled, the label automatically applies <code className="text-primary bg-primary/5 px-1 rounded">peer-disabled:cursor-not-allowed</code> and <code className="text-primary bg-primary/5 px-1 rounded">peer-disabled:opacity-70</code> for a coordinated disabled appearance.
+            When a sibling form control is disabled, the label automatically applies <code className="text-primary bg-muted px-1 rounded">peer-disabled:cursor-not-allowed</code> and <code className="text-primary bg-muted px-1 rounded">peer-disabled:opacity-70</code> for a coordinated disabled appearance.
           </p>
         </section>
 
@@ -112,10 +112,10 @@ export default function UILabel() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Association:</strong> Uses Radix UI's Label primitive which renders a native <code className="text-primary bg-primary/5 px-1 rounded">&lt;label&gt;</code> element. Connect to controls via <code className="text-primary bg-primary/5 px-1 rounded">htmlFor</code>.</p>
+            <p><strong className="text-foreground">Association:</strong> Uses Radix UI's Label primitive which renders a native <code className="text-primary bg-muted px-1 rounded">&lt;label&gt;</code> element. Connect to controls via <code className="text-primary bg-muted px-1 rounded">htmlFor</code>.</p>
             <p><strong className="text-foreground">Click behavior:</strong> Clicking the label focuses or toggles the associated form control.</p>
             <p><strong className="text-foreground">Screen readers:</strong> Properly announces the label text when the associated control receives focus.</p>
-            <p><strong className="text-foreground">Disabled:</strong> The <code className="text-primary bg-primary/5 px-1 rounded">peer-disabled</code> utilities provide visual coordination but do not change the label's own enabled state.</p>
+            <p><strong className="text-foreground">Disabled:</strong> The <code className="text-primary bg-muted px-1 rounded">peer-disabled</code> utilities provide visual coordination but do not change the label's own enabled state.</p>
           </div>
         </section>
 

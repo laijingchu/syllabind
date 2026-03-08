@@ -89,7 +89,7 @@ export default function Pricing() {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto py-12 px-4 space-y-10">
+    <div className="max-w-page-wide mx-auto py-12 px-4 space-y-10">
       <div className="text-center space-y-3">
         <h1 className="text-4xl font-display font-medium">Simple, Transparent Pricing</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -99,7 +99,7 @@ export default function Pricing() {
           <span className={`text-sm ${!annual ? 'font-medium' : 'text-muted-foreground'}`}>Monthly</span>
           <Switch checked={annual} onCheckedChange={setAnnual} />
           <span className={`text-sm ${annual ? 'font-medium' : 'text-muted-foreground'}`}>
-            Annual <span className="text-green-600 text-xs">(save 17%)</span>
+            Annual <span className="text-success text-xs">(save 17%)</span>
           </span>
         </div>
       </div>
@@ -108,7 +108,7 @@ export default function Pricing() {
         {plans.map(plan => (
           <Card key={plan.name} className={`relative flex flex-col ${plan.badge === 'Most Popular' ? 'border-primary shadow-lg' : ''}`}>
             {plan.badge && (
-              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
+              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary-inverted text-foreground-inverted">
                 {plan.badge}
               </Badge>
             )}
@@ -127,14 +127,14 @@ export default function Pricing() {
               <ul className="space-y-2 flex-1 mb-6">
                 {plan.features.map(f => (
                   <li key={f} className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                    <Check className="h-4 w-4 text-success mt-0.5 shrink-0" />
                     {f}
                   </li>
                 ))}
               </ul>
               <Button
                 className="w-full"
-                variant={plan.badge === 'Most Popular' ? 'default' : 'outline'}
+                variant={plan.badge === 'Most Popular' ? 'default' : 'secondary'}
                 disabled={plan.disabled || loading !== null}
                 onClick={() => plan.plan && handleCheckout(plan.plan)}
               >
@@ -152,7 +152,7 @@ export default function Pricing() {
         <div className="border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-muted/50">
+              <tr className="bg-muted">
                 <th className="text-left p-3 font-medium">AI Feature</th>
                 <th className="text-right p-3 font-medium">Credits</th>
                 <th className="text-right p-3 font-medium">Notes</th>
@@ -200,7 +200,7 @@ export default function Pricing() {
                   <p className="text-sm text-muted-foreground">credits</p>
                   <p className="font-semibold">{pkg.price}</p>
                   <p className="text-xs text-muted-foreground">{pkg.perCredit}/credit</p>
-                  <Button size="sm" variant="outline" className="w-full" onClick={() => handleCheckout(pkg.plan)} disabled={loading !== null}>
+                  <Button size="sm" variant="secondary" className="w-full" onClick={() => handleCheckout(pkg.plan)} disabled={loading !== null}>
                     {loading === pkg.plan ? '...' : 'Buy'}
                   </Button>
                 </CardContent>

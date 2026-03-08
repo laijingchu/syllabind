@@ -83,7 +83,7 @@ export default function ResetPassword() {
           {success ? (
             <>
               <CardHeader className="text-center">
-                <CheckCircle2 className="mx-auto h-10 w-10 text-green-600 mb-2" />
+                <CheckCircle2 className="mx-auto h-10 w-10 text-success mb-2" />
                 <CardTitle>Password reset</CardTitle>
                 <CardDescription>Your password has been updated. You can now log in.</CardDescription>
               </CardHeader>
@@ -113,7 +113,7 @@ export default function ResetPassword() {
                     {PASSWORD_REQUIREMENTS.map((req) => (
                       <li
                         key={req.label}
-                        className={newPassword ? (req.test(newPassword) ? 'text-green-600' : 'text-red-500') : 'text-muted-foreground'}
+                        className={newPassword ? (req.test(newPassword) ? 'text-success' : 'text-destructive') : 'text-muted-foreground'}
                       >
                         {req.label}
                       </li>
@@ -129,7 +129,7 @@ export default function ResetPassword() {
                     onChange={e => setConfirmPassword(e.target.value)}
                   />
                   {confirmPassword && !passwordsMatch && (
-                    <p className="text-xs text-red-500">Passwords do not match</p>
+                    <p className="text-xs text-destructive">Passwords do not match</p>
                   )}
                 </div>
               </CardContent>

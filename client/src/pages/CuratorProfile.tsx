@@ -70,7 +70,7 @@ export default function CuratorProfile() {
   if (!user) return null;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-page-prose mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center gap-4">
         <Link href="/curator">
           <Button variant="ghost" size="icon" className="rounded-full">

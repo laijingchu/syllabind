@@ -32,7 +32,7 @@ export default function UITooltip() {
               <div className="flex flex-wrap gap-4 items-center">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon"><Info className="h-4 w-4" /></Button>
+                    <Button variant="secondary" size="icon"><Info className="h-4 w-4" /></Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>More information</p>
@@ -69,7 +69,7 @@ export default function UITooltip() {
             </TooltipProvider>
           </div>
           <p className="text-base text-muted-foreground">
-            Hover or focus any icon button above to see the tooltip. The <code className="text-primary bg-primary/5 px-1 rounded">sideOffset</code> prop controls the gap between trigger and tooltip (default 4px).
+            Hover or focus any icon button above to see the tooltip. The <code className="text-primary bg-muted px-1 rounded">sideOffset</code> prop controls the gap between trigger and tooltip (default 4px).
           </p>
         </section>
 
@@ -79,15 +79,15 @@ export default function UITooltip() {
           <p className="text-base text-muted-foreground">Tooltip rendered directly on the page for visual reference.</p>
           <div className="border border-border rounded-lg p-6 flex items-center justify-center min-h-[100px]">
             <div className="flex flex-col items-center gap-2">
-              <div className="bg-primary text-primary-foreground px-3 py-1.5 rounded-md text-sm shadow-md animate-in fade-in-0 zoom-in-95">
+              <div className="bg-primary-inverted text-foreground-inverted px-3 py-1.5 rounded-md text-sm shadow-md animate-in fade-in-0 zoom-in-95">
                 More information
               </div>
               <svg className="text-primary -mt-1" width="10" height="5" viewBox="0 0 10 5"><polygon fill="currentColor" points="0,0 10,0 5,5" /></svg>
-              <Button variant="outline" size="icon"><Info className="h-4 w-4" /></Button>
+              <Button variant="secondary" size="icon"><Info className="h-4 w-4" /></Button>
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            The tooltip uses <code className="text-primary bg-primary/5 px-1 rounded">--primary</code> as background and <code className="text-primary bg-primary/5 px-1 rounded">--primary-foreground</code> as text color. The arrow points toward the trigger element.
+            The tooltip uses <code className="text-primary bg-muted px-1 rounded">--primary</code> as background and <code className="text-primary bg-muted px-1 rounded">--primary-inverted</code> as text color. The arrow points toward the trigger element.
           </p>
         </section>
 
@@ -99,7 +99,7 @@ export default function UITooltip() {
               <div className="flex flex-wrap gap-4 items-center justify-center">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" size="sm">Top (default)</Button>
+                    <Button variant="secondary" size="sm">Top (default)</Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">
                     <p>Top tooltip</p>
@@ -108,7 +108,7 @@ export default function UITooltip() {
 
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" size="sm">Bottom</Button>
+                    <Button variant="secondary" size="sm">Bottom</Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
                     <p>Bottom tooltip</p>
@@ -117,7 +117,7 @@ export default function UITooltip() {
 
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" size="sm">Left</Button>
+                    <Button variant="secondary" size="sm">Left</Button>
                   </TooltipTrigger>
                   <TooltipContent side="left">
                     <p>Left tooltip</p>
@@ -126,7 +126,7 @@ export default function UITooltip() {
 
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" size="sm">Right</Button>
+                    <Button variant="secondary" size="sm">Right</Button>
                   </TooltipTrigger>
                   <TooltipContent side="right">
                     <p>Right tooltip</p>
@@ -136,7 +136,7 @@ export default function UITooltip() {
             </TooltipProvider>
           </div>
           <p className="text-base text-muted-foreground">
-            Use the <code className="text-primary bg-primary/5 px-1 rounded">side</code> prop to control placement. The tooltip will automatically flip if there is not enough room.
+            Use the <code className="text-primary bg-muted px-1 rounded">side</code> prop to control placement. The tooltip will automatically flip if there is not enough room.
           </p>
         </section>
 
@@ -149,7 +149,7 @@ export default function UITooltip() {
                 <div className="space-y-2 text-center">
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button variant="outline" size="icon"><Info className="h-4 w-4" /></Button>
+                      <Button variant="secondary" size="icon"><Info className="h-4 w-4" /></Button>
                     </TooltipTrigger>
                     <TooltipContent><p>Hover me</p></TooltipContent>
                   </Tooltip>
@@ -158,7 +158,7 @@ export default function UITooltip() {
                 <div className="space-y-2 text-center">
                   <Tooltip defaultOpen>
                     <TooltipTrigger asChild>
-                      <Button variant="outline" size="icon"><Info className="h-4 w-4" /></Button>
+                      <Button variant="secondary" size="icon"><Info className="h-4 w-4" /></Button>
                     </TooltipTrigger>
                     <TooltipContent><p>Visible</p></TooltipContent>
                   </Tooltip>
@@ -167,7 +167,7 @@ export default function UITooltip() {
                 <div className="space-y-2 text-center">
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button variant="outline" size="icon" disabled><Info className="h-4 w-4" /></Button>
+                      <Button variant="secondary" size="icon" disabled><Info className="h-4 w-4" /></Button>
                     </TooltipTrigger>
                     <TooltipContent><p>Disabled trigger</p></TooltipContent>
                   </Tooltip>
@@ -177,7 +177,7 @@ export default function UITooltip() {
             </TooltipProvider>
           </div>
           <p className="text-base text-muted-foreground">
-            Tooltips animate in with <code className="text-primary bg-primary/5 px-1 rounded">fade-in</code> and <code className="text-primary bg-primary/5 px-1 rounded">zoom-in-95</code>, and slide from the opposite side of their placement.
+            Tooltips animate in with <code className="text-primary bg-muted px-1 rounded">fade-in</code> and <code className="text-primary bg-muted px-1 rounded">zoom-in-95</code>, and slide from the opposite side of their placement.
           </p>
         </section>
 
@@ -186,7 +186,7 @@ export default function UITooltip() {
           <h2 className="font-display text-xl font-medium">Design Tokens</h2>
           <div className="border border-border rounded-lg p-4">
             <TokenRow token="--primary" value="Tooltip background color" />
-            <TokenRow token="--primary-foreground" value="Tooltip text color" />
+            <TokenRow token="--primary-inverted" value="Tooltip text color" />
           </div>
         </section>
 
@@ -223,8 +223,8 @@ export default function UITooltip() {
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Tooltip opens on focus and closes on blur. No additional keyboard interaction needed.</p>
-            <p><strong className="text-foreground">Screen readers:</strong> The tooltip content is associated with the trigger via <code className="text-primary bg-primary/5 px-1 rounded">aria-describedby</code>, automatically managed by Radix.</p>
-            <p><strong className="text-foreground">Timing:</strong> TooltipProvider accepts a <code className="text-primary bg-primary/5 px-1 rounded">delayDuration</code> prop (default 700ms) to prevent accidental triggers.</p>
+            <p><strong className="text-foreground">Screen readers:</strong> The tooltip content is associated with the trigger via <code className="text-primary bg-muted px-1 rounded">aria-describedby</code>, automatically managed by Radix.</p>
+            <p><strong className="text-foreground">Timing:</strong> TooltipProvider accepts a <code className="text-primary bg-muted px-1 rounded">delayDuration</code> prop (default 700ms) to prevent accidental triggers.</p>
             <p><strong className="text-foreground">Escape:</strong> Pressing Escape dismisses an open tooltip.</p>
           </div>
         </section>

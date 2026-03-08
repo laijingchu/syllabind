@@ -45,8 +45,8 @@ export function ReviewQueueCard({ binder, actionInProgress, onApprove, onReject 
               <span className="text-xs text-muted-foreground">
                 by {binder.curator?.name || 'Unknown'}
               </span>
-              <Badge variant="outline" className="text-xs">{binder.visibility}</Badge>
-              <Badge variant="outline" className="text-xs">{binder.audienceLevel}</Badge>
+              <Badge variant="secondary" className="text-xs">{binder.visibility}</Badge>
+              <Badge variant="secondary" className="text-xs">{binder.audienceLevel}</Badge>
               {binder.submittedAt && (
                 <span className="text-xs text-muted-foreground">
                   {formatDistanceToNow(new Date(binder.submittedAt), { addSuffix: true })}
@@ -58,12 +58,12 @@ export function ReviewQueueCard({ binder, actionInProgress, onApprove, onReject 
 
         <div className="flex items-center gap-2 shrink-0">
           <Link href={`/curator/binder/${binder.id}/edit`}>
-            <Button variant="outline" size="icon" className="h-8 w-8">
+            <Button variant="secondary" size="icon" className="h-8 w-8">
               <Pencil className="h-4 w-4" />
             </Button>
           </Link>
           <Link href={`/binder/${binder.id}?preview=true`}>
-            <Button variant="outline" size="sm" className="gap-1.5">
+            <Button variant="secondary" size="sm" className="gap-1.5">
               <Eye className="h-4 w-4" /> Preview
             </Button>
           </Link>

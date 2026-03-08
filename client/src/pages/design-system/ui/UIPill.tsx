@@ -21,7 +21,7 @@ export default function UIPill() {
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Pill</h1>
           <p className="text-lg text-muted-foreground">
-            A compact, rounded toggle button for filtering and selection. Pills use <code className="text-primary bg-primary/5 px-1 rounded">rounded-full</code> styling
+            A compact, rounded toggle button for filtering and selection. Pills use <code className="text-primary bg-muted px-1 rounded">rounded-full</code> styling
             with a high-contrast active state to clearly indicate selection. Available in default (solid) and outline variants.
           </p>
         </div>
@@ -99,8 +99,8 @@ export default function UIPill() {
             </div>
           </div>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Default:</strong> Solid fill. Active = <code className="text-primary bg-primary/5 px-1 rounded">bg-foreground text-background</code>, Inactive = <code className="text-primary bg-primary/5 px-1 rounded">bg-muted text-muted-foreground</code>. Used for primary filter controls.</p>
-            <p><strong className="text-foreground">Outline:</strong> Bordered. Active = <code className="text-primary bg-primary/5 px-1 rounded">bg-primary/15 border-primary/60</code>, Inactive = <code className="text-primary bg-primary/5 px-1 rounded">border-primary/30 text-primary</code>. Used for secondary actions like demo topic chips.</p>
+            <p><strong className="text-foreground">Default:</strong> Solid fill. Active = <code className="text-primary bg-muted px-1 rounded">bg-foreground text-background</code>, Inactive = <code className="text-primary bg-muted px-1 rounded">bg-muted text-muted-foreground</code>. Used for primary filter controls.</p>
+            <p><strong className="text-foreground">Outline:</strong> Bordered. Active = <code className="text-primary bg-muted px-1 rounded">bg-primary-surface border-border</code>, Inactive = <code className="text-primary bg-muted px-1 rounded">border-border text-primary</code>. Used for secondary actions like demo topic chips.</p>
           </div>
         </section>
 
@@ -131,7 +131,7 @@ export default function UIPill() {
           <div className="border border-border rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted/30">
+                <tr className="border-b border-border bg-muted">
                   <th className="text-left p-3 font-medium">Prop</th>
                   <th className="text-left p-3 font-medium">Type</th>
                   <th className="text-left p-3 font-medium">Default</th>
@@ -228,10 +228,10 @@ export default function UIPill() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">aria-pressed:</strong> Each pill sets <code className="text-primary bg-primary/5 px-1 rounded">aria-pressed</code> based on its <code className="text-primary bg-primary/5 px-1 rounded">active</code> prop, enabling screen readers to announce toggle state.</p>
-            <p><strong className="text-foreground">data-state:</strong> Exposes <code className="text-primary bg-primary/5 px-1 rounded">data-state="on"</code> or <code className="text-primary bg-primary/5 px-1 rounded">"off"</code> for CSS targeting.</p>
-            <p><strong className="text-foreground">Focus ring:</strong> Visible focus ring via <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:ring-1 focus-visible:ring-ring</code>.</p>
-            <p><strong className="text-foreground">Native button:</strong> Uses <code className="text-primary bg-primary/5 px-1 rounded">{"<button type=\"button\">"}</code> for keyboard accessibility (Enter/Space to activate, Tab to navigate).</p>
+            <p><strong className="text-foreground">aria-pressed:</strong> Each pill sets <code className="text-primary bg-muted px-1 rounded">aria-pressed</code> based on its <code className="text-primary bg-muted px-1 rounded">active</code> prop, enabling screen readers to announce toggle state.</p>
+            <p><strong className="text-foreground">data-state:</strong> Exposes <code className="text-primary bg-muted px-1 rounded">data-state="on"</code> or <code className="text-primary bg-muted px-1 rounded">"off"</code> for CSS targeting.</p>
+            <p><strong className="text-foreground">Focus ring:</strong> Visible focus ring via <code className="text-primary bg-muted px-1 rounded">focus-visible:ring-1 focus-visible:ring-ring</code>.</p>
+            <p><strong className="text-foreground">Native button:</strong> Uses <code className="text-primary bg-muted px-1 rounded">{"<button type=\"button\">"}</code> for keyboard accessibility (Enter/Space to activate, Tab to navigate).</p>
           </div>
         </section>
 
@@ -241,7 +241,7 @@ export default function UIPill() {
           <div className="border border-border rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted/30">
+                <tr className="border-b border-border bg-muted">
                   <th className="text-left p-3 font-medium">Component</th>
                   <th className="text-left p-3 font-medium">Interactive</th>
                   <th className="text-left p-3 font-medium">Shape</th>

@@ -9,7 +9,7 @@ export default function UIButton() {
         <div>
           <h1 className="font-display text-3xl font-medium mb-2">Button</h1>
           <p className="text-lg text-muted-foreground">
-            The primary interactive element for triggering actions. Supports 6 visual variants
+            The primary interactive element for triggering actions. Supports 7 visual variants
             and 4 sizes, with a flat elevation system for hover and active feedback.
           </p>
         </div>
@@ -30,18 +30,20 @@ export default function UIButton() {
             <div className="flex flex-wrap gap-3 items-center">
               <Button variant="default">Default</Button>
               <Button variant="secondary">Secondary</Button>
-              <Button variant="outline">Outline</Button>
+              <Button variant="tertiary">Tertiary</Button>
               <Button variant="ghost">Ghost</Button>
               <Button variant="destructive">Destructive</Button>
+              <Button variant="secondary-destructive">Secondary Destructive</Button>
               <Button variant="link">Link</Button>
             </div>
           </div>
           <div className="text-base text-muted-foreground space-y-1">
-            <p><strong className="text-foreground">default</strong> — Filled primary background. Main CTAs, "Enroll", form submissions.</p>
-            <p><strong className="text-foreground">secondary</strong> — Muted fill. Supporting actions beside a primary button.</p>
-            <p><strong className="text-foreground">outline</strong> — Transparent with border. "Cancel", filter toggles, secondary actions.</p>
+            <p><strong className="text-foreground">default</strong> — Black fill with a subtle prismatic shimmer on hover. Main CTAs, "Enroll", form submissions.</p>
+            <p><strong className="text-foreground">secondary</strong> — Transparent with border and shadow. "Cancel", filter toggles, secondary actions.</p>
+            <p><strong className="text-foreground">tertiary</strong> — Muted fill, no border. Supporting actions beside a primary button.</p>
             <p><strong className="text-foreground">ghost</strong> — No background or border. Icon buttons, back buttons, nav links.</p>
             <p><strong className="text-foreground">destructive</strong> — Red fill for irreversible actions. "Delete", "Remove".</p>
+            <p><strong className="text-foreground">secondary-destructive</strong> — Red surface with red border. Lower-emphasis destructive actions beside a primary destructive button.</p>
             <p><strong className="text-foreground">link</strong> — Styled as inline text link. "Learn more", inline navigation.</p>
           </div>
         </section>
@@ -89,7 +91,7 @@ export default function UIButton() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            Hover and active states use the elevation overlay system (<code className="text-primary bg-primary/5 px-1 rounded">hover-elevate</code> and <code className="text-primary bg-primary/5 px-1 rounded">active-elevate-2</code>) rather than color shifts. Disabled buttons reduce opacity to 50%.
+            Hover and active states use the elevation overlay system (<code className="text-primary bg-muted px-1 rounded">hover-elevate</code> and <code className="text-primary bg-muted px-1 rounded">active-elevate-2</code>) rather than color shifts. Disabled buttons reduce opacity to 50%.
           </p>
         </section>
 
@@ -99,13 +101,13 @@ export default function UIButton() {
           <div className="border border-border rounded-lg p-6">
             <div className="flex flex-wrap gap-3 items-center">
               <Button><Plus className="h-4 w-4" />Create Binder</Button>
-              <Button variant="outline">Next <ArrowRight className="h-4 w-4" /></Button>
+              <Button variant="secondary">Next <ArrowRight className="h-4 w-4" /></Button>
               <Button variant="destructive"><Trash2 className="h-4 w-4" />Delete</Button>
               <Button variant="ghost" size="icon"><Plus className="h-4 w-4" /></Button>
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            Icons inside buttons are automatically sized to 16px and flex-shrunk via the <code className="text-primary bg-primary/5 px-1 rounded">[&_svg]:size-4</code> selector.
+            Icons inside buttons are automatically sized to 16px and flex-shrunk via the <code className="text-primary bg-muted px-1 rounded">[&_svg]:size-4</code> selector.
           </p>
         </section>
 
@@ -113,12 +115,13 @@ export default function UIButton() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Design Tokens</h2>
           <div className="border border-border rounded-lg p-4">
-            <TokenRow token="--primary" value="Main fill color for default variant" />
-            <TokenRow token="--primary-foreground" value="Text on primary-colored buttons" />
-            <TokenRow token="--primary-border" value="Subtle border on filled buttons" />
-            <TokenRow token="--secondary" value="Fill for secondary variant" />
-            <TokenRow token="--destructive" value="Fill for destructive variant" />
-            <TokenRow token="--button-outline" value="Border color for outline variant" />
+            <TokenRow token=".bg-action-gradient" value="Black base with translucent prismatic shimmer sweep on hover (blue→purple→rose light band)" />
+            <TokenRow token="--foreground-inverted" value="Text on primary and destructive buttons" />
+            <TokenRow token="--button-outline" value="Border color for secondary variant" />
+            <TokenRow token="--secondary" value="Fill for tertiary variant" />
+            <TokenRow token="--danger-inverted" value="Solid danger fill for destructive variant" />
+            <TokenRow token="--danger-surface" value="Tinted fill for secondary-destructive variant" />
+            <TokenRow token="--danger-border" value="Border for destructive and secondary-destructive variants" />
             <TokenRow token="--elevate-1" value="Hover overlay" />
             <TokenRow token="--elevate-2" value="Active/press overlay" />
             <TokenRow token="--ring" value="Focus ring color" />
@@ -132,10 +135,11 @@ export default function UIButton() {
 
 // Variants
 <Button variant="default">Enroll Now</Button>
-<Button variant="secondary">Save Draft</Button>
-<Button variant="outline">Cancel</Button>
+<Button variant="secondary">Cancel</Button>
+<Button variant="tertiary">Save Draft</Button>
 <Button variant="ghost">Back</Button>
 <Button variant="destructive">Delete Binder</Button>
+<Button variant="secondary-destructive">Remove</Button>
 <Button variant="link">Learn more</Button>
 
 // Sizes
@@ -162,9 +166,9 @@ export default function UIButton() {
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Focusable via Tab. Activates on Enter or Space.</p>
-            <p><strong className="text-foreground">Focus indicator:</strong> 1px ring using <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:ring-1</code>. Only visible on keyboard navigation.</p>
-            <p><strong className="text-foreground">Disabled:</strong> Sets <code className="text-primary bg-primary/5 px-1 rounded">disabled:pointer-events-none</code> and <code className="text-primary bg-primary/5 px-1 rounded">disabled:opacity-50</code>.</p>
-            <p><strong className="text-foreground">asChild:</strong> Use the <code className="text-primary bg-primary/5 px-1 rounded">asChild</code> prop to render a different element (e.g., anchor tag) while keeping button styling and accessibility.</p>
+            <p><strong className="text-foreground">Focus indicator:</strong> 1px ring using <code className="text-primary bg-muted px-1 rounded">focus-visible:ring-1</code>. Only visible on keyboard navigation.</p>
+            <p><strong className="text-foreground">Disabled:</strong> Sets <code className="text-primary bg-muted px-1 rounded">disabled:pointer-events-none</code> and <code className="text-primary bg-muted px-1 rounded">disabled:opacity-50</code>.</p>
+            <p><strong className="text-foreground">asChild:</strong> Use the <code className="text-primary bg-muted px-1 rounded">asChild</code> prop to render a different element (e.g., anchor tag) while keeping button styling and accessibility.</p>
           </div>
         </section>
 
@@ -172,8 +176,8 @@ export default function UIButton() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">BinderOverview:</strong> "Enroll" CTA (default), "Preview" (outline).</p>
-            <p><strong className="text-foreground">BinderEditor:</strong> "Publish" (default), "Save Draft" (secondary), "Delete Binder" (destructive).</p>
+            <p><strong className="text-foreground">BinderOverview:</strong> "Enroll" CTA (default), "Preview" (secondary).</p>
+            <p><strong className="text-foreground">BinderEditor:</strong> "Publish" (default), "Save Draft" (tertiary), "Delete Binder" (destructive).</p>
             <p><strong className="text-foreground">Dashboard:</strong> "Create New Binder" (default with Plus icon).</p>
             <p><strong className="text-foreground">Layout nav:</strong> Back buttons and menu triggers (ghost, icon size).</p>
           </div>

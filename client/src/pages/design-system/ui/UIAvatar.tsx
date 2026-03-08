@@ -45,7 +45,7 @@ export default function UIAvatar() {
             The image loads asynchronously. While loading, the fallback is displayed. Once loaded, the image replaces it seamlessly.
           </p>
           <p className="text-base text-muted-foreground">
-            Syllabind uses <strong className="text-foreground">DiceBear Notionists</strong> (<code className="text-primary bg-primary/5 px-1 rounded">api.dicebear.com/7.x/notionists/svg</code>) as the default avatar illustration style. The <code className="text-primary bg-primary/5 px-1 rounded">seed</code> parameter is set to the user's display name to generate a consistent, unique illustration per user. Custom uploaded photos replace the DiceBear fallback.
+            Syllabind uses <strong className="text-foreground">DiceBear Notionists</strong> (<code className="text-primary bg-muted px-1 rounded">api.dicebear.com/7.x/notionists/svg</code>) as the default avatar illustration style. The <code className="text-primary bg-muted px-1 rounded">seed</code> parameter is set to the user's display name to generate a consistent, unique illustration per user. Custom uploaded photos replace the DiceBear fallback.
           </p>
         </section>
 
@@ -111,7 +111,7 @@ export default function UIAvatar() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            The default size is 40px (<code className="text-primary bg-primary/5 px-1 rounded">h-10 w-10</code>). Override via className to fit different contexts. Adjust <code className="text-primary bg-primary/5 px-1 rounded">text-*</code> alongside for proportional initials.
+            The default size is 40px (<code className="text-primary bg-muted px-1 rounded">h-10 w-10</code>). Override via className to fit different contexts. Adjust <code className="text-primary bg-muted px-1 rounded">text-*</code> alongside for proportional initials.
           </p>
         </section>
 
@@ -186,7 +186,7 @@ const avatarSrc = \`https://api.dicebear.com/7.x/notionists/svg?seed=\${userName
 </Avatar>
 
 // Small inline avatar (e.g. curator row in BinderCard)
-<Avatar className="h-8 w-8 border border-border/50">
+<Avatar className="h-8 w-8 border border-border">
   <AvatarImage src={avatarSrc} alt={curatorName} />
   <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
     {initial}
@@ -198,9 +198,9 @@ const avatarSrc = \`https://api.dicebear.com/7.x/notionists/svg?seed=\${userName
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Alt text:</strong> Always provide a descriptive <code className="text-primary bg-primary/5 px-1 rounded">alt</code> prop on AvatarImage for screen readers.</p>
+            <p><strong className="text-foreground">Alt text:</strong> Always provide a descriptive <code className="text-primary bg-muted px-1 rounded">alt</code> prop on AvatarImage for screen readers.</p>
             <p><strong className="text-foreground">Fallback:</strong> The initials in AvatarFallback are readable by screen readers. Use meaningful abbreviations (first + last initial).</p>
-            <p><strong className="text-foreground">Decorative use:</strong> If the avatar is purely decorative (e.g., next to the user's full name), use <code className="text-primary bg-primary/5 px-1 rounded">alt=""</code> to avoid redundant announcements.</p>
+            <p><strong className="text-foreground">Decorative use:</strong> If the avatar is purely decorative (e.g., next to the user's full name), use <code className="text-primary bg-muted px-1 rounded">alt=""</code> to avoid redundant announcements.</p>
           </div>
         </section>
 

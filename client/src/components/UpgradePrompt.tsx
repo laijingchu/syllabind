@@ -63,8 +63,8 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo, creditCos
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <div className="flex items-center gap-2 mb-2">
-              <div className="bg-amber-500/10 p-2 rounded-full">
-                <Coins className="h-5 w-5 text-amber-500" />
+              <div className="bg-warning-surface p-2 rounded-full">
+                <Coins className="h-5 w-5 text-warning" />
               </div>
             </div>
             <DialogTitle>Need More Credits</DialogTitle>
@@ -77,7 +77,7 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo, creditCos
           <div className="space-y-2">
             <Button
               className="w-full justify-between"
-              variant="outline"
+              variant="secondary"
               onClick={() => handleUpgrade('credits_100')}
               disabled={loading !== null}
             >
@@ -86,7 +86,7 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo, creditCos
             </Button>
             <Button
               className="w-full justify-between"
-              variant="outline"
+              variant="secondary"
               onClick={() => handleUpgrade('credits_250')}
               disabled={loading !== null}
             >
@@ -95,7 +95,7 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo, creditCos
             </Button>
             <Button
               className="w-full justify-between"
-              variant="outline"
+              variant="secondary"
               onClick={() => handleUpgrade('credits_550')}
               disabled={loading !== null}
             >
@@ -120,8 +120,8 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo, creditCos
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <div className="flex items-center gap-2 mb-2">
-              <div className="bg-amber-500/10 p-2 rounded-full">
-                <Coins className="h-5 w-5 text-amber-500" />
+              <div className="bg-warning-surface p-2 rounded-full">
+                <Coins className="h-5 w-5 text-warning" />
               </div>
             </div>
             <DialogTitle>Out of Credits</DialogTitle>
@@ -137,7 +137,7 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo, creditCos
               <Zap className="h-4 w-4 mr-2" />
               {loading === 'pro_monthly' ? 'Redirecting...' : 'Go Pro — $14.99/mo'}
             </Button>
-            <Button className="w-full" variant="outline" onClick={() => handleUpgrade('pro_annual')} disabled={loading !== null}>
+            <Button className="w-full" variant="secondary" onClick={() => handleUpgrade('pro_annual')} disabled={loading !== null}>
               {loading === 'pro_annual' ? 'Redirecting...' : 'Annual — $150/yr (save 17%)'}
             </Button>
           </div>
@@ -170,14 +170,14 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo, creditCos
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-2">
-            <div className="bg-primary/10 p-2 rounded-full">
+            <div className="bg-primary-surface p-2 rounded-full">
               <Crown className="h-5 w-5 text-primary" />
             </div>
           </div>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <div className="border rounded-lg p-4 bg-muted/30 space-y-2">
+        <div className="border rounded-lg p-4 bg-muted space-y-2">
           <p className="font-medium text-sm">Syllabind Pro includes:</p>
           <ul className="text-sm text-muted-foreground space-y-1">
             <li>- 130 AI credits per month</li>
@@ -192,7 +192,7 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo, creditCos
           <Button className="w-full" onClick={() => handleUpgrade('pro_monthly')} disabled={loading !== null}>
             {loading === 'pro_monthly' ? 'Redirecting...' : 'Go Pro — $14.99/mo'}
           </Button>
-          <Button className="w-full" variant="outline" onClick={() => handleUpgrade('pro_annual')} disabled={loading !== null}>
+          <Button className="w-full" variant="secondary" onClick={() => handleUpgrade('pro_annual')} disabled={loading !== null}>
             {loading === 'pro_annual' ? 'Redirecting...' : 'Annual — $150/yr (save 17%)'}
           </Button>
         </div>

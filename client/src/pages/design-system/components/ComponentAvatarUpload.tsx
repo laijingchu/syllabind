@@ -28,7 +28,7 @@ export default function ComponentAvatarUpload() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Anatomy</h2>
           <p className="text-base text-muted-foreground">
-            The component cannot be rendered in this design system demo because it calls <code className="text-primary bg-primary/5 px-1 rounded">fetch('/api/upload')</code> on file drop. Below is a static representation of its layout.
+            The component cannot be rendered in this design system demo because it calls <code className="text-primary bg-muted px-1 rounded">fetch('/api/upload')</code> on file drop. Below is a static representation of its layout.
           </p>
           <div className="border border-border rounded-lg p-6">
             <div className="flex items-center gap-6">
@@ -50,7 +50,7 @@ export default function ComponentAvatarUpload() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 px-2"
+                  className="text-destructive hover:text-destructive hover:bg-danger-surface h-8 px-2"
                   disabled
                 >
                   <X className="h-3 w-3 mr-1.5" /> Remove photo
@@ -75,7 +75,7 @@ export default function ComponentAvatarUpload() {
           <h2 className="font-display text-xl font-medium">Props</h2>
           <div className="border border-border rounded-lg overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-muted/50">
+              <thead className="bg-muted">
                 <tr>
                   <th className="text-left p-3 font-medium">Prop</th>
                   <th className="text-left p-3 font-medium">Type</th>
@@ -147,7 +147,7 @@ export default function ComponentAvatarUpload() {
             <p><strong className="text-foreground">Keyboard:</strong> The dropzone area is clickable and opens the native file picker. The remove button is focusable via Tab and activates on Enter or Space.</p>
             <p><strong className="text-foreground">Drag and drop:</strong> react-dropzone provides a hidden file input, so screen readers see a standard file input. The visible dropzone acts as a click target.</p>
             <p><strong className="text-foreground">Error feedback:</strong> Upload failures display a browser alert with a descriptive error message.</p>
-            <p><strong className="text-foreground">Alt text:</strong> The Avatar image uses the <code className="text-primary bg-primary/5 px-1 rounded">name</code> prop as alt text.</p>
+            <p><strong className="text-foreground">Alt text:</strong> The Avatar image uses the <code className="text-primary bg-muted px-1 rounded">name</code> prop as alt text.</p>
           </div>
         </section>
 

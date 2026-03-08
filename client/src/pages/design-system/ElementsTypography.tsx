@@ -56,10 +56,10 @@ export default function ElementsTypography() {
                   ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789
                 </p>
               </div>
-              <div className="border-t border-border p-4 bg-muted/30 space-y-2">
+              <div className="border-t border-border p-4 bg-muted space-y-2">
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium">{f.name}</span>
-                  <code className="text-xs font-mono text-primary bg-primary/5 px-1.5 py-0.5 rounded">{f.tw}</code>
+                  <code className="text-xs font-mono text-primary bg-muted px-1.5 py-0.5 rounded">{f.tw}</code>
                   <span className="text-sm text-muted-foreground">{f.usage}</span>
                 </div>
                 <p className="text-base text-muted-foreground">{f.personality}</p>
@@ -101,7 +101,7 @@ export default function ElementsTypography() {
             {typeScale.map((t, i) => (
               <div
                 key={t.label}
-                className={`flex items-baseline gap-6 px-4 py-3 ${i !== typeScale.length - 1 ? 'border-b border-border/50' : ''}`}
+                className={`flex items-baseline gap-6 px-4 py-3 ${i !== typeScale.length - 1 ? 'border-b border-border' : ''}`}
               >
                 <code className="text-xs font-mono text-primary w-20 shrink-0">{t.label}</code>
                 <span className="text-sm text-muted-foreground w-12 shrink-0">{t.size}</span>
@@ -129,7 +129,7 @@ export default function ElementsTypography() {
             ].map((w, i, arr) => (
               <div
                 key={w.label}
-                className={`flex flex-wrap items-center gap-x-6 gap-y-1 px-4 py-3 ${i !== arr.length - 1 ? 'border-b border-border/50' : ''}`}
+                className={`flex flex-wrap items-center gap-x-6 gap-y-1 px-4 py-3 ${i !== arr.length - 1 ? 'border-b border-border' : ''}`}
               >
                 <code className="text-xs font-mono text-primary w-32 shrink-0">{w.label}</code>
                 <span className="text-sm text-muted-foreground w-12 shrink-0">{w.weight}</span>

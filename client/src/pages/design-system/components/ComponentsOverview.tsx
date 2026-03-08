@@ -77,10 +77,10 @@ export default function ComponentsOverview() {
           </p>
           <div className="border border-border rounded-lg overflow-hidden text-base">
             {[
-              { layer: 'UI Component', example: 'Card', knows: 'How to render a bordered container with padding', color: 'bg-primary/15' },
-              { layer: 'Component', example: 'BinderCard', knows: 'What a binder is, which fields to show, how enrollment affects display', color: 'bg-primary/5' },
+              { layer: 'UI Component', example: 'Card', knows: 'How to render a bordered container with padding', color: 'bg-primary-surface' },
+              { layer: 'Component', example: 'BinderCard', knows: 'What a binder is, which fields to show, how enrollment affects display', color: 'bg-primary-surface' },
             ].map((l, i) => (
-              <div key={i} className={`px-4 py-3 border-b border-border/50 last:border-0 ${l.color}`}>
+              <div key={i} className={`px-4 py-3 border-b border-border last:border-0 ${l.color}`}>
                 <div className="flex flex-wrap items-start gap-4">
                   <span className="font-medium w-24 md:w-32 shrink-0">{l.layer}</span>
                   <div>
@@ -123,7 +123,7 @@ export default function ComponentsOverview() {
           <h2 className="font-display text-xl font-medium">Architecture</h2>
           <p className="text-base text-muted-foreground">
             Components live alongside the pages that use them or in shared directories when
-            used across multiple pages. They import from <code className="font-mono text-primary bg-primary/5 px-1.5 py-0.5 rounded">@/components/ui/</code> for
+            used across multiple pages. They import from <code className="font-mono text-primary bg-muted px-1.5 py-0.5 rounded">@/components/ui/</code> for
             primitives and from each other for shared patterns.
           </p>
           <CodeBlock>{`// Typical component structure

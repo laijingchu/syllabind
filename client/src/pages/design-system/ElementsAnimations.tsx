@@ -32,7 +32,7 @@ export default function ElementsAnimations() {
             <div key={shimmerKey} className="animate-shimmer h-4 w-3/4 rounded" />
             <div key={`${shimmerKey}-b`} className="animate-shimmer h-4 w-1/2 rounded" style={{ animationDelay: '0.3s' }} />
             <div key={`${shimmerKey}-c`} className="animate-shimmer h-4 w-2/3 rounded" style={{ animationDelay: '0.6s' }} />
-            <Button variant="outline" size="sm" className="mt-4" onClick={() => setShimmerKey(k => k + 1)}>
+            <Button variant="secondary" size="sm" className="mt-4" onClick={() => setShimmerKey(k => k + 1)}>
               Restart
             </Button>
           </div>
@@ -43,6 +43,65 @@ export default function ElementsAnimations() {
               a generic spinner when the layout is known.
             </p>
           </div>
+          <CodeBlock>{`@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--primary) / 0.15) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Usage */
+<div className="animate-shimmer h-4 w-3/4 rounded" />`}</CodeBlock>
+        </section>
+
+        {/* Shimmer Text */}
+        <section className="space-y-4">
+          <h2 className="font-display text-xl font-medium">Shimmer Text — Attention Draw</h2>
+          <p className="text-base text-muted-foreground">
+            A text-level shimmer that sweeps a gold highlight across the text. Unlike block shimmer
+            (which replaces content), shimmer text applies to visible labels to draw the eye toward
+            an interactive element. Used on the "Try a demo" label in the binder editor (/create) to
+            nudge new curators toward demo topics.
+          </p>
+          <div className="border border-border rounded-lg p-6 bg-card flex items-center gap-6">
+            <span className="text-xs font-medium shimmer-text">Try a demo:</span>
+            <span className="text-sm font-medium shimmer-text">Loading inspiration</span>
+            <span className="text-base font-medium shimmer-text">Highlighted label</span>
+          </div>
+          <div className="border border-border rounded-lg p-4 text-base text-muted-foreground">
+            <p>
+              <strong className="text-foreground">When to use:</strong> Inline labels that call attention
+              to a secondary action or suggestion without using a full button. The gold sweep is subtle enough
+              for persistent display — it runs on a 3s loop with ease-in-out. Use sparingly; one shimmer-text
+              element per view is enough.
+            </p>
+          </div>
+          <CodeBlock>{`.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted-foreground)) 0%,
+    hsl(40 65% 50%) 45%,
+    hsl(40 65% 50%) 55%,
+    hsl(var(--muted-foreground)) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* Usage */
+<span className="shimmer-text">Try a demo:</span>`}</CodeBlock>
         </section>
 
         {/* Pulse Border */}
@@ -66,6 +125,25 @@ export default function ElementsAnimations() {
               suggests "working on it" rather than "stuck."
             </p>
           </div>
+          <CodeBlock>{`@keyframes pulse-border {
+  0%, 100% {
+    border-color: hsl(var(--primary) / 0.3);
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.1);
+  }
+  50% {
+    border-color: hsl(var(--primary) / 0.6);
+    box-shadow: 0 0 8px 2px hsl(var(--primary) / 0.2);
+  }
+}
+
+.animate-generating {
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+/* Usage */
+<div className="animate-generating border-2 rounded-lg p-6">
+  Generating step content...
+</div>`}</CodeBlock>
         </section>
 
         {/* Step Slide In */}
@@ -87,7 +165,7 @@ export default function ElementsAnimations() {
                 </div>
               ))}
             </div>
-            <Button variant="outline" size="sm" className="mt-4" onClick={() => setStepKey(k => k + 1)}>
+            <Button variant="secondary" size="sm" className="mt-4" onClick={() => setStepKey(k => k + 1)}>
               Replay
             </Button>
           </div>
@@ -98,6 +176,30 @@ export default function ElementsAnimations() {
               100ms between items keeps it snappy, 200ms+ starts to feel slow.
             </p>
           </div>
+          <CodeBlock>{`@keyframes stepSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.step-enter {
+  animation: stepSlideIn 0.4s ease-out forwards;
+  opacity: 0;
+}
+
+.step-delay-1 { animation-delay: 0.1s; }
+.step-delay-2 { animation-delay: 0.2s; }
+.step-delay-3 { animation-delay: 0.3s; }
+.step-delay-4 { animation-delay: 0.4s; }
+
+/* Usage */
+<div className="step-enter step-delay-1">Step 1</div>
+<div className="step-enter step-delay-2">Step 2</div>`}</CodeBlock>
         </section>
 
         {/* Animated Ellipsis */}
@@ -129,6 +231,21 @@ export default function ElementsAnimations() {
               rather than page-level loading. Pair with descriptive text so the user knows what's happening.
             </p>
           </div>
+          <CodeBlock>{`@keyframes ellipsis {
+  0% { content: ""; }
+  25% { content: "."; }
+  50% { content: ".."; }
+  75% { content: "..."; }
+}
+
+.animate-ellipsis::after {
+  content: "";
+  animation: ellipsis 1.2s steps(1) infinite;
+}
+
+/* Usage */
+<span>Loading</span>
+<span className="animate-ellipsis" />`}</CodeBlock>
         </section>
 
         {/* Tailwind Built-ins */}
@@ -177,6 +294,17 @@ export default function ElementsAnimations() {
               </div>
             </div>
           </div>
+          <CodeBlock>{`/* Tailwind built-in utilities */
+<div className="animate-spin" />    /* 1s linear infinite */
+<div className="animate-pulse" />   /* 2s ease-in-out infinite */
+<div className="animate-bounce" />  /* 1s infinite */
+<div className="animate-ping" />    /* 1s ease-out infinite */
+
+/* Common pattern: spinner inside a button */
+<Button disabled>
+  <Loader2 className="animate-spin mr-2 h-4 w-4" />
+  Saving...
+</Button>`}</CodeBlock>
         </section>
 
         {/* Accordion */}
@@ -214,6 +342,15 @@ export default function ElementsAnimations() {
               </AccordionItem>
             </Accordion>
           </div>
+          <CodeBlock>{`/* Radix Accordion with Tailwind transitions */
+<Accordion type="single" collapsible>
+  <AccordionItem value="week-1">
+    <AccordionTrigger>Week 1: Digital Audit</AccordionTrigger>
+    <AccordionContent>
+      Content slides down (0.2s ease-out)
+    </AccordionContent>
+  </AccordionItem>
+</Accordion>`}</CodeBlock>
         </section>
 
         {/* Motion principles */}

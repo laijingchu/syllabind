@@ -122,8 +122,8 @@ export default function Completion() {
 
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center text-center max-w-2xl mx-auto px-4 space-y-8">
-        <div className="h-24 w-24 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
-          <AlertCircle className="h-12 w-12 text-amber-600 dark:text-amber-400" />
+        <div className="h-24 w-24 bg-warning-surface rounded-full flex items-center justify-center">
+          <AlertCircle className="h-12 w-12 text-warning" />
         </div>
 
         <div className="space-y-4">
@@ -143,7 +143,7 @@ export default function Completion() {
 
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Link href={`/binder/${binder.id}/week/${binder.durationWeeks}`}>
-            <Button variant="outline" className="w-full sm:w-auto">
+            <Button variant="secondary" className="w-full sm:w-auto">
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Last Week
             </Button>
           </Link>
@@ -161,7 +161,7 @@ export default function Completion() {
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center text-center max-w-2xl mx-auto space-y-8">
       <div className="relative">
-        <div className="h-32 w-32 bg-primary/10 rounded-full flex items-center justify-center animate-in zoom-in duration-500">
+        <div className="h-32 w-32 bg-primary-surface rounded-full flex items-center justify-center animate-in zoom-in duration-500">
            <Award className="h-16 w-16 text-primary" />
         </div>
         <div className="absolute -bottom-2 -right-2 bg-background p-2 rounded-full border shadow-sm">
@@ -181,7 +181,7 @@ export default function Completion() {
 
       <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-500 fill-mode-backwards">
         <Link href="/">
-          <Button variant="outline">Back to Dashboard</Button>
+          <Button variant="secondary">Back to Dashboard</Button>
         </Link>
         <Link href="/catalog">
           <Button>Find your next path <ArrowRight className="ml-2 h-4 w-4" /></Button>

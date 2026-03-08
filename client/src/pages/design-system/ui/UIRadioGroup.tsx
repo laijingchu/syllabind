@@ -83,7 +83,7 @@ export default function UIRadioGroup() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            Selected state shows a filled <code className="text-primary bg-primary/5 px-1 rounded">--primary</code> circle indicator. The outer ring uses <code className="text-primary bg-primary/5 px-1 rounded">--border</code> via the border-primary class. Disabled state reduces opacity to 50%.
+            Selected state shows a filled <code className="text-primary bg-muted px-1 rounded">--primary</code> circle indicator. The outer ring uses <code className="text-primary bg-muted px-1 rounded">--border</code> via the border-primary class. Disabled state reduces opacity to 50%.
           </p>
         </section>
 
@@ -137,11 +137,11 @@ const [value, setValue] = useState('option-1');
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Role:</strong> Renders as <code className="text-primary bg-primary/5 px-1 rounded">role="radiogroup"</code> with individual items as <code className="text-primary bg-primary/5 px-1 rounded">role="radio"</code>.</p>
+            <p><strong className="text-foreground">Role:</strong> Renders as <code className="text-primary bg-muted px-1 rounded">role="radiogroup"</code> with individual items as <code className="text-primary bg-muted px-1 rounded">role="radio"</code>.</p>
             <p><strong className="text-foreground">Keyboard:</strong> Tab focuses the group. Arrow keys move between options. Space selects the focused option.</p>
-            <p><strong className="text-foreground">Focus indicator:</strong> 1px ring using <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:ring-1</code>. Only visible on keyboard navigation.</p>
-            <p><strong className="text-foreground">Disabled:</strong> Sets <code className="text-primary bg-primary/5 px-1 rounded">disabled:cursor-not-allowed</code> and <code className="text-primary bg-primary/5 px-1 rounded">disabled:opacity-50</code>.</p>
-            <p><strong className="text-foreground">Label association:</strong> Each RadioGroupItem should be paired with a <code className="text-primary bg-primary/5 px-1 rounded">label</code> element using matching <code className="text-primary bg-primary/5 px-1 rounded">id</code> and <code className="text-primary bg-primary/5 px-1 rounded">htmlFor</code>.</p>
+            <p><strong className="text-foreground">Focus indicator:</strong> 1px ring using <code className="text-primary bg-muted px-1 rounded">focus-visible:ring-1</code>. Only visible on keyboard navigation.</p>
+            <p><strong className="text-foreground">Disabled:</strong> Sets <code className="text-primary bg-muted px-1 rounded">disabled:cursor-not-allowed</code> and <code className="text-primary bg-muted px-1 rounded">disabled:opacity-50</code>.</p>
+            <p><strong className="text-foreground">Label association:</strong> Each RadioGroupItem should be paired with a <code className="text-primary bg-muted px-1 rounded">label</code> element using matching <code className="text-primary bg-muted px-1 rounded">id</code> and <code className="text-primary bg-muted px-1 rounded">htmlFor</code>.</p>
           </div>
         </section>
 

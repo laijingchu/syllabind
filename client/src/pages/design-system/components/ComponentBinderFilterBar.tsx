@@ -65,7 +65,7 @@ export default function ComponentBinderFilterBar() {
             />
           </div>
           <p className="text-base text-muted-foreground">
-            At minimum, BinderFilterBar provides a search input with an inline search icon. The <code className="text-primary bg-primary/5 px-1 rounded">searchQuery</code> and <code className="text-primary bg-primary/5 px-1 rounded">onSearchChange</code> props are required.
+            At minimum, BinderFilterBar provides a search input with an inline search icon. The <code className="text-primary bg-muted px-1 rounded">searchQuery</code> and <code className="text-primary bg-muted px-1 rounded">onSearchChange</code> props are required.
           </p>
         </section>
 
@@ -81,7 +81,7 @@ export default function ComponentBinderFilterBar() {
             />
           </div>
           <p className="text-base text-muted-foreground">
-            Pass <code className="text-primary bg-primary/5 px-1 rounded">visibility</code> and <code className="text-primary bg-primary/5 px-1 rounded">onVisibilityChange</code> to show Public / Unlisted / Private pill toggles. Custom options can be provided via <code className="text-primary bg-primary/5 px-1 rounded">visibilityOptions</code>.
+            Pass <code className="text-primary bg-muted px-1 rounded">visibility</code> and <code className="text-primary bg-muted px-1 rounded">onVisibilityChange</code> to show Public / Unlisted / Private pill toggles. Custom options can be provided via <code className="text-primary bg-muted px-1 rounded">visibilityOptions</code>.
           </p>
         </section>
 
@@ -98,7 +98,7 @@ export default function ComponentBinderFilterBar() {
             />
           </div>
           <p className="text-base text-muted-foreground">
-            Pass <code className="text-primary bg-primary/5 px-1 rounded">sortBy</code>, <code className="text-primary bg-primary/5 px-1 rounded">onSortChange</code>, and <code className="text-primary bg-primary/5 px-1 rounded">sortOptions</code> to add a sort dropdown via the Select primitive.
+            Pass <code className="text-primary bg-muted px-1 rounded">sortBy</code>, <code className="text-primary bg-muted px-1 rounded">onSortChange</code>, and <code className="text-primary bg-muted px-1 rounded">sortOptions</code> to add a sort dropdown via the Select primitive.
           </p>
         </section>
 
@@ -150,10 +150,10 @@ export default function ComponentBinderFilterBar() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Styling Notes</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p>The bar uses semantic class names: <code className="text-primary bg-primary/5 px-1 rounded">binder-filter-bar</code>, <code className="text-primary bg-primary/5 px-1 rounded">catalog-search-row</code>, <code className="text-primary bg-primary/5 px-1 rounded">catalog-visibility</code>, and <code className="text-primary bg-primary/5 px-1 rounded">catalog-categories</code>.</p>
-            <p>Pills toggle between <code className="text-primary bg-primary/5 px-1 rounded">bg-foreground text-background</code> (active) and <code className="text-primary bg-primary/5 px-1 rounded">bg-muted text-muted-foreground</code> (inactive) with a smooth transition.</p>
-            <p>The search input has an inline Search icon positioned absolutely at <code className="text-primary bg-primary/5 px-1 rounded">left-3</code> with <code className="text-primary bg-primary/5 px-1 rounded">pl-10</code> padding on the input.</p>
-            <p>On small screens, the top row stacks vertically via <code className="text-primary bg-primary/5 px-1 rounded">flex-col</code> and switches to a horizontal layout at <code className="text-primary bg-primary/5 px-1 rounded">sm:</code> breakpoint.</p>
+            <p>The bar uses semantic class names: <code className="text-primary bg-muted px-1 rounded">binder-filter-bar</code>, <code className="text-primary bg-muted px-1 rounded">catalog-search-row</code>, <code className="text-primary bg-muted px-1 rounded">catalog-visibility</code>, and <code className="text-primary bg-muted px-1 rounded">catalog-categories</code>.</p>
+            <p>Pills toggle between <code className="text-primary bg-muted px-1 rounded">bg-foreground text-background</code> (active) and <code className="text-primary bg-muted px-1 rounded">bg-muted text-muted-foreground</code> (inactive) with a smooth transition.</p>
+            <p>The search input has an inline Search icon positioned absolutely at <code className="text-primary bg-muted px-1 rounded">left-3</code> with <code className="text-primary bg-muted px-1 rounded">pl-10</code> padding on the input.</p>
+            <p>On small screens, the top row stacks vertically via <code className="text-primary bg-muted px-1 rounded">flex-col</code> and switches to a horizontal layout at <code className="text-primary bg-muted px-1 rounded">sm:</code> breakpoint.</p>
           </div>
         </section>
 
@@ -201,9 +201,9 @@ export default function ComponentBinderFilterBar() {
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> All interactive elements (input, pills, dropdown) are focusable via Tab. Pills activate on Enter or Space.</p>
-            <p><strong className="text-foreground">Pill toggles:</strong> Visibility and category pills are rendered as native <code className="text-primary bg-primary/5 px-1 rounded">&lt;button&gt;</code> elements. Consider adding <code className="text-primary bg-primary/5 px-1 rounded">aria-pressed</code> for toggle state communication.</p>
+            <p><strong className="text-foreground">Pill toggles:</strong> Visibility and category pills are rendered as native <code className="text-primary bg-muted px-1 rounded">&lt;button&gt;</code> elements. Consider adding <code className="text-primary bg-muted px-1 rounded">aria-pressed</code> for toggle state communication.</p>
             <p><strong className="text-foreground">Sort dropdown:</strong> Uses the Radix Select primitive which provides full keyboard navigation, ARIA roles, and screen reader announcements out of the box.</p>
-            <p><strong className="text-foreground">Result count:</strong> Consider wrapping in an <code className="text-primary bg-primary/5 px-1 rounded">aria-live="polite"</code> region so screen readers announce updated counts.</p>
+            <p><strong className="text-foreground">Result count:</strong> Consider wrapping in an <code className="text-primary bg-muted px-1 rounded">aria-live="polite"</code> region so screen readers announce updated counts.</p>
           </div>
         </section>
 

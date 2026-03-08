@@ -90,7 +90,7 @@ export default function UITable() {
               <p className="text-sm font-medium">Hover row</p>
               <Table>
                 <TableBody>
-                  <TableRow className="bg-muted/50">
+                  <TableRow className="bg-muted">
                     <TableCell className="font-medium">Hovered row</TableCell>
                     <TableCell>Shows muted background on hover</TableCell>
                   </TableRow>
@@ -110,8 +110,8 @@ export default function UITable() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            Rows transition to <code className="text-primary bg-primary/5 px-1 rounded">bg-muted/50</code> on hover.
-            Selected rows use the <code className="text-primary bg-primary/5 px-1 rounded">data-[state=selected]</code> attribute for a solid muted background.
+            Rows transition to <code className="text-primary bg-muted px-1 rounded">bg-muted</code> on hover.
+            Selected rows use the <code className="text-primary bg-muted px-1 rounded">data-[state=selected]</code> attribute for a solid muted background.
           </p>
         </section>
 
@@ -162,9 +162,9 @@ export default function UITable() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Semantic HTML:</strong> Uses native <code className="text-primary bg-primary/5 px-1 rounded">&lt;table&gt;</code>, <code className="text-primary bg-primary/5 px-1 rounded">&lt;thead&gt;</code>, <code className="text-primary bg-primary/5 px-1 rounded">&lt;tbody&gt;</code>, <code className="text-primary bg-primary/5 px-1 rounded">&lt;th&gt;</code>, and <code className="text-primary bg-primary/5 px-1 rounded">&lt;td&gt;</code> elements for proper screen reader support.</p>
-            <p><strong className="text-foreground">Caption:</strong> TableCaption renders a <code className="text-primary bg-primary/5 px-1 rounded">&lt;caption&gt;</code> element, providing an accessible description of the table's purpose.</p>
-            <p><strong className="text-foreground">Responsive:</strong> The table wrapper uses <code className="text-primary bg-primary/5 px-1 rounded">overflow-auto</code> to allow horizontal scrolling on narrow viewports without breaking layout.</p>
+            <p><strong className="text-foreground">Semantic HTML:</strong> Uses native <code className="text-primary bg-muted px-1 rounded">&lt;table&gt;</code>, <code className="text-primary bg-muted px-1 rounded">&lt;thead&gt;</code>, <code className="text-primary bg-muted px-1 rounded">&lt;tbody&gt;</code>, <code className="text-primary bg-muted px-1 rounded">&lt;th&gt;</code>, and <code className="text-primary bg-muted px-1 rounded">&lt;td&gt;</code> elements for proper screen reader support.</p>
+            <p><strong className="text-foreground">Caption:</strong> TableCaption renders a <code className="text-primary bg-muted px-1 rounded">&lt;caption&gt;</code> element, providing an accessible description of the table's purpose.</p>
+            <p><strong className="text-foreground">Responsive:</strong> The table wrapper uses <code className="text-primary bg-muted px-1 rounded">overflow-auto</code> to allow horizontal scrolling on narrow viewports without breaking layout.</p>
           </div>
         </section>
 

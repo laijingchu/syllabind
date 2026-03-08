@@ -194,7 +194,7 @@ export default function AdminSettings() {
   if (!user?.isAdmin) return null;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-page-prose mx-auto space-y-6">
       <div>
         <Link href="/">
           <Button variant="ghost" className="pl-0 mb-4 hover:bg-transparent hover:text-primary">

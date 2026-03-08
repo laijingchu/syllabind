@@ -33,7 +33,7 @@ export default function UIPopover() {
           <div className="border border-border rounded-lg p-6 flex items-center justify-center min-h-[120px]">
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline">Open Popover</Button>
+                <Button variant="secondary">Open Popover</Button>
               </PopoverTrigger>
               <PopoverContent className="w-80">
                 <div className="grid gap-4">
@@ -57,7 +57,7 @@ export default function UIPopover() {
           </div>
           <p className="text-base text-muted-foreground">
             The popover is portaled to the document body and positioned relative to the trigger.
-            It supports <code className="text-primary bg-primary/5 px-1 rounded">align</code> (start, center, end) and <code className="text-primary bg-primary/5 px-1 rounded">side</code> (top, right, bottom, left) props for placement control.
+            It supports <code className="text-primary bg-muted px-1 rounded">align</code> (start, center, end) and <code className="text-primary bg-muted px-1 rounded">side</code> (top, right, bottom, left) props for placement control.
           </p>
         </section>
 
@@ -96,7 +96,7 @@ export default function UIPopover() {
               <div className="space-y-2 text-center">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm">Default</Button>
+                    <Button variant="secondary" size="sm">Default</Button>
                   </PopoverTrigger>
                   <PopoverContent>
                     <p className="text-sm">Default popover content.</p>
@@ -107,7 +107,7 @@ export default function UIPopover() {
               <div className="space-y-2 text-center">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm">Align Start</Button>
+                    <Button variant="secondary" size="sm">Align Start</Button>
                   </PopoverTrigger>
                   <PopoverContent align="start">
                     <p className="text-sm">Aligned to start of trigger.</p>
@@ -118,7 +118,7 @@ export default function UIPopover() {
               <div className="space-y-2 text-center">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm">Align End</Button>
+                    <Button variant="secondary" size="sm">Align End</Button>
                   </PopoverTrigger>
                   <PopoverContent align="end">
                     <p className="text-sm">Aligned to end of trigger.</p>
@@ -151,7 +151,7 @@ export default function UIPopover() {
 // Basic usage
 <Popover>
   <PopoverTrigger asChild>
-    <Button variant="outline">Open</Button>
+    <Button variant="secondary">Open</Button>
   </PopoverTrigger>
   <PopoverContent>
     <p>Popover content here.</p>
@@ -176,7 +176,7 @@ export default function UIPopover() {
             <p><strong className="text-foreground">Keyboard:</strong> Opens on Enter or Space when trigger is focused. Closes on Escape.</p>
             <p><strong className="text-foreground">Focus management:</strong> Focus moves into the popover content when opened and returns to the trigger on close.</p>
             <p><strong className="text-foreground">Dismiss:</strong> Clicking outside the popover or pressing Escape closes it.</p>
-            <p><strong className="text-foreground">ARIA:</strong> The trigger uses <code className="text-primary bg-primary/5 px-1 rounded">aria-expanded</code> and <code className="text-primary bg-primary/5 px-1 rounded">aria-haspopup</code>. Content is linked via <code className="text-primary bg-primary/5 px-1 rounded">aria-controls</code>.</p>
+            <p><strong className="text-foreground">ARIA:</strong> The trigger uses <code className="text-primary bg-muted px-1 rounded">aria-expanded</code> and <code className="text-primary bg-muted px-1 rounded">aria-haspopup</code>. Content is linked via <code className="text-primary bg-muted px-1 rounded">aria-controls</code>.</p>
           </div>
         </section>
 

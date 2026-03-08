@@ -46,7 +46,7 @@ export default function ComponentUpgradePrompt() {
             {/* curator-limit */}
             <DemoCard label="variant=&quot;curator-limit&quot;">
               <div className="flex items-center gap-2 mb-2">
-                <div className="bg-primary/10 p-2 rounded-full">
+                <div className="bg-primary-surface p-2 rounded-full">
                   <Crown className="h-5 w-5 text-primary" />
                 </div>
               </div>
@@ -54,7 +54,7 @@ export default function ComponentUpgradePrompt() {
                 <h3 className="text-lg font-semibold leading-none tracking-tight">Upgrade to Syllabind Pro</h3>
                 <p className="text-base text-muted-foreground">Upgrade to Pro for unlimited binders, enrollments, and 130 monthly AI credits.</p>
               </div>
-              <div className="border rounded-lg p-4 bg-muted/30 space-y-2">
+              <div className="border rounded-lg p-4 bg-muted space-y-2">
                 <p className="font-medium text-sm">Syllabind Pro includes:</p>
                 <ul className="text-base text-muted-foreground space-y-1">
                   <li>- 130 AI credits per month</li>
@@ -67,7 +67,7 @@ export default function ComponentUpgradePrompt() {
               </div>
               <div className="space-y-2">
                 <Button className="w-full">Go Pro — $14.99/mo</Button>
-                <Button className="w-full" variant="outline">Annual — $150/yr (save 17%)</Button>
+                <Button className="w-full" variant="secondary">Annual — $150/yr (save 17%)</Button>
               </div>
               <p className="text-center text-sm text-muted-foreground underline">See all plans</p>
             </DemoCard>
@@ -75,7 +75,7 @@ export default function ComponentUpgradePrompt() {
             {/* enrollment-gate */}
             <DemoCard label="variant=&quot;enrollment-gate&quot;">
               <div className="flex items-center gap-2 mb-2">
-                <div className="bg-primary/10 p-2 rounded-full">
+                <div className="bg-primary-surface p-2 rounded-full">
                   <Crown className="h-5 w-5 text-primary" />
                 </div>
               </div>
@@ -83,7 +83,7 @@ export default function ComponentUpgradePrompt() {
                 <h3 className="text-lg font-semibold leading-none tracking-tight">Syllabind Pro Required</h3>
                 <p className="text-base text-muted-foreground">Free plan allows 1 active enrollment. Upgrade to Pro for unlimited enrollments and 130 monthly credits.</p>
               </div>
-              <div className="border rounded-lg p-4 bg-muted/30 space-y-2">
+              <div className="border rounded-lg p-4 bg-muted space-y-2">
                 <p className="font-medium text-sm">Syllabind Pro includes:</p>
                 <ul className="text-base text-muted-foreground space-y-1">
                   <li>- 130 AI credits per month</li>
@@ -96,7 +96,7 @@ export default function ComponentUpgradePrompt() {
               </div>
               <div className="space-y-2">
                 <Button className="w-full">Go Pro — $14.99/mo</Button>
-                <Button className="w-full" variant="outline">Annual — $150/yr (save 17%)</Button>
+                <Button className="w-full" variant="secondary">Annual — $150/yr (save 17%)</Button>
               </div>
               <p className="text-center text-sm text-muted-foreground underline">See all plans</p>
             </DemoCard>
@@ -104,8 +104,8 @@ export default function ComponentUpgradePrompt() {
             {/* insufficient-credits (Pro user) */}
             <DemoCard label="variant=&quot;insufficient-credits&quot; (Pro user)">
               <div className="flex items-center gap-2 mb-2">
-                <div className="bg-amber-500/10 p-2 rounded-full">
-                  <Coins className="h-5 w-5 text-amber-500" />
+                <div className="bg-warning-surface p-2 rounded-full">
+                  <Coins className="h-5 w-5 text-warning" />
                 </div>
               </div>
               <div className="space-y-1.5">
@@ -113,15 +113,15 @@ export default function ComponentUpgradePrompt() {
                 <p className="text-base text-muted-foreground">This action costs 10 credits. You have 3 credits remaining.</p>
               </div>
               <div className="space-y-2">
-                <Button className="w-full justify-between" variant="outline">
+                <Button className="w-full justify-between" variant="secondary">
                   <span>100 credits</span>
                   <span className="font-semibold">$4.99</span>
                 </Button>
-                <Button className="w-full justify-between" variant="outline">
+                <Button className="w-full justify-between" variant="secondary">
                   <span>250 credits</span>
                   <span className="font-semibold">$9.99</span>
                 </Button>
-                <Button className="w-full justify-between" variant="outline">
+                <Button className="w-full justify-between" variant="secondary">
                   <span>550 credits</span>
                   <span className="font-semibold">$19.99</span>
                 </Button>
@@ -134,8 +134,8 @@ export default function ComponentUpgradePrompt() {
             {/* insufficient-credits (Free user) */}
             <DemoCard label="variant=&quot;insufficient-credits&quot; (Free user)">
               <div className="flex items-center gap-2 mb-2">
-                <div className="bg-amber-500/10 p-2 rounded-full">
-                  <Coins className="h-5 w-5 text-amber-500" />
+                <div className="bg-warning-surface p-2 rounded-full">
+                  <Coins className="h-5 w-5 text-warning" />
                 </div>
               </div>
               <div className="space-y-1.5">
@@ -147,7 +147,7 @@ export default function ComponentUpgradePrompt() {
                   <Zap className="h-4 w-4 mr-2" />
                   Go Pro — $14.99/mo
                 </Button>
-                <Button className="w-full" variant="outline">Annual — $150/yr (save 17%)</Button>
+                <Button className="w-full" variant="secondary">Annual — $150/yr (save 17%)</Button>
               </div>
               <p className="text-center text-sm text-muted-foreground underline">See all plans</p>
               <div className="flex justify-end">
@@ -176,7 +176,7 @@ export default function ComponentUpgradePrompt() {
           <div className="border border-border rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-muted/30">
+                <tr className="border-b bg-muted">
                   <th className="text-left p-3 font-medium">Prop</th>
                   <th className="text-left p-3 font-medium">Type</th>
                   <th className="text-left p-3 font-medium">Description</th>
@@ -217,10 +217,10 @@ export default function ComponentUpgradePrompt() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Internal Composition</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Dialog</strong> — Radix-based modal with <code className="text-primary bg-primary/5 px-1 rounded">sm:max-w-md</code> constraint.</p>
+            <p><strong className="text-foreground">Dialog</strong> — Radix-based modal with <code className="text-primary bg-muted px-1 rounded">sm:max-w-md</code> constraint.</p>
             <p><strong className="text-foreground">Button</strong> — Primary for main CTA, outline for secondary CTA, ghost for cancel/dismiss.</p>
-            <p><strong className="text-foreground">Icons</strong> — <code className="text-primary bg-primary/5 px-1 rounded">Crown</code> (primary tint) for upgrade variants, <code className="text-primary bg-primary/5 px-1 rounded">Coins</code> (amber tint) for credit variants, <code className="text-primary bg-primary/5 px-1 rounded">Zap</code> inline on the free-user credit CTA.</p>
-            <p><strong className="text-foreground">Legal links</strong> — Terms of Service and Privacy Policy URLs fetched from <code className="text-primary bg-primary/5 px-1 rounded">/api/site-settings</code> on open. Shown only on the 3 upgrade variants (not credit packages).</p>
+            <p><strong className="text-foreground">Icons</strong> — <code className="text-primary bg-muted px-1 rounded">Crown</code> (primary tint) for upgrade variants, <code className="text-primary bg-muted px-1 rounded">Coins</code> (amber tint) for credit variants, <code className="text-primary bg-muted px-1 rounded">Zap</code> inline on the free-user credit CTA.</p>
+            <p><strong className="text-foreground">Legal links</strong> — Terms of Service and Privacy Policy URLs fetched from <code className="text-primary bg-muted px-1 rounded">/api/site-settings</code> on open. Shown only on the 3 upgrade variants (not credit packages).</p>
           </div>
         </section>
 
@@ -264,10 +264,10 @@ export default function ComponentUpgradePrompt() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">BinderEditor:</strong> Triggered with <code className="text-primary bg-primary/5 px-1 rounded">curator-limit</code> when a free curator tries to create a new binder beyond the plan cap.</p>
-            <p><strong className="text-foreground">BinderOverview:</strong> Triggered with <code className="text-primary bg-primary/5 px-1 rounded">enrollment-gate</code> when a free reader attempts to enroll while already at the 1-enrollment limit.</p>
-            <p><strong className="text-foreground">WeekView:</strong> Triggered with <code className="text-primary bg-primary/5 px-1 rounded">enrollment-gate</code> for the same enrollment limit scenario.</p>
-            <p><strong className="text-foreground">CuratorDashboard:</strong> Triggered with <code className="text-primary bg-primary/5 px-1 rounded">curator-limit</code> from the "Create Binder" action.</p>
+            <p><strong className="text-foreground">BinderEditor:</strong> Triggered with <code className="text-primary bg-muted px-1 rounded">curator-limit</code> when a free curator tries to create a new binder beyond the plan cap.</p>
+            <p><strong className="text-foreground">BinderOverview:</strong> Triggered with <code className="text-primary bg-muted px-1 rounded">enrollment-gate</code> when a free reader attempts to enroll while already at the 1-enrollment limit.</p>
+            <p><strong className="text-foreground">WeekView:</strong> Triggered with <code className="text-primary bg-muted px-1 rounded">enrollment-gate</code> for the same enrollment limit scenario.</p>
+            <p><strong className="text-foreground">CuratorDashboard:</strong> Triggered with <code className="text-primary bg-muted px-1 rounded">curator-limit</code> from the "Create Binder" action.</p>
           </div>
         </section>
       </div>

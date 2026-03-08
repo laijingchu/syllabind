@@ -62,10 +62,10 @@ export default function Marketing() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-24 md:space-y-32 pb-12 md:pb-20 pt-4 md:pt-8 px-4 md:px-6">
+    <div className="max-w-page-max mx-auto space-y-24 md:space-y-32 pb-12 md:pb-20 pt-4 md:pt-8 px-4 md:px-6">
       {/* A. Hero */}
       <section className="text-center space-y-8 py-12 md:py-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="space-y-4 max-w-3xl mx-auto">
+        <div className="space-y-4 max-w-page-narrow mx-auto">
           <h1 className="text-4xl md:text-7xl font-display font-medium tracking-tight text-foreground">
             Syllabind<span className="text-primary">.</span>
           </h1>
@@ -76,12 +76,12 @@ export default function Marketing() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-           <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-lg rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all bg-black text-white hover:bg-neutral-800 border-none" onClick={handleWaitlistClick}>
+           <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-lg rounded-full shadow-lg shadow-border hover:shadow-border transition-all bg-black text-white hover:bg-neutral-800 border-none" onClick={handleWaitlistClick}>
              Join waitlist
              {waitlistUrl && <ExternalLink className="ml-2 h-4 w-4" />}
            </Button>
            {getPaidToTeachUrl && (
-             <Button variant="outline" size="lg" className="w-full sm:w-auto h-12 px-8 text-lg rounded-full border-primary/20 hover:border-primary/50 text-primary" onClick={handleGetPaidToTeachClick}>
+             <Button variant="secondary" size="lg" className="w-full sm:w-auto h-12 px-8 text-lg rounded-full border-border hover:border-border text-primary" onClick={handleGetPaidToTeachClick}>
                Give feedback
              </Button>
            )}
@@ -97,7 +97,7 @@ export default function Marketing() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-page-default mx-auto">
           {/* Self-directed */}
           <div className="rounded-2xl border bg-card p-6 md:p-8 space-y-4">
             <div className="text-3xl">&#x1F9ED;</div>
@@ -160,12 +160,12 @@ export default function Marketing() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-            <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-lg rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all bg-black text-white hover:bg-neutral-800 border-none" onClick={handleWaitlistClick}>
+            <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-lg rounded-full shadow-lg shadow-border hover:shadow-border transition-all bg-black text-white hover:bg-neutral-800 border-none" onClick={handleWaitlistClick}>
               <Plus className="mr-2 h-5 w-5" />
               Create your own
             </Button>
             <Link href="/catalog" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 h-12 px-8 text-lg rounded-full">
+              <Button size="lg" variant="secondary" className="w-full sm:w-auto gap-2 h-12 px-8 text-lg rounded-full">
                 Browse all binders
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -201,12 +201,12 @@ export default function Marketing() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             {getPaidToTeachUrl && (
-              <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-lg rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all bg-black text-white hover:bg-neutral-800 border-none" onClick={handleGetPaidToTeachClick}>
+              <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-lg rounded-full shadow-lg shadow-border hover:shadow-border transition-all bg-black text-white hover:bg-neutral-800 border-none" onClick={handleGetPaidToTeachClick}>
                 Give feedback
               </Button>
             )}
             <Link href="/catalog" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 h-12 px-8 text-lg rounded-full">
+              <Button size="lg" variant="secondary" className="w-full sm:w-auto gap-2 h-12 px-8 text-lg rounded-full">
                 Browse all binders
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -215,7 +215,7 @@ export default function Marketing() {
         </section>
       )}
       {/* About */}
-      <section className="about-section space-y-6 max-w-3xl mx-auto text-center">
+      <section className="about-section space-y-6 max-w-page-narrow mx-auto text-center">
         <h2 className="text-3xl md:text-4xl font-display">Why we built Syllabind</h2>
         <div className="space-y-4 text-base md:text-lg text-muted-foreground leading-relaxed">
           <p>
@@ -306,7 +306,7 @@ export default function Marketing() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-page-narrow mx-auto">
           {/* Free */}
           <div className="rounded-2xl border bg-card p-8 space-y-6">
             <div>
@@ -324,7 +324,7 @@ export default function Marketing() {
                 </li>
               ))}
             </ul>
-            <Button variant="outline" size="lg" className="w-full rounded-full" onClick={handleWaitlistClick}>
+            <Button variant="secondary" size="lg" className="w-full rounded-full" onClick={handleWaitlistClick}>
               Get started
             </Button>
           </div>
@@ -332,7 +332,7 @@ export default function Marketing() {
           {/* Pro */}
           <div className="rounded-2xl border-2 border-primary bg-card p-8 space-y-6 relative">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">Coming soon</span>
+              <span className="bg-primary-inverted text-foreground-inverted text-xs font-semibold px-3 py-1 rounded-full">Coming soon</span>
             </div>
             <div>
               <h3 className="text-2xl font-display font-medium">Pro</h3>
@@ -357,7 +357,7 @@ export default function Marketing() {
       </section>
 
       {/* FAQ */}
-      <section className="faq-section space-y-12 max-w-3xl mx-auto">
+      <section className="faq-section space-y-12 max-w-page-narrow mx-auto">
         <div className="text-center space-y-4">
           <h2 className="text-3xl md:text-4xl font-display">Frequently Asked Questions</h2>
         </div>

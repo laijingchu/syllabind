@@ -18,7 +18,7 @@ export function GeneratingWeekPlaceholder({ weekIndex, status, title, descriptio
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Generation status header */}
-      <div className="flex items-center gap-3 p-4 rounded-lg bg-primary/5 border border-primary/20">
+      <div className="flex items-center gap-3 p-4 rounded-lg bg-primary-surface border border-border">
         <Loader2 className="h-5 w-5 animate-spin text-primary" />
         <span className="text-sm font-medium text-primary">
           {status || `Generating Week ${weekIndex}...`}
@@ -53,10 +53,10 @@ export function GeneratingWeekPlaceholder({ weekIndex, status, title, descriptio
         {currentSteps.map((step, idx) => (
           <div
             key={step.id}
-            className="border rounded-lg p-5 bg-muted/20 step-appear"
+            className="border rounded-lg p-5 bg-muted step-appear"
           >
             <div className="flex items-center gap-3 mb-4">
-              <Badge variant="outline" className="text-[10px] sm:text-xs uppercase px-1.5 sm:px-2 py-0.5 tracking-wider font-semibold">
+              <Badge variant="secondary" className="text-[10px] sm:text-xs uppercase px-1.5 sm:px-2 py-0.5 tracking-wider font-semibold">
                 {step.type}
               </Badge>
               <span className="text-xs text-muted-foreground font-medium">Step {idx + 1}</span>
@@ -66,7 +66,7 @@ export function GeneratingWeekPlaceholder({ weekIndex, status, title, descriptio
               <div className="text-sm text-muted-foreground mb-2">by {step.author}</div>
             )}
             {step.type === 'reading' && step.url && (
-              <div className="text-xs text-primary/70 truncate">{step.url}</div>
+              <div className="text-xs text-primary truncate">{step.url}</div>
             )}
             {step.type === 'exercise' && step.promptText && (
               <div className="text-sm text-muted-foreground line-clamp-2" dangerouslySetInnerHTML={{ __html: sanitizeHtml(step.promptText) }} />
@@ -78,7 +78,7 @@ export function GeneratingWeekPlaceholder({ weekIndex, status, title, descriptio
         {Array.from({ length: remainingCount }).map((_, idx) => (
           <div
             key={`skeleton-${idx}`}
-            className="border rounded-lg p-5 bg-muted/10 animate-shimmer"
+            className="border rounded-lg p-5 bg-muted animate-shimmer"
             style={{ animationDelay: `${(currentSteps.length + idx) * 0.15}s` }}
           >
             <div className="flex items-center gap-3 mb-4">

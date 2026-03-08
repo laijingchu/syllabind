@@ -60,7 +60,7 @@ export default function UIOverlay() {
                 ))}
               </div>
               <p className="text-base text-muted-foreground">
-                Syllabind uses <code className="text-primary bg-primary/5 px-1 rounded">bg-black/80</code> as the standard. This provides enough contrast to focus attention on the overlay content while keeping the page context partially visible.
+                Syllabind uses <code className="text-primary bg-muted px-1 rounded">bg-black/80</code> as the standard. This provides enough contrast to focus attention on the overlay content while keeping the page context partially visible.
               </p>
             </div>
           </div>
@@ -72,7 +72,7 @@ export default function UIOverlay() {
           <div className="border border-border rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted/30">
+                <tr className="border-b border-border bg-muted">
                   <th className="text-left p-3 font-medium">Export</th>
                   <th className="text-left p-3 font-medium">Animation</th>
                   <th className="text-left p-3 font-medium">Used by</th>
@@ -81,7 +81,7 @@ export default function UIOverlay() {
               <tbody className="divide-y divide-border">
                 <tr>
                   <td className="p-3 font-mono text-xs">OVERLAY_ANIMATED</td>
-                  <td className="p-3 text-muted-foreground">Fade in/out on <code className="text-primary bg-primary/5 px-1 rounded">data-[state]</code></td>
+                  <td className="p-3 text-muted-foreground">Fade in/out on <code className="text-primary bg-muted px-1 rounded">data-[state]</code></td>
                   <td className="p-3 text-muted-foreground">Dialog, AlertDialog, Sheet</td>
                 </tr>
                 <tr>
@@ -91,7 +91,7 @@ export default function UIOverlay() {
                 </tr>
                 <tr>
                   <td className="p-3 font-mono text-xs">Overlay</td>
-                  <td className="p-3 text-muted-foreground">Animated by default, configurable via <code className="text-primary bg-primary/5 px-1 rounded">animated</code> prop</td>
+                  <td className="p-3 text-muted-foreground">Animated by default, configurable via <code className="text-primary bg-muted px-1 rounded">animated</code> prop</td>
                   <td className="p-3 text-muted-foreground">Standalone use</td>
                 </tr>
               </tbody>
@@ -103,10 +103,10 @@ export default function UIOverlay() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Consumers</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Dialog</strong> — imports <code className="text-primary bg-primary/5 px-1 rounded">OVERLAY_ANIMATED</code>, applies to <code className="text-primary bg-primary/5 px-1 rounded">DialogPrimitive.Overlay</code>.</p>
-            <p><strong className="text-foreground">AlertDialog</strong> — imports <code className="text-primary bg-primary/5 px-1 rounded">OVERLAY_ANIMATED</code>, applies to <code className="text-primary bg-primary/5 px-1 rounded">AlertDialogPrimitive.Overlay</code>.</p>
-            <p><strong className="text-foreground">Sheet</strong> — imports <code className="text-primary bg-primary/5 px-1 rounded">OVERLAY_ANIMATED</code>, applies to <code className="text-primary bg-primary/5 px-1 rounded">SheetPrimitive.Overlay</code>.</p>
-            <p><strong className="text-foreground">Drawer</strong> — imports <code className="text-primary bg-primary/5 px-1 rounded">OVERLAY_BASE</code> (Vaul manages its own animation), applies to <code className="text-primary bg-primary/5 px-1 rounded">DrawerPrimitive.Overlay</code>.</p>
+            <p><strong className="text-foreground">Dialog</strong> — imports <code className="text-primary bg-muted px-1 rounded">OVERLAY_ANIMATED</code>, applies to <code className="text-primary bg-muted px-1 rounded">DialogPrimitive.Overlay</code>.</p>
+            <p><strong className="text-foreground">AlertDialog</strong> — imports <code className="text-primary bg-muted px-1 rounded">OVERLAY_ANIMATED</code>, applies to <code className="text-primary bg-muted px-1 rounded">AlertDialogPrimitive.Overlay</code>.</p>
+            <p><strong className="text-foreground">Sheet</strong> — imports <code className="text-primary bg-muted px-1 rounded">OVERLAY_ANIMATED</code>, applies to <code className="text-primary bg-muted px-1 rounded">SheetPrimitive.Overlay</code>.</p>
+            <p><strong className="text-foreground">Drawer</strong> — imports <code className="text-primary bg-muted px-1 rounded">OVERLAY_BASE</code> (Vaul manages its own animation), applies to <code className="text-primary bg-muted px-1 rounded">DrawerPrimitive.Overlay</code>.</p>
           </div>
         </section>
 

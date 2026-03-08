@@ -69,7 +69,7 @@ export default function ComponentPageHeader() {
               backLabel="Dashboard"
               actions={
                 <div className="flex gap-2">
-                  <Button variant="outline"><Settings className="h-4 w-4" />Settings</Button>
+                  <Button variant="secondary"><Settings className="h-4 w-4" />Settings</Button>
                   <Button>Publish</Button>
                 </div>
               }
@@ -83,7 +83,7 @@ export default function ComponentPageHeader() {
           <div className="border border-border rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted/50">
+                <tr className="border-b border-border bg-muted">
                   <th className="text-left p-3 font-medium">Prop</th>
                   <th className="text-left p-3 font-medium">Type</th>
                   <th className="text-left p-3 font-medium">Default</th>
@@ -143,7 +143,7 @@ export default function ComponentPageHeader() {
             <TokenRow token=".page-header-actions" value="Actions slot aligned to the end" />
           </div>
           <p className="text-base text-muted-foreground">
-            PageHeader uses semantic class names (no Tailwind layout utilities on the root) so page-level layout can be controlled via the design system stylesheet. The title uses <code className="text-primary bg-primary/5 px-1 rounded">font-display</code> at 3xl.
+            PageHeader uses semantic class names (no Tailwind layout utilities on the root) so page-level layout can be controlled via the design system stylesheet. The title uses <code className="text-primary bg-muted px-1 rounded">font-display</code> at 3xl.
           </p>
         </section>
 
@@ -184,7 +184,7 @@ import { Plus } from 'lucide-react';
   backLabel="Dashboard"
   actions={
     <div className="flex gap-2">
-      <Button variant="outline">Settings</Button>
+      <Button variant="secondary">Settings</Button>
       <Button>Publish</Button>
     </div>
   }
@@ -195,7 +195,7 @@ import { Plus } from 'lucide-react';
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Heading hierarchy:</strong> Renders an <code className="text-primary bg-primary/5 px-1 rounded">h1</code> element, so there should only be one PageHeader per page to maintain proper document structure.</p>
+            <p><strong className="text-foreground">Heading hierarchy:</strong> Renders an <code className="text-primary bg-muted px-1 rounded">h1</code> element, so there should only be one PageHeader per page to maintain proper document structure.</p>
             <p><strong className="text-foreground">Back navigation:</strong> The back button is a ghost Button wrapped in a Link, fully keyboard accessible via Tab and Enter.</p>
             <p><strong className="text-foreground">Actions slot:</strong> Buttons placed in the actions slot inherit standard Button accessibility (focus ring, keyboard activation).</p>
           </div>

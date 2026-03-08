@@ -38,7 +38,7 @@ export default function UIRichTextEditor() {
             />
           </div>
           <p className="text-base text-muted-foreground">
-            Select text to reveal the bubble menu. The editor outputs HTML via the <code className="text-primary bg-primary/5 px-1 rounded">onChange</code> callback.
+            Select text to reveal the bubble menu. The editor outputs HTML via the <code className="text-primary bg-muted px-1 rounded">onChange</code> callback.
           </p>
         </section>
 
@@ -53,7 +53,7 @@ export default function UIRichTextEditor() {
             />
           </div>
           <p className="text-base text-muted-foreground">
-            The <code className="text-primary bg-primary/5 px-1 rounded">placeholder</code> prop displays hint text when the editor is empty. Defaults to "Start writing..." if not provided.
+            The <code className="text-primary bg-muted px-1 rounded">placeholder</code> prop displays hint text when the editor is empty. Defaults to "Start writing..." if not provided.
           </p>
         </section>
 
@@ -64,7 +64,7 @@ export default function UIRichTextEditor() {
             <p><strong className="text-foreground">Empty:</strong> Shows placeholder text. The "Improve writing" button is hidden.</p>
             <p><strong className="text-foreground">Editing:</strong> Content is editable. Selecting text reveals the floating bubble menu with bold, italic, list, and link controls.</p>
             <p><strong className="text-foreground">Bubble menu:</strong> Dark toolbar appears above selected text with toggle buttons. Active formats are highlighted with a lighter background.</p>
-            <p><strong className="text-foreground">Saving:</strong> Optional save indicator appears on hover/focus via <code className="text-primary bg-primary/5 px-1 rounded">isSaving</code> and <code className="text-primary bg-primary/5 px-1 rounded">lastSaved</code> props.</p>
+            <p><strong className="text-foreground">Saving:</strong> Optional save indicator appears on hover/focus via <code className="text-primary bg-muted px-1 rounded">isSaving</code> and <code className="text-primary bg-muted px-1 rounded">lastSaved</code> props.</p>
             <p><strong className="text-foreground">Improving:</strong> When "Improve writing" is clicked, a spinner replaces the sparkle icon while the AI request is in progress.</p>
           </div>
         </section>
@@ -80,7 +80,7 @@ export default function UIRichTextEditor() {
             <TokenRow token="font-display" value="Editor content uses the display font family" />
           </div>
           <p className="text-base text-muted-foreground">
-            The bubble menu uses hardcoded zinc colors (<code className="text-primary bg-primary/5 px-1 rounded">bg-zinc-900</code>, <code className="text-primary bg-primary/5 px-1 rounded">text-zinc-50</code>) for a dark toolbar regardless of theme.
+            The bubble menu uses hardcoded zinc colors (<code className="text-primary bg-muted px-1 rounded">bg-zinc-900</code>, <code className="text-primary bg-muted px-1 rounded">text-zinc-50</code>) for a dark toolbar regardless of theme.
           </p>
         </section>
 
@@ -130,7 +130,7 @@ const [content, setContent] = useState('');
             <p><strong className="text-foreground">Keyboard:</strong> Standard text editing shortcuts work (Ctrl/Cmd+B for bold, Ctrl/Cmd+I for italic). Tab moves focus out of the editor.</p>
             <p><strong className="text-foreground">Bubble menu:</strong> Toolbar buttons are keyboard-accessible but the menu itself is triggered by text selection, which requires mouse or touch interaction.</p>
             <p><strong className="text-foreground">Screen readers:</strong> ProseMirror's contenteditable region is announced as an editable text field. Formatted content uses semantic HTML (strong, em, ul/li, a).</p>
-            <p><strong className="text-foreground">Link dialog:</strong> Uses a native <code className="text-primary bg-primary/5 px-1 rounded">window.prompt()</code> for URL input, which is accessible but not styled.</p>
+            <p><strong className="text-foreground">Link dialog:</strong> Uses a native <code className="text-primary bg-muted px-1 rounded">window.prompt()</code> for URL input, which is accessible but not styled.</p>
           </div>
         </section>
 

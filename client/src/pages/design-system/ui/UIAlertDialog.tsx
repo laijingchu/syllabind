@@ -55,7 +55,7 @@ export default function UIAlertDialog() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    <AlertDialogAction className="bg-danger-inverted text-foreground-inverted hover:bg-danger-inverted/90">
                       Delete
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -67,7 +67,7 @@ export default function UIAlertDialog() {
               <p className="text-sm font-medium">Non-destructive confirmation</p>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="outline">Unpublish Binder</Button>
+                  <Button variant="secondary">Unpublish Binder</Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
@@ -104,8 +104,8 @@ export default function UIAlertDialog() {
                   </p>
                 </div>
                 <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
-                  <Button variant="outline">Cancel</Button>
-                  <Button className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</Button>
+                  <Button variant="secondary">Cancel</Button>
+                  <Button className="bg-danger-inverted text-foreground-inverted hover:bg-danger-inverted/90">Delete</Button>
                 </div>
               </div>
             </div>
@@ -121,7 +121,7 @@ export default function UIAlertDialog() {
                   </p>
                 </div>
                 <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
-                  <Button variant="outline">Cancel</Button>
+                  <Button variant="secondary">Cancel</Button>
                   <Button>Unpublish</Button>
                 </div>
               </div>
@@ -146,7 +146,7 @@ export default function UIAlertDialog() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                      <AlertDialogAction className="bg-danger-inverted text-foreground-inverted hover:bg-danger-inverted/90">Delete</AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
@@ -155,7 +155,7 @@ export default function UIAlertDialog() {
               <div className="space-y-2 text-center">
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm">Confirm</Button>
+                    <Button variant="secondary" size="sm">Confirm</Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
@@ -171,16 +171,16 @@ export default function UIAlertDialog() {
                 <p className="text-sm text-muted-foreground">Standard confirm</p>
               </div>
               <div className="space-y-2 text-center">
-                <Button variant="outline" size="sm" disabled>Disabled trigger</Button>
+                <Button variant="secondary" size="sm" disabled>Disabled trigger</Button>
                 <p className="text-sm text-muted-foreground">Disabled</p>
               </div>
             </div>
           </div>
           <div className="text-base text-muted-foreground space-y-1">
-            <p><strong className="text-foreground">Open</strong> — Overlay fades in with <code className="text-primary bg-primary/5 px-1 rounded">bg-black/80</code>. Content animates with zoom and slide from bottom.</p>
+            <p><strong className="text-foreground">Open</strong> — Overlay fades in with <code className="text-primary bg-muted px-1 rounded">bg-black/80</code>. Content animates with zoom and slide from bottom.</p>
             <p><strong className="text-foreground">No dismiss on overlay:</strong> Unlike Dialog, clicking the overlay does not close AlertDialog. The user must use Cancel or the action button.</p>
-            <p><strong className="text-foreground">Action button:</strong> Uses <code className="text-primary bg-primary/5 px-1 rounded">buttonVariants()</code> by default. Override with destructive styling for delete actions.</p>
-            <p><strong className="text-foreground">Cancel button:</strong> Uses <code className="text-primary bg-primary/5 px-1 rounded">buttonVariants({'{'} variant: "outline" {'}'})</code> styling.</p>
+            <p><strong className="text-foreground">Action button:</strong> Uses <code className="text-primary bg-muted px-1 rounded">buttonVariants()</code> by default. Override with destructive styling for delete actions.</p>
+            <p><strong className="text-foreground">Cancel button:</strong> Uses <code className="text-primary bg-muted px-1 rounded">buttonVariants({'{'} variant: "secondary" {'}'})</code> styling.</p>
           </div>
         </section>
 
@@ -192,7 +192,7 @@ export default function UIAlertDialog() {
             <TokenRow token="--foreground" value="Title and default text color" />
             <TokenRow token="--muted-foreground" value="Description text color" />
             <TokenRow token="--destructive" value="Destructive action button fill color" />
-            <TokenRow token="--destructive-foreground" value="Text on destructive action button" />
+            <TokenRow token="--foreground-inverted" value="Text on destructive buttons" />
             <TokenRow token="--border" value="Border color for the dialog panel" />
           </div>
         </section>
@@ -228,8 +228,8 @@ export default function UIAlertDialog() {
     <AlertDialogFooter>
       <AlertDialogCancel>Cancel</AlertDialogCancel>
       <AlertDialogAction
-        className="bg-destructive text-destructive-foreground
-                   hover:bg-destructive/90"
+        className="bg-danger-inverted text-foreground-inverted
+                   hover:bg-danger-inverted/90"
       >
         Delete
       </AlertDialogAction>
@@ -267,7 +267,7 @@ const [open, setOpen] = useState(false);
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Focus trap:</strong> Focus is constrained to the alert dialog. Tab cycles between Cancel and Action buttons.</p>
             <p><strong className="text-foreground">Keyboard:</strong> Escape does not close the dialog (unlike Dialog). The user must press Cancel or the action button.</p>
-            <p><strong className="text-foreground">ARIA:</strong> Radix applies <code className="text-primary bg-primary/5 px-1 rounded">role="alertdialog"</code>, <code className="text-primary bg-primary/5 px-1 rounded">aria-labelledby</code>, and <code className="text-primary bg-primary/5 px-1 rounded">aria-describedby</code> automatically.</p>
+            <p><strong className="text-foreground">ARIA:</strong> Radix applies <code className="text-primary bg-muted px-1 rounded">role="alertdialog"</code>, <code className="text-primary bg-muted px-1 rounded">aria-labelledby</code>, and <code className="text-primary bg-muted px-1 rounded">aria-describedby</code> automatically.</p>
             <p><strong className="text-foreground">Initial focus:</strong> Focus defaults to the Cancel button to prevent accidental destructive actions.</p>
           </div>
         </section>

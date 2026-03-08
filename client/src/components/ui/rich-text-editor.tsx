@@ -177,7 +177,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, isSavi
             {isImproving ? (
               <Loader2 className="h-3 w-3 animate-spin mr-1.5" />
             ) : (
-              <Sparkles className="h-3 w-3 mr-1.5 text-primary/60" />
+              <Sparkles className="h-3 w-3 mr-1.5 text-primary" />
             )}
             <span className="text-xs">Improve writing (1 credit)</span>
           </Button>

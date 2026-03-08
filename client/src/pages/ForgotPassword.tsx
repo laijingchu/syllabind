@@ -54,14 +54,14 @@ export default function ForgotPassword() {
           {sent ? (
             <>
               <CardHeader className="text-center">
-                <CheckCircle2 className="mx-auto h-10 w-10 text-green-600 mb-2" />
+                <CheckCircle2 className="mx-auto h-10 w-10 text-success mb-2" />
                 <CardTitle>Check your email</CardTitle>
                 <CardDescription>
                   If an account exists for <strong>{email}</strong>, we've sent a link to reset your password.
                 </CardDescription>
               </CardHeader>
               <CardFooter className="flex flex-col gap-2">
-                <Button variant="outline" className="w-full" onClick={() => setLocation('/login')}>
+                <Button variant="secondary" className="w-full" onClick={() => setLocation('/login')}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Log In
                 </Button>

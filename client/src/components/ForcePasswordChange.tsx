@@ -68,7 +68,7 @@ export default function ForcePasswordChange() {
               {PASSWORD_REQUIREMENTS.map((req) => (
                 <li
                   key={req.label}
-                  className={newPassword ? (req.test(newPassword) ? 'text-green-600' : 'text-red-500') : 'text-muted-foreground'}
+                  className={newPassword ? (req.test(newPassword) ? 'text-success' : 'text-destructive') : 'text-muted-foreground'}
                 >
                   {req.label}
                 </li>
@@ -84,7 +84,7 @@ export default function ForcePasswordChange() {
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
             {confirmPassword && !passwordsMatch && (
-              <p className="text-xs text-red-500">Passwords do not match</p>
+              <p className="text-xs text-destructive">Passwords do not match</p>
             )}
           </div>
           <Button

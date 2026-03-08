@@ -141,7 +141,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-page-prose mx-auto space-y-6">
       <div>
         <Link href="/">
           <Button variant="ghost" className="pl-0 mb-4 hover:bg-transparent hover:text-primary">
@@ -191,7 +191,7 @@ export default function Settings() {
                         {PASSWORD_REQUIREMENTS.map((req) => (
                           <div
                             key={req.label}
-                            className={req.test(field.value || '') ? 'text-green-600' : ''}
+                            className={req.test(field.value || '') ? 'text-success' : ''}
                           >
                             {req.test(field.value || '') ? '\u2713' : '\u2022'} {req.label}
                           </div>
@@ -229,7 +229,7 @@ export default function Settings() {
       )}
 
       {/* Delete Account */}
-      <Card className="border-destructive/30">
+      <Card className="border-danger-border">
         <CardHeader>
           <CardTitle className="text-destructive">Danger Zone</CardTitle>
           <CardDescription>
@@ -266,7 +266,7 @@ export default function Settings() {
                 <AlertDialogAction
                   onClick={handleDeleteAccount}
                   disabled={isDeleting || (isEmailAuth && !deletePassword)}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  className="bg-danger-inverted text-foreground-inverted hover:bg-danger-inverted/90"
                 >
                   {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Delete Account

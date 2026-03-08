@@ -59,7 +59,7 @@ export default function UIAccordion() {
             </Accordion>
           </div>
           <p className="text-base text-muted-foreground">
-            <code className="text-primary bg-primary/5 px-1 rounded">type="single" collapsible</code> allows one section open at a time, and clicking the open section collapses it.
+            <code className="text-primary bg-muted px-1 rounded">type="single" collapsible</code> allows one section open at a time, and clicking the open section collapses it.
           </p>
         </section>
 
@@ -89,7 +89,7 @@ export default function UIAccordion() {
             </Accordion>
           </div>
           <p className="text-base text-muted-foreground">
-            <code className="text-primary bg-primary/5 px-1 rounded">type="multiple"</code> allows multiple sections to be open simultaneously.
+            <code className="text-primary bg-muted px-1 rounded">type="multiple"</code> allows multiple sections to be open simultaneously.
           </p>
         </section>
 
@@ -98,8 +98,8 @@ export default function UIAccordion() {
           <h2 className="font-display text-xl font-medium">States</h2>
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Collapsed:</strong> Trigger text visible with a right-aligned chevron pointing down. Bottom border separates items.</p>
-            <p><strong className="text-foreground">Expanded:</strong> Content slides down with <code className="text-primary bg-primary/5 px-1 rounded">animate-accordion-down</code>. Chevron rotates 180 degrees to point up.</p>
-            <p><strong className="text-foreground">Collapsing:</strong> Content slides up with <code className="text-primary bg-primary/5 px-1 rounded">animate-accordion-up</code>. Smooth height transition via <code className="text-primary bg-primary/5 px-1 rounded">overflow-hidden</code>.</p>
+            <p><strong className="text-foreground">Expanded:</strong> Content slides down with <code className="text-primary bg-muted px-1 rounded">animate-accordion-down</code>. Chevron rotates 180 degrees to point up.</p>
+            <p><strong className="text-foreground">Collapsing:</strong> Content slides up with <code className="text-primary bg-muted px-1 rounded">animate-accordion-up</code>. Smooth height transition via <code className="text-primary bg-muted px-1 rounded">overflow-hidden</code>.</p>
           </div>
         </section>
 
@@ -158,7 +158,7 @@ export default function UIAccordion() {
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Arrow Up/Down moves focus between triggers. Enter or Space toggles the focused section. Home/End jump to first/last trigger.</p>
-            <p><strong className="text-foreground">ARIA:</strong> Each trigger has <code className="text-primary bg-primary/5 px-1 rounded">aria-expanded</code> and <code className="text-primary bg-primary/5 px-1 rounded">aria-controls</code> linking to its content panel. Content panels have <code className="text-primary bg-primary/5 px-1 rounded">role="region"</code>.</p>
+            <p><strong className="text-foreground">ARIA:</strong> Each trigger has <code className="text-primary bg-muted px-1 rounded">aria-expanded</code> and <code className="text-primary bg-muted px-1 rounded">aria-controls</code> linking to its content panel. Content panels have <code className="text-primary bg-muted px-1 rounded">role="region"</code>.</p>
             <p><strong className="text-foreground">Focus management:</strong> Radix handles focus trapping within the accordion group, following the WAI-ARIA Accordion pattern.</p>
           </div>
         </section>

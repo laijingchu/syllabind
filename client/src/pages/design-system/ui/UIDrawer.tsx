@@ -39,7 +39,7 @@ export default function UIDrawer() {
           <div className="border border-border rounded-lg p-6 flex items-center justify-center min-h-[120px]">
             <Drawer>
               <DrawerTrigger asChild>
-                <Button variant="outline">Open Drawer</Button>
+                <Button variant="secondary">Open Drawer</Button>
               </DrawerTrigger>
               <DrawerContent>
                 <DrawerHeader>
@@ -51,14 +51,14 @@ export default function UIDrawer() {
                 <DrawerFooter>
                   <Button>Confirm</Button>
                   <DrawerClose asChild>
-                    <Button variant="outline">Cancel</Button>
+                    <Button variant="secondary">Cancel</Button>
                   </DrawerClose>
                 </DrawerFooter>
               </DrawerContent>
             </Drawer>
           </div>
           <p className="text-base text-muted-foreground">
-            The drawer slides up from the bottom with a drag handle at the top. Swipe down to dismiss. The background content scales down slightly when <code className="text-primary bg-primary/5 px-1 rounded">shouldScaleBackground</code> is true (the default).
+            The drawer slides up from the bottom with a drag handle at the top. Swipe down to dismiss. The background content scales down slightly when <code className="text-primary bg-muted px-1 rounded">shouldScaleBackground</code> is true (the default).
           </p>
         </section>
 
@@ -77,7 +77,7 @@ export default function UIDrawer() {
                 </div>
                 <div className="p-4 space-y-2">
                   <Button className="w-full">Confirm</Button>
-                  <Button variant="outline" className="w-full">Cancel</Button>
+                  <Button variant="secondary" className="w-full">Cancel</Button>
                 </div>
               </div>
             </div>
@@ -96,7 +96,7 @@ export default function UIDrawer() {
                   <Button variant="ghost" className="w-full justify-start text-destructive">Delete binder</Button>
                 </div>
                 <div className="p-4 pt-2">
-                  <Button variant="outline" className="w-full">Cancel</Button>
+                  <Button variant="secondary" className="w-full">Cancel</Button>
                 </div>
               </div>
             </div>
@@ -111,7 +111,7 @@ export default function UIDrawer() {
               <div className="space-y-2 text-center">
                 <Drawer>
                   <DrawerTrigger asChild>
-                    <Button variant="outline" size="sm">Basic</Button>
+                    <Button variant="secondary" size="sm">Basic</Button>
                   </DrawerTrigger>
                   <DrawerContent>
                     <DrawerHeader>
@@ -120,7 +120,7 @@ export default function UIDrawer() {
                     </DrawerHeader>
                     <DrawerFooter>
                       <DrawerClose asChild>
-                        <Button variant="outline">Close</Button>
+                        <Button variant="secondary">Close</Button>
                       </DrawerClose>
                     </DrawerFooter>
                   </DrawerContent>
@@ -130,7 +130,7 @@ export default function UIDrawer() {
               <div className="space-y-2 text-center">
                 <Drawer>
                   <DrawerTrigger asChild>
-                    <Button variant="outline" size="sm">With Content</Button>
+                    <Button variant="secondary" size="sm">With Content</Button>
                   </DrawerTrigger>
                   <DrawerContent>
                     <DrawerHeader>
@@ -144,7 +144,7 @@ export default function UIDrawer() {
                     </div>
                     <DrawerFooter>
                       <DrawerClose asChild>
-                        <Button variant="outline">Cancel</Button>
+                        <Button variant="secondary">Cancel</Button>
                       </DrawerClose>
                     </DrawerFooter>
                   </DrawerContent>
@@ -154,7 +154,7 @@ export default function UIDrawer() {
               <div className="space-y-2 text-center">
                 <Drawer shouldScaleBackground={false}>
                   <DrawerTrigger asChild>
-                    <Button variant="outline" size="sm">No Scale</Button>
+                    <Button variant="secondary" size="sm">No Scale</Button>
                   </DrawerTrigger>
                   <DrawerContent>
                     <DrawerHeader>
@@ -163,7 +163,7 @@ export default function UIDrawer() {
                     </DrawerHeader>
                     <DrawerFooter>
                       <DrawerClose asChild>
-                        <Button variant="outline">Close</Button>
+                        <Button variant="secondary">Close</Button>
                       </DrawerClose>
                     </DrawerFooter>
                   </DrawerContent>
@@ -200,7 +200,7 @@ export default function UIDrawer() {
 // Basic bottom drawer
 <Drawer>
   <DrawerTrigger asChild>
-    <Button variant="outline">Open</Button>
+    <Button variant="secondary">Open</Button>
   </DrawerTrigger>
   <DrawerContent>
     <DrawerHeader>
@@ -211,7 +211,7 @@ export default function UIDrawer() {
     <DrawerFooter>
       <Button>Confirm</Button>
       <DrawerClose asChild>
-        <Button variant="outline">Cancel</Button>
+        <Button variant="secondary">Cancel</Button>
       </DrawerClose>
     </DrawerFooter>
   </DrawerContent>
@@ -230,7 +230,7 @@ export default function UIDrawer() {
             <p><strong className="text-foreground">Keyboard:</strong> Opens on Enter or Space. Closes on Escape.</p>
             <p><strong className="text-foreground">Focus trap:</strong> Focus is contained within the drawer while open.</p>
             <p><strong className="text-foreground">Touch gestures:</strong> Swipe down on the drawer or drag handle to dismiss. Built into Vaul by default.</p>
-            <p><strong className="text-foreground">ARIA:</strong> Uses <code className="text-primary bg-primary/5 px-1 rounded">role="dialog"</code> with proper labelling from DrawerTitle and DrawerDescription.</p>
+            <p><strong className="text-foreground">ARIA:</strong> Uses <code className="text-primary bg-muted px-1 rounded">role="dialog"</code> with proper labelling from DrawerTitle and DrawerDescription.</p>
           </div>
         </section>
 

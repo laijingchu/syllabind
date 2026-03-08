@@ -61,7 +61,7 @@ export default function UITextarea() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            The underline style uses <code className="text-primary bg-primary/5 px-1 rounded">border-b border-input</code> at rest and transitions to <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:border-primary</code> on focus. No box shadow or ring is applied. Disabled state reduces opacity to 50%.
+            The underline style uses <code className="text-primary bg-muted px-1 rounded">border-b border-input</code> at rest and transitions to <code className="text-primary bg-muted px-1 rounded">focus-visible:border-primary</code> on focus. No box shadow or ring is applied. Disabled state reduces opacity to 50%.
           </p>
         </section>
 
@@ -110,9 +110,9 @@ const [value, setValue] = useState('');
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Focusable via Tab. Standard text editing keys work (Enter for newline, etc.).</p>
-            <p><strong className="text-foreground">Focus indicator:</strong> Bottom border changes to primary color via <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:border-primary</code>. Ring is suppressed with <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:ring-0</code>.</p>
-            <p><strong className="text-foreground">Disabled:</strong> Sets <code className="text-primary bg-primary/5 px-1 rounded">disabled:cursor-not-allowed</code> and <code className="text-primary bg-primary/5 px-1 rounded">disabled:opacity-50</code>.</p>
-            <p><strong className="text-foreground">Labels:</strong> Always pair with a Label component or <code className="text-primary bg-primary/5 px-1 rounded">aria-label</code> for screen reader context.</p>
+            <p><strong className="text-foreground">Focus indicator:</strong> Bottom border changes to primary color via <code className="text-primary bg-muted px-1 rounded">focus-visible:border-primary</code>. Ring is suppressed with <code className="text-primary bg-muted px-1 rounded">focus-visible:ring-0</code>.</p>
+            <p><strong className="text-foreground">Disabled:</strong> Sets <code className="text-primary bg-muted px-1 rounded">disabled:cursor-not-allowed</code> and <code className="text-primary bg-muted px-1 rounded">disabled:opacity-50</code>.</p>
+            <p><strong className="text-foreground">Labels:</strong> Always pair with a Label component or <code className="text-primary bg-muted px-1 rounded">aria-label</code> for screen reader context.</p>
           </div>
         </section>
 

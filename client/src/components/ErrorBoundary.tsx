@@ -66,7 +66,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </CardHeader>
             <CardContent className="space-y-4">
               {this.state.error && (
-                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                <div className="bg-danger-surface border border-danger-border rounded-lg p-4">
                   <p className="font-mono text-sm text-destructive">
                     {this.state.error.toString()}
                   </p>
@@ -88,7 +88,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 <Button onClick={this.handleReset}>
                   Reload Page
                 </Button>
-                <Button variant="outline" onClick={() => window.history.back()}>
+                <Button variant="secondary" onClick={() => window.history.back()}>
                   Go Back
                 </Button>
               </div>

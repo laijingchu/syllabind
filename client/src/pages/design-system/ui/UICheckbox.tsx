@@ -70,7 +70,7 @@ export default function UICheckbox() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            Checked state fills with <code className="text-primary bg-primary/5 px-1 rounded">--primary</code> and displays a check icon in <code className="text-primary bg-primary/5 px-1 rounded">--primary-foreground</code>. Disabled state reduces opacity to 50%.
+            Checked state fills with <code className="text-primary bg-muted px-1 rounded">--primary</code> and displays a check icon in <code className="text-primary bg-muted px-1 rounded">--primary-inverted</code>. Disabled state reduces opacity to 50%.
           </p>
         </section>
 
@@ -79,7 +79,7 @@ export default function UICheckbox() {
           <h2 className="font-display text-xl font-medium">Design Tokens</h2>
           <div className="border border-border rounded-lg p-4">
             <TokenRow token="--primary" value="Border color and checked fill" />
-            <TokenRow token="--primary-foreground" value="Check icon color when checked" />
+            <TokenRow token="--primary-inverted" value="Check icon color when checked" />
             <TokenRow token="--ring" value="Focus ring color on keyboard navigation" />
           </div>
         </section>
@@ -114,9 +114,9 @@ const [checked, setChecked] = useState(false);
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Focusable via Tab. Toggles on Space.</p>
-            <p><strong className="text-foreground">Focus indicator:</strong> 1px ring using <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:ring-1</code>. Only visible on keyboard navigation.</p>
-            <p><strong className="text-foreground">Disabled:</strong> Sets <code className="text-primary bg-primary/5 px-1 rounded">disabled:cursor-not-allowed</code> and <code className="text-primary bg-primary/5 px-1 rounded">disabled:opacity-50</code>.</p>
-            <p><strong className="text-foreground">Label association:</strong> Always pair with a <code className="text-primary bg-primary/5 px-1 rounded">label</code> element using matching <code className="text-primary bg-primary/5 px-1 rounded">id</code> and <code className="text-primary bg-primary/5 px-1 rounded">htmlFor</code> for screen reader support.</p>
+            <p><strong className="text-foreground">Focus indicator:</strong> 1px ring using <code className="text-primary bg-muted px-1 rounded">focus-visible:ring-1</code>. Only visible on keyboard navigation.</p>
+            <p><strong className="text-foreground">Disabled:</strong> Sets <code className="text-primary bg-muted px-1 rounded">disabled:cursor-not-allowed</code> and <code className="text-primary bg-muted px-1 rounded">disabled:opacity-50</code>.</p>
+            <p><strong className="text-foreground">Label association:</strong> Always pair with a <code className="text-primary bg-muted px-1 rounded">label</code> element using matching <code className="text-primary bg-muted px-1 rounded">id</code> and <code className="text-primary bg-muted px-1 rounded">htmlFor</code> for screen reader support.</p>
           </div>
         </section>
 

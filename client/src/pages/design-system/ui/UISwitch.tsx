@@ -69,7 +69,7 @@ export default function UISwitch() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            The thumb slides from left to right on check. Off state uses <code className="text-primary bg-primary/5 px-1 rounded">--input</code> background; on state uses <code className="text-primary bg-primary/5 px-1 rounded">--primary</code>. The thumb uses <code className="text-primary bg-primary/5 px-1 rounded">--background</code>. Disabled state reduces opacity to 50%.
+            The thumb slides from left to right on check. Off state uses <code className="text-primary bg-muted px-1 rounded">--input</code> background; on state uses <code className="text-primary bg-muted px-1 rounded">--primary</code>. The thumb uses <code className="text-primary bg-muted px-1 rounded">--background</code>. Disabled state reduces opacity to 50%.
           </p>
         </section>
 
@@ -112,11 +112,11 @@ const [enabled, setEnabled] = useState(false);
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Role:</strong> Renders as <code className="text-primary bg-primary/5 px-1 rounded">role="switch"</code> with <code className="text-primary bg-primary/5 px-1 rounded">aria-checked</code> managed by Radix.</p>
+            <p><strong className="text-foreground">Role:</strong> Renders as <code className="text-primary bg-muted px-1 rounded">role="switch"</code> with <code className="text-primary bg-muted px-1 rounded">aria-checked</code> managed by Radix.</p>
             <p><strong className="text-foreground">Keyboard:</strong> Focusable via Tab. Toggles on Space.</p>
-            <p><strong className="text-foreground">Focus indicator:</strong> 2px ring using <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:ring-2</code> with ring offset for clear visibility.</p>
-            <p><strong className="text-foreground">Disabled:</strong> Sets <code className="text-primary bg-primary/5 px-1 rounded">disabled:cursor-not-allowed</code> and <code className="text-primary bg-primary/5 px-1 rounded">disabled:opacity-50</code>.</p>
-            <p><strong className="text-foreground">Label association:</strong> Always pair with a <code className="text-primary bg-primary/5 px-1 rounded">label</code> element using matching <code className="text-primary bg-primary/5 px-1 rounded">id</code> and <code className="text-primary bg-primary/5 px-1 rounded">htmlFor</code>.</p>
+            <p><strong className="text-foreground">Focus indicator:</strong> 2px ring using <code className="text-primary bg-muted px-1 rounded">focus-visible:ring-2</code> with ring offset for clear visibility.</p>
+            <p><strong className="text-foreground">Disabled:</strong> Sets <code className="text-primary bg-muted px-1 rounded">disabled:cursor-not-allowed</code> and <code className="text-primary bg-muted px-1 rounded">disabled:opacity-50</code>.</p>
+            <p><strong className="text-foreground">Label association:</strong> Always pair with a <code className="text-primary bg-muted px-1 rounded">label</code> element using matching <code className="text-primary bg-muted px-1 rounded">id</code> and <code className="text-primary bg-muted px-1 rounded">htmlFor</code>.</p>
           </div>
         </section>
 

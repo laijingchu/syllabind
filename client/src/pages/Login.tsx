@@ -186,7 +186,7 @@ export default function Login() {
 
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="secondary"
                     className="w-full"
                     onClick={handleGoogleAuth}
                     data-testid="button-google-login"

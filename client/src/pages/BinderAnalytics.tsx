@@ -63,7 +63,7 @@ export default function BinderAnalytics() {
       <div className="flex flex-col items-center justify-center py-20">
         <p className="text-muted-foreground mb-4">Binder not found</p>
         <Link href="/curator">
-          <Button variant="outline">Back to Dashboard</Button>
+          <Button variant="secondary">Back to Dashboard</Button>
         </Link>
       </div>
     );
@@ -74,7 +74,7 @@ export default function BinderAnalytics() {
       <div className="flex flex-col items-center justify-center py-20">
         <p className="text-muted-foreground mb-4">Failed to load analytics</p>
         <Link href="/curator">
-          <Button variant="outline">Back to Dashboard</Button>
+          <Button variant="secondary">Back to Dashboard</Button>
         </Link>
       </div>
     );
@@ -87,7 +87,7 @@ export default function BinderAnalytics() {
     ?.slice(0, 3) ?? [];
 
   return (
-    <AnimatedPage className="max-w-5xl mx-auto space-y-8">
+    <AnimatedPage className="max-w-page-wide mx-auto space-y-8">
       <div className="space-y-4">
         <Link href="/curator">
           <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
@@ -106,10 +106,10 @@ export default function BinderAnalytics() {
           </div>
           <div className="flex gap-2">
             <Link href={`/curator/binder/${binder.id}/edit`}>
-              <Button variant="outline" size="sm">Edit Binder</Button>
+              <Button variant="secondary" size="sm">Edit Binder</Button>
             </Link>
             <Link href={`/binder/${binder.id}`}>
-              <Button variant="outline" size="sm">Preview</Button>
+              <Button variant="secondary" size="sm">Preview</Button>
             </Link>
           </div>
         </div>
@@ -117,7 +117,7 @@ export default function BinderAnalytics() {
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-card/50">
+        <Card className="bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium text-muted-foreground">Readers Started</CardTitle>
             <Users className="h-4 w-4 text-primary" />
@@ -132,10 +132,10 @@ export default function BinderAnalytics() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/50">
+        <Card className="bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium text-muted-foreground">Readers Completed</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
+            <CheckCircle2 className="h-4 w-4 text-success" />
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -151,7 +151,7 @@ export default function BinderAnalytics() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/50">
+        <Card className="bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium text-muted-foreground">Completion Rate</CardTitle>
             <TrendingUp className="h-4 w-4 text-blue-500" />
@@ -166,10 +166,10 @@ export default function BinderAnalytics() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/50">
+        <Card className="bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium text-muted-foreground">Average Progress</CardTitle>
-            <BarChart2 className="h-4 w-4 text-orange-500" />
+            <BarChart2 className="h-4 w-4 text-warning" />
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -251,7 +251,7 @@ export default function BinderAnalytics() {
                 </div>
                 {analytics.topDropoutStep && (
                   <p className="text-sm text-muted-foreground mt-6 flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-orange-500" />
+                    <AlertCircle className="h-4 w-4 text-warning" />
                     Biggest drop happens at Week {analytics.topDropoutStep.weekIndex} ({analytics.topDropoutStep.dropoffRate}% dropoff)
                   </p>
                 )}

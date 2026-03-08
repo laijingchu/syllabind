@@ -43,7 +43,7 @@ export default function UIDialog() {
               <p className="text-sm font-medium">Basic dialog with form</p>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="outline">Edit Profile</Button>
+                  <Button variant="secondary">Edit Profile</Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
@@ -64,7 +64,7 @@ export default function UIDialog() {
                   </div>
                   <DialogFooter>
                     <DialogClose asChild>
-                      <Button variant="outline">Cancel</Button>
+                      <Button variant="secondary">Cancel</Button>
                     </DialogClose>
                     <Button type="submit">Save changes</Button>
                   </DialogFooter>
@@ -76,7 +76,7 @@ export default function UIDialog() {
               <p className="text-sm font-medium">Simple informational dialog</p>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="outline">View Details</Button>
+                  <Button variant="secondary">View Details</Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -123,7 +123,7 @@ export default function UIDialog() {
                   </div>
                 </div>
                 <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
-                  <Button variant="outline">Cancel</Button>
+                  <Button variant="secondary">Cancel</Button>
                   <Button>Save changes</Button>
                 </div>
               </div>
@@ -156,7 +156,7 @@ export default function UIDialog() {
               <div className="space-y-2 text-center">
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">Open</Button>
+                    <Button variant="secondary" size="sm">Open</Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
@@ -168,13 +168,13 @@ export default function UIDialog() {
                 <p className="text-sm text-muted-foreground">Open</p>
               </div>
               <div className="space-y-2 text-center">
-                <Button variant="outline" size="sm" disabled>Trigger disabled</Button>
+                <Button variant="secondary" size="sm" disabled>Trigger disabled</Button>
                 <p className="text-sm text-muted-foreground">Disabled trigger</p>
               </div>
               <div className="space-y-2 text-center">
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">With footer</Button>
+                    <Button variant="secondary" size="sm">With footer</Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
@@ -183,7 +183,7 @@ export default function UIDialog() {
                     </DialogHeader>
                     <DialogFooter>
                       <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
+                        <Button variant="secondary">Cancel</Button>
                       </DialogClose>
                       <Button>Confirm</Button>
                     </DialogFooter>
@@ -194,9 +194,9 @@ export default function UIDialog() {
             </div>
           </div>
           <div className="text-base text-muted-foreground space-y-1">
-            <p><strong className="text-foreground">Open</strong> — Content animates in with fade and zoom. Overlay fades in with <code className="text-primary bg-primary/5 px-1 rounded">bg-black/80</code>.</p>
+            <p><strong className="text-foreground">Open</strong> — Content animates in with fade and zoom. Overlay fades in with <code className="text-primary bg-muted px-1 rounded">bg-black/80</code>.</p>
             <p><strong className="text-foreground">Closing</strong> — Reverse animation with slide-out-to-bottom and fade-out.</p>
-            <p><strong className="text-foreground">Close button</strong> — X icon in top-right corner, always present via <code className="text-primary bg-primary/5 px-1 rounded">DialogContent</code>.</p>
+            <p><strong className="text-foreground">Close button</strong> — X icon in top-right corner, always present via <code className="text-primary bg-muted px-1 rounded">DialogContent</code>.</p>
           </div>
         </section>
 
@@ -241,7 +241,7 @@ export default function UIDialog() {
     {/* Dialog body content */}
     <DialogFooter>
       <DialogClose asChild>
-        <Button variant="outline">Cancel</Button>
+        <Button variant="secondary">Cancel</Button>
       </DialogClose>
       <Button>Save</Button>
     </DialogFooter>
@@ -272,8 +272,8 @@ const [open, setOpen] = useState(false);
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Focus trap:</strong> Focus is constrained to the dialog while open. Tab cycles through interactive elements.</p>
             <p><strong className="text-foreground">Keyboard:</strong> Escape closes the dialog. Enter/Space activates buttons.</p>
-            <p><strong className="text-foreground">ARIA:</strong> Radix applies <code className="text-primary bg-primary/5 px-1 rounded">role="dialog"</code>, <code className="text-primary bg-primary/5 px-1 rounded">aria-labelledby</code> (from DialogTitle), and <code className="text-primary bg-primary/5 px-1 rounded">aria-describedby</code> (from DialogDescription) automatically.</p>
-            <p><strong className="text-foreground">Close button:</strong> The X button includes a <code className="text-primary bg-primary/5 px-1 rounded">sr-only</code> "Close" label for screen readers.</p>
+            <p><strong className="text-foreground">ARIA:</strong> Radix applies <code className="text-primary bg-muted px-1 rounded">role="dialog"</code>, <code className="text-primary bg-muted px-1 rounded">aria-labelledby</code> (from DialogTitle), and <code className="text-primary bg-muted px-1 rounded">aria-describedby</code> (from DialogDescription) automatically.</p>
+            <p><strong className="text-foreground">Close button:</strong> The X button includes a <code className="text-primary bg-muted px-1 rounded">sr-only</code> "Close" label for screen readers.</p>
           </div>
         </section>
 

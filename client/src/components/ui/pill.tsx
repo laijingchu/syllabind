@@ -10,7 +10,7 @@ const pillVariants = cva(
       variant: {
         default: "",
         outline:
-          "border border-primary/30 text-primary hover:bg-primary/10",
+          "border border-border text-primary hover:bg-primary-surface",
       },
       size: {
         default: "px-3 py-1.5 text-sm",
@@ -25,13 +25,13 @@ const pillVariants = cva(
 )
 
 function activeClass(variant: string | null | undefined) {
-  if (variant === "outline") return "bg-primary/15 border-primary/60 hover:bg-primary/25 hover:border-primary"
-  return "bg-foreground text-background hover:opacity-80"
+  if (variant === "outline") return "bg-primary-surface border-border hover:bg-primary-surface hover:border-primary"
+  return "bg-primary-inverted text-foreground-inverted hover:opacity-80"
 }
 
 function inactiveClass(variant: string | null | undefined) {
   if (variant === "outline") return ""
-  return "bg-muted text-muted-foreground hover:bg-foreground/10"
+  return "bg-muted text-muted-foreground hover:bg-highlight"
 }
 
 interface PillProps

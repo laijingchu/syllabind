@@ -59,13 +59,13 @@ export default function Dashboard() {
 
   // Wait for enrollment data before deciding what to show
   if (enrollmentLoading || bindersLoading) {
-    return <div className="max-w-4xl mx-auto py-20 text-center text-muted-foreground">Loading...</div>;
+    return <div className="max-w-page-default mx-auto py-20 text-center text-muted-foreground">Loading...</div>;
   }
 
   // If no active binder and no completed binders, show first-time welcome
   if (!activeBinderMetadata && !allCompleted && completedBinders.length === 0) {
     return (
-      <AnimatedPage className="max-w-3xl mx-auto py-12 space-y-10">
+      <AnimatedPage className="max-w-page-narrow mx-auto py-12 space-y-10">
         <header className="text-center space-y-3">
           <h1 className="text-4xl font-display text-foreground">Welcome to Syllabind</h1>
           <p className="text-lg text-muted-foreground">How would you like to get started?</p>
@@ -74,13 +74,13 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <AnimatedCard delay={0.1}>
             <Link href="/curator/binder/new">
-              <Card className="welcome-card group cursor-pointer border-2 hover:border-primary/50 hover:shadow-lg transition-all duration-300 h-full">
+              <Card className="welcome-card group cursor-pointer border-2 hover:border-border hover:shadow-lg transition-all duration-300 h-full">
                 <CardContent className="flex flex-col items-center justify-center py-12 px-6 text-center space-y-4">
                   <div className="relative inline-block">
-                    <div className="bg-primary/10 p-5 rounded-full group-hover:bg-primary/20 transition-colors">
+                    <div className="bg-primary-surface p-5 rounded-full group-hover:bg-primary-surface transition-colors">
                       <Wand2 className="h-10 w-10 text-primary" />
                     </div>
-                    <span className="absolute -top-1 -right-1 inline-block bg-primary text-primary-foreground text-xs font-semibold px-2 py-0.5 rounded-md shadow-sm">
+                    <span className="absolute -top-1 -right-1 inline-block bg-primary-inverted text-foreground-inverted text-xs font-semibold px-2 py-0.5 rounded-md shadow-sm">
                       AI
                     </span>
                   </div>
@@ -95,9 +95,9 @@ export default function Dashboard() {
 
           <AnimatedCard delay={0.2}>
             <Link href="/catalog">
-              <Card className="welcome-card group cursor-pointer border-2 hover:border-primary/50 hover:shadow-lg transition-all duration-300 h-full">
+              <Card className="welcome-card group cursor-pointer border-2 hover:border-border hover:shadow-lg transition-all duration-300 h-full">
                 <CardContent className="flex flex-col items-center justify-center py-12 px-6 text-center space-y-4">
-                  <div className="bg-primary/10 p-5 rounded-full group-hover:bg-primary/20 transition-colors">
+                  <div className="bg-primary-surface p-5 rounded-full group-hover:bg-primary-surface transition-colors">
                     <BookOpen className="h-10 w-10 text-primary" />
                   </div>
                   <div className="space-y-1">
@@ -126,7 +126,7 @@ export default function Dashboard() {
     .slice(0, 3);
 
   return (
-    <AnimatedPage className="max-w-4xl mx-auto space-y-12">
+    <AnimatedPage className="max-w-page-default mx-auto space-y-12">
       <section className="space-y-6">
         <header>
           <h1 className="text-3xl font-display text-foreground mb-2">
@@ -144,9 +144,9 @@ export default function Dashboard() {
 
         {allCompleted ? (
            <AnimatedCard delay={0.1}>
-            <Card className="border-dashed border-2 bg-muted/30">
+            <Card className="border-dashed border-2 bg-muted">
               <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-                <div className="bg-primary/10 p-4 rounded-full">
+                <div className="bg-primary-surface p-4 rounded-full">
                   <Award className="h-8 w-8 text-primary" />
                 </div>
                 <div className="space-y-1">
@@ -161,7 +161,7 @@ export default function Dashboard() {
           <AnimatedCard delay={0.1}>
             <div className="relative rounded-xl border bg-card text-card-foreground shadow-sm">
             <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
-               <div className="absolute top-0 right-0 p-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+               <div className="absolute top-0 right-0 p-32 bg-primary-surface rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             </div>
 
             {getOverallProgress(activeBinder.id) === 100 && (
@@ -206,9 +206,9 @@ export default function Dashboard() {
 
                 {getOverallProgress(activeBinder.id) === 100 ? (
                   <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2">
-                    <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="bg-primary-surface border border-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4">
                       <div className="flex items-center gap-4">
-                        <div className="bg-primary text-primary-foreground h-10 w-10 rounded-full flex items-center justify-center shrink-0">
+                        <div className="bg-primary-inverted text-foreground-inverted h-10 w-10 rounded-full flex items-center justify-center shrink-0">
                           <Award className="h-6 w-6" />
                         </div>
                         <div>
@@ -222,10 +222,10 @@ export default function Dashboard() {
                           Mark Complete
                         </Button>
                         <Link href={`/binder/${activeBinder.id}`} className="w-full sm:w-auto">
-                          <Button variant="outline" size="sm" className="w-full sm:w-auto">View Binder</Button>
+                          <Button variant="secondary" size="sm" className="w-full sm:w-auto">View Binder</Button>
                         </Link>
                         <Link href={`/binder/${activeBinder.id}/completed`} className="w-full sm:w-auto">
-                          <Button variant="outline" size="sm" className="w-full sm:w-auto">View Certificate</Button>
+                          <Button variant="secondary" size="sm" className="w-full sm:w-auto">View Certificate</Button>
                         </Link>
                       </div>
                     </div>
@@ -233,13 +233,13 @@ export default function Dashboard() {
                 ) : (
                   <div className="flex flex-col sm:flex-row gap-3">
                     <Link href={`/binder/${activeBinder.id}/week/${enrollment?.currentWeekIndex || 1}`}>
-                      <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/20">
+                      <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-border">
                         <PlayCircle className="mr-2 h-5 w-5" />
                         Continue to Week {enrollment?.currentWeekIndex || 1}
                       </Button>
                     </Link>
                     <Link href={`/binder/${activeBinder.id}`}>
-                      <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                      <Button variant="secondary" size="lg" className="w-full sm:w-auto">
                         View Binder
                       </Button>
                     </Link>
@@ -268,7 +268,7 @@ export default function Dashboard() {
           </>
         ) : (
           <AnimatedCard delay={0.1}>
-            <Card className="border-dashed border-2 bg-muted/30">
+            <Card className="border-dashed border-2 bg-muted">
               <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-4">
                 <div className="bg-muted p-4 rounded-full">
                   <BookOpenIcon className="h-8 w-8 text-muted-foreground" />
@@ -282,7 +282,7 @@ export default function Dashboard() {
                     <Button>Browse Catalog</Button>
                   </Link>
                   <Link href="/curator">
-                    <Button variant="outline">Build your own course</Button>
+                    <Button variant="secondary">Build your own course</Button>
                   </Link>
                 </div>
               </CardContent>
@@ -300,8 +300,8 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {completedBinders.map(s => (
                  <Link key={s.id} href={`/binder/${s.id}`}>
-                   <div className="flex items-center gap-4 p-4 border rounded-lg bg-card/50 hover:bg-muted/50 transition-colors cursor-pointer group">
-                      <div className="bg-primary/10 p-3 rounded-full text-primary">
+                   <div className="flex items-center gap-4 p-4 border rounded-lg bg-card hover:bg-muted transition-colors cursor-pointer group">
+                      <div className="bg-primary-surface p-3 rounded-full text-primary">
                         <Award className="h-6 w-6" />
                       </div>
                       <div>

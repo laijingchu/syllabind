@@ -79,15 +79,15 @@ export default function ComponentReviewQueueCard() {
           <h2 className="font-display text-xl font-medium">Anatomy</h2>
           <div className="border border-border rounded-lg p-6 space-y-4 text-base">
             <div className="space-y-3">
-              <div className="border-l-2 border-primary/30 pl-4 space-y-1">
+              <div className="border-l-2 border-border pl-4 space-y-1">
                 <p className="font-medium text-foreground">1. Curator avatar</p>
                 <p className="text-lg text-muted-foreground">10x10 Avatar with DiceBear fallback. Only shown when curator data is present.</p>
               </div>
-              <div className="border-l-2 border-primary/30 pl-4 space-y-1">
+              <div className="border-l-2 border-border pl-4 space-y-1">
                 <p className="font-medium text-foreground">2. Title + metadata row</p>
                 <p className="text-lg text-muted-foreground">Binder title (truncated), "by curator" text, visibility badge, audience level badge, and relative submission time.</p>
               </div>
-              <div className="border-l-2 border-primary/30 pl-4 space-y-1">
+              <div className="border-l-2 border-border pl-4 space-y-1">
                 <p className="font-medium text-foreground">3. Action buttons</p>
                 <p className="text-lg text-muted-foreground">Edit (pencil icon), Preview (outline with label), Approve (primary with checkmark), Reject (destructive with X icon).</p>
               </div>
@@ -101,7 +101,7 @@ export default function ComponentReviewQueueCard() {
           <div className="border border-border rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted/30">
+                <tr className="border-b border-border bg-muted">
                   <th className="text-left p-3 font-medium">Prop</th>
                   <th className="text-left p-3 font-medium">Type</th>
                   <th className="text-left p-3 font-medium">Description</th>
@@ -122,9 +122,9 @@ export default function ComponentReviewQueueCard() {
           <h2 className="font-display text-xl font-medium">Design Tokens</h2>
           <div className="border border-border rounded-lg p-4">
             <TokenRow token="--primary" value="Approve button background" />
-            <TokenRow token="--primary-foreground" value="Approve button text" />
+            <TokenRow token="--primary-inverted" value="Approve button text" />
             <TokenRow token="--destructive" value="Reject button background" />
-            <TokenRow token="--destructive-foreground" value="Reject button text" />
+            <TokenRow token="--foreground-inverted" value="Reject button text" />
             <TokenRow token="--muted-foreground" value="Curator name, timestamp text" />
             <TokenRow token="--border" value="Card border, badge outlines" />
           </div>

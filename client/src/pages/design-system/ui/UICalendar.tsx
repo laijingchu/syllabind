@@ -42,7 +42,7 @@ export default function UICalendar() {
               />
             </div>
             <p className="text-sm text-muted-foreground text-center">
-              Selected: <code className="text-primary bg-primary/5 px-1 rounded">{selected ? selected.toLocaleDateString() : 'none'}</code>
+              Selected: <code className="text-primary bg-muted px-1 rounded">{selected ? selected.toLocaleDateString() : 'none'}</code>
             </p>
           </div>
         </section>
@@ -61,7 +61,7 @@ export default function UICalendar() {
                 />
               </div>
               <p className="text-sm text-muted-foreground text-center">
-                Range: <code className="text-primary bg-primary/5 px-1 rounded">
+                Range: <code className="text-primary bg-muted px-1 rounded">
                   {range?.from ? range.from.toLocaleDateString() : '?'} - {range?.to ? range.to.toLocaleDateString() : '?'}
                 </code>
               </p>
@@ -80,7 +80,7 @@ export default function UICalendar() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            Today is highlighted with <code className="text-primary bg-primary/5 px-1 rounded">bg-accent</code>. Selected dates use <code className="text-primary bg-primary/5 px-1 rounded">bg-primary</code>. Range midpoints use a lighter accent fill. Outside-month days are muted.
+            Today is highlighted with <code className="text-primary bg-muted px-1 rounded">bg-highlight</code>. Selected dates use <code className="text-primary bg-muted px-1 rounded">bg-primary</code>. Range midpoints use a lighter highlight fill. Outside-month days are muted.
           </p>
         </section>
 
@@ -89,7 +89,7 @@ export default function UICalendar() {
           <h2 className="font-display text-xl font-medium">Design Tokens</h2>
           <div className="border border-border rounded-lg p-4">
             <TokenRow token="--primary" value="Selected date fill and range endpoints" />
-            <TokenRow token="--accent" value="Today highlight and range midpoint fill" />
+            <TokenRow token="--highlight" value="Today highlight and range midpoint fill" />
             <TokenRow token="--muted" value="Outside-month day text color" />
             <TokenRow token="--ring" value="Focus ring on day buttons and dropdowns" />
           </div>
@@ -127,7 +127,7 @@ const [range, setRange] = useState<{ from: Date; to?: Date }>();
 // Inside a Popover (common pattern)
 <Popover>
   <PopoverTrigger asChild>
-    <Button variant="outline">Pick a date</Button>
+    <Button variant="secondary">Pick a date</Button>
   </PopoverTrigger>
   <PopoverContent className="w-auto p-0">
     <Calendar mode="single" selected={date} onSelect={setDate} />
@@ -140,8 +140,8 @@ const [range, setRange] = useState<{ from: Date; to?: Date }>();
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Arrow keys move focus between days. Enter or Space selects a day. Page Up/Down navigate months.</p>
-            <p><strong className="text-foreground">Focus indicator:</strong> Focused day shows a 3px ring using <code className="text-primary bg-primary/5 px-1 rounded">ring-ring/50</code>.</p>
-            <p><strong className="text-foreground">Disabled dates:</strong> Reduced to 50% opacity with <code className="text-primary bg-primary/5 px-1 rounded">aria-disabled</code> set.</p>
+            <p><strong className="text-foreground">Focus indicator:</strong> Focused day shows a 3px ring using <code className="text-primary bg-muted px-1 rounded">ring-ring</code>.</p>
+            <p><strong className="text-foreground">Disabled dates:</strong> Reduced to 50% opacity with <code className="text-primary bg-muted px-1 rounded">aria-disabled</code> set.</p>
             <p><strong className="text-foreground">Screen readers:</strong> Each day is announced with its full date. Navigation buttons are labeled "Previous month" and "Next month".</p>
           </div>
         </section>

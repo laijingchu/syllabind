@@ -42,7 +42,7 @@ export default function UISheet() {
           <div className="border border-border rounded-lg p-6 flex items-center justify-center min-h-[120px]">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline">Open Sheet</Button>
+                <Button variant="secondary">Open Sheet</Button>
               </SheetTrigger>
               <SheetContent>
                 <SheetHeader>
@@ -63,7 +63,7 @@ export default function UISheet() {
                 </div>
                 <SheetFooter>
                   <SheetClose asChild>
-                    <Button variant="outline">Cancel</Button>
+                    <Button variant="secondary">Cancel</Button>
                   </SheetClose>
                   <SheetClose asChild>
                     <Button>Save changes</Button>
@@ -73,7 +73,7 @@ export default function UISheet() {
             </Sheet>
           </div>
           <p className="text-base text-muted-foreground">
-            Default side is <code className="text-primary bg-primary/5 px-1 rounded">right</code>. The sheet slides in with animation and includes a dark overlay behind it. A close button (X) is automatically rendered in the top-right corner.
+            Default side is <code className="text-primary bg-muted px-1 rounded">right</code>. The sheet slides in with animation and includes a dark overlay behind it. A close button (X) is automatically rendered in the top-right corner.
           </p>
         </section>
 
@@ -103,7 +103,7 @@ export default function UISheet() {
                 </div>
               </div>
               <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
-                <Button variant="outline">Cancel</Button>
+                <Button variant="secondary">Cancel</Button>
                 <Button>Save changes</Button>
               </div>
             </div>
@@ -118,7 +118,7 @@ export default function UISheet() {
               <div className="space-y-2 text-center">
                 <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="outline" size="sm">Right</Button>
+                    <Button variant="secondary" size="sm">Right</Button>
                   </SheetTrigger>
                   <SheetContent side="right">
                     <SheetHeader>
@@ -132,7 +132,7 @@ export default function UISheet() {
               <div className="space-y-2 text-center">
                 <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="outline" size="sm">Left</Button>
+                    <Button variant="secondary" size="sm">Left</Button>
                   </SheetTrigger>
                   <SheetContent side="left">
                     <SheetHeader>
@@ -146,7 +146,7 @@ export default function UISheet() {
               <div className="space-y-2 text-center">
                 <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="outline" size="sm">Top</Button>
+                    <Button variant="secondary" size="sm">Top</Button>
                   </SheetTrigger>
                   <SheetContent side="top">
                     <SheetHeader>
@@ -160,7 +160,7 @@ export default function UISheet() {
               <div className="space-y-2 text-center">
                 <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="outline" size="sm">Bottom</Button>
+                    <Button variant="secondary" size="sm">Bottom</Button>
                   </SheetTrigger>
                   <SheetContent side="bottom">
                     <SheetHeader>
@@ -174,7 +174,7 @@ export default function UISheet() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            The <code className="text-primary bg-primary/5 px-1 rounded">side</code> prop controls the edge the sheet slides from. Left and right sheets are constrained to <code className="text-primary bg-primary/5 px-1 rounded">w-3/4 sm:max-w-sm</code>. Top and bottom sheets span the full width.
+            The <code className="text-primary bg-muted px-1 rounded">side</code> prop controls the edge the sheet slides from. Left and right sheets are constrained to <code className="text-primary bg-muted px-1 rounded">w-3/4 sm:max-w-sm</code>. Top and bottom sheets span the full width.
           </p>
         </section>
 
@@ -200,7 +200,7 @@ export default function UISheet() {
 // Basic usage (slides from right by default)
 <Sheet>
   <SheetTrigger asChild>
-    <Button variant="outline">Open</Button>
+    <Button variant="secondary">Open</Button>
   </SheetTrigger>
   <SheetContent>
     <SheetHeader>
@@ -210,7 +210,7 @@ export default function UISheet() {
     <div className="py-4">Content here</div>
     <SheetFooter>
       <SheetClose asChild>
-        <Button variant="outline">Cancel</Button>
+        <Button variant="secondary">Cancel</Button>
       </SheetClose>
       <Button>Save</Button>
     </SheetFooter>
@@ -229,8 +229,8 @@ export default function UISheet() {
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Opens on Enter or Space when trigger is focused. Closes on Escape.</p>
             <p><strong className="text-foreground">Focus trap:</strong> Focus is trapped inside the sheet while open, preventing interaction with the page behind it.</p>
-            <p><strong className="text-foreground">Close button:</strong> An X button with <code className="text-primary bg-primary/5 px-1 rounded">sr-only</code> "Close" label is automatically included.</p>
-            <p><strong className="text-foreground">ARIA:</strong> Built on Radix Dialog, so it sets <code className="text-primary bg-primary/5 px-1 rounded">role="dialog"</code>, <code className="text-primary bg-primary/5 px-1 rounded">aria-modal="true"</code>, and links title/description via <code className="text-primary bg-primary/5 px-1 rounded">aria-labelledby</code> / <code className="text-primary bg-primary/5 px-1 rounded">aria-describedby</code>.</p>
+            <p><strong className="text-foreground">Close button:</strong> An X button with <code className="text-primary bg-muted px-1 rounded">sr-only</code> "Close" label is automatically included.</p>
+            <p><strong className="text-foreground">ARIA:</strong> Built on Radix Dialog, so it sets <code className="text-primary bg-muted px-1 rounded">role="dialog"</code>, <code className="text-primary bg-muted px-1 rounded">aria-modal="true"</code>, and links title/description via <code className="text-primary bg-muted px-1 rounded">aria-labelledby</code> / <code className="text-primary bg-muted px-1 rounded">aria-describedby</code>.</p>
           </div>
         </section>
 

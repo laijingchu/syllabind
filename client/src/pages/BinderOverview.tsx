@@ -316,14 +316,14 @@ export default function BinderOverview() {
       <Tooltip open={open} onOpenChange={setOpen}>
         <TooltipTrigger asChild>
           <button type="button" className="group relative cursor-pointer" onClick={() => setOpen(prev => !prev)}>
-            <Avatar className="h-10 w-10 border-2 border-background ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
+            <Avatar className="h-10 w-10 border-2 border-background ring-2 ring-transparent group-hover:ring-ring transition-all">
               <AvatarImage src={avatarSrc} alt={reader.user.name || reader.user.username} />
               <AvatarFallback className="bg-muted text-muted-foreground text-xs">
                 {initial}
               </AvatarFallback>
             </Avatar>
             {reader.status === 'completed' && (
-              <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-0.5 border border-background">
+              <div className="absolute -bottom-1 -right-1 bg-primary-inverted text-foreground-inverted rounded-full p-0.5 border border-background">
                 <Check className="h-2 w-2" />
               </div>
             )}
@@ -331,7 +331,7 @@ export default function BinderOverview() {
         </TooltipTrigger>
         <TooltipContent side="top" align="center" className="p-3 w-60 bg-popover text-popover-foreground border shadow-xl">
           <div className="flex items-start gap-3">
-            <Avatar className="h-9 w-9 shrink-0 border border-border/50 mt-0.5">
+            <Avatar className="h-9 w-9 shrink-0 border border-border mt-0.5">
               <AvatarImage src={avatarSrc} />
               <AvatarFallback>{initial}</AvatarFallback>
             </Avatar>
@@ -371,31 +371,37 @@ export default function BinderOverview() {
   };
 
   return (
-    <AnimatedPage className="max-w-4xl mx-auto">
+    <AnimatedPage className="max-w-page-default mx-auto">
       {isGuestPreview && (
-        <div className="preview-banner mb-6 bg-primary/5 border border-primary/20 text-foreground px-4 py-3 rounded-lg flex items-center justify-between gap-3">
+        <div className="preview-banner mb-6 bg-primary-surface border border-border text-foreground px-4 py-3 rounded-lg flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Eye className="h-5 w-5 shrink-0 text-primary" />
             <p className="text-sm font-medium">
               Demo Preview: This is how your binder would look to readers.
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setLocation('/create')} className="shrink-0 gap-1.5">
+          <Button variant="secondary" size="sm" onClick={() => setLocation('/create')} className="shrink-0 gap-1.5">
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Editor
           </Button>
         </div>
       )}
       {isPreview && !isGuestPreview && (
-        <div className="preview-banner mb-6 bg-muted border border-border text-muted-foreground px-4 py-3 rounded-lg flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 shrink-0" />
-          <p className="text-sm font-medium">
-            Draft Preview: You are viewing a private draft. This content is not yet public.
-          </p>
+        <div className="preview-banner mb-6 bg-muted border border-border text-muted-foreground px-4 py-3 rounded-lg flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 shrink-0" />
+            <p className="text-sm font-medium">
+              Draft Preview: You are viewing a private draft.
+            </p>
+          </div>
+          <Button variant="secondary" size="sm" onClick={() => setLocation(`/binder/${binderId}/edit`)} className="shrink-0 gap-1.5">
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to Editor
+          </Button>
         </div>
       )}
       {binder.status === 'pending_review' && isCuratorViewing && (
-        <div className="pending-review-banner mb-6 bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded-lg flex items-center gap-3">
+        <div className="pending-review-banner mb-6 bg-warning-surface border border-warning-border text-warning px-4 py-3 rounded-lg flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 shrink-0" />
           <p className="text-sm font-medium">
             This binder is pending admin review and is not yet visible to readers.
@@ -416,7 +422,7 @@ export default function BinderOverview() {
              {isCompleted ? (
                <Badge variant="default" className="mb-4">Completed</Badge>
              ) : isActive ? (
-               <Badge variant="secondary" className="mb-4">In Progress</Badge>
+               <Badge variant="tertiary" className="mb-4">In Progress</Badge>
              ) : null}
              <h1 className="text-4xl md:text-5xl font-display text-foreground mb-6 leading-tight">
                {binder.title}
@@ -434,7 +440,7 @@ export default function BinderOverview() {
                 <Button size="lg" onClick={() => setLocation('/login?mode=signup')}>
                   Sign up to Start
                 </Button>
-                <Button variant="outline" onClick={() => setLocation('/create')}>
+                <Button variant="secondary" onClick={() => setLocation('/create')}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Editor
                 </Button>
@@ -452,7 +458,7 @@ export default function BinderOverview() {
           <div className="binder-metadata flex flex-wrap gap-6 text-sm text-muted-foreground border-y py-6">
             {binder.category && (
               <div className="metadata-category">
-                <Badge variant="outline">{binder.category.name}</Badge>
+                <Badge variant="secondary">{binder.category.name}</Badge>
               </div>
             )}
             <div className="metadata-duration flex items-center gap-2">
@@ -478,7 +484,7 @@ export default function BinderOverview() {
           {binder.tags && binder.tags.length > 0 && (
             <div className="binder-tags flex flex-wrap gap-1.5">
               {binder.tags.map((tag: any) => (
-                <Badge key={tag.id} variant="secondary" className="text-xs font-normal">
+                <Badge key={tag.id} variant="tertiary" className="text-xs font-normal">
                   {tag.name}
                 </Badge>
               ))}
@@ -500,7 +506,7 @@ export default function BinderOverview() {
                     value={`week-${week.index}`}
                     className="border-none"
                   >
-                    <AccordionTrigger className="py-4 px-4 rounded-lg hover:bg-muted/50 transition-colors [&[data-state=open]>div]:bg-transparent">
+                    <AccordionTrigger className="py-4 px-4 rounded-lg hover:bg-muted transition-colors [&[data-state=open]>div]:bg-transparent">
                       <div
                         className={cn(
                           "flex gap-4 items-start w-full text-left transition-colors",
@@ -508,11 +514,11 @@ export default function BinderOverview() {
                       >
                         <div className={cn(
                           "bg-background h-8 w-8 rounded-full flex items-center justify-center font-mono text-sm font-medium shrink-0 border transition-colors",
-                          weekDone && "bg-primary text-primary-foreground border-primary",
-                          isCurrentWeek && !weekDone && "border-primary text-primary ring-2 ring-primary/20",
-                          isAccessible && "border-muted-foreground/40 text-muted-foreground"
+                          weekDone && "bg-primary-inverted text-foreground-inverted border-primary",
+                          isCurrentWeek && !weekDone && "border-primary text-primary ring-2 ring-ring",
+                          isAccessible && "border-border text-muted-foreground"
                         )}>
-                          {weekDone ? <Check className="h-4 w-4" /> : isCurrentWeek ? <ChevronRight className="h-4 w-4" /> : isLockedWeek ? <Lock className="h-3.5 w-3.5 text-muted-foreground/70" /> : week.index}
+                          {weekDone ? <Check className="h-4 w-4" /> : isCurrentWeek ? <ChevronRight className="h-4 w-4" /> : isLockedWeek ? <Lock className="h-3.5 w-3.5 text-muted-foreground" /> : week.index}
                         </div>
                         <div className="flex-1">
                           <div className="flex justify-between items-start">
@@ -521,7 +527,7 @@ export default function BinderOverview() {
                                 {week.title || `Week ${week.index}`}
                               </h3>
                               {isCurrentWeek && (
-                                <Badge variant="outline" className="h-5 px-1.5 text-[10px] uppercase tracking-wider">
+                                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] uppercase tracking-wider">
                                   Current
                                 </Badge>
                               )}
@@ -547,7 +553,7 @@ export default function BinderOverview() {
                             <div className="flex items-center gap-3 text-sm text-muted-foreground">
                               <div className={cn(
                                 "p-1.5 rounded-md shrink-0",
-                                isDone ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                                isDone ? "bg-primary-surface text-primary" : "bg-muted text-muted-foreground"
                               )}>
                                 {step.type === 'reading' ? <FileText className="h-3.5 w-3.5" /> : <Dumbbell className="h-3.5 w-3.5" />}
                               </div>
@@ -570,7 +576,7 @@ export default function BinderOverview() {
                             </div>
 
                             {isDone && exerciseLink && (
-                              <div className="ml-9 pl-3 border-l-2 border-primary/20 pb-1">
+                              <div className="ml-9 pl-3 border-l-2 border-border pb-1">
                                 <a
                                   href={exerciseLink.startsWith('http') ? exerciseLink : `https://${exerciseLink}`}
                                   target="_blank"
@@ -604,7 +610,7 @@ export default function BinderOverview() {
                       {isAccessible && !isCompleted && (
                         <div className="pt-4 md:hidden">
                           <Button
-                            variant="secondary"
+                            variant="tertiary"
                             size="sm"
                             className="w-full"
                             onClick={() => setLocation(`/binder/${binder.id}/week/${week.index}`)}
@@ -617,7 +623,7 @@ export default function BinderOverview() {
                       {isCompleted && (
                         <div className="pt-2">
                           <Button
-                            variant="secondary"
+                            variant="tertiary"
                             size="sm"
                             className="w-full"
                             onClick={() => setLocation(`/binder/${binder.id}/week/${week.index}`)}
@@ -742,22 +748,22 @@ export default function BinderOverview() {
               {(curator.linkedin || curator.twitter || curator.threads || curator.website) && (
                 <div className="flex flex-wrap gap-2">
                   {curator.linkedin && (
-                    <a href={`https://linkedin.com/in/${curator.linkedin}`} target="_blank" rel="noopener noreferrer" title="LinkedIn" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-muted hover:bg-muted/80 text-muted-foreground hover:text-[#0077b5] transition-colors">
+                    <a href={`https://linkedin.com/in/${curator.linkedin}`} target="_blank" rel="noopener noreferrer" title="LinkedIn" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-muted hover:bg-muted text-muted-foreground hover:text-[#0077b5] transition-colors">
                       <Linkedin className="h-[18px] w-[18px]" />
                     </a>
                   )}
                   {curator.twitter && (
-                    <a href={`https://twitter.com/${curator.twitter}`} target="_blank" rel="noopener noreferrer" title="X / Twitter" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-muted hover:bg-muted/80 text-muted-foreground hover:text-[#1DA1F2] transition-colors">
+                    <a href={`https://twitter.com/${curator.twitter}`} target="_blank" rel="noopener noreferrer" title="X / Twitter" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-muted hover:bg-muted text-muted-foreground hover:text-[#1DA1F2] transition-colors">
                       <Twitter className="h-[18px] w-[18px]" />
                     </a>
                   )}
                   {curator.threads && (
-                    <a href={`https://threads.net/@${curator.threads}`} target="_blank" rel="noopener noreferrer" title="Threads" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors">
+                    <a href={`https://threads.net/@${curator.threads}`} target="_blank" rel="noopener noreferrer" title="Threads" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-muted hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
                       <MessageCircle className="h-[18px] w-[18px]" />
                     </a>
                   )}
                   {curator.website && (
-                    <a href={curator.website.startsWith('http') ? curator.website : `https://${curator.website}`} target="_blank" rel="noopener noreferrer" title="Website" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-muted hover:bg-muted/80 text-muted-foreground hover:text-primary transition-colors">
+                    <a href={curator.website.startsWith('http') ? curator.website : `https://${curator.website}`} target="_blank" rel="noopener noreferrer" title="Website" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-muted hover:bg-muted text-muted-foreground hover:text-primary transition-colors">
                       <Globe className="h-[18px] w-[18px]" />
                     </a>
                   )}
@@ -766,26 +772,26 @@ export default function BinderOverview() {
 
               <div className="flex flex-col gap-2">
                 {curator.schedulingUrl && binder?.showSchedulingLink !== false && binder?.status === 'published' && (
-                  <Button variant="outline" size="sm" onClick={handleBookCall} className="w-full gap-2">
+                  <Button variant="secondary" size="sm" onClick={handleBookCall} className="w-full gap-2">
                     <CalendarDays className="h-4 w-4" />
                     1:1 Office Hour
                     {(!currentUser || !isPro) && (
-                      <Badge className="bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                      <Badge className="bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
                     )}
                   </Button>
                 )}
 
                 {slackUrl && binder?.status === 'published' && (
-                  <Button variant="outline" size="sm" onClick={handleJoinSlack} className="w-full gap-2">
+                  <Button variant="secondary" size="sm" onClick={handleJoinSlack} className="w-full gap-2">
                     <Hash className="h-4 w-4" />
                     Join Slack Community
                     {(!currentUser || !isPro) && (
-                      <Badge className="bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                      <Badge className="bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
                     )}
                   </Button>
                 )}
 
-                <Button variant="outline" size="sm" onClick={() => setShowShareDialog(true)} className="w-full gap-2">
+                <Button variant="secondary" size="sm" onClick={() => setShowShareDialog(true)} className="w-full gap-2">
                   <Share2 className="h-4 w-4" />
                   Share with a Friend
                 </Button>
@@ -816,19 +822,19 @@ export default function BinderOverview() {
               </p>
 
               <div className="flex flex-col gap-2">
-                <Button variant="outline" size="sm" className="w-full gap-2" disabled>
+                <Button variant="secondary" size="sm" className="w-full gap-2" disabled>
                   <CalendarDays className="h-4 w-4" />
                   1:1 Office Hour
-                  <Badge className="bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                  <Badge className="bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
                 </Button>
 
-                <Button variant="outline" size="sm" className="w-full gap-2" disabled>
+                <Button variant="secondary" size="sm" className="w-full gap-2" disabled>
                   <Hash className="h-4 w-4" />
                   Join Slack Community
-                  <Badge className="bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                  <Badge className="bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
                 </Button>
 
-                <Button variant="outline" size="sm" className="w-full gap-2" disabled>
+                <Button variant="secondary" size="sm" className="w-full gap-2" disabled>
                   <Share2 className="h-4 w-4" />
                   Share with a Friend
                 </Button>
@@ -858,7 +864,7 @@ export default function BinderOverview() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <Button variant="outline" onClick={() => handleEnroll(false)}>Join Privately</Button>
+            <Button variant="secondary" onClick={() => handleEnroll(false)}>Join Privately</Button>
             <Button onClick={() => handleEnroll(true)}>Join & Share Profile</Button>
           </AlertDialogFooter>
         </AlertDialogContent>

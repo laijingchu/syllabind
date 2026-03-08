@@ -38,7 +38,7 @@ export default function UICard() {
               </CardContent>
               <CardFooter className="gap-2">
                 <Button size="sm">Enroll</Button>
-                <Button size="sm" variant="outline">Preview</Button>
+                <Button size="sm" variant="secondary">Preview</Button>
               </CardFooter>
             </Card>
 
@@ -55,12 +55,12 @@ export default function UICard() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Subcomponents</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Card</strong> — Outer container. <code className="text-primary bg-primary/5 px-1 rounded">rounded-xl border bg-card</code>.</p>
-            <p><strong className="text-foreground">CardHeader</strong> — Top section with vertical spacing. <code className="text-primary bg-primary/5 px-1 rounded">p-6</code>, flex-col, gap-1.5.</p>
+            <p><strong className="text-foreground">Card</strong> — Outer container. <code className="text-primary bg-muted px-1 rounded">rounded-xl border bg-card</code>.</p>
+            <p><strong className="text-foreground">CardHeader</strong> — Top section with vertical spacing. <code className="text-primary bg-muted px-1 rounded">p-6</code>, flex-col, gap-1.5.</p>
             <p><strong className="text-foreground">CardTitle</strong> — Heading text. Semibold, tight tracking, no explicit size (inherits).</p>
-            <p><strong className="text-foreground">CardDescription</strong> — Subtitle below title. <code className="text-primary bg-primary/5 px-1 rounded">text-base text-muted-foreground</code>.</p>
-            <p><strong className="text-foreground">CardContent</strong> — Main body area. <code className="text-primary bg-primary/5 px-1 rounded">p-6 pt-0</code> (no top padding, butts against header).</p>
-            <p><strong className="text-foreground">CardFooter</strong> — Bottom action row. <code className="text-primary bg-primary/5 px-1 rounded">flex items-center p-6 pt-0</code>.</p>
+            <p><strong className="text-foreground">CardDescription</strong> — Subtitle below title. <code className="text-primary bg-muted px-1 rounded">text-base text-muted-foreground</code>.</p>
+            <p><strong className="text-foreground">CardContent</strong> — Main body area. <code className="text-primary bg-muted px-1 rounded">p-6 pt-0</code> (no top padding, butts against header).</p>
+            <p><strong className="text-foreground">CardFooter</strong> — Bottom action row. <code className="text-primary bg-muted px-1 rounded">flex items-center p-6 pt-0</code>.</p>
           </div>
         </section>
 
@@ -84,7 +84,7 @@ export default function UICard() {
                   <CardDescription>Receive updates when readers enroll.</CardDescription>
                 </CardHeader>
                 <CardFooter>
-                  <Button size="sm" variant="outline">Configure</Button>
+                  <Button size="sm" variant="secondary">Configure</Button>
                 </CardFooter>
               </Card>
             </div>
@@ -145,7 +145,7 @@ export default function UICard() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Semantic HTML:</strong> Card renders as a <code className="text-primary bg-primary/5 px-1 rounded">&lt;div&gt;</code>. For landmark semantics, wrap in <code className="text-primary bg-primary/5 px-1 rounded">&lt;section&gt;</code> or <code className="text-primary bg-primary/5 px-1 rounded">&lt;article&gt;</code> as needed.</p>
+            <p><strong className="text-foreground">Semantic HTML:</strong> Card renders as a <code className="text-primary bg-muted px-1 rounded">&lt;div&gt;</code>. For landmark semantics, wrap in <code className="text-primary bg-muted px-1 rounded">&lt;section&gt;</code> or <code className="text-primary bg-muted px-1 rounded">&lt;article&gt;</code> as needed.</p>
             <p><strong className="text-foreground">Heading levels:</strong> CardTitle renders as a div — add an explicit heading tag inside if the card introduces a new content section for screen reader navigation.</p>
           </div>
         </section>

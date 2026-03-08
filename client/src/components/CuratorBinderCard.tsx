@@ -55,21 +55,21 @@ export function CuratorBinderCard({
             <div className="flex items-center gap-2 flex-wrap">
               {binder.status === 'published' ? (
                 binder.visibility === 'unlisted' ? (
-                  <Badge variant="secondary" className="shrink-0">Unlisted</Badge>
+                  <Badge variant="tertiary" className="shrink-0">Unlisted</Badge>
                 ) : binder.visibility === 'private' ? (
-                  <Badge variant="secondary" className="shrink-0">Private</Badge>
+                  <Badge variant="tertiary" className="shrink-0">Private</Badge>
                 ) : (
-                  <Badge variant="outline" className="shrink-0">Published</Badge>
+                  <Badge variant="secondary" className="shrink-0">Published</Badge>
                 )
               ) : binder.status === 'pending_review' ? (
-                <Badge variant="outline" className="shrink-0 bg-amber-50 text-amber-700 border-amber-200">
+                <Badge variant="secondary" className="shrink-0 bg-warning-surface text-warning border-warning-border">
                   Pending Review
                 </Badge>
               ) : (
-                <Badge variant="secondary" className="shrink-0">Draft</Badge>
+                <Badge variant="tertiary" className="shrink-0">Draft</Badge>
               )}
               {isOtherCurator && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="secondary" className="text-xs">
                   by {binder.curator?.name || binder.curatorId}
                 </Badge>
               )}
@@ -80,12 +80,12 @@ export function CuratorBinderCard({
               <span className="hidden sm:inline"> • Updated {binder.updatedAt ? formatDistanceToNow(new Date(binder.updatedAt as string), { addSuffix: true }) : 'recently'}</span>
             </div>
             {binder.reviewNote && binder.status === 'draft' && (
-              <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 mt-1">
+              <div className="text-xs text-warning bg-warning-surface border border-warning-border rounded px-2 py-1 mt-1">
                 Review feedback: {binder.reviewNote}
               </div>
             )}
             {binder.status === 'published' && hasApprovalNotification && (
-              <div className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1 mt-1">
+              <div className="text-xs text-success bg-success-surface border border-success-border rounded px-2 py-1 mt-1">
                 Approved and published!
               </div>
             )}
@@ -102,11 +102,11 @@ export function CuratorBinderCard({
             <div className="text-xs text-muted-foreground">{pluralize(readerCount?.active || 0, 'Active')}</div>
           </div>
           {binder.status === 'published' ? (
-            <Button variant="secondary" size="sm" className="h-8 px-3" onClick={() => onUnpublish(binder.id)}>
+            <Button variant="tertiary" size="sm" className="h-8 px-3" onClick={() => onUnpublish(binder.id)}>
               Unpublish
             </Button>
           ) : binder.status === 'pending_review' && !isAdmin ? (
-            <Button variant="secondary" size="sm" className="h-8 px-3" onClick={() => onWithdraw(binder.id)}>
+            <Button variant="tertiary" size="sm" className="h-8 px-3" onClick={() => onWithdraw(binder.id)}>
               Withdraw from Review
             </Button>
           ) : (
@@ -133,17 +133,17 @@ export function CuratorBinderCard({
             </DropdownMenu>
           )}
           <Link href={`/curator/binder/${binder.id}/edit`}>
-            <Button variant="outline" size="icon" className="h-8 w-8">
+            <Button variant="secondary" size="icon" className="h-8 w-8">
               <Edit2 className="h-4 w-4" />
             </Button>
           </Link>
           <Link href={binder.status === 'published' ? `/binder/${binder.id}` : `/binder/${binder.id}?preview=true`}>
-            <Button variant="outline" size="icon" className="h-8 w-8">
+            <Button variant="secondary" size="icon" className="h-8 w-8">
               <Eye className="h-4 w-4" />
             </Button>
           </Link>
           <Link href={`/curator/binder/${binder.id}/analytics`}>
-            <Button variant="outline" size="icon" className="h-8 w-8">
+            <Button variant="secondary" size="icon" className="h-8 w-8">
               <BarChart2 className="h-4 w-4" />
             </Button>
           </Link>

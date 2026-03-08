@@ -77,7 +77,7 @@ export default function UIInput() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            Focus state changes the bottom border to primary color via <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:border-primary</code>.
+            Focus state changes the bottom border to primary color via <code className="text-primary bg-muted px-1 rounded">focus-visible:border-primary</code>.
             No ring is shown — the underline style uses border-only focus indication.
           </p>
         </section>
@@ -98,10 +98,10 @@ export default function UIInput() {
           <h2 className="font-display text-xl font-medium">Styling Notes</h2>
           <div className="text-base text-muted-foreground space-y-2">
             <p>The Input uses a distinctive <strong className="text-foreground">underline style</strong> rather than a full border box:</p>
-            <p>- <code className="text-primary bg-primary/5 px-1 rounded">border-b</code> only (no left/right/top borders)</p>
-            <p>- <code className="text-primary bg-primary/5 px-1 rounded">rounded-none</code> to prevent border-radius on the underline</p>
-            <p>- <code className="text-primary bg-primary/5 px-1 rounded">text-xl font-display</code> for a prominent, editorial feel</p>
-            <p>- <code className="text-primary bg-primary/5 px-1 rounded">bg-transparent</code> to sit flush against any background</p>
+            <p>- <code className="text-primary bg-muted px-1 rounded">border-b</code> only (no left/right/top borders)</p>
+            <p>- <code className="text-primary bg-muted px-1 rounded">rounded-none</code> to prevent border-radius on the underline</p>
+            <p>- <code className="text-primary bg-muted px-1 rounded">text-xl font-display</code> for a prominent, editorial feel</p>
+            <p>- <code className="text-primary bg-muted px-1 rounded">bg-transparent</code> to sit flush against any background</p>
             <p>Override these defaults per-instance via className when a standard boxed input is needed.</p>
           </div>
         </section>
@@ -139,9 +139,9 @@ const [value, setValue] = useState('');
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Label association:</strong> Always pair with a <code className="text-primary bg-primary/5 px-1 rounded">&lt;Label&gt;</code> using matching <code className="text-primary bg-primary/5 px-1 rounded">htmlFor</code>/<code className="text-primary bg-primary/5 px-1 rounded">id</code> attributes.</p>
+            <p><strong className="text-foreground">Label association:</strong> Always pair with a <code className="text-primary bg-muted px-1 rounded">&lt;Label&gt;</code> using matching <code className="text-primary bg-muted px-1 rounded">htmlFor</code>/<code className="text-primary bg-muted px-1 rounded">id</code> attributes.</p>
             <p><strong className="text-foreground">Focus:</strong> Visible bottom-border color change on focus-visible. No ring to avoid doubling the underline visual.</p>
-            <p><strong className="text-foreground">Disabled:</strong> Applies <code className="text-primary bg-primary/5 px-1 rounded">disabled:cursor-not-allowed</code> and <code className="text-primary bg-primary/5 px-1 rounded">disabled:opacity-50</code>.</p>
+            <p><strong className="text-foreground">Disabled:</strong> Applies <code className="text-primary bg-muted px-1 rounded">disabled:cursor-not-allowed</code> and <code className="text-primary bg-muted px-1 rounded">disabled:opacity-50</code>.</p>
             <p><strong className="text-foreground">Type support:</strong> Accepts all native input types (text, email, password, search, file, etc.).</p>
           </div>
         </section>

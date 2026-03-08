@@ -1,7 +1,7 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { cn } from '@/lib/utils';
-import { BookOpen, Palette, Type, Square, Layers, Play, Menu } from 'lucide-react';
+import { BookOpen, Palette, Type, Square, Layers, Play, LayoutGrid, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -17,6 +17,7 @@ const elementsNav = [
   { href: '/design-system/colors', label: 'Colors', icon: Palette },
   { href: '/design-system/typography', label: 'Typography', icon: Type },
   { href: '/design-system/spacing', label: 'Spacing & Radius', icon: Square },
+  { href: '/design-system/layout', label: 'Layout Grid', icon: LayoutGrid },
   { href: '/design-system/shadows', label: 'Shadows & Elevation', icon: Layers },
   { href: '/design-system/animations', label: 'Animations', icon: Play },
 ];
@@ -98,8 +99,8 @@ function CodeBlock({ children }: { children: string }) {
 
 function TokenRow({ token, value, children }: { token: string; value?: string; children?: React.ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 py-3 border-b border-border/50 last:border-0">
-      <code className="text-sm font-mono text-primary bg-primary/5 px-2 py-0.5 rounded min-w-[120px] md:min-w-[200px] shrink-0">{token}</code>
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 py-3 border-b border-border last:border-0">
+      <code className="text-sm font-mono text-primary bg-muted px-2 py-0.5 rounded min-w-[120px] md:min-w-[200px] shrink-0">{token}</code>
       {value && <span className="text-base text-muted-foreground shrink-0">{value}</span>}
       {children}
     </div>
@@ -121,7 +122,7 @@ function SidebarNav({ location, onNavigate }: { location: string; onNavigate?: (
             <span className={cn(
               "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer",
               location === href
-                ? "bg-primary/10 text-primary font-medium"
+                ? "bg-highlight text-highlight-foreground font-medium"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted"
             )}>
               <Icon className="h-4 w-4" />
@@ -138,7 +139,7 @@ function SidebarNav({ location, onNavigate }: { location: string; onNavigate?: (
           <span className={cn(
             "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer",
             location === '/design-system/ui'
-              ? "bg-primary/10 text-primary font-medium"
+              ? "bg-highlight text-highlight-foreground font-medium"
               : "text-muted-foreground hover:text-foreground hover:bg-muted"
           )}>
             Overview
@@ -146,14 +147,14 @@ function SidebarNav({ location, onNavigate }: { location: string; onNavigate?: (
         </Link>
         {uiNav.map(({ category, items }) => (
           <div key={category}>
-            <p className="text-sm text-muted-foreground/70 px-3 mb-1">{category}</p>
+            <p className="text-sm text-muted-foreground px-3 mb-1">{category}</p>
             <div className="flex flex-col gap-0.5">
               {items.map(({ href, label }) => (
                 <Link key={href} href={href} onClick={onNavigate}>
                   <span className={cn(
                     "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer",
                     location === href
-                      ? "bg-primary/10 text-primary font-medium"
+                      ? "bg-highlight text-highlight-foreground font-medium"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}>
                     {label}
@@ -172,7 +173,7 @@ function SidebarNav({ location, onNavigate }: { location: string; onNavigate?: (
           <span className={cn(
             "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer",
             location === '/design-system/components'
-              ? "bg-primary/10 text-primary font-medium"
+              ? "bg-highlight text-highlight-foreground font-medium"
               : "text-muted-foreground hover:text-foreground hover:bg-muted"
           )}>
             Overview
@@ -183,7 +184,7 @@ function SidebarNav({ location, onNavigate }: { location: string; onNavigate?: (
             <span className={cn(
               "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer",
               location === href
-                ? "bg-primary/10 text-primary font-medium"
+                ? "bg-highlight text-highlight-foreground font-medium"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted"
             )}>
               {label}
@@ -232,7 +233,7 @@ export default function DesignSystemLayout({ children }: { children: React.React
         <div className="md:hidden flex justify-start mb-2">
           <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
             <SheetTrigger asChild>
-              <Button variant="secondary" size="sm">
+              <Button variant="tertiary" size="sm">
                 <Menu className="h-4 w-4 mr-1.5" />
                 Menu
               </Button>

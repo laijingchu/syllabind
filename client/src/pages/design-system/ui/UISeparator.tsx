@@ -60,8 +60,8 @@ export default function UISeparator() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            Vertical separators require a parent with a defined height (or <code className="text-primary bg-primary/5 px-1 rounded">h-full</code> context) since
-            the separator uses <code className="text-primary bg-primary/5 px-1 rounded">h-full w-[1px]</code>.
+            Vertical separators require a parent with a defined height (or <code className="text-primary bg-muted px-1 rounded">h-full</code> context) since
+            the separator uses <code className="text-primary bg-muted px-1 rounded">h-full w-[1px]</code>.
           </p>
         </section>
 
@@ -75,7 +75,7 @@ export default function UISeparator() {
             </div>
             <div className="space-y-2">
               <Separator decorative={false} />
-              <p className="text-sm text-muted-foreground">Non-decorative — announced by screen readers with <code className="text-primary bg-primary/5 px-1 rounded">role="separator"</code></p>
+              <p className="text-sm text-muted-foreground">Non-decorative — announced by screen readers with <code className="text-primary bg-muted px-1 rounded">role="separator"</code></p>
             </div>
             <div className="space-y-2">
               <Separator className="bg-primary" />
@@ -83,7 +83,7 @@ export default function UISeparator() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            By default, separators are decorative (<code className="text-primary bg-primary/5 px-1 rounded">role="none"</code>). Set <code className="text-primary bg-primary/5 px-1 rounded">decorative=&#123;false&#125;</code> when the
+            By default, separators are decorative (<code className="text-primary bg-muted px-1 rounded">role="none"</code>). Set <code className="text-primary bg-muted px-1 rounded">decorative=&#123;false&#125;</code> when the
             separator conveys meaningful structure to assistive technologies.
           </p>
         </section>
@@ -122,8 +122,8 @@ export default function UISeparator() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Decorative (default):</strong> Renders with <code className="text-primary bg-primary/5 px-1 rounded">role="none"</code>, completely hidden from the accessibility tree.</p>
-            <p><strong className="text-foreground">Non-decorative:</strong> Renders with <code className="text-primary bg-primary/5 px-1 rounded">role="separator"</code> and appropriate <code className="text-primary bg-primary/5 px-1 rounded">aria-orientation</code>.</p>
+            <p><strong className="text-foreground">Decorative (default):</strong> Renders with <code className="text-primary bg-muted px-1 rounded">role="none"</code>, completely hidden from the accessibility tree.</p>
+            <p><strong className="text-foreground">Non-decorative:</strong> Renders with <code className="text-primary bg-muted px-1 rounded">role="separator"</code> and appropriate <code className="text-primary bg-muted px-1 rounded">aria-orientation</code>.</p>
             <p><strong className="text-foreground">When to use non-decorative:</strong> Use when the separator marks a meaningful boundary between distinct sections, such as between navigation groups in a sidebar.</p>
           </div>
         </section>

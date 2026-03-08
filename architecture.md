@@ -778,6 +778,29 @@ React Query handles authentication data fetching. It provides automatic caching 
 - Automatic cache invalidation on login/register
 - Credentials included for cookie-based sessions
 
+#### Color Token System
+
+The color system uses a surface/foreground model with primitive color ramps as the foundation.
+
+**Primitive Ramps** (defined in `:root` in `client/src/index.css`):
+- **Warm neutral** (hue 8°, 19 steps: 50-950) — used by light mode
+- **Cool neutral** (hue 220°, 19 steps: 50-950) — used by dark mode
+- **Success** (hue 145°), **Danger** (hue 0°), **Warning** (hue 40°) — semantic ramps (10 steps: 50-900)
+
+**Semantic tokens** reference ramps via `var(--ramp-step)`:
+- Light mode: `--border: var(--warm-300)`, `--muted: var(--warm-150)`, `--destructive: var(--danger-500)`
+- Dark mode: `--border: var(--cool-700)`, `--muted: var(--cool-750)`, `--destructive: var(--danger-500)`
+
+**Token architecture** — all semantic tokens are raw HSL triplets (e.g. `8 16% 82%`), wrapped in `hsl()` by `@theme inline`:
+- `--color-border: hsl(var(--border))` — Tailwind consumes `--color-border`
+- Exception: `--button-outline`, `--badge-outline`, `--elevate-1`, `--elevate-2` are complete `hsl()` values consumed directly via `var()` in CSS
+
+**Surface tokens** (backgrounds): `background`, `card`, `popover`, `secondary`, `muted`, `accent`, `elevate-1`, `elevate-2`
+**Foreground tokens** (text/borders): `foreground`, `muted-foreground`, `primary`, `destructive`, `border`, `input`, `ring`, `button-outline`, `badge-outline`
+
+**Special utilities:**
+- `.bg-action-gradient` — Black base (`--primary-inverted`) with a translucent prismatic shimmer that sweeps across on hover via `cta-shimmer` keyframe animation. Defined in `index.css` with light/dark variants. BinderCard hover uses `.binder-card-cta` with a matching CSS rule.
+
 ---
 
 ## API Endpoints
@@ -2573,3 +2596,33 @@ All AI features are now gated by a credit system. The old generation count/coold
 - `server/__tests__/storage-coverage.test.ts` — Added ~25 describes covering: `updateWeek`, `deleteStep`, `deleteWeeksByBinderId`, `saveWeeksAndSteps`, `getUserByStripeCustomerId`, `getSubscriptionByStripeId`, `upsertSubscription`, `updateSubscriptionByStripeId`, `countBindersByCurator`, `countActiveEnrollments`, `countManualBinders`, `getSiteSetting`, `setSiteSetting`, `listCategories`, `initializeDefaultCategories`, `listTags`, `getTagsByBinderId`, `findOrCreateTag`, `setBinderTags`, `incrementGenerationCount`, `getGenerationInfo`, `getBindersByStatus`, `getDemoBinders`, `getCuratorUnreadNotifications`, `getAdminUnreadCount`, `acknowledgeNotifications`, `getCreditBalance`, `getCreditTransactions`, `deductCredits`, `grantCredits`, `refreshSearchVector`
 
 **Results:** 37 test suites, 712 tests, all passing. Coverage: Statements 80.21%, Branches 68.6%, Functions 73.55%, Lines 81% — all above thresholds.
+
+---
+
+## Layout Grid System
+
+### Baseline Grid
+All text line-heights snap to 4px multiples (matching `--spacing: 0.25rem`):
+- `text-xs`: 12px / 16px
+- `text-sm`: 14px / 20px
+- `text-base`: 16px / 24px
+- `text-lg`: 18px / 28px
+- `text-xl`: 20px / 28px
+
+### Page Width Tokens
+Semantic width tokens in `@theme inline` using `--container-*` namespace (generates Tailwind `max-w-page-*` utilities):
+Each tier is 8rem apart:
+| Token | Width | Usage |
+|-------|-------|-------|
+| `--container-page-max` | 64rem (1024px) | Marketing, Catalog, BinderReaders |
+| `--container-page-wide` | 56rem (896px) | CuratorDashboard, Pricing, Analytics |
+| `--container-page-default` | 48rem (768px) | BinderEditor, BinderOverview, Dashboard |
+| `--container-page-narrow` | 42rem (672px) | WeekView, reading-focused layouts |
+| `--container-page-prose` | 36rem (576px) | Settings, Billing, Profile, AdminSettings |
+
+On viewports narrower than the token width, content fills available space minus `px-4` gutters.
+
+### Debug Baseline Grid
+- CSS class `.debug-baseline` adds a 4px repeating-line overlay via `::before`
+- Dev-only keyboard shortcut `Ctrl+Shift+G` toggles `.debug-baseline` on `<body>` (Layout.tsx, gated behind `import.meta.env.DEV`)
+- Design system `/design-system/layout` page documents all layout tokens

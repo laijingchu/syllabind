@@ -79,8 +79,8 @@ export function SaveStatus({ isSaving, lastSaved, className }: { isSaving: boole
         </>
       ) : lastSaved ? (
         <>
-          <CheckCircle2 className="h-3 w-3 text-green-500/70 shrink-0" />
-          <span className="text-xs text-muted-foreground/70">Saved</span>
+          <CheckCircle2 className="h-3 w-3 text-success shrink-0" />
+          <span className="text-xs text-muted-foreground">Saved</span>
         </>
       ) : null}
     </span>
@@ -120,7 +120,7 @@ function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, remov
       ref={setNodeRef}
       style={style}
       className={cn(
-        "border rounded-lg p-4 sm:p-6 bg-muted/20 relative group",
+        "border rounded-lg p-4 sm:p-6 bg-muted relative group",
         isJustCompleted && `step-enter step-delay-${Math.min(idx + 1, 4)}`,
         isDragging && "opacity-50 shadow-lg z-50"
       )}
@@ -130,18 +130,18 @@ function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, remov
            <button
              {...attributes}
              {...listeners}
-             className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground transition-colors touch-none"
+             className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-muted-foreground transition-colors touch-none"
              aria-label="Drag to reorder"
            >
              <GripVertical className="h-5 w-5" />
            </button>
-           <Badge variant="outline" className="text-[10px] sm:text-xs uppercase px-1.5 sm:px-2 py-0.5 tracking-wider font-semibold">{step.type}</Badge>
+           <Badge variant="secondary" className="text-[10px] sm:text-xs uppercase px-1.5 sm:px-2 py-0.5 tracking-wider font-semibold">{step.type}</Badge>
            <span className="text-xs text-muted-foreground font-medium">Step {idx + 1}</span>
          </div>
          <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-danger-surface transition-colors"
             onClick={() => removeStep(weekIndex, step.id)}
          >
            <Trash2 className="h-4 w-4" />
@@ -173,7 +173,7 @@ function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, remov
                  <Tooltip>
                    <TooltipTrigger asChild>
                      <Button
-                       variant="secondary"
+                       variant="tertiary"
                        size="icon"
                        onClick={() => handleAutoFill(weekIndex, step.id)}
                        disabled={!step.url}
@@ -355,6 +355,7 @@ export default function BinderEditor() {
   const isGeneratingRef = useRef(false); // Ref for ws.onclose (avoids stale closure)
   const regeneratingWeekRef = useRef<number | null>(null); // Ref for ws.onclose (avoids stale closure)
   const rateLimitRetryRef = useRef<ReturnType<typeof setInterval> | null>(null); // Track rate limit countdown
+  const weeklySectionRef = useRef<HTMLDivElement>(null);
 
   // Demo & generation info state
   const [demoBinders, setDemoBinders] = useState<Array<{ id: number; title: string; description: string; audienceLevel: string; durationWeeks: number; weeks: Week[] }>>([]);
@@ -362,16 +363,40 @@ export default function BinderEditor() {
   const [generationInfo, setGenerationInfo] = useState<{ creditBalance?: number; isPro: boolean; isAdmin?: boolean; subscriptionTier?: string; costs?: { per_week: number; improve_writing: number; auto_fill: number }; maxWeeks?: number; generationCount: number; generationLimit: number | null; remaining: number | null; cooldownRemaining: number } | null>(null);
   const [showWaitlist, setShowWaitlist] = useState(false);
   const [waitlistUrl, setWaitlistUrl] = useState<string | null>(null);
+  const [showWeeklySection, setShowWeeklySection] = useState(false);
 
   // Check if Binder already has content (treat '<p></p>' as empty — TipTap's default)
   const hasBinderContent = formData.weeks.some(week =>
     week.steps.length > 0 || week.title || (week.description && week.description !== '<p></p>')
   );
 
+  // Progressive disclosure: show rest of Basics only after user fills title + description, then clicks/tabs out
+  const [basicsRevealed, setBasicsRevealed] = useState(false);
+  const basicsFieldsRef = useRef<HTMLDivElement>(null);
+  const showFullForm = !isNew || basicsRevealed || isDemoMode || isGenerating;
+
+  useEffect(() => {
+    if (!isNew || basicsRevealed || isDemoMode || isGenerating) return;
+    const handleFocusOut = (e: FocusEvent) => {
+      // Wait a frame so document.activeElement has settled
+      requestAnimationFrame(() => {
+        if (basicsFieldsRef.current?.contains(document.activeElement)) return;
+        // Check both fields are filled at the moment focus leaves
+        const title = formData.title?.trim();
+        const desc = formData.description;
+        const descFilled = desc && desc !== '<p></p>' && desc.replace(/<[^>]*>/g, '').trim() !== '';
+        if (title && descFilled) setBasicsRevealed(true);
+      });
+    };
+    const node = basicsFieldsRef.current;
+    node?.addEventListener('focusout', handleFocusOut);
+    return () => node?.removeEventListener('focusout', handleFocusOut);
+  }, [isNew, basicsRevealed, isDemoMode, isGenerating, formData.title, formData.description]);
+
   // Fetch full binder with weeks and steps when editing
   useEffect(() => {
-    // Skip fetch if generation is in progress -- the generation handlers manage formData
-    if (isGeneratingRef.current) return;
+    // Skip fetch if generation or demo is in progress -- those handlers manage formData
+    if (isGeneratingRef.current || isDemoRef.current) return;
 
     if (!isNew && params?.id) {
       const binderId = parseInt(params.id);
@@ -415,6 +440,7 @@ export default function BinderEditor() {
             }))
           });
           if (existing.tags) setBinderTags(existing.tags);
+          setShowWeeklySection(true);
           setIsLoadingContent(false);
         })
         .catch(err => {
@@ -428,7 +454,7 @@ export default function BinderEditor() {
   // so that subsequent auto-saves work and content persists across refresh
   const isCreatingRef = useRef(false);
   useEffect(() => {
-    if (isGuestMode) return; // Skip in guest mode
+    if (isGuestMode || isDemoRef.current) return; // Skip in guest/demo mode
     if (formData.id >= 0 || !formData.title?.trim() || isCreatingRef.current) return;
 
     isCreatingRef.current = true;
@@ -455,7 +481,7 @@ export default function BinderEditor() {
 
   // Auto-save effect
   useEffect(() => {
-    if (isGuestMode) return; // Skip in guest mode
+    if (isGuestMode || isDemoRef.current) return; // Skip in guest/demo mode
     // Skip initial load, empty title, or unsaved binders (negative IDs)
     if (!formData.title || formData.id < 0) return;
 
@@ -494,14 +520,14 @@ export default function BinderEditor() {
       .catch(() => {});
   }, []);
 
-  // Fetch demo binders in guest mode
+  // Fetch demo binders for all users (new binder creation)
   useEffect(() => {
-    if (!isGuestMode) return;
+    if (!isNew) return;
     fetch('/api/demo-binders')
       .then(res => res.json())
       .then(data => setDemoBinders(Array.isArray(data) ? data : []))
       .catch(() => {});
-  }, [isGuestMode]);
+  }, [isNew]);
 
   // Fetch waitlist URL in guest mode
   useEffect(() => {
@@ -699,8 +725,11 @@ export default function BinderEditor() {
   };
 
   // Demo generation: simulate the full generation lifecycle using pre-built demo data
+  const isDemoRef = useRef(false);
   const handleDemoGenerate = (demo: { id: number; title: string; description: string; audienceLevel: string; durationWeeks: number; weeks: Week[] }) => {
     setIsDemoMode(true);
+    isDemoRef.current = true;
+    setShowWeeklySection(true);
     const weekCount = Math.min(demo.durationWeeks || 6, 6);
     const demoWeeks = (demo.weeks || []).slice(0, weekCount);
 
@@ -728,6 +757,11 @@ export default function BinderEditor() {
     setJustCompletedWeek(null);
     setGenerationProgress({ currentWeek: 0, status: `Planning ${weekCount}-week course structure...` });
     setActiveWeekTab('week-1');
+
+    // Scroll to weekly section after React renders the content
+    setTimeout(() => {
+      weeklySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
 
     // Phase 1: planning delay, then populate week titles
     setTimeout(() => {
@@ -885,6 +919,8 @@ export default function BinderEditor() {
       })),
     });
     setIsDemoMode(false);
+    isDemoRef.current = false;
+    setShowWeeklySection(false);
     setActiveWeekTab('week-1');
   };
 
@@ -901,11 +937,16 @@ export default function BinderEditor() {
     if (requireAuth()) return;
     setShowRegenerateDialog(false);
 
+    // Clear demo mode — user is now requesting real generation
+    isDemoRef.current = false;
+    setIsDemoMode(false);
+
     if (useMock) {
       console.log('[Mock Mode] Testing streaming effect without API calls');
     }
 
     // Show progress immediately -- don't wait for create/start API calls
+    setShowWeeklySection(true);
     setIsGenerating(true);
     isGeneratingRef.current = true;
     setGenerationProgress({ currentWeek: 0, status: 'Starting generation...' });
@@ -1637,6 +1678,7 @@ export default function BinderEditor() {
 
   const handleSave = async (statusOverride?: 'draft' | 'published', visibilityOverride?: string) => {
     if (requireAuth()) return;
+    if (isDemoRef.current) return;
     const overrides: Record<string, any> = {};
     if (statusOverride) overrides.status = statusOverride;
     if (visibilityOverride) overrides.visibility = visibilityOverride;
@@ -1705,6 +1747,7 @@ export default function BinderEditor() {
 
   // Publish action via POST /publish endpoint (for non-admin curators)
   const handlePublishAction = async (visibility: string) => {
+    if (isDemoRef.current) return;
     try {
       const res = await fetch(`/api/binders/${formData.id}/publish`, {
         method: 'POST',
@@ -1824,8 +1867,133 @@ export default function BinderEditor() {
     setFormData({ ...formData, weeks: newWeeks });
   }, [formData]);
 
+  // Shared action buttons rendered in both top bar (compact) and bottom bar (labeled)
+  const ActionButtons = ({ compact }: { compact: boolean }) => {
+    const previewGuest = () => {
+      sessionStorage.setItem('guestBinderPreview', JSON.stringify(formData));
+      setLocation('/create/preview');
+    };
+
+    // Guest mode actions
+    if (isGuestMode) {
+      if (!hasBinderContent || isGenerating) return null;
+      return compact ? (
+        <>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={handleFormReset}>
+                <RefreshCw className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Start Over</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button size="icon" className="h-8 w-8" onClick={previewGuest}>
+                <Eye className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Preview</TooltipContent>
+          </Tooltip>
+          <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>Sign up</Button>
+        </>
+      ) : (
+        <>
+          <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={handleFormReset}>
+            <RefreshCw className="h-3.5 w-3.5" /> Start Over
+          </Button>
+          <Button size="sm" className="gap-1.5" onClick={previewGuest}>
+            <Eye className="h-4 w-4" /> Preview
+          </Button>
+          <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>
+            Sign up
+          </Button>
+        </>
+      );
+    }
+
+    // Logged-in demo mode
+    if (isDemoMode) {
+      return compact ? (
+        <Button size="sm" variant="secondary" className="gap-1.5" onClick={handleFormReset}>
+          <RefreshCw className="h-3.5 w-3.5" /> Start Over
+        </Button>
+      ) : (
+        <Button size="sm" variant="secondary" className="gap-1.5" onClick={handleFormReset}>
+          <RefreshCw className="h-3.5 w-3.5" /> Start Over
+        </Button>
+      );
+    }
+
+    // Logged-in: published
+    if (formData.status === 'published') {
+      return compact ? (
+        <Button variant="tertiary" size="sm" onClick={() => setShowUnpublishDialog(true)}>Unpublish</Button>
+      ) : (
+        <Button variant="tertiary" size="sm" onClick={() => setShowUnpublishDialog(true)}>Unpublish</Button>
+      );
+    }
+
+    // Logged-in: pending review
+    if (formData.status === 'pending_review' && !user?.isAdmin) {
+      return compact ? (
+        <>
+          <Badge variant="secondary" className="bg-warning-surface text-warning border-warning-border">Pending Review</Badge>
+          <Button variant="tertiary" size="sm" onClick={() => handlePublishAction('withdraw')}>Withdraw from Review</Button>
+        </>
+      ) : (
+        <Button variant="tertiary" size="sm" onClick={() => handlePublishAction('withdraw')}>Withdraw from Review</Button>
+      );
+    }
+
+    // Logged-in: draft — Publish dropdown
+    const descriptionText = formData.description?.replace(/<[^>]*>/g, '').trim() || '';
+    const isBasicsComplete = formData.title.trim().length > 0 && descriptionText.length > 0;
+
+    if (!isBasicsComplete) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span tabIndex={0}>
+                <Button size="sm" className="gap-1.5" disabled>
+                  Publish <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>Fill in the title and description to publish</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button size="sm" className="gap-1.5">
+            Publish <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuItem onClick={() => user?.isAdmin ? handleSave('published', 'public') : (() => { setPendingVisibility('public'); setShowReviewConfirmDialog(true); })()}>
+            <Globe className="h-4 w-4 mr-2" /> Public
+            <span className="ml-auto text-xs text-muted-foreground">{user?.isAdmin ? 'Catalog' : 'To be featured'}</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => user?.isAdmin ? handleSave('published', 'unlisted') : handlePublishAction('unlisted')}>
+            <EyeOff className="h-4 w-4 mr-2" /> Unlisted
+            <span className="ml-auto text-xs text-muted-foreground">Link only</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => user?.isAdmin ? handleSave('published', 'private') : handlePublishAction('private')}>
+            <Lock className="h-4 w-4 mr-2" /> Private
+            <span className="ml-auto text-xs text-muted-foreground">Only you</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-20">
+    <div className="max-w-page-default mx-auto space-y-8 pb-20">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
          <div className="flex items-center gap-3 sm:gap-4">
             <Button variant="ghost" size="icon" onClick={() => setLocation('/curator')} className="shrink-0">
@@ -1841,10 +2009,14 @@ export default function BinderEditor() {
                   <span className="hidden sm:inline">Demo</span>
                 ) : (formData.title.trim() || formData.description.trim()) ? (
                   <>
-                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                    <AlertTriangle className="h-3 w-3 text-warning" />
                     <span className="hidden sm:inline">Progress not saved</span>
                   </>
                 ) : null}
+              </span>
+            ) : isDemoMode ? (
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <span className="hidden sm:inline">Demo — not saved</span>
               </span>
             ) : (
               <SaveStatus isSaving={isSaving} lastSaved={lastSaved} />
@@ -1853,7 +2025,7 @@ export default function BinderEditor() {
               <>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleShareDraft}>
+                    <Button variant="secondary" size="icon" className="h-8 w-8" onClick={handleShareDraft}>
                       <Share2 className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
@@ -1862,7 +2034,7 @@ export default function BinderEditor() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link href={`/curator/binder/${params?.id}/analytics`}>
-                      <Button variant="outline" size="icon" className="h-8 w-8">
+                      <Button variant="secondary" size="icon" className="h-8 w-8">
                         <BarChart2 className="h-4 w-4" />
                       </Button>
                     </Link>
@@ -1875,9 +2047,9 @@ export default function BinderEditor() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="icon"
-                    className="h-8 w-8 border-destructive text-destructive hover:bg-destructive/10"
+                    className="h-8 w-8 border-destructive text-destructive hover:bg-danger-surface"
                     onClick={() => setShowDeleteDialog(true)}
                     disabled={isDeleting}
                   >
@@ -1887,70 +2059,12 @@ export default function BinderEditor() {
                 <TooltipContent>{isDeleting ? 'Deleting...' : 'Delete'}</TooltipContent>
               </Tooltip>
             )}
-            {isGuestMode && hasBinderContent && !isGenerating && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={handleFormReset}>
-                    <RefreshCw className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Start Over</TooltipContent>
-              </Tooltip>
-            )}
-            {isGuestMode && hasBinderContent && !isGenerating && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => {
-                      sessionStorage.setItem('guestBinderPreview', JSON.stringify(formData));
-                      setLocation('/create/preview');
-                    }}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Preview</TooltipContent>
-              </Tooltip>
-            )}
-            {isGuestMode ? (
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>Sign up</Button>
-            ) : formData.status === 'published' ? (
-              <Button variant="secondary" size="sm" onClick={() => setShowUnpublishDialog(true)}>Unpublish</Button>
-            ) : formData.status === 'pending_review' && !user?.isAdmin ? (
-              <>
-                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Pending Review</Badge>
-                <Button variant="secondary" size="sm" onClick={() => handlePublishAction('withdraw')}>Withdraw from Review</Button>
-              </>
-            ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" className="gap-1.5">
-                    Publish <ChevronDown className="h-3.5 w-3.5 opacity-60" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuItem onClick={() => user?.isAdmin ? handleSave('published', 'public') : (() => { setPendingVisibility('public'); setShowReviewConfirmDialog(true); })()}>
-                    <Globe className="h-4 w-4 mr-2" /> Public
-                    <span className="ml-auto text-xs text-muted-foreground">{user?.isAdmin ? 'Catalog' : 'To be featured'}</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => user?.isAdmin ? handleSave('published', 'unlisted') : handlePublishAction('unlisted')}>
-                    <EyeOff className="h-4 w-4 mr-2" /> Unlisted
-                    <span className="ml-auto text-xs text-muted-foreground">Link only</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => user?.isAdmin ? handleSave('published', 'private') : handlePublishAction('private')}>
-                    <Lock className="h-4 w-4 mr-2" /> Private
-                    <span className="ml-auto text-xs text-muted-foreground">Only you</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            <ActionButtons compact />
             {!isNew && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link href={formData.status === 'published' ? `/binder/${params?.id}` : `/binder/${params?.id}?preview=true`}>
-                    <Button variant="outline" size="icon" className="h-8 w-8">
+                    <Button variant="secondary" size="icon" className="h-8 w-8">
                       <Eye className="h-4 w-4" />
                     </Button>
                   </Link>
@@ -1962,7 +2076,7 @@ export default function BinderEditor() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link href={`/curator/binder/${params?.id}/readers`}>
-                    <Button variant="outline" size="icon" className="h-8 w-8">
+                    <Button variant="secondary" size="icon" className="h-8 w-8">
                       <Users className="h-4 w-4" />
                     </Button>
                   </Link>
@@ -1975,7 +2089,7 @@ export default function BinderEditor() {
       </div>
 
       {formData.reviewNote && formData.status === 'draft' && (
-        <div className="review-feedback-banner flex items-start gap-3 p-4 rounded-lg border border-amber-200 bg-amber-50 text-amber-900">
+        <div className="review-feedback-banner flex items-start gap-3 p-4 rounded-lg border border-warning-border bg-warning-surface text-warning">
           <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
           <div>
             <p className="font-medium text-sm">Feedback from admin review</p>
@@ -1996,41 +2110,44 @@ export default function BinderEditor() {
           <CardTitle className="text-lg sm:text-xl">Basics</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6 sm:space-y-10 p-4 sm:p-6 pt-0 sm:pt-0">
-          <div className="space-y-2">
-            <Label className="text-sm">Title</Label>
-            <Input
-              value={formData.title}
-              onChange={e => setFormData({...formData, title: e.target.value})}
-              placeholder="e.g. Intro to Stoicism"
-              className="text-base md:text-lg"
-            />
-            {isGuestMode && demoBinders.length > 0 && !hasBinderContent && !isGenerating && (
-              <div className="demo-topic-chips flex flex-wrap items-center gap-2 pt-1">
-                <span className="text-xs text-muted-foreground">Try a demo:</span>
-                {demoBinders.map((demo) => (
-                  <Pill
-                    key={demo.id}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDemoGenerate(demo)}
-                  >
-                    {demo.title}
-                  </Pill>
-                ))}
-              </div>
-            )}
+          <div ref={basicsFieldsRef} className="space-y-6 sm:space-y-10">
+            <div className="space-y-2">
+              <Label className="text-sm">Title <span className="text-destructive">*</span></Label>
+              <Input
+                value={formData.title}
+                onChange={e => setFormData({...formData, title: e.target.value})}
+                placeholder="Create your dream course on anything"
+                className="text-base md:text-lg"
+              />
+              {isNew && demoBinders.length > 0 && !hasBinderContent && !isGenerating && (
+                <div className="demo-topic-chips flex flex-wrap items-center gap-2 pt-1">
+                  <span className="text-xs font-medium shimmer-text">Try a demo:</span>
+                  {demoBinders.map((demo) => (
+                    <Pill
+                      key={demo.id}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDemoGenerate(demo)}
+                    >
+                      {demo.title}
+                    </Pill>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Description <span className="text-destructive">*</span></Label>
+              <RichTextEditor
+                value={formData.description}
+                onChange={(value: string) => setFormData({...formData, description: value})}
+                placeholder="Survey the historical context, current practices, future prospects, divergent voices, etc."
+                isSaving={isSaving}
+                lastSaved={lastSaved}
+                onCreditUsed={refreshGenerationInfo}
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label className="text-sm">Description</Label>
-            <RichTextEditor
-              value={formData.description}
-              onChange={(value: string) => setFormData({...formData, description: value})}
-              placeholder="What will they learn?"
-              isSaving={isSaving}
-              lastSaved={lastSaved}
-              onCreditUsed={refreshGenerationInfo}
-            />
-          </div>
+          {showFullForm && (<>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
             <div className="space-y-2">
               <Label className="text-sm">Audience Level</Label>
@@ -2059,13 +2176,13 @@ export default function BinderEditor() {
                       <span className="flex items-center gap-2">
                         {n} {n === 1 ? 'Week' : 'Weeks'}
                         {isGuestMode && n === 4 && (
-                          <Badge className="ml-1 bg-green-600 text-white text-[10px] py-0 px-1.5 leading-tight">Free Sign Up</Badge>
+                          <Badge className="ml-1 bg-success text-foreground-success-inverted text-[10px] py-0 px-1.5 leading-tight">Free Sign Up</Badge>
                         )}
                         {isGuestMode && n > 4 && (
-                          <Badge className="ml-1 bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                          <Badge className="ml-1 bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
                         )}
                         {!isGuestMode && n > 4 && isFreeTier && (
-                          <Badge className="ml-1 bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                          <Badge className="ml-1 bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
                         )}
                       </span>
                     </SelectItem>
@@ -2139,7 +2256,7 @@ export default function BinderEditor() {
               {binderTags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {binderTags.map(tag => (
-                    <Badge key={tag.id} variant="secondary" className="gap-1 pr-1">
+                    <Badge key={tag.id} variant="tertiary" className="gap-1 pr-1">
                       {tag.name}
                       <button
                         onClick={() => removeTag(tag.id)}
@@ -2156,22 +2273,45 @@ export default function BinderEditor() {
 
           <div className="pt-4 space-y-3">
             <div className="flex items-center justify-between gap-3">
-              <Button
-                variant={isLoadingContent || hasBinderContent ? "secondary" : "default"}
-                onClick={handleAutogenerateClick}
-                disabled={isGenerating || !formData.title || !formData.description}
-                className="gap-2"
-              >
-                <Wand2 className="h-4 w-4" />
-                {isGenerating
-                  ? 'Generating...'
-                  : hasBinderContent
-                    ? 'Regenerate with AI'
-                    : 'Autogenerate with AI'}
-                {hasBinderContent && isFreeTier && (
-                  <Badge className="ml-1 bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Free</Badge>
+              <div className="flex items-center gap-2">
+                {isNew && !showWeeklySection && (
+                  <Button
+                    variant="default"
+                    onClick={() => setShowWeeklySection(true)}
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Manually add resources
+                  </Button>
                 )}
-              </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex">
+                        <Button
+                          variant="tertiary"
+                          onClick={handleAutogenerateClick}
+                          disabled={isGenerating || !formData.title || !formData.description}
+                          className="gap-2"
+                        >
+                          <Wand2 className="h-4 w-4" />
+                          {isGenerating
+                            ? 'Generating...'
+                            : hasBinderContent
+                              ? 'Regenerate with AI'
+                              : 'Autogenerate with AI'}
+                          {hasBinderContent && isFreeTier && (
+                            <Badge className="ml-1 bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Free</Badge>
+                          )}
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {(!formData.title || !formData.description) && !isGenerating && (
+                      <TooltipContent>Please fill in Title and Description.</TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               {/* Scheduling link toggle -- only shown when curator has a scheduling URL */}
               {user?.schedulingUrl && (
                 <div className="scheduling-link-toggle flex items-center gap-2">
@@ -2240,11 +2380,11 @@ export default function BinderEditor() {
               </p>
             )}
             {isGenerating && (
-              <Card className="mt-4 border-primary/20 bg-primary/5">
+              <Card className="mt-4 border-border bg-primary-surface">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
                     <div className="relative">
-                      <div className="h-10 w-10 rounded-full border-2 border-primary/30 flex items-center justify-center">
+                      <div className="h-10 w-10 rounded-full border-2 border-border flex items-center justify-center">
                         <Loader2 className="h-5 w-5 animate-spin text-primary" />
                       </div>
                     </div>
@@ -2285,12 +2425,14 @@ export default function BinderEditor() {
               </Card>
             )}
           </div>
+          </>)}
 
         </CardContent>
       </Card>
 
       {/* Binder weeks */}
-      <div className="space-y-4">
+      {showWeeklySection && (
+      <div ref={weeklySectionRef} className="space-y-4">
         <h2 className="text-lg sm:text-xl font-medium">Binder</h2>
         <Tabs value={activeWeekTab} onValueChange={setActiveWeekTab} className="w-full">
           <TabsList className="w-auto flex-wrap h-auto p-1 justify-start">
@@ -2313,10 +2455,10 @@ export default function BinderEditor() {
                   )}
                   Week {w.index}
                   {isWeekErrored && !isWeekGenerating && (
-                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                    <AlertTriangle className="h-3 w-3 text-warning" />
                   )}
                   {isWeekComplete && !isWeekGenerating && !isWeekErrored && (
-                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    <CheckCircle2 className="h-3 w-3 text-success" />
                   )}
                 </TabsTrigger>
               );
@@ -2347,7 +2489,7 @@ export default function BinderEditor() {
                   </CardContent>
                 </Card>
               ) : (
-              <Card className={cn(isWeekGenerating && "border-primary/30 animate-generating")}>
+              <Card className={cn(isWeekGenerating && "border-border animate-generating")}>
                  <CardContent className="p-4 sm:p-6 pt-4 sm:pt-6 space-y-6 sm:space-y-10">
                     <div className="space-y-2">
                       <Label className="text-sm">Week Title (Optional)</Label>
@@ -2381,7 +2523,7 @@ export default function BinderEditor() {
                        {!isNew && formData.id > 0 && (
                          <div className="pt-2">
                            <Button
-                             variant="secondary"
+                             variant="tertiary"
                              size="sm"
                              onClick={(e) => {
                                if (isFreeTier) {
@@ -2404,7 +2546,7 @@ export default function BinderEditor() {
                                ? 'Regenerating...'
                                : 'Regenerate Week'}
                              {isFreeTier && (
-                               <Badge className="ml-1 bg-primary text-primary-foreground text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                               <Badge className="ml-1 bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
                              )}
                            </Button>
                          </div>
@@ -2434,10 +2576,10 @@ export default function BinderEditor() {
                     </DndContext>
 
                     <div className="flex flex-wrap gap-2 pt-4">
-                      <Button variant="secondary" size="sm" onClick={() => addStep(week.index, 'reading')} className="text-sm">
+                      <Button variant="tertiary" size="sm" onClick={() => addStep(week.index, 'reading')} className="text-sm">
                         <Plus className="mr-1.5 sm:mr-2 h-4 w-4" /> Add Reading
                       </Button>
-                      <Button variant="secondary" size="sm" onClick={() => addStep(week.index, 'exercise')} className="text-sm">
+                      <Button variant="tertiary" size="sm" onClick={() => addStep(week.index, 'exercise')} className="text-sm">
                         <Plus className="mr-1.5 sm:mr-2 h-4 w-4" /> Add Exercise
                       </Button>
                     </div>
@@ -2449,6 +2591,7 @@ export default function BinderEditor() {
           })}
         </Tabs>
       </div>
+      )}
 
       {!isNew && (
         <div className="space-y-4 pt-6 sm:pt-8 border-t">
@@ -2478,7 +2621,7 @@ export default function BinderEditor() {
 
                 if (allRecentSubmissions.length === 0) {
                    return (
-                     <div className="text-center py-6 sm:py-8 bg-muted/20 rounded-lg text-muted-foreground italic text-sm">
+                     <div className="text-center py-6 sm:py-8 bg-muted rounded-lg text-muted-foreground italic text-sm">
                         No recent submissions.
                      </div>
                    );
@@ -2491,7 +2634,7 @@ export default function BinderEditor() {
                           <div className="space-y-1 min-w-0">
                              <div className="font-medium text-base md:text-lg flex flex-wrap items-center gap-2">
                                <span className="truncate">Week {sub.weekIndex}: {sub.stepTitle}</span>
-                               {sub.grade ? <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0">Graded: {sub.grade}</Badge> : <Badge variant="outline" className="text-[10px] sm:text-xs shrink-0">Needs Grading</Badge>}
+                               {sub.grade ? <Badge variant="tertiary" className="text-[10px] sm:text-xs shrink-0">Graded: {sub.grade}</Badge> : <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0">Needs Grading</Badge>}
                              </div>
                              <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-2">
                                 <span className="font-mono bg-muted px-1 rounded truncate max-w-[200px] sm:max-w-none">{sub.answer}</span>
@@ -2499,7 +2642,7 @@ export default function BinderEditor() {
                              </div>
                           </div>
                           <Link href={`/curator/binder/${formData.id}/readers`}>
-                             <Button size="sm" variant="secondary" className="w-full sm:w-auto">Review</Button>
+                             <Button size="sm" variant="tertiary" className="w-full sm:w-auto">Review</Button>
                           </Link>
                        </CardContent>
                      </Card>
@@ -2511,25 +2654,10 @@ export default function BinderEditor() {
       )}
 
 
-      {/* Bottom action bar for guest mode */}
-      {isGuestMode && hasBinderContent && !isGenerating && (
+      {/* Bottom action bar — mirrors top bar actions */}
+      {hasBinderContent && !isGenerating && (
         <div className="flex flex-wrap items-center justify-center gap-3 pt-4 pb-2 border-t">
-          <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={handleFormReset}>
-            <RefreshCw className="h-3.5 w-3.5" /> Start Over
-          </Button>
-          <Button
-            size="sm"
-            className="gap-1.5"
-            onClick={() => {
-              sessionStorage.setItem('guestBinderPreview', JSON.stringify(formData));
-              setLocation('/create/preview');
-            }}
-          >
-            <Eye className="h-4 w-4" /> Preview
-          </Button>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>
-            Sign up
-          </Button>
+          <ActionButtons compact={false} />
         </div>
       )}
 

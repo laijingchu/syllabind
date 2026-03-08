@@ -312,7 +312,7 @@ export default function CuratorDashboard() {
   };
 
   return (
-    <AnimatedPage className="space-y-4 sm:space-y-8 max-w-5xl mx-auto px-1 sm:px-0">
+    <AnimatedPage className="space-y-4 sm:space-y-8 max-w-page-wide mx-auto px-1 sm:px-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-display mb-1">Curator Studio</h1>
@@ -320,7 +320,7 @@ export default function CuratorDashboard() {
         </div>
         <div className="flex items-center gap-2 sm:gap-4">
           <Link href="/curator/profile">
-            <Button variant="outline" size="sm">
+            <Button variant="secondary" size="sm">
               Edit Profile
             </Button>
           </Link>
@@ -390,7 +390,7 @@ export default function CuratorDashboard() {
             >
               Review Queue
               {pendingReviewCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-danger-inverted" />
               )}
             </button>
           </div>
@@ -402,7 +402,7 @@ export default function CuratorDashboard() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-medium">Pending Review</h2>
-            <Button variant="outline" size="sm" onClick={async () => { await acknowledgeNotifications(); await refreshNotifications(); }}>
+            <Button variant="secondary" size="sm" onClick={async () => { await acknowledgeNotifications(); await refreshNotifications(); }}>
               Mark all as read
             </Button>
           </div>
@@ -438,7 +438,7 @@ export default function CuratorDashboard() {
         <>
           {/* Notification dismiss banner */}
           {notificationItems.length > 0 && (
-            <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+            <div className="flex items-center justify-between p-3 rounded-lg border bg-muted">
               <span className="text-sm">{notificationItems.length} binder(s) reviewed</span>
               <Button variant="ghost" size="sm" onClick={async () => { await acknowledgeNotifications(); await refreshNotifications(); }}>
                 Dismiss
@@ -482,7 +482,7 @@ export default function CuratorDashboard() {
             <AnimatedCard delay={0.1}>
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-                  <div className="bg-primary/10 p-4 rounded-full">
+                  <div className="bg-primary-surface p-4 rounded-full">
                     <BookOpen className="h-8 w-8 text-primary" />
                   </div>
                   <div className="space-y-1">
@@ -602,7 +602,7 @@ export default function CuratorDashboard() {
             <AlertDialogAction
               onClick={handleDeleteSelected}
               disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-danger-inverted text-foreground-inverted hover:bg-danger-inverted/90"
             >
               {isDeleting ? 'Deleting...' : `Delete ${pluralize(selectedIds.length, 'binder', 'binders')}`}
             </AlertDialogAction>

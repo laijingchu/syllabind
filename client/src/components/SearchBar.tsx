@@ -31,7 +31,7 @@ export function SearchBar({
           className="bg-background text-sm"
         />
         <Button
-          variant="outline"
+          variant="secondary"
           size="icon"
           className="shrink-0"
           onClick={onSearch}

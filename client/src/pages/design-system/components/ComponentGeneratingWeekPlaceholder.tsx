@@ -81,7 +81,7 @@ export default function ComponentGeneratingWeekPlaceholder() {
           <div className="border border-border rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-muted/30">
+                <tr className="border-b bg-muted">
                   <th className="text-left p-3 font-medium">Prop</th>
                   <th className="text-left p-3 font-medium">Type</th>
                   <th className="text-left p-3 font-medium">Description</th>
@@ -143,7 +143,7 @@ export default function ComponentGeneratingWeekPlaceholder() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">In the Product</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">BinderEditor:</strong> Rendered in place of the week editor panel during AI binder generation. Each week tab shows this placeholder while the server streams generated content. As steps arrive via the streaming response, <code className="text-primary bg-primary/5 px-1 rounded">currentSteps</code> is updated and real step cards progressively replace the skeletons.</p>
+            <p><strong className="text-foreground">BinderEditor:</strong> Rendered in place of the week editor panel during AI binder generation. Each week tab shows this placeholder while the server streams generated content. As steps arrive via the streaming response, <code className="text-primary bg-muted px-1 rounded">currentSteps</code> is updated and real step cards progressively replace the skeletons.</p>
           </div>
         </section>
       </div>

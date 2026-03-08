@@ -66,7 +66,7 @@ export default function Billing() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-page-prose mx-auto space-y-6">
       <div>
         <Link href="/">
           <Button variant="ghost" className="pl-0 mb-4 hover:bg-transparent hover:text-primary">
@@ -85,7 +85,7 @@ export default function Billing() {
               {isAdmin ? <Shield className="h-5 w-5" /> : <Crown className="h-5 w-5" />}
               Subscription
             </CardTitle>
-            <Badge className={isPro || isAdmin ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}>
+            <Badge className={isPro || isAdmin ? 'bg-primary-inverted text-foreground-inverted' : 'bg-muted text-muted-foreground'}>
               {tierLabel}
             </Badge>
           </div>
@@ -100,7 +100,7 @@ export default function Billing() {
         <CardContent>
           {isPro && !isAdmin ? (
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={async () => {
                 setPortalLoading(true);
                 try { await redirectToPortal(); } catch (e) { setPortalLoading(false); toast({ title: 'Unable to open billing portal', variant: 'destructive' }); }
@@ -116,10 +116,10 @@ export default function Billing() {
                   <Zap className="mr-2 h-4 w-4" />
                   {checkoutLoading === 'pro_monthly' ? 'Redirecting...' : 'Go Pro — $14.99/mo'}
                 </Button>
-                <Button className="w-full" variant="outline" onClick={() => handleCheckout('pro_annual')} disabled={checkoutLoading !== null}>
+                <Button className="w-full" variant="secondary" onClick={() => handleCheckout('pro_annual')} disabled={checkoutLoading !== null}>
                   {checkoutLoading === 'pro_annual' ? 'Redirecting...' : 'Annual — $150/yr (save 17%)'}
                 </Button>
-                <Button className="w-full" variant="outline" onClick={() => handleCheckout('lifetime')} disabled={checkoutLoading !== null}>
+                <Button className="w-full" variant="secondary" onClick={() => handleCheckout('lifetime')} disabled={checkoutLoading !== null}>
                   {checkoutLoading === 'lifetime' ? 'Redirecting...' : 'Founding Member — $500 (lifetime)'}
                 </Button>
               </div>
@@ -151,13 +151,13 @@ export default function Billing() {
           <CardContent>
             <p className="text-sm font-medium mb-3">Buy more credits:</p>
             <div className="grid grid-cols-3 gap-2">
-              <Button size="sm" variant="outline" onClick={() => handleCheckout('credits_100')} disabled={checkoutLoading !== null}>
+              <Button size="sm" variant="secondary" onClick={() => handleCheckout('credits_100')} disabled={checkoutLoading !== null}>
                 100 — $4.99
               </Button>
-              <Button size="sm" variant="outline" onClick={() => handleCheckout('credits_250')} disabled={checkoutLoading !== null}>
+              <Button size="sm" variant="secondary" onClick={() => handleCheckout('credits_250')} disabled={checkoutLoading !== null}>
                 250 — $9.99
               </Button>
-              <Button size="sm" variant="outline" onClick={() => handleCheckout('credits_550')} disabled={checkoutLoading !== null}>
+              <Button size="sm" variant="secondary" onClick={() => handleCheckout('credits_550')} disabled={checkoutLoading !== null}>
                 550 — $19.99
               </Button>
             </div>
@@ -187,7 +187,7 @@ export default function Billing() {
                         {new Date(tx.createdAt).toLocaleDateString()}
                       </p>
                     </div>
-                    <span className={`text-sm font-medium ${tx.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                    <span className={`text-sm font-medium ${tx.amount > 0 ? 'text-success' : 'text-destructive'}`}>
                       {tx.amount > 0 ? '+' : ''}{tx.amount}
                     </span>
                   </div>

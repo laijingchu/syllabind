@@ -121,9 +121,9 @@ const [tab, setTab] = useState("overview");
           <h2 className="font-display text-xl font-medium">Accessibility</h2>
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Keyboard:</strong> Arrow keys move focus between triggers. Tab moves focus into the active content panel. Enter or Space activates a trigger.</p>
-            <p><strong className="text-foreground">ARIA:</strong> Built on Radix UI, which provides <code className="text-primary bg-primary/5 px-1 rounded">role="tablist"</code>, <code className="text-primary bg-primary/5 px-1 rounded">role="tab"</code>, and <code className="text-primary bg-primary/5 px-1 rounded">role="tabpanel"</code> automatically.</p>
-            <p><strong className="text-foreground">Focus indicator:</strong> 2px ring using <code className="text-primary bg-primary/5 px-1 rounded">focus-visible:ring-2</code> with ring offset. Only visible on keyboard navigation.</p>
-            <p><strong className="text-foreground">Disabled:</strong> Sets <code className="text-primary bg-primary/5 px-1 rounded">disabled:pointer-events-none</code> and <code className="text-primary bg-primary/5 px-1 rounded">disabled:opacity-50</code> on triggers.</p>
+            <p><strong className="text-foreground">ARIA:</strong> Built on Radix UI, which provides <code className="text-primary bg-muted px-1 rounded">role="tablist"</code>, <code className="text-primary bg-muted px-1 rounded">role="tab"</code>, and <code className="text-primary bg-muted px-1 rounded">role="tabpanel"</code> automatically.</p>
+            <p><strong className="text-foreground">Focus indicator:</strong> 2px ring using <code className="text-primary bg-muted px-1 rounded">focus-visible:ring-2</code> with ring offset. Only visible on keyboard navigation.</p>
+            <p><strong className="text-foreground">Disabled:</strong> Sets <code className="text-primary bg-muted px-1 rounded">disabled:pointer-events-none</code> and <code className="text-primary bg-muted px-1 rounded">disabled:opacity-50</code> on triggers.</p>
           </div>
         </section>
 

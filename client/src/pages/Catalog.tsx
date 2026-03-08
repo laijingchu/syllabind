@@ -112,13 +112,13 @@ export default function Catalog() {
         <div className="hero-section flex flex-col items-center gap-5 max-w-xl mx-auto py-32">
           <h1 className="font-display text-7xl text-foreground">Syllabind</h1>
           <p className="text-lg text-muted-foreground">Create your own knowledge binder on any topic</p>
-          <div className="create-binder-bar group relative w-full flex items-center rounded-full border border-border/80 bg-background shadow-sm hover:shadow-md focus-within:shadow-md transition-shadow px-5 py-2">
-            <Sparkles className="h-4 w-4 text-muted-foreground/60 flex-shrink-0" />
+          <div className="create-binder-bar group relative w-full flex items-center rounded-full border border-border bg-background shadow-sm hover:shadow-md focus-within:shadow-md transition-shadow px-5 py-2">
+            <Sparkles className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <input
               value={newBinderTitle}
               onChange={e => setNewBinderTitle(e.target.value)}
               placeholder="e.g. Intro to Systems Thinking"
-              className="flex-1 bg-transparent border-0 outline-none text-base px-3 py-1 placeholder:text-muted-foreground/50"
+              className="flex-1 bg-transparent border-0 outline-none text-base px-3 py-1 placeholder:text-muted-foreground"
               onKeyDown={e => e.key === 'Enter' && newBinderTitle.trim() && handleCreate()}
             />
             {newBinderTitle.trim() && (
@@ -140,7 +140,7 @@ export default function Catalog() {
           </a>
         </div>
       )}
-      <AnimatedPage className="max-w-6xl mx-auto space-y-8">
+      <AnimatedPage className="max-w-page-max mx-auto space-y-8">
         <div className="text-center max-w-2xl mx-auto space-y-4">
           <h1 className="text-4xl font-display text-foreground">📒 Featured binders</h1>
           <p className="text-lg text-muted-foreground">Handcrafted by experts, vetted for quality. </p>
@@ -190,7 +190,7 @@ export default function Catalog() {
             {hasMore && (
               <div className="flex justify-center pt-4">
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   onClick={() => fetchCatalog(true)}
                   disabled={isLoadingMore}
                 >
