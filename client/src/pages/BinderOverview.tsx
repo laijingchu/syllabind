@@ -371,7 +371,7 @@ export default function BinderOverview() {
   };
 
   return (
-    <AnimatedPage className="max-w-page-default mx-auto">
+    <AnimatedPage>
       {isGuestPreview && (
         <div className="preview-banner mb-6 bg-primary-surface border border-border text-foreground px-4 py-3 rounded-lg flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">

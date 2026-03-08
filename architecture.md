@@ -1502,11 +1502,11 @@ Enhanced visual feedback during AI binder generation to make progress more obvio
 2. **Progress Card:** Enhanced progress indicator with percentage, progress bar, and colored segment indicators
 3. **Skeleton Placeholder:** New `GeneratingWeekPlaceholder` component shows shimmer-animated skeleton while week generates
 4. **Step Entrance Animation:** Steps slide in with staggered delay when week completes
-5. **Generating Border:** Active week card has pulsing primary-color border
+5. **Generating Border:** Active week card has pulsing primary-color outline
 
 **CSS Animations Added:**
 - `animate-shimmer` - Gradient sweep effect for skeleton loading
-- `animate-generating` - Pulsing border effect for active generation
+- `animate-generating` - Pulsing outline effect for active generation
 - `step-enter`, `step-delay-1` through `step-delay-4` - Staggered slide-in for steps
 
 **Files Modified:**
@@ -2601,6 +2601,30 @@ All AI features are now gated by a credit system. The old generation count/coold
 
 ## Layout Grid System
 
+### 12-Column Grid (2026-03-08)
+The app uses a 12-column CSS grid system defined in `index.css`:
+
+**CSS tokens:**
+- `--grid-columns: 12` — number of columns
+- `--grid-gutter: 1.5rem` — 24px gap between columns
+- `--grid-margin: 1rem` — responsive outer margin (16px mobile, 24px tablet, 32px desktop)
+- `--grid-max-width: 72rem` — 1152px max content width
+
+**CSS utility classes:**
+- `.grid-container` — centers content, applies responsive margins and max-width. Used by Layout shell for header, main, and footer.
+- `.grid-12` — the 12-column CSS grid (`grid-template-columns: repeat(12, 1fr)` with `--grid-gutter` gaps).
+
+**Responsive card pattern:**
+- `col-span-12` — 1 card per row (mobile)
+- `md:col-span-6` — 2 cards per row (tablet, 768px+)
+- `lg:col-span-4` — 3 cards per row (desktop, 1024px+)
+- `xl:col-span-3` — 4 cards per row (wide desktop, 1280px+)
+
+**Layout structure:**
+- Header/footer backgrounds stretch full viewport width; inner content constrained by `.grid-container`
+- Main content also uses `.grid-container`; pages can further narrow with `max-w-page-*` tokens
+- `Ctrl+Shift+C` toggles 12-column overlay in dev mode
+
 ### Baseline Grid
 All text line-heights snap to 4px multiples (matching `--spacing: 0.25rem`):
 - `text-xs`: 12px / 16px
@@ -2610,19 +2634,28 @@ All text line-heights snap to 4px multiples (matching `--spacing: 0.25rem`):
 - `text-xl`: 20px / 28px
 
 ### Page Width Tokens
-Semantic width tokens in `@theme inline` using `--container-*` namespace (generates Tailwind `max-w-page-*` utilities):
-Each tier is 8rem apart:
+Semantic width tokens in `@theme inline` using `--container-*` namespace (generates Tailwind `max-w-page-*` utilities). Used within `.grid-container` to further constrain content:
 | Token | Width | Usage |
 |-------|-------|-------|
-| `--container-page-max` | 64rem (1024px) | Marketing, Catalog, BinderReaders |
-| `--container-page-wide` | 56rem (896px) | CuratorDashboard, Pricing, Analytics |
-| `--container-page-default` | 48rem (768px) | BinderEditor, BinderOverview, Dashboard |
-| `--container-page-narrow` | 42rem (672px) | WeekView, reading-focused layouts |
-| `--container-page-prose` | 36rem (576px) | Settings, Billing, Profile, AdminSettings |
+| `--container-page-max` | 72rem (1152px) | Marketing, Catalog, BinderReaders |
+| `--container-page-wide` | 64rem (1024px) | CuratorDashboard, Pricing, Analytics |
+| `--container-page-default` | 56rem (896px) | BinderEditor, BinderOverview, Dashboard |
+| `--container-page-narrow` | 48rem (768px) | WeekView, reading-focused layouts |
+| `--container-page-prose` | 42rem (672px) | Settings, Billing, Profile, AdminSettings |
 
-On viewports narrower than the token width, content fills available space minus `px-4` gutters.
-
-### Debug Baseline Grid
-- CSS class `.debug-baseline` adds a 4px repeating-line overlay via `::before`
-- Dev-only keyboard shortcut `Ctrl+Shift+G` toggles `.debug-baseline` on `<body>` (Layout.tsx, gated behind `import.meta.env.DEV`)
+### Debug Overlays
+- `Ctrl+Shift+G` toggles 4px baseline grid overlay (Layout.tsx, dev-only)
+- `Ctrl+Shift+C` toggles 12-column grid overlay (Layout.tsx, dev-only)
 - Design system `/design-system/layout` page documents all layout tokens
+
+### Card Border → Outline Migration (2026-03-08)
+
+Replaced CSS `border` with inset `outline` on Card components and card-like divs in vertical flow to fix 4px baseline grid alignment. CSS `border` shifts internal content by 1px even with `box-sizing: border-box`; `outline` with `-outline-offset-1` draws inside the element boundary without affecting layout.
+
+**Changes:**
+- `card.tsx` base class: `border` → `outline outline-1 -outline-offset-1 outline-border`
+- All Card call sites: `border-*` overrides converted to `outline-*` equivalents
+- `pulse-border` animation keyframes: `border-color` → `outline-color`
+- Header `border-b` moved from `<header>` to inner `h-16` div so box-sizing includes the 1px
+- Elevation system: added parallel `.outline` selectors with `inset: 0` (no -1px adjustment needed)
+- Non-Card bordered divs in vertical flow (Dashboard progress/completed sections) also converted

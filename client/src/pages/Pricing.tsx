@@ -89,7 +89,7 @@ export default function Pricing() {
   ];
 
   return (
-    <div className="max-w-page-wide mx-auto py-12 px-4 space-y-10">
+    <div className="py-12 space-y-10">
       <div className="text-center space-y-3">
         <h1 className="text-4xl font-display font-medium">Simple, Transparent Pricing</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -104,9 +104,9 @@ export default function Pricing() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid-12">
         {plans.map(plan => (
-          <Card key={plan.name} className={`relative flex flex-col ${plan.badge === 'Most Popular' ? 'border-primary shadow-lg' : ''}`}>
+          <Card key={plan.name} className={`col-span-12 md:col-span-4 relative flex flex-col ${plan.badge === 'Most Popular' ? 'outline-primary shadow-lg' : ''}`}>
             {plan.badge && (
               <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary-inverted text-foreground-inverted">
                 {plan.badge}
@@ -145,61 +145,22 @@ export default function Pricing() {
         ))}
       </div>
 
-      {/* Credit Cost Breakdown */}
-      <div className="max-w-2xl mx-auto space-y-4">
-        <h2 className="text-2xl font-display font-medium text-center">Credit Costs</h2>
-        <p className="text-center text-muted-foreground text-sm">Credits are proportional to AI API costs.</p>
-        <div className="border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-muted">
-                <th className="text-left p-3 font-medium">AI Feature</th>
-                <th className="text-right p-3 font-medium">Credits</th>
-                <th className="text-right p-3 font-medium">Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-t">
-                <td className="p-3">Binder generation</td>
-                <td className="p-3 text-right font-mono">10/week</td>
-                <td className="p-3 text-right text-muted-foreground">4-week = 40, 6-week = 60</td>
-              </tr>
-              <tr className="border-t">
-                <td className="p-3">Week regeneration</td>
-                <td className="p-3 text-right font-mono">10</td>
-                <td className="p-3 text-right text-muted-foreground">Same as 1 week generation</td>
-              </tr>
-              <tr className="border-t">
-                <td className="p-3">Improve writing</td>
-                <td className="p-3 text-right font-mono">1</td>
-                <td className="p-3 text-right text-muted-foreground">Per use</td>
-              </tr>
-              <tr className="border-t">
-                <td className="p-3">Auto-fill from URL</td>
-                <td className="p-3 text-right font-mono">0</td>
-                <td className="p-3 text-right text-muted-foreground">Free for all</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Credit Packages */}
-      <div className="max-w-2xl mx-auto space-y-4">
-          <h2 className="text-2xl font-display font-medium text-center">Credit Packages</h2>
-          <p className="text-center text-muted-foreground text-sm">Need more credits? Purchase additional packages anytime.</p>
-          <div className="grid grid-cols-3 gap-4">
+      {/* Credit Packages & Cost Breakdown — side by side on the 12-col grid */}
+      <div className="grid-12">
+        <div className="col-span-12 lg:col-span-6 space-y-4">
+          <h2 className="text-2xl font-display font-medium">Credit Packages</h2>
+          <p className="text-muted-foreground text-sm">Need more credits? Purchase additional packages anytime.</p>
+          <div className="grid-12">
             {[
               { plan: 'credits_100' as CheckoutPlan, credits: 100, price: '$4.99', perCredit: '$0.05' },
               { plan: 'credits_250' as CheckoutPlan, credits: 250, price: '$9.99', perCredit: '$0.04' },
               { plan: 'credits_550' as CheckoutPlan, credits: 550, price: '$19.99', perCredit: '$0.036' },
             ].map(pkg => (
-              <Card key={pkg.plan}>
+              <Card key={pkg.plan} className="col-span-12 sm:col-span-4">
                 <CardContent className="pt-6 text-center space-y-2">
                   <p className="text-2xl font-bold">{pkg.credits}</p>
                   <p className="text-sm text-muted-foreground">credits</p>
                   <p className="font-semibold">{pkg.price}</p>
-                  <p className="text-xs text-muted-foreground">{pkg.perCredit}/credit</p>
                   <Button size="sm" variant="secondary" className="w-full" onClick={() => handleCheckout(pkg.plan)} disabled={loading !== null}>
                     {loading === pkg.plan ? '...' : 'Buy'}
                   </Button>
@@ -208,6 +169,36 @@ export default function Pricing() {
             ))}
           </div>
         </div>
+
+        <div className="col-span-12 lg:col-span-6 space-y-4">
+          <h2 className="text-2xl font-display font-medium">Credit Costs</h2>
+          <p className="text-muted-foreground text-sm">Credits are proportional to AI API costs.</p>
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-muted">
+                  <th className="text-left p-3 font-medium">AI Feature</th>
+                  <th className="text-right p-3 font-medium">Credits</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-t">
+                  <td className="p-3">Binder generation</td>
+                  <td className="p-3 text-right font-mono">10/week</td>
+                </tr>
+                <tr className="border-t">
+                  <td className="p-3">Week regeneration</td>
+                  <td className="p-3 text-right font-mono">10</td>
+                </tr>
+                <tr className="border-t">
+                  <td className="p-3">Improve writing</td>
+                  <td className="p-3 text-right font-mono">1</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
       <p className="text-center text-sm text-muted-foreground">
         Questions?{' '}

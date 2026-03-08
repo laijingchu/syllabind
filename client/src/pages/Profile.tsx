@@ -72,7 +72,7 @@ export default function Profile() {
   });
 
   if (!user) {
-    return <div className="container mx-auto py-10">Please log in to view your profile.</div>;
+    return <div className="py-10">Please log in to view your profile.</div>;
   }
 
   function onSubmit(values: z.infer<typeof profileSchema>) {

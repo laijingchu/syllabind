@@ -27,16 +27,17 @@ export default function ElementsShadows() {
 
         {/* Shadow Scale */}
         <section className="space-y-4">
-          <h2 className="font-display text-xl font-medium">Shadow Scale (Currently Disabled)</h2>
+          <h2 className="font-display text-xl font-medium">Shadow Scale</h2>
           <p className="text-base text-muted-foreground">
-            A full shadow scale exists in the tokens but is set to 0% opacity — effectively invisible.
-            This is a deliberate design choice for flat aesthetics. The tokens are ready if the direction
-            shifts toward using shadows for depth.
+            Shadows use a semantic <code className="bg-muted px-1 rounded">--shadow-color</code> variable
+            that switches per mode: <code className="bg-muted px-1 rounded">cool-300</code> in dark mode,
+            <code className="bg-muted px-1 rounded">warm-300</code> in light mode. This keeps shadows
+            tinted to match the palette rather than using neutral grey.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
             {shadowScale.map(s => (
               <div key={s.token} className="text-center space-y-3">
-                <div className={`h-20 bg-card rounded-lg border border-border ${s.tw}`} />
+                <div className={`h-20 bg-card rounded-lg outline outline-1 -outline-offset-1 outline-border ${s.tw}`} />
                 <div>
                   <code className="text-xs font-mono text-primary">{s.tw}</code>
                   <p className="text-sm text-muted-foreground mt-0.5">{s.label}</p>
@@ -46,9 +47,8 @@ export default function ElementsShadows() {
           </div>
           <div className="border border-border rounded-lg p-4 text-base text-muted-foreground">
             <p>
-              <strong className="text-foreground">Design note:</strong> All eight shadow tiers render identically
-              right now (flat). If we decide to introduce depth via shadows — for example, for floating elements
-              like dialogs or sticky headers — we can enable them per-tier without changing any component code.
+              <strong className="text-foreground">Design note:</strong> Shadow definitions live in <code className="bg-muted px-1 rounded">@theme inline</code> using <code className="bg-muted px-1 rounded">--shadow-color</code>.
+              To change the shadow tint, update <code className="bg-muted px-1 rounded">--shadow-color</code> in <code className="bg-muted px-1 rounded">:root</code> (dark) or <code className="bg-muted px-1 rounded">.light</code>.
             </p>
           </div>
         </section>
@@ -63,7 +63,7 @@ export default function ElementsShadows() {
             This works on any background color without introducing new hues or requiring manual color matching.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="border border-border rounded-lg p-4 space-y-3">
+            <div className="outline outline-1 -outline-offset-1 outline-border rounded-lg p-4 space-y-3">
               <h3 className="text-sm font-medium">Two Intensity Levels</h3>
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
@@ -82,7 +82,7 @@ export default function ElementsShadows() {
                 </div>
               </div>
             </div>
-            <div className="border border-border rounded-lg p-4 space-y-3">
+            <div className="outline outline-1 -outline-offset-1 outline-border rounded-lg p-4 space-y-3">
               <h3 className="text-base font-medium">Adapts to Mode Automatically</h3>
               <div className="text-base space-y-2 text-muted-foreground">
                 <p>

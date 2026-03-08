@@ -1993,7 +1993,7 @@ export default function BinderEditor() {
   };
 
   return (
-    <div className="max-w-page-default mx-auto space-y-8 pb-20">
+    <div className="space-y-8 pb-20">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
          <div className="flex items-center gap-3 sm:gap-4">
             <Button variant="ghost" size="icon" onClick={() => setLocation('/curator')} className="shrink-0">
@@ -2380,7 +2380,7 @@ export default function BinderEditor() {
               </p>
             )}
             {isGenerating && (
-              <Card className="mt-4 border-border bg-primary-surface">
+              <Card className="mt-4 bg-primary-surface">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
                     <div className="relative">
@@ -2489,7 +2489,7 @@ export default function BinderEditor() {
                   </CardContent>
                 </Card>
               ) : (
-              <Card className={cn(isWeekGenerating && "border-border animate-generating")}>
+              <Card className={cn(isWeekGenerating && "animate-generating")}>
                  <CardContent className="p-4 sm:p-6 pt-4 sm:pt-6 space-y-6 sm:space-y-10">
                     <div className="space-y-2">
                       <Label className="text-sm">Week Title (Optional)</Label>

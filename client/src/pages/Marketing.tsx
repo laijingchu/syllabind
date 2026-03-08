@@ -6,12 +6,13 @@ import { motion } from 'framer-motion';
 import { BinderCard } from '@/components/BinderCard';
 import type { Binder } from '@/lib/types';
 
-// Responsive two-row visibility for 1/2/3-column grid
-// Mobile (1 col): show 2, md (2 cols): show 4, lg (3 cols): show 6
+// Responsive two-row visibility for 12-col grid
+// Mobile (1 col): show 2, md (2 cols): show 4, lg (3 cols): show 6, xl (4 cols): show 8
 function twoRowClass(index: number): string {
   if (index < 2) return '';
   if (index < 4) return 'hidden md:block';
-  return 'hidden lg:block';
+  if (index < 6) return 'hidden lg:block';
+  return 'hidden xl:block';
 }
 
 export default function Marketing() {
@@ -62,7 +63,7 @@ export default function Marketing() {
   };
 
   return (
-    <div className="max-w-page-max mx-auto space-y-24 md:space-y-32 pb-12 md:pb-20 pt-4 md:pt-8 px-4 md:px-6">
+    <div className="space-y-24 md:space-y-32 pb-12 md:pb-20 pt-4 md:pt-8">
       {/* A. Hero */}
       <section className="text-center space-y-8 py-12 md:py-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="space-y-4 max-w-page-narrow mx-auto">
@@ -97,9 +98,9 @@ export default function Marketing() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-page-default mx-auto">
+        <div className="grid-12 max-w-page-default mx-auto">
           {/* Self-directed */}
-          <div className="rounded-2xl border bg-card p-6 md:p-8 space-y-4">
+          <div className="col-span-12 md:col-span-6 rounded-2xl border bg-card p-6 md:p-8 space-y-4">
             <div className="text-3xl">&#x1F9ED;</div>
             <h3 className="text-xl md:text-2xl font-display font-medium">Self-directed</h3>
             <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
@@ -116,7 +117,7 @@ export default function Marketing() {
           </div>
 
           {/* Expert-directed */}
-          <div className="rounded-2xl border bg-card p-6 md:p-8 space-y-4">
+          <div className="col-span-12 md:col-span-6 rounded-2xl border bg-card p-6 md:p-8 space-y-4">
             <div className="text-3xl">&#x1F393;</div>
             <h3 className="text-xl md:text-2xl font-display font-medium">Expert-directed</h3>
             <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
@@ -144,11 +145,11 @@ export default function Marketing() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid-12">
             {buildCards.map((binder, index) => (
               <motion.div
                 key={binder.id}
-                className={twoRowClass(index)}
+                className={`col-span-12 md:col-span-6 lg:col-span-4 xl:col-span-3 ${twoRowClass(index)}`}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
@@ -184,11 +185,11 @@ export default function Marketing() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid-12">
             {curatedCards.map((binder, index) => (
               <motion.div
                 key={binder.id}
-                className={twoRowClass(index)}
+                className={`col-span-12 md:col-span-6 lg:col-span-4 xl:col-span-3 ${twoRowClass(index)}`}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
@@ -282,7 +283,7 @@ export default function Marketing() {
             { name: 'Online courses', highlight: false, features: ['Structured path', 'Curated by experts', 'Active exercises'] },
             { name: 'YouTube / blogs', highlight: false, features: ['Free to start', 'Open web resources', 'Curator-friendly'] },
           ].map(({ name, highlight, features }) => (
-            <div key={name} className={`rounded-xl border p-5 space-y-3 ${highlight ? 'border-primary border-2' : ''}`}>
+            <div key={name} className={`rounded-xl outline outline-1 -outline-offset-1 outline-border p-5 space-y-3 ${highlight ? 'outline-primary outline-2' : ''}`}>
               <h3 className={`font-display font-medium ${highlight ? 'text-lg' : 'text-base text-muted-foreground'}`}>{name}</h3>
               <ul className="space-y-1.5">
                 {features.map(f => (
@@ -306,9 +307,9 @@ export default function Marketing() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-page-narrow mx-auto">
+        <div className="grid-12 max-w-page-narrow mx-auto">
           {/* Free */}
-          <div className="rounded-2xl border bg-card p-8 space-y-6">
+          <div className="col-span-12 md:col-span-6 rounded-2xl border bg-card p-8 space-y-6">
             <div>
               <h3 className="text-2xl font-display font-medium">Free</h3>
               <p className="text-muted-foreground mt-1">For readers getting started</p>
@@ -330,7 +331,7 @@ export default function Marketing() {
           </div>
 
           {/* Pro */}
-          <div className="rounded-2xl border-2 border-primary bg-card p-8 space-y-6 relative">
+          <div className="col-span-12 md:col-span-6 rounded-2xl outline outline-2 -outline-offset-2 outline-primary bg-card p-8 space-y-6 relative">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <span className="bg-primary-inverted text-foreground-inverted text-xs font-semibold px-3 py-1 rounded-full">Coming soon</span>
             </div>

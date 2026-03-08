@@ -140,7 +140,7 @@ export default function Catalog() {
           </a>
         </div>
       )}
-      <AnimatedPage className="max-w-page-max mx-auto space-y-8">
+      <AnimatedPage className="space-y-8">
         <div className="text-center max-w-2xl mx-auto space-y-4">
           <h1 className="text-4xl font-display text-foreground">📒 Featured binders</h1>
           <p className="text-lg text-muted-foreground">Handcrafted by experts, vetted for quality. </p>
@@ -174,13 +174,13 @@ export default function Catalog() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid-12">
               {binders.length === 0 ? (
-                <div className="flex items-center justify-center col-span-full py-8">
+                <div className="col-span-full flex items-center justify-center py-8">
                   <p className="text-muted-foreground">No other binders found. Try adjusting your search or filters.</p>
                 </div>
               ) : binders.map((binder, index) => (
-                <AnimatedCard key={binder.id} delay={0.05 * Math.min(index + 1, 6)} className="h-full">
+                <AnimatedCard key={binder.id} delay={0.05 * Math.min(index + 1, 6)} className="h-full col-span-12 md:col-span-6 lg:col-span-4">
                   <BinderCard binder={binder} />
                 </AnimatedCard>
               ))}

@@ -87,7 +87,7 @@ export default function BinderAnalytics() {
     ?.slice(0, 3) ?? [];
 
   return (
-    <AnimatedPage className="max-w-page-wide mx-auto space-y-8">
+    <AnimatedPage className="space-y-8">
       <div className="space-y-4">
         <Link href="/curator">
           <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
@@ -116,8 +116,8 @@ export default function BinderAnalytics() {
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-card">
+      <div className="grid-12">
+        <Card className="bg-card col-span-12 sm:col-span-6 lg:col-span-3">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium text-muted-foreground">Readers Started</CardTitle>
             <Users className="h-4 w-4 text-primary" />
@@ -132,7 +132,7 @@ export default function BinderAnalytics() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card">
+        <Card className="bg-card col-span-12 sm:col-span-6 lg:col-span-3">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium text-muted-foreground">Readers Completed</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-success" />
@@ -151,7 +151,7 @@ export default function BinderAnalytics() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card">
+        <Card className="bg-card col-span-12 sm:col-span-6 lg:col-span-3">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium text-muted-foreground">Completion Rate</CardTitle>
             <TrendingUp className="h-4 w-4 text-blue-500" />
@@ -166,7 +166,7 @@ export default function BinderAnalytics() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card">
+        <Card className="bg-card col-span-12 sm:col-span-6 lg:col-span-3">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium text-muted-foreground">Average Progress</CardTitle>
             <BarChart2 className="h-4 w-4 text-warning" />
@@ -182,9 +182,9 @@ export default function BinderAnalytics() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid-12">
         {/* Weekly Drop-off Chart */}
-        <Card className="lg:col-span-2">
+        <Card className="col-span-12 lg:col-span-8">
           <CardHeader>
             <CardTitle className="text-lg font-display">How far readers get</CardTitle>
           </CardHeader>
@@ -265,7 +265,7 @@ export default function BinderAnalytics() {
         </Card>
 
         {/* Dropout Insight */}
-        <Card className="h-full">
+        <Card className="col-span-12 lg:col-span-4 h-full">
           <CardHeader>
             <CardTitle className="text-lg font-display">Most common dropout step</CardTitle>
           </CardHeader>

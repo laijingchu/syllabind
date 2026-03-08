@@ -55,7 +55,7 @@ export default function UICard() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Subcomponents</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">Card</strong> — Outer container. <code className="text-primary bg-muted px-1 rounded">rounded-xl border bg-card</code>.</p>
+            <p><strong className="text-foreground">Card</strong> — Outer container. <code className="text-primary bg-muted px-1 rounded">rounded-xl outline outline-1 -outline-offset-1 outline-border bg-card</code>. Uses inset outline instead of border to avoid shifting content off the 4px baseline grid.</p>
             <p><strong className="text-foreground">CardHeader</strong> — Top section with vertical spacing. <code className="text-primary bg-muted px-1 rounded">p-6</code>, flex-col, gap-1.5.</p>
             <p><strong className="text-foreground">CardTitle</strong> — Heading text. Semibold, tight tracking, no explicit size (inherits).</p>
             <p><strong className="text-foreground">CardDescription</strong> — Subtitle below title. <code className="text-primary bg-muted px-1 rounded">text-base text-muted-foreground</code>.</p>

@@ -312,7 +312,7 @@ export default function CuratorDashboard() {
   };
 
   return (
-    <AnimatedPage className="space-y-4 sm:space-y-8 max-w-page-wide mx-auto px-1 sm:px-0">
+    <AnimatedPage className="space-y-4 sm:space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-display mb-1">Curator Studio</h1>

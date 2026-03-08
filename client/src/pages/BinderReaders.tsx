@@ -115,7 +115,7 @@ export default function BinderReaders() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="border-b bg-card">
-        <div className="container mx-auto px-4 py-3 sm:py-4 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
+        <div className="grid-container py-3 sm:py-4 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
           <div className="space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-4">
              <Link href={`/curator/binder/${binder.id}/edit`}>
                <Button variant="ghost" size="sm" className="gap-2 -ml-2 sm:ml-0">
@@ -131,7 +131,7 @@ export default function BinderReaders() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 sm:py-8 max-w-page-max">
+      <div className="grid-container py-6 sm:py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
              <TabsList className="w-full sm:w-auto inline-flex">
@@ -270,8 +270,8 @@ export default function BinderReaders() {
           </TabsContent>
 
           <TabsContent value="cohorts" className="space-y-4 sm:space-y-6">
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-                <Card className="md:col-span-2 order-2 md:order-1">
+             <div className="grid-12">
+                <Card className="col-span-12 md:col-span-8 order-2 md:order-1">
                   <CardHeader className="p-4 sm:p-6">
                     <CardTitle className="text-base sm:text-lg">Active Cohorts</CardTitle>
                     <CardDescription className="text-xs sm:text-sm">Group readers to manage them effectively.</CardDescription>
@@ -294,7 +294,7 @@ export default function BinderReaders() {
                   </CardContent>
                 </Card>
 
-                <Card className="order-1 md:order-2">
+                <Card className="col-span-12 md:col-span-4 order-1 md:order-2">
                   <CardHeader className="p-4 sm:p-6">
                     <CardTitle className="text-base sm:text-lg">Create Cohort</CardTitle>
                   </CardHeader>

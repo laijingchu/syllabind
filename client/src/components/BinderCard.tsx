@@ -30,7 +30,7 @@ export function BinderCard({ binder, className }: BinderCardProps) {
   const [tooltipOpen, setTooltipOpen] = useState(false);
 
   return (
-    <Card className={cn("group flex flex-col h-full overflow-hidden transition-all border-border", className)}>
+    <Card className={cn("group flex flex-col h-full overflow-hidden transition-all", className)}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between py-1">
           {curator && (

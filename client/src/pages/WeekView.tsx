@@ -249,7 +249,7 @@ export default function WeekView() {
   const allDone = allReadingsDone;
 
   return (
-    <div className="max-w-page-narrow mx-auto pb-20 px-4 sm:px-0">
+    <div className="max-w-page-narrow mx-auto pb-20">
       <header className="mb-6 sm:mb-10">
         <div className="flex justify-between items-center mb-4">
           <Link href={`/binder/${binder.id}`}>

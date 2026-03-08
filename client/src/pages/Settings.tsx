@@ -63,7 +63,7 @@ export default function Settings() {
   });
 
   if (!user) {
-    return <div className="container mx-auto py-10">Please log in to view settings.</div>;
+    return <div className="py-10">Please log in to view settings.</div>;
   }
 
   async function onChangePassword(values: z.infer<typeof changePasswordSchema>) {
@@ -229,7 +229,7 @@ export default function Settings() {
       )}
 
       {/* Delete Account */}
-      <Card className="border-danger-border">
+      <Card className="outline-danger-border">
         <CardHeader>
           <CardTitle className="text-destructive">Danger Zone</CardTitle>
           <CardDescription>

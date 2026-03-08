@@ -33,7 +33,7 @@ const foregroundTextColors = [
   { name: 'muted-foreground', token: '--muted-foreground', tw: 'text-muted-foreground', desc: 'De-emphasized text. Descriptions, timestamps, helper text, placeholders.', light: '--warm-500', dark: '--cool-400' },
   { name: 'secondary-foreground', token: '--secondary-foreground', tw: 'text-secondary-foreground', desc: 'Text on secondary surfaces.', light: '--warm-850', dark: '--cool-50', bg: '--secondary' },
   { name: 'highlight-foreground', token: '--highlight-foreground', tw: 'text-highlight-foreground', desc: 'Text on highlight surfaces.', light: '--warm-850', dark: '--cool-50', bg: '--highlight' },
-  { name: 'foreground-inverted', token: '--foreground-inverted', tw: 'text-foreground-inverted', desc: 'Text on inverted surfaces (primary-inverted, danger-inverted). Lightest neutral swatch.', light: '--warm-50', dark: '--cool-50', bg: '--danger-inverted' },
+  { name: 'foreground-inverted', token: '--foreground-inverted', tw: 'text-foreground-inverted', desc: 'Text on inverted surfaces (primary-inverted, danger-inverted). Contrasts against the inverted background in each mode.', light: '--warm-50', dark: '--cool-900', bg: '--primary-inverted' },
   { name: 'foreground-warning-inverted', token: '--foreground-warning-inverted', tw: 'text-foreground-warning-inverted', desc: 'Text on warning-inverted surfaces.', light: '--warm-50', dark: '--warning-900', bg: '--warning-inverted' },
   { name: 'foreground-success-inverted', token: '--foreground-success-inverted', tw: 'text-foreground-success-inverted', desc: 'Text on success-inverted surfaces.', light: '--warm-50', dark: '--success-900', bg: '--success-inverted' },
 ];
@@ -160,7 +160,7 @@ export default function ElementsColors() {
 --border: var(--cool-700);              /* dark mode */
 
 /* How engineers use it */
-<Card className="border-border" />      /* default divider */
+<Card />                                /* outline-border is the default */
 <Badge className="bg-primary-surface" />     /* 10% opacity variant */`}</CodeBlock>
         </section>
 

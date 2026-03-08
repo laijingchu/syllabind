@@ -222,31 +222,33 @@ export default function DesignSystemLayout({ children }: { children: React.React
   }, []);
 
   return (
-    <div className="design-system-layout flex gap-8 max-w-7xl" style={{ height: 'calc(100vh - 7.5rem)' }}>
-      {/* Desktop sidebar */}
-      <aside ref={sidebarRef} onScroll={handleSidebarScroll} className="design-system-nav w-56 shrink-0 hidden md:block overflow-y-auto -ml-2 py-16">
+    <div className="design-system-layout grid-12" style={{ height: 'calc(100vh - 7.5rem)' }}>
+      {/* Desktop sidebar — 3 of 12 columns */}
+      <aside ref={sidebarRef} onScroll={handleSidebarScroll} className="design-system-nav col-span-3 hidden md:block overflow-y-auto py-16">
         <SidebarNav location={location} />
       </aside>
 
-      <main className="design-system-content flex-1 min-w-0 overflow-y-auto overflow-x-hidden py-16">
-        {/* Mobile nav trigger — aligned with page heading */}
-        <div className="md:hidden flex justify-start mb-2">
-          <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-            <SheetTrigger asChild>
-              <Button variant="tertiary" size="sm">
-                <Menu className="h-4 w-4 mr-1.5" />
-                Menu
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-72 overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle className="sr-only">Design System Navigation</SheetTitle>
-              </SheetHeader>
-              <SidebarNav location={location} onNavigate={() => setMobileNavOpen(false)} />
-            </SheetContent>
-          </Sheet>
+      <main className="design-system-content col-span-12 md:col-span-9 min-w-0 overflow-y-auto py-16">
+        <div className="md:max-w-[calc((100%-8*var(--grid-gutter))/9*8+7*var(--grid-gutter))]">
+          {/* Mobile nav trigger — aligned with page heading */}
+          <div className="md:hidden flex justify-start mb-2">
+            <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+              <SheetTrigger asChild>
+                <Button variant="tertiary" size="sm">
+                  <Menu className="h-4 w-4 mr-1.5" />
+                  Menu
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-72 overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle className="sr-only">Design System Navigation</SheetTitle>
+                </SheetHeader>
+                <SidebarNav location={location} onNavigate={() => setMobileNavOpen(false)} />
+              </SheetContent>
+            </Sheet>
+          </div>
+          {children}
         </div>
-        {children}
       </main>
     </div>
   );

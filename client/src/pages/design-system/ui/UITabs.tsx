@@ -57,7 +57,7 @@ export default function UITabs() {
                   <TabsTrigger value="inactive">Inactive Tab</TabsTrigger>
                 </TabsList>
               </Tabs>
-              <p className="text-sm text-muted-foreground">Active trigger gets a white background with shadow; inactive triggers use muted text.</p>
+              <p className="text-sm text-muted-foreground">Active trigger gets a white background with shadow via a sliding indicator; inactive triggers use muted text. Switching tabs animates the indicator smoothly.</p>
             </div>
             <div className="space-y-2">
               <p className="text-sm font-medium">Disabled trigger</p>

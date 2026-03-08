@@ -49,7 +49,7 @@ export default function Billing() {
   }, [user]);
 
   if (!user) {
-    return <div className="container mx-auto py-10">Please log in to view billing.</div>;
+    return <div className="py-10">Please log in to view billing.</div>;
   }
 
   const isAdmin = user.isAdmin === true;

@@ -26,12 +26,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, logout, isLoggingOut, hasUnreadNotifications } = useStore();
 
   // Dev-only: Ctrl+Shift+G toggles baseline grid overlay
+  // Dev-only: Ctrl+Shift+C toggles column grid overlay
+  const [showBaseline, setShowBaseline] = useState(false);
+  const [showColumns, setShowColumns] = useState(false);
   useEffect(() => {
     if (!import.meta.env.DEV) return;
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'G') {
         e.preventDefault();
-        document.body.classList.toggle('debug-baseline');
+        setShowBaseline(prev => !prev);
+      }
+      if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+        setShowColumns(prev => !prev);
       }
     };
     window.addEventListener('keydown', handler);
@@ -77,7 +84,34 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-text selection:bg-primary-surface">
+    <div className="min-h-screen bg-background text-foreground font-text selection:bg-primary-surface relative">
+      {showBaseline && (
+        <div
+          aria-hidden
+          className="absolute inset-0 z-[9999] pointer-events-none"
+          style={{
+            backgroundImage: 'repeating-linear-gradient(to bottom, hsl(200 80% 60% / 0.12) 0px, hsl(200 80% 60% / 0.12) 1px, transparent 1px, transparent 4px)',
+          }}
+        />
+      )}
+      {showColumns && (
+        <div aria-hidden className="fixed inset-0 z-[9998] pointer-events-none">
+          <div className="grid-container h-full">
+            <div className="grid-12 h-full">
+              {Array.from({ length: 12 }, (_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: 'hsl(340 80% 60% / 0.07)',
+                    borderLeft: '1px solid hsl(340 80% 60% / 0.2)',
+                    borderRight: '1px solid hsl(340 80% 60% / 0.2)',
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       {isLoggingOut && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
           <div className="flex flex-col items-center gap-4">
@@ -88,8 +122,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       )}
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/85 backdrop-blur-md">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-50 w-full bg-background/85 backdrop-blur-md border-b border-border">
+        <div className="grid-container h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             {/* Mobile hamburger menu */}
             {isAuthenticated && (
@@ -304,11 +338,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className={cn("container mx-auto px-4 animate-in fade-in slide-in-from-bottom-4 duration-700", location.startsWith('/design-system') ? "pt-0 pb-0" : "py-8 md:py-12")}>
+      <main className={cn("grid-container animate-in fade-in slide-in-from-bottom-4 duration-700", location.startsWith('/design-system') ? "pt-0 pb-0" : "py-8 md:py-12")}>
         {children}
       </main>
       <footer className={cn("site-footer border-t border-border", location.startsWith('/design-system') ? "mt-0" : "mt-12")}>
-        <div className="container mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+        <div className="grid-container py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} Syllabind. All rights reserved.</p>
           <nav className="footer-links flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
             <a href={termsUrl || "/terms"} {...(termsUrl ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="hover:text-foreground transition-colors">Terms of Service</a>
