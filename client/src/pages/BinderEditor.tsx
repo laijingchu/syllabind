@@ -291,6 +291,20 @@ export default function BinderEditor() {
   const [location, setLocation] = useLocation();
   const isNew = location === '/curator/binder/new' || location.startsWith('/create');
   const isGuestMode = location.startsWith('/create');
+  // Track whether this session started as a new binder creation.
+  // isNew flips to false when auto-create replaces the URL, but we still
+  // need progressive disclosure until the user fills both title + description.
+  const [startedAsNew] = useState(() => {
+    const path = window.location.pathname;
+    const isNewRoute = path === '/curator/binder/new' || path.startsWith('/create');
+    if (isNewRoute) {
+      sessionStorage.setItem('binderStartedAsNew', '1');
+      return true;
+    }
+    // Survive remount after auto-create replaces /new → /curator/binder/:id/edit
+    const wasNew = sessionStorage.getItem('binderStartedAsNew') === '1';
+    return wasNew;
+  });
   const { createBinder, updateBinder, refreshBinders, getSubmissionsForStep, getReadersForBinder, user, isPro } = useStore();
   const isFreeTier = isGuestMode || !isPro;
   const posthog = usePostHog();
@@ -306,24 +320,32 @@ export default function BinderEditor() {
   const initialTitle = isNew ? new URLSearchParams(window.location.search).get('title') || '' : '';
 
   const defaultWeeks = isGuestMode ? 3 : 4;
-  const [formData, setFormData] = useState<Binder>({
-    id: generateTempId(),
-    title: initialTitle,
-    description: '',
-    audienceLevel: 'Beginner',
-    durationWeeks: defaultWeeks,
-    status: 'draft',
-    visibility: 'public',
-    curatorId: user?.username || '',
-    showSchedulingLink: true,
-    mediaPreference: 'auto',
-    weeks: Array.from({ length: defaultWeeks }, (_, i) => ({
+  const [formData, setFormData] = useState<Binder>(() => {
+    // Restore form state after auto-create remount (/new → /:id/edit)
+    const saved = sessionStorage.getItem('binderAutoCreated');
+    if (saved && sessionStorage.getItem('binderStartedAsNew')) {
+      sessionStorage.removeItem('binderAutoCreated');
+      try { return JSON.parse(saved); } catch {}
+    }
+    return {
       id: generateTempId(),
-      binderId: generateTempId(),
-      index: i + 1,
-      steps: [] as Step[],
-      title: ''
-    })),
+      title: initialTitle,
+      description: '',
+      audienceLevel: 'Beginner',
+      durationWeeks: defaultWeeks,
+      status: 'draft',
+      visibility: 'public',
+      curatorId: user?.username || '',
+      showSchedulingLink: true,
+      mediaPreference: 'auto',
+      weeks: Array.from({ length: defaultWeeks }, (_, i) => ({
+        id: generateTempId(),
+        binderId: generateTempId(),
+        index: i + 1,
+        steps: [] as Step[],
+        title: ''
+      })),
+    };
   });
 
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -349,7 +371,9 @@ export default function BinderEditor() {
   const [showRegenerateWeekDialog, setShowRegenerateWeekDialog] = useState(false);
   const [weekToRegenerate, setWeekToRegenerate] = useState<number | null>(null);
   const [originalWeeks, setOriginalWeeks] = useState<Week[]>([]); // Store weeks from database
-  const [isLoadingContent, setIsLoadingContent] = useState(!isNew && !!params?.id);
+  // Don't show loading spinner if we just auto-created (binderStartedAsNew means
+  // the component remounted after URL changed from /new → /:id/edit)
+  const [isLoadingContent, setIsLoadingContent] = useState(!isNew && !!params?.id && !sessionStorage.getItem('binderStartedAsNew'));
   const [activeWeekTab, setActiveWeekTab] = useState('week-1'); // Controlled tab for auto-switching during generation
   const generationWsRef = useRef<WebSocket | null>(null); // Persist WS ref for cancel support
   const isGeneratingRef = useRef(false); // Ref for ws.onclose (avoids stale closure)
@@ -373,30 +397,62 @@ export default function BinderEditor() {
   // Progressive disclosure: show rest of Basics only after user fills title + description, then clicks/tabs out
   const [basicsRevealed, setBasicsRevealed] = useState(false);
   const basicsFieldsRef = useRef<HTMLDivElement>(null);
-  const showFullForm = !isNew || basicsRevealed || isDemoMode || isGenerating;
+  const formDataRef = useRef(formData);
+  formDataRef.current = formData;
+  const titleFilled = !!formData.title?.trim();
+  const descText = formData.description?.replace(/<[^>]*>/g, '').trim() || '';
+  const descFilled = descText.length > 0;
+  const showFullForm = !startedAsNew || (basicsRevealed && titleFilled && descFilled) || isDemoMode || isGenerating;
+  console.log('[disclosure-debug]', { startedAsNew, basicsRevealed, titleFilled, descFilled, isDemoMode, isGenerating, showFullForm, pathname: window.location.pathname });
 
   useEffect(() => {
-    if (!isNew || basicsRevealed || isDemoMode || isGenerating) return;
+    if (!startedAsNew || basicsRevealed || isDemoMode || isGenerating) return;
     const handleFocusOut = (e: FocusEvent) => {
-      // Wait a frame so document.activeElement has settled
-      requestAnimationFrame(() => {
+      // Fast path: relatedTarget is known and inside the container — skip immediately
+      const related = e.relatedTarget as Node | null;
+      if (related && basicsFieldsRef.current?.contains(related)) return;
+      // Slow path: TipTap contenteditable doesn't always set relatedTarget —
+      // wait 150ms for focus to settle before checking activeElement
+      setTimeout(() => {
         if (basicsFieldsRef.current?.contains(document.activeElement)) return;
         // Check both fields are filled at the moment focus leaves
-        const title = formData.title?.trim();
-        const desc = formData.description;
+        const title = formDataRef.current.title?.trim();
+        const desc = formDataRef.current.description;
         const descFilled = desc && desc !== '<p></p>' && desc.replace(/<[^>]*>/g, '').trim() !== '';
-        if (title && descFilled) setBasicsRevealed(true);
-      });
+        if (title && descFilled) {
+          setBasicsRevealed(true);
+          sessionStorage.removeItem('binderStartedAsNew');
+        }
+      }, 150);
     };
     const node = basicsFieldsRef.current;
     node?.addEventListener('focusout', handleFocusOut);
     return () => node?.removeEventListener('focusout', handleFocusOut);
-  }, [isNew, basicsRevealed, isDemoMode, isGenerating, formData.title, formData.description]);
+  }, [startedAsNew, basicsRevealed, isDemoMode, isGenerating, isLoadingContent]);
+
+  // Restore guest editor state when returning from preview
+  useEffect(() => {
+    if (!isGuestMode) return;
+    const saved = sessionStorage.getItem('guestEditorState');
+    if (!saved) return;
+    try {
+      const restored = JSON.parse(saved);
+      if (restored.weeks?.length > 0 && restored.weeks.some((w: any) => w.steps?.length > 0 || w.title)) {
+        setFormData(restored);
+        setShowWeeklySection(true);
+        setBasicsRevealed(true);
+        sessionStorage.removeItem('binderStartedAsNew');
+        sessionStorage.removeItem('guestEditorState');
+      }
+    } catch { /* ignore parse errors */ }
+  }, [isGuestMode]);
 
   // Fetch full binder with weeks and steps when editing
   useEffect(() => {
     // Skip fetch if generation or demo is in progress -- those handlers manage formData
     if (isGeneratingRef.current || isDemoRef.current) return;
+    // Skip fetch if we just auto-created this binder (remount after /new → /:id/edit)
+    if (sessionStorage.getItem('binderStartedAsNew')) return;
 
     if (!isNew && params?.id) {
       const binderId = parseInt(params.id);
@@ -440,7 +496,15 @@ export default function BinderEditor() {
             }))
           });
           if (existing.tags) setBinderTags(existing.tags);
-          setShowWeeklySection(true);
+          // Only reveal weekly section if the binder already has real content.
+          // When startedAsNew is true (auto-create just replaced /new → /:id/edit),
+          // progressive disclosure should still control visibility.
+          const hasContent = weeksArray.some(w =>
+            w.steps?.length > 0 || w.title || (w.description && w.description !== '<p></p>')
+          );
+          if (hasContent && !sessionStorage.getItem('binderStartedAsNew')) {
+            setShowWeeklySection(true);
+          }
           setIsLoadingContent(false);
         })
         .catch(err => {
@@ -468,6 +532,9 @@ export default function BinderEditor() {
         });
         if (!res.ok) throw new Error('Failed to create binder');
         const created = await res.json();
+        // Save form state so it survives the remount when wouter switches routes
+        const updatedForm = { ...formData, id: created.id };
+        sessionStorage.setItem('binderAutoCreated', JSON.stringify(updatedForm));
         setFormData(prev => ({ ...prev, id: created.id }));
         window.history.replaceState(null, '', `/curator/binder/${created.id}/edit`);
         setLastSaved(new Date());
@@ -1269,9 +1336,29 @@ export default function BinderEditor() {
             setCompletedWeeks(new Set());
             setJustCompletedWeek(null);
             generationWsRef.current = null;
+            // Save state for guest mode preview/restoration
+            if (isGuestMode) {
+              setFormData(prev => {
+                const json = JSON.stringify(prev);
+                sessionStorage.setItem('guestBinderPreview', json);
+                sessionStorage.setItem('guestEditorState', json);
+                return prev;
+              });
+            }
             toast({
               title: "Binder Generated!",
-              description: "Your Binder has been generated. Review and make any edits.",
+              description: "Your binder is ready. Want to see how it looks?",
+              action: (
+                <ToastAction altText="View Preview" onClick={() => {
+                  if (isGuestMode) {
+                    setLocation('/create/preview');
+                  } else {
+                    setLocation(`/binder/${binderId}?preview=true`);
+                  }
+                }}>
+                  View Preview
+                </ToastAction>
+              ),
             });
             // Refresh credits and generation info
             fetch('/api/generation-info', { credentials: 'include' }).then(r => r.json()).then(setGenerationInfo).catch(() => {});
@@ -1870,7 +1957,9 @@ export default function BinderEditor() {
   // Shared action buttons rendered in both top bar (compact) and bottom bar (labeled)
   const ActionButtons = ({ compact }: { compact: boolean }) => {
     const previewGuest = () => {
-      sessionStorage.setItem('guestBinderPreview', JSON.stringify(formData));
+      const json = JSON.stringify(formData);
+      sessionStorage.setItem('guestBinderPreview', json);
+      sessionStorage.setItem('guestEditorState', json);
       setLocation('/create/preview');
     };
 
@@ -1895,7 +1984,7 @@ export default function BinderEditor() {
             </TooltipTrigger>
             <TooltipContent>Preview</TooltipContent>
           </Tooltip>
-          <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>Sign up</Button>
+          {!user && <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>Sign up</Button>}
         </>
       ) : (
         <>
@@ -1905,9 +1994,11 @@ export default function BinderEditor() {
           <Button size="sm" className="gap-1.5" onClick={previewGuest}>
             <Eye className="h-4 w-4" /> Preview
           </Button>
-          <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>
-            Sign up
-          </Button>
+          {!user && (
+            <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>
+              Sign up
+            </Button>
+          )}
         </>
       );
     }
@@ -2274,10 +2365,24 @@ export default function BinderEditor() {
           <div className="pt-4 space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                {isNew && !showWeeklySection && (
+                {!showWeeklySection && !hasBinderContent && (
                   <Button
                     variant="default"
-                    onClick={() => setShowWeeklySection(true)}
+                    onClick={() => {
+                      setShowWeeklySection(true);
+                      // Seed week 1 with a default reading + exercise
+                      setFormData(prev => {
+                        const week1 = prev.weeks.find(w => w.index === 1);
+                        if (!week1 || week1.steps.length > 0) return prev;
+                        return { ...prev, weeks: prev.weeks.map(w => w.index !== 1 ? w : {
+                          ...w,
+                          steps: [
+                            { id: generateTempId(), weekId: w.id, position: 1, type: 'reading' as const, title: '', estimatedMinutes: 15 },
+                            { id: generateTempId(), weekId: w.id, position: 2, type: 'exercise' as const, title: '', estimatedMinutes: 15 },
+                          ],
+                        }) };
+                      });
+                    }}
                     className="gap-2"
                   >
                     <Plus className="h-4 w-4" />
@@ -2593,7 +2698,7 @@ export default function BinderEditor() {
       </div>
       )}
 
-      {!isNew && (
+      {!isNew && formData.status !== 'draft' && (
         <div className="space-y-4 pt-6 sm:pt-8 border-t">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
              <h2 className="text-lg sm:text-xl font-medium">Recent Submissions</h2>

@@ -34,12 +34,12 @@ export default function ElementsOverview() {
           </p>
           <div className="border border-border rounded-lg overflow-hidden text-base">
             {[
-              { layer: 'Design Tokens', desc: 'The source of truth. Colors, fonts, spacing, and radius values defined as named variables.', detail: 'One CSS file defines every visual primitive.', color: 'bg-primary-surface' },
-              { layer: 'Tailwind CSS', desc: 'Translates tokens into usable style utilities. When a token changes, every utility updates.', detail: 'No config file needed — reads tokens directly.', color: 'bg-primary-surface' },
-              { layer: 'Component Variants', desc: 'Each component (Button, Card, Badge) defines named variants like "primary", "secondary", "ghost".', detail: 'Variants map design intent to specific token combinations.', color: 'bg-primary-surface' },
-              { layer: 'Accessible Primitives', desc: 'Radix UI handles keyboard navigation, screen readers, and focus management invisibly.', detail: 'Accessibility is built in — not bolted on.', color: 'bg-primary-surface' },
-              { layer: 'UI Components', desc: '50+ ready-made components combining all the above. Buttons, dialogs, accordions, forms.', detail: 'Owned code — fully customizable, not a library.', color: 'bg-primary-surface' },
-              { layer: 'Pages & Features', desc: 'Compose components together with layout utilities to build complete experiences.', detail: 'Where the product takes shape.', color: 'bg-primary-surface' },
+              { layer: 'Design Tokens', desc: 'The source of truth. Colors, fonts, spacing, and radius values defined as named variables.', detail: 'One CSS file defines every visual primitive.', color: 'bg-muted' },
+              { layer: 'Tailwind CSS', desc: 'Translates tokens into usable style utilities. When a token changes, every utility updates.', detail: 'No config file needed — reads tokens directly.', color: 'bg-muted' },
+              { layer: 'Component Variants', desc: 'Each component (Button, Card, Badge) defines named variants like "primary", "secondary", "ghost".', detail: 'Variants map design intent to specific token combinations.', color: 'bg-muted' },
+              { layer: 'Accessible Primitives', desc: 'Radix UI handles keyboard navigation, screen readers, and focus management invisibly.', detail: 'Accessibility is built in — not bolted on.', color: 'bg-muted' },
+              { layer: 'UI Components', desc: '50+ ready-made components combining all the above. Buttons, dialogs, accordions, forms.', detail: 'Owned code — fully customizable, not a library.', color: 'bg-muted' },
+              { layer: 'Pages & Features', desc: 'Compose components together with layout utilities to build complete experiences.', detail: 'Where the product takes shape.', color: 'bg-muted' },
             ].map((l, i) => (
               <div key={i} className={`px-4 py-3 border-b border-border last:border-0 ${l.color}`}>
                 <div className="flex flex-wrap items-center gap-4">

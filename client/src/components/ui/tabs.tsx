@@ -66,7 +66,7 @@ const TabsList = React.forwardRef<
     <TabsPrimitive.List
       ref={listRef}
       className={cn(
-        "relative inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground",
+        "relative inline-flex h-9 items-center justify-center rounded-lg bg-primary-surface p-1 text-muted-foreground",
         className
       )}
       {...props}
@@ -74,7 +74,7 @@ const TabsList = React.forwardRef<
       <div
         ref={indicatorRef}
         aria-hidden
-        className="absolute left-0 top-1 bottom-1 rounded-md bg-background shadow transition-[transform,width] duration-200 ease-out opacity-0"
+        className="absolute left-0 top-1 bottom-1 rounded-md bg-background transition-[transform,width] duration-200 ease-out opacity-0"
       />
       {children}
     </TabsPrimitive.List>

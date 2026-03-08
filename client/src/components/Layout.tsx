@@ -25,12 +25,11 @@ import {
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, logout, isLoggingOut, hasUnreadNotifications } = useStore();
 
-  // Dev-only: Ctrl+Shift+G toggles baseline grid overlay
-  // Dev-only: Ctrl+Shift+C toggles column grid overlay
+  // Ctrl+Shift+G toggles baseline grid overlay
+  // Ctrl+Shift+C toggles column grid overlay
   const [showBaseline, setShowBaseline] = useState(false);
   const [showColumns, setShowColumns] = useState(false);
   useEffect(() => {
-    if (!import.meta.env.DEV) return;
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'G') {
         e.preventDefault();

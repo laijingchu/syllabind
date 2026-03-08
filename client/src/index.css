@@ -144,8 +144,8 @@
   --danger-border: var(--danger-800);
   --danger-surface: var(--danger-900);
   --primary-surface: var(--cool-700);
-  --border: var(--cool-750);
-  --input: var(--cool-750);
+  --border: var(--cool-650);
+  --input: var(--cool-650);
   --ring: var(--cool-200);
   --chart-1: 220 70% 50%;
   --chart-2: 160 60% 45%;
@@ -394,6 +394,18 @@
   /* Hide ugly search cancel button in Chrome until we can style it properly */
   input[type="search"]::-webkit-search-cancel-button {
     @apply hidden;
+  }
+
+  /* Make native date/time input icons respect dark mode */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
+  .light input[type="date"]::-webkit-calendar-picker-indicator,
+  .light input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  .light input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: none;
   }
 
   /* Placeholder styling for contentEditable div */

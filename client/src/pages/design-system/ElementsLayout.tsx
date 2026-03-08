@@ -104,8 +104,8 @@ export default function ElementsLayout() {
               </div>
             </div>
             <p className="text-sm text-muted-foreground">
-              <strong>Dev shortcut:</strong> Press <kbd className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono border border-border">Ctrl+Shift+C</kbd> anywhere
-              in development to toggle the 12-column grid overlay on the full page.
+              <strong>Shortcut:</strong> Press <kbd className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono border border-border">Ctrl+Shift+C</kbd> anywhere
+              to toggle the 12-column grid overlay on the full page.
             </p>
           </div>
 
@@ -312,8 +312,8 @@ export default function ElementsLayout() {
               <p className="text-xl">Text xl — 20px / 28px line-height</p>
             </div>
             <p className="text-sm text-muted-foreground">
-              <strong>Dev shortcut:</strong> Press <kbd className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono border border-border">Ctrl+Shift+G</kbd> anywhere
-              in development to toggle the baseline grid overlay on the full page.
+              <strong>Shortcut:</strong> Press <kbd className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono border border-border">Ctrl+Shift+G</kbd> anywhere
+              to toggle the baseline grid overlay on the full page.
             </p>
           </div>
         </section>

@@ -123,7 +123,7 @@ function SidebarNav({ location, onNavigate }: { location: string; onNavigate?: (
               "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer",
               location === href
                 ? "bg-highlight text-highlight-foreground font-medium"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                : "text-foreground/70 hover:text-foreground hover:bg-muted"
             )}>
               <Icon className="h-4 w-4" />
               {label}
@@ -140,22 +140,22 @@ function SidebarNav({ location, onNavigate }: { location: string; onNavigate?: (
             "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer",
             location === '/design-system/ui'
               ? "bg-highlight text-highlight-foreground font-medium"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              : "text-foreground/70 hover:text-foreground hover:bg-muted"
           )}>
             Overview
           </span>
         </Link>
         {uiNav.map(({ category, items }) => (
           <div key={category}>
-            <p className="text-sm text-muted-foreground px-3 mb-1">{category}</p>
-            <div className="flex flex-col gap-0.5">
+            <p className="text-xs text-muted-foreground px-3 mb-1 uppercase tracking-wider font-medium">{category}</p>
+            <div className="flex flex-col gap-0.5 ml-2">
               {items.map(({ href, label }) => (
                 <Link key={href} href={href} onClick={onNavigate}>
                   <span className={cn(
                     "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer",
                     location === href
                       ? "bg-highlight text-highlight-foreground font-medium"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      : "text-foreground/70 hover:text-foreground hover:bg-muted"
                   )}>
                     {label}
                   </span>
@@ -174,7 +174,7 @@ function SidebarNav({ location, onNavigate }: { location: string; onNavigate?: (
             "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer",
             location === '/design-system/components'
               ? "bg-highlight text-highlight-foreground font-medium"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              : "text-foreground/70 hover:text-foreground hover:bg-muted"
           )}>
             Overview
           </span>
@@ -185,7 +185,7 @@ function SidebarNav({ location, onNavigate }: { location: string; onNavigate?: (
               "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer",
               location === href
                 ? "bg-highlight text-highlight-foreground font-medium"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                : "text-foreground/70 hover:text-foreground hover:bg-muted"
             )}>
               {label}
             </span>

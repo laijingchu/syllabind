@@ -394,7 +394,7 @@ export default function BinderOverview() {
               Draft Preview: You are viewing a private draft.
             </p>
           </div>
-          <Button variant="secondary" size="sm" onClick={() => setLocation(`/binder/${binderId}/edit`)} className="shrink-0 gap-1.5">
+          <Button variant="secondary" size="sm" onClick={() => setLocation(`/curator/binder/${binderId}/edit`)} className="shrink-0 gap-1.5">
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Editor
           </Button>
