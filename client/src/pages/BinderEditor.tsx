@@ -301,8 +301,15 @@ export default function BinderEditor() {
       sessionStorage.setItem('binderStartedAsNew', '1');
       return true;
     }
-    // Survive remount after auto-create replaces /new → /curator/binder/:id/edit
+    // Survive remount after auto-create replaces /new → /curator/binder/:id/edit.
+    // Only honour the flag if binderAutoCreated is also present (same session).
+    // Otherwise the flag is stale from a previous create flow and would block
+    // data loading for every subsequent binder edit.
     const wasNew = sessionStorage.getItem('binderStartedAsNew') === '1';
+    if (wasNew && !sessionStorage.getItem('binderAutoCreated')) {
+      sessionStorage.removeItem('binderStartedAsNew');
+      return false;
+    }
     return wasNew;
   });
   const { createBinder, updateBinder, refreshBinders, getSubmissionsForStep, getReadersForBinder, user, isPro } = useStore();
@@ -403,7 +410,6 @@ export default function BinderEditor() {
   const descText = formData.description?.replace(/<[^>]*>/g, '').trim() || '';
   const descFilled = descText.length > 0;
   const showFullForm = !startedAsNew || (basicsRevealed && titleFilled && descFilled) || isDemoMode || isGenerating;
-  console.log('[disclosure-debug]', { startedAsNew, basicsRevealed, titleFilled, descFilled, isDemoMode, isGenerating, showFullForm, pathname: window.location.pathname });
 
   useEffect(() => {
     if (!startedAsNew || basicsRevealed || isDemoMode || isGenerating) return;
