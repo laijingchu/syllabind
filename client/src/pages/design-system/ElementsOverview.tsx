@@ -191,7 +191,7 @@ export default function ElementsOverview() {
               { file: 'client/src/pages/', desc: 'Full page layouts — Dashboard, Catalog, BinderOverview, etc. Where components are composed into features.' },
             ].map(f => (
               <div key={f.file} className="flex gap-4 py-2 border-b border-border last:border-0">
-                <code className="text-primary font-mono text-xs bg-primary-surface px-2 py-0.5 rounded shrink-0">{f.file}</code>
+                <code className="text-primary font-mono text-xs bg-highlight px-2 py-0.5 rounded shrink-0">{f.file}</code>
                 <span className="text-muted-foreground">{f.desc}</span>
               </div>
             ))}

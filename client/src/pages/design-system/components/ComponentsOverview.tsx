@@ -77,8 +77,8 @@ export default function ComponentsOverview() {
           </p>
           <div className="border border-border rounded-lg overflow-hidden text-base">
             {[
-              { layer: 'UI Component', example: 'Card', knows: 'How to render a bordered container with padding', color: 'bg-primary-surface' },
-              { layer: 'Component', example: 'BinderCard', knows: 'What a binder is, which fields to show, how enrollment affects display', color: 'bg-primary-surface' },
+              { layer: 'UI Component', example: 'Card', knows: 'How to render a bordered container with padding', color: 'bg-highlight' },
+              { layer: 'Component', example: 'BinderCard', knows: 'What a binder is, which fields to show, how enrollment affects display', color: 'bg-highlight' },
             ].map((l, i) => (
               <div key={i} className={`px-4 py-3 border-b border-border last:border-0 ${l.color}`}>
                 <div className="flex flex-wrap items-start gap-4">

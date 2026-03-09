@@ -13,6 +13,7 @@ import NotFound from "@/pages/not-found";
 import ForcePasswordChange from "@/components/ForcePasswordChange";
 
 import Dashboard from "@/pages/Dashboard";
+import CompletedJourneys from "@/pages/CompletedJourneys";
 import Catalog from "@/pages/Catalog";
 import BinderOverview from "@/pages/BinderOverview";
 import WeekView from "@/pages/WeekView";
@@ -83,6 +84,12 @@ import ComponentGeneratingWeekPlaceholder from "@/pages/design-system/components
 import ComponentErrorBoundary from "@/pages/design-system/components/ComponentErrorBoundary";
 import ComponentCuratorBinderCard from "@/pages/design-system/components/ComponentCuratorBinderCard";
 import ComponentReviewQueueCard from "@/pages/design-system/components/ComponentReviewQueueCard";
+import ComponentOnboardingChecklist from "@/pages/design-system/components/ComponentOnboardingChecklist";
+import ComponentCreditsCard from "@/pages/design-system/components/ComponentCreditsCard";
+import ComponentBinderReviewStatusCard from "@/pages/design-system/components/ComponentBinderReviewStatusCard";
+import ComponentFeedbackCard from "@/pages/design-system/components/ComponentFeedbackCard";
+import ComponentCuratorRecruitCard from "@/pages/design-system/components/ComponentCuratorRecruitCard";
+import ComponentItemList from "@/pages/design-system/components/ComponentItemList";
 
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
@@ -126,6 +133,7 @@ function Router() {
         <Route path="/reset-password" component={ResetPassword} />
 
         <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
+        <Route path="/completed" component={() => <ProtectedRoute component={CompletedJourneys} />} />
         <Route path="/catalog" component={Catalog} />
         <Route path="/binder/:id" component={BinderOverview} />
         <Route path="/binder/:id/week/:index" component={WeekView} />
@@ -202,6 +210,12 @@ function Router() {
         <Route path="/design-system/components/error-boundary" component={ComponentErrorBoundary} />
         <Route path="/design-system/components/curator-binder-card" component={ComponentCuratorBinderCard} />
         <Route path="/design-system/components/review-queue-card" component={ComponentReviewQueueCard} />
+        <Route path="/design-system/components/onboarding-checklist" component={ComponentOnboardingChecklist} />
+        <Route path="/design-system/components/credits-card" component={ComponentCreditsCard} />
+        <Route path="/design-system/components/binder-review-status-card" component={ComponentBinderReviewStatusCard} />
+        <Route path="/design-system/components/feedback-card" component={ComponentFeedbackCard} />
+        <Route path="/design-system/components/curator-recruit-card" component={ComponentCuratorRecruitCard} />
+        <Route path="/design-system/components/item-list" component={ComponentItemList} />
 
         <Route component={NotFound} />
       </Switch>

@@ -87,7 +87,7 @@ export default function ComponentEmptyState() {
                 <tr>
                   <td className="p-3 font-mono text-xs">iconClassName</td>
                   <td className="p-3 font-mono text-xs">string?</td>
-                  <td className="p-3 text-muted-foreground">"bg-primary-surface text-primary"</td>
+                  <td className="p-3 text-muted-foreground">"bg-highlight text-primary"</td>
                   <td className="p-3 text-muted-foreground">Custom background and color classes for the icon badge</td>
                 </tr>
                 <tr>

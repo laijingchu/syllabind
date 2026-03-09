@@ -18,7 +18,7 @@ export function GeneratingWeekPlaceholder({ weekIndex, status, title, descriptio
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Generation status header */}
-      <div className="flex items-center gap-3 p-4 rounded-lg bg-primary-surface border border-border">
+      <div className="flex items-center gap-3 p-4 rounded-lg bg-highlight border border-border">
         <Loader2 className="h-5 w-5 animate-spin text-primary" />
         <span className="text-sm font-medium text-primary">
           {status || `Generating Week ${weekIndex}...`}

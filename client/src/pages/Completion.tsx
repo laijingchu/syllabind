@@ -161,7 +161,7 @@ export default function Completion() {
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center text-center max-w-2xl mx-auto space-y-8">
       <div className="relative">
-        <div className="h-32 w-32 bg-primary-surface rounded-full flex items-center justify-center animate-in zoom-in duration-500">
+        <div className="h-32 w-32 bg-highlight rounded-full flex items-center justify-center animate-in zoom-in duration-500">
            <Award className="h-16 w-16 text-primary" />
         </div>
         <div className="absolute -bottom-2 -right-2 bg-background p-2 rounded-full border shadow-sm">

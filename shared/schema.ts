@@ -3,6 +3,11 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
 
+// Custom type for PostgreSQL bytea (binary data)
+const bytea = customType<{ data: Buffer }>({
+  dataType() { return "bytea"; },
+});
+
 // Custom type for PostgreSQL tsvector (full-text search)
 const tsvector = customType<{ data: string }>({
   dataType() {
@@ -42,6 +47,8 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   name: text("name"),
   avatarUrl: text("avatar_url"),
+  avatarData: bytea("avatar_data"),
+  avatarMime: text("avatar_mime"),
   isCurator: boolean("is_curator").default(false),
   bio: text("bio"),
   expertise: text("expertise"),

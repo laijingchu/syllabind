@@ -326,7 +326,7 @@ export default function WeekView() {
               transition={{ delay: idx * 0.1 }}
               className={cn(
                 "p-4 sm:p-6 rounded-xl border bg-card transition-all duration-300",
-                isDone ? "border-border bg-primary-surface" : "border-border shadow-sm hover:shadow-md"
+                isDone ? "border-border bg-background" : "border-border shadow-sm hover:shadow-md"
               )}
             >
               <div className="flex gap-3 sm:gap-4 items-start">
@@ -400,7 +400,7 @@ export default function WeekView() {
                       className="inline-flex items-center text-sm font-medium text-primary hover:underline mt-2"
                       onClick={() => !isDone && handleMarkComplete(step.id)} // Optional: auto-complete on click
                     >
-                      Read Article <ExternalLink className="h-3 w-3 ml-1" />
+                      Open link <ExternalLink className="h-3 w-3 ml-1" />
                     </a>
                   )}
 
@@ -459,7 +459,7 @@ export default function WeekView() {
                            </div>
 
                            {getSubmission(step.id)?.grade && (
-                             <div className="bg-primary-surface border border-border p-4 rounded-lg space-y-2">
+                             <div className="bg-highlight border border-border p-4 rounded-lg space-y-2">
                                 <div className="flex justify-between items-center">
                                   <h4 className="font-semibold text-sm">Curator Feedback</h4>
                                   <Badge>{getSubmission(step.id)?.grade}</Badge>

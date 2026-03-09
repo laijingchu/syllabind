@@ -82,7 +82,7 @@ export default function UIProgress() {
           <h2 className="font-display text-xl font-medium">Design Tokens</h2>
           <div className="border border-border rounded-lg p-4">
             <TokenRow token="--primary" value="Indicator fill color (bg-primary)" />
-            <TokenRow token="--muted" value="Track background (bg-primary-surface)" />
+            <TokenRow token="--muted" value="Track background (bg-highlight)" />
           </div>
         </section>
 

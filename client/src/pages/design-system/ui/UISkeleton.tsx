@@ -97,7 +97,7 @@ export default function UISkeleton() {
                 <p className="text-sm text-muted-foreground">Pulsing (default)</p>
               </div>
               <div className="space-y-2 text-center">
-                <div className="h-10 w-full rounded-md bg-primary-surface" />
+                <div className="h-10 w-full rounded-md bg-highlight" />
                 <p className="text-sm text-muted-foreground">Static (no animation)</p>
               </div>
               <div className="space-y-2 text-center">

@@ -19,7 +19,10 @@ export default function AdminSettings() {
   const [bugReportUrl, setBugReportUrl] = useState('');
   const [termsUrl, setTermsUrl] = useState('');
   const [privacyUrl, setPrivacyUrl] = useState('');
-  const [getPaidToTeachUrl, setGetPaidToTeachUrl] = useState('');
+  const [feedbackUrlGeneral, setFeedbackUrlGeneral] = useState('');
+  const [feedbackUrlLearners, setFeedbackUrlLearners] = useState('');
+  const [feedbackUrlCurators, setFeedbackUrlCurators] = useState('');
+  const [curatorLearnMoreUrl, setCuratorLearnMoreUrl] = useState('');
   const [wipBadgeUrl, setWipBadgeUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -27,7 +30,10 @@ export default function AdminSettings() {
   const [bugReportSaving, setBugReportSaving] = useState(false);
   const [termsSaving, setTermsSaving] = useState(false);
   const [privacySaving, setPrivacySaving] = useState(false);
-  const [getPaidToTeachSaving, setGetPaidToTeachSaving] = useState(false);
+  const [feedbackGeneralSaving, setFeedbackGeneralSaving] = useState(false);
+  const [feedbackLearnersSaving, setFeedbackLearnersSaving] = useState(false);
+  const [feedbackCuratorsSaving, setFeedbackCuratorsSaving] = useState(false);
+  const [curatorLearnMoreSaving, setCuratorLearnMoreSaving] = useState(false);
   const [wipBadgeSaving, setWipBadgeSaving] = useState(false);
 
   // Create User state
@@ -50,16 +56,22 @@ export default function AdminSettings() {
       fetch('/api/site-settings/bug_report_url').then(r => r.json()),
       fetch('/api/site-settings/terms_of_service_url').then(r => r.json()),
       fetch('/api/site-settings/privacy_policy_url').then(r => r.json()),
-      fetch('/api/site-settings/get_paid_to_teach_url').then(r => r.json()),
+      fetch('/api/site-settings/feedback_url_general').then(r => r.json()),
+      fetch('/api/site-settings/feedback_url_learners').then(r => r.json()),
+      fetch('/api/site-settings/feedback_url_curators').then(r => r.json()),
+      fetch('/api/site-settings/curator_learn_more_url').then(r => r.json()),
       fetch('/api/site-settings/wip_badge_url').then(r => r.json()),
     ])
-      .then(([slackData, waitlistData, bugReportData, termsData, privacyData, getPaidToTeachData, wipBadgeData]) => {
+      .then(([slackData, waitlistData, bugReportData, termsData, privacyData, feedbackGeneralData, feedbackLearnersData, feedbackCuratorsData, curatorLearnMoreData, wipBadgeData]) => {
         setSlackUrl(slackData.value || '');
         setWaitlistUrl(waitlistData.value || '');
         setBugReportUrl(bugReportData.value || '');
         setTermsUrl(termsData.value || '');
         setPrivacyUrl(privacyData.value || '');
-        setGetPaidToTeachUrl(getPaidToTeachData.value || '');
+        setFeedbackUrlGeneral(feedbackGeneralData.value || '#feedback_general');
+        setFeedbackUrlLearners(feedbackLearnersData.value || '#feedback_reader');
+        setFeedbackUrlCurators(feedbackCuratorsData.value || '#feedback_curator');
+        setCuratorLearnMoreUrl(curatorLearnMoreData.value || '#learnmore_curator');
         setWipBadgeUrl(wipBadgeData.value || '');
         setLoading(false);
       })
@@ -156,21 +168,44 @@ export default function AdminSettings() {
     }
   };
 
-  const handleGetPaidToTeachSave = async () => {
-    setGetPaidToTeachSaving(true);
+  const handleFeedbackSave = async (type: 'general' | 'learners' | 'curators') => {
+    const keyMap = { general: 'feedback_url_general', learners: 'feedback_url_learners', curators: 'feedback_url_curators' };
+    const valueMap = { general: feedbackUrlGeneral, learners: feedbackUrlLearners, curators: feedbackUrlCurators };
+    const setterMap = { general: setFeedbackGeneralSaving, learners: setFeedbackLearnersSaving, curators: setFeedbackCuratorsSaving };
+    const savingMap = { general: feedbackGeneralSaving, learners: feedbackLearnersSaving, curators: feedbackCuratorsSaving };
+
+    setterMap[type](true);
     try {
       const res = await fetch('/api/admin/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ key: 'get_paid_to_teach_url', value: getPaidToTeachUrl }),
+        body: JSON.stringify({ key: keyMap[type], value: valueMap[type] }),
       });
       if (!res.ok) throw new Error('Failed to save');
-      toast({ title: 'Settings saved', description: 'Get Paid to Teach URL has been updated.' });
+      toast({ title: 'Settings saved', description: `Feedback URL (${type}) has been updated.` });
     } catch {
       toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
     } finally {
-      setGetPaidToTeachSaving(false);
+      setterMap[type](false);
+    }
+  };
+
+  const handleCuratorLearnMoreSave = async () => {
+    setCuratorLearnMoreSaving(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ key: 'curator_learn_more_url', value: curatorLearnMoreUrl }),
+      });
+      if (!res.ok) throw new Error('Failed to save');
+      toast({ title: 'Settings saved', description: 'Curator Learn More URL has been updated.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
+    } finally {
+      setCuratorLearnMoreSaving(false);
     }
   };
 
@@ -345,9 +380,9 @@ export default function AdminSettings() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Give Feedback URL</CardTitle>
+          <CardTitle>Feedback URL — General</CardTitle>
           <CardDescription>
-            URL for the "Give feedback" button on the Marketing page hero section.
+            Feedback form for website visitors (e.g. Marketing page hero section).
             Leave empty to scroll to the Apply to Curate section instead.
           </CardDescription>
         </CardHeader>
@@ -360,12 +395,99 @@ export default function AdminSettings() {
           ) : (
             <>
               <Input
-                placeholder="https://example.com/teach"
-                value={getPaidToTeachUrl}
-                onChange={(e) => setGetPaidToTeachUrl(e.target.value)}
+                placeholder="https://example.com/feedback"
+                value={feedbackUrlGeneral}
+                onChange={(e) => setFeedbackUrlGeneral(e.target.value)}
               />
-              <Button onClick={handleGetPaidToTeachSave} disabled={getPaidToTeachSaving}>
-                {getPaidToTeachSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button onClick={() => handleFeedbackSave('general')} disabled={feedbackGeneralSaving}>
+                {feedbackGeneralSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Feedback URL — Learners</CardTitle>
+          <CardDescription>
+            Feedback form shown on the learner dashboard sidebar card.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading...
+            </div>
+          ) : (
+            <>
+              <Input
+                placeholder="https://example.com/feedback-learners"
+                value={feedbackUrlLearners}
+                onChange={(e) => setFeedbackUrlLearners(e.target.value)}
+              />
+              <Button onClick={() => handleFeedbackSave('learners')} disabled={feedbackLearnersSaving}>
+                {feedbackLearnersSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Feedback URL — Curators</CardTitle>
+          <CardDescription>
+            Feedback form for curators.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading...
+            </div>
+          ) : (
+            <>
+              <Input
+                placeholder="https://example.com/feedback-curators"
+                value={feedbackUrlCurators}
+                onChange={(e) => setFeedbackUrlCurators(e.target.value)}
+              />
+              <Button onClick={() => handleFeedbackSave('curators')} disabled={feedbackCuratorsSaving}>
+                {feedbackCuratorsSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Curator Recruitment — Learn More URL</CardTitle>
+          <CardDescription>
+            URL for the "Learn More" button on the Become a Curator card shown on the reader dashboard.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading...
+            </div>
+          ) : (
+            <>
+              <Input
+                placeholder="https://example.com/become-a-curator"
+                value={curatorLearnMoreUrl}
+                onChange={(e) => setCuratorLearnMoreUrl(e.target.value)}
+              />
+              <Button onClick={handleCuratorLearnMoreSave} disabled={curatorLearnMoreSaving}>
+                {curatorLearnMoreSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save
               </Button>
             </>

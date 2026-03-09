@@ -83,7 +83,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-text selection:bg-primary-surface relative">
+    <div className="min-h-screen bg-background text-foreground font-text selection:bg-highlight relative">
       {showBaseline && (
         <div
           aria-hidden
@@ -145,7 +145,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       onClick={() => handleMobileNavClick("/")}
                       className={cn(
                         "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
-                        location === "/" ? "bg-primary-surface text-primary" : "hover:bg-muted"
+                        location === "/" ? "bg-highlight text-primary" : "hover:bg-muted"
                       )}
                     >
                       <span className="font-medium">Dashboard</span>
@@ -154,7 +154,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       onClick={() => handleMobileNavClick("/catalog")}
                       className={cn(
                         "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
-                        location === "/catalog" ? "bg-primary-surface text-primary" : "hover:bg-muted"
+                        location === "/catalog" ? "bg-highlight text-primary" : "hover:bg-muted"
                       )}
                     >
                       <span className="font-medium">Catalog</span>
@@ -163,7 +163,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       onClick={() => handleMobileNavClick("/curator")}
                       className={cn(
                         "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
-                        location.startsWith("/curator") ? "bg-primary-surface text-primary" : "hover:bg-muted"
+                        location.startsWith("/curator") ? "bg-highlight text-primary" : "hover:bg-muted"
                       )}
                     >
                       <span className="font-medium">Curator Studio</span>
@@ -173,7 +173,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       onClick={() => handleMobileNavClick("/profile")}
                       className={cn(
                         "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
-                        location === "/profile" ? "bg-primary-surface text-primary" : "hover:bg-muted"
+                        location === "/profile" ? "bg-highlight text-primary" : "hover:bg-muted"
                       )}
                     >
                       <User className="h-4 w-4" />
@@ -183,7 +183,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       onClick={() => handleMobileNavClick("/settings")}
                       className={cn(
                         "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
-                        location === "/settings" ? "bg-primary-surface text-primary" : "hover:bg-muted"
+                        location === "/settings" ? "bg-highlight text-primary" : "hover:bg-muted"
                       )}
                     >
                       <Settings className="h-4 w-4" />
@@ -193,7 +193,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       onClick={() => handleMobileNavClick("/billing")}
                       className={cn(
                         "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
-                        location === "/billing" ? "bg-primary-surface text-primary" : "hover:bg-muted"
+                        location === "/billing" ? "bg-highlight text-primary" : "hover:bg-muted"
                       )}
                     >
                       <CreditCard className="h-4 w-4" />

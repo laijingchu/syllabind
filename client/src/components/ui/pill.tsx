@@ -10,7 +10,7 @@ const pillVariants = cva(
       variant: {
         default: "",
         outline:
-          "border border-border text-primary hover:bg-primary-surface",
+          "border border-border text-primary hover:bg-highlight",
       },
       size: {
         default: "px-3 py-2 text-sm",
@@ -25,7 +25,7 @@ const pillVariants = cva(
 )
 
 function activeClass(variant: string | null | undefined) {
-  if (variant === "outline") return "bg-primary-surface border-border hover:bg-primary-surface hover:border-primary"
+  if (variant === "outline") return "bg-highlight border-border hover:bg-highlight hover:border-primary"
   return "bg-primary-inverted text-foreground-inverted hover:opacity-80"
 }
 

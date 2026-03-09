@@ -77,7 +77,6 @@
   --color-success-border: hsl(var(--success-border));
   --color-success-surface: hsl(var(--success-surface));
   --color-danger-surface: hsl(var(--danger-surface));
-  --color-primary-surface: hsl(var(--primary-surface));
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
@@ -114,7 +113,7 @@
   --elevate-1: var(--highlight);
   --elevate-2: var(--secondary);
 
-  --background: var(--cool-800);
+  --background: var(--cool-850);
   --foreground: var(--cool-50);
   --card: var(--cool-800);
   --card-foreground: var(--foreground);
@@ -143,7 +142,6 @@
   --success-surface: var(--success-900);
   --danger-border: var(--danger-800);
   --danger-surface: var(--danger-900);
-  --primary-surface: var(--cool-700);
   --border: var(--cool-650);
   --input: var(--cool-650);
   --ring: var(--cool-200);
@@ -248,7 +246,7 @@
   --elevate-1: var(--highlight);
   --elevate-2: var(--secondary);
 
-  --background: var(--warm-50);
+  --background: var(--warm-100);
   --foreground: var(--warm-950);
   --card: var(--warm-50);
   --card-foreground: var(--foreground);
@@ -256,11 +254,11 @@
   --popover-foreground: var(--foreground);
   --primary: var(--warm-900);
   --primary-inverted: var(--warm-900);
-  --secondary: var(--warm-100);
+  --secondary: var(--warm-200);
   --secondary-foreground: var(--warm-850);
-  --muted: var(--warm-100);
-  --muted-foreground: var(--warm-500);
-  --highlight: var(--warm-150);
+  --muted: var(--warm-150);
+  --muted-foreground: var(--warm-550);
+  --highlight: var(--warm-200);
   --highlight-foreground: var(--warm-850);
   --destructive: var(--danger-500);
   --foreground-inverted: var(--warm-50);
@@ -277,8 +275,7 @@
   --success-surface: var(--success-50);
   --danger-border: var(--danger-200);
   --danger-surface: var(--danger-50);
-  --primary-surface: var(--warm-150);
-  --border: var(--warm-200);
+  --border: var(--warm-250);
   --input: var(--warm-200);
   --ring: var(--warm-800);
   --chart-1: 12 76% 61%;

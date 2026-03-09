@@ -140,6 +140,13 @@ export default function BinderOverview() {
     }
   }, [binderId, currentUser]);
 
+  // Track that user browsed a binder (for onboarding checklist)
+  useEffect(() => {
+    if (binder && currentUser && binder.curatorId !== currentUser.username) {
+      localStorage.setItem('syllabind_browsed_binder', 'true');
+    }
+  }, [binder, currentUser]);
+
   // Fetch completed steps for this specific enrollment
   useEffect(() => {
     if (existingEnrollment?.id) {
@@ -373,7 +380,7 @@ export default function BinderOverview() {
   return (
     <AnimatedPage>
       {isGuestPreview && (
-        <div className="preview-banner mb-6 bg-primary-surface border border-border text-foreground px-4 py-3 rounded-lg flex items-center justify-between gap-3">
+        <div className="preview-banner mb-6 bg-highlight border border-border text-foreground px-4 py-3 rounded-lg flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Eye className="h-5 w-5 shrink-0 text-primary" />
             <p className="text-sm font-medium">
@@ -553,7 +560,7 @@ export default function BinderOverview() {
                             <div className="flex items-center gap-3 text-sm text-muted-foreground">
                               <div className={cn(
                                 "p-1.5 rounded-md shrink-0",
-                                isDone ? "bg-primary-surface text-primary" : "bg-muted text-muted-foreground"
+                                isDone ? "bg-highlight text-primary" : "bg-muted text-muted-foreground"
                               )}>
                                 {step.type === 'reading' ? <FileText className="h-3.5 w-3.5" /> : <Dumbbell className="h-3.5 w-3.5" />}
                               </div>

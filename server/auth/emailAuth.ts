@@ -84,8 +84,8 @@ export function registerEmailAuthRoutes(app: Express): void {
       (req as any).session.userId = newUser.id;
 
       // Return user without password
-      const { password: _, ...userWithoutPassword } = newUser;
-      res.json({ ...userWithoutPassword, creditBalance: 100, isAdmin: isAdminUser(newUser.username) });
+      const { password: _, avatarData: _ad, avatarMime: _am, ...userSafe } = newUser;
+      res.json({ ...userSafe, creditBalance: 100, isAdmin: isAdminUser(newUser.username) });
     } catch (error) {
       console.error("Registration error:", error);
       res.status(500).json({ message: "Registration failed" });
@@ -124,8 +124,8 @@ export function registerEmailAuthRoutes(app: Express): void {
       (req as any).session.userId = user.id;
 
       // Return user without password
-      const { password: _, ...userWithoutPassword } = user;
-      res.json({ ...userWithoutPassword, isAdmin: isAdminUser(user.username) });
+      const { password: _, avatarData: _ad, avatarMime: _am, ...userSafe } = user;
+      res.json({ ...userSafe, isAdmin: isAdminUser(user.username) });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });
@@ -147,8 +147,8 @@ export function registerEmailAuthRoutes(app: Express): void {
       }
 
       // Return user without password
-      const { password: _, ...userWithoutPassword } = user;
-      res.json({ ...userWithoutPassword, isAdmin: isAdminUser(user.username) });
+      const { password: _, avatarData: _ad, avatarMime: _am, ...userSafe } = user;
+      res.json({ ...userSafe, isAdmin: isAdminUser(user.username) });
     } catch (error) {
       console.error("Get user error:", error);
       res.status(500).json({ message: "Failed to get user" });

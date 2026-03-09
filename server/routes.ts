@@ -26,25 +26,16 @@ import {
   grantSignupCredits
 } from "./utils/creditService";
 import * as path from "path";
-import fs from "fs/promises";
-import { fileURLToPath } from "url";
 
-const currentFilePath = fileURLToPath(import.meta.url);
-const currentDirPath = path.dirname(currentFilePath);
+// Strip binary/sensitive fields from user objects before sending to client
+function sanitizeUser(user: any) {
+  const { password, avatarData, avatarMime, ...safe } = user;
+  return safe;
+}
 
-// Configure multer for file uploads
-const uploadStorage = multer.diskStorage({
-  destination: function (_req, _file, cb) {
-    cb(null, path.join(currentDirPath, "../uploads"));
-  },
-  filename: function (_req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
+// Configure multer for file uploads (memory storage — files go to DB, not disk)
 const upload = multer({
-  storage: uploadStorage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 2 * 1024 * 1024, // 2MB limit
   },
@@ -93,8 +84,20 @@ export async function registerRoutes(
   await registerStripeRoutes(app);
   await registerWebhookRoutes(app);
 
-  // Serve uploaded files statically
-  app.use("/uploads", express.static(path.join(currentDirPath, "../uploads")));
+  // Serve avatar images from database
+  app.get("/api/avatars/:username", async (req, res) => {
+    try {
+      const user = await storage.getUserByUsername(req.params.username);
+      if (!user?.avatarData || !user?.avatarMime) {
+        return res.status(404).json({ message: "Avatar not found" });
+      }
+      res.set("Content-Type", user.avatarMime);
+      res.set("Cache-Control", "public, max-age=86400");
+      res.send(user.avatarData);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to load avatar" });
+    }
+  });
 
   // ========== USER ROUTES ==========
 
@@ -112,7 +115,7 @@ export async function registerRoutes(
       });
     }
 
-    const { password, email, ...publicProfile } = user;
+    const { email, ...publicProfile } = sanitizeUser(user);
     res.json(publicProfile);
   });
 
@@ -133,18 +136,14 @@ export async function registerRoutes(
       }
     }
 
-    // Delete old avatar file from disk when removing or replacing
-    if ('avatarUrl' in req.body) {
-      const currentUser = await storage.getUser(userId);
-      if (currentUser?.avatarUrl?.startsWith('/uploads/')) {
-        const oldPath = path.join(process.cwd(), currentUser.avatarUrl);
-        fs.unlink(oldPath).catch(() => {});
-      }
+    // Clear avatar data from DB when removing avatar
+    if ('avatarUrl' in req.body && !req.body.avatarUrl) {
+      profileUpdate.avatarData = null;
+      profileUpdate.avatarMime = null;
     }
 
     const updated = await storage.updateUser(userId, profileUpdate);
-    const { password, ...userWithoutPassword } = updated;
-    res.json(userWithoutPassword);
+    res.json(sanitizeUser(updated));
   });
 
   // Toggle curator mode
@@ -154,8 +153,7 @@ export async function registerRoutes(
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const updated = await storage.updateUser(userId, { isCurator: !user.isCurator });
-    const { password, ...userWithoutPassword } = updated;
-    res.json(userWithoutPassword);
+    res.json(sanitizeUser(updated));
   });
 
   // Change password (email auth only)
@@ -257,26 +255,30 @@ export async function registerRoutes(
     }
   });
 
-  // Upload avatar image
+  // Upload avatar image — stores in database
   app.post("/api/upload", isAuthenticated, (req, res) => {
-    console.log("Upload request received from user:", (req.user as any)?.username || "unauthenticated");
-    console.log("Request headers:", req.headers['content-type']);
-
-    upload.single("file")(req, res, (err) => {
+    upload.single("file")(req, res, async (err) => {
       if (err) {
-        console.error("Multer error:", err);
         return res.status(400).json({ message: err.message || "Failed to upload file" });
       }
 
       if (!req.file) {
-        console.error("No file in request");
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      // Return the URL to access the uploaded file
-      const fileUrl = `/uploads/${req.file.filename}`;
-      console.log("File uploaded successfully:", fileUrl);
-      res.json({ url: fileUrl });
+      try {
+        const userId = (req.user as any).id;
+        const username = (req.user as any).username;
+        const avatarUrl = `/api/avatars/${username}?v=${Date.now()}`;
+        await storage.updateUser(userId, {
+          avatarData: req.file.buffer,
+          avatarMime: req.file.mimetype,
+          avatarUrl,
+        });
+        res.json({ url: avatarUrl });
+      } catch (uploadErr) {
+        res.status(500).json({ message: "Failed to save avatar" });
+      }
     });
   });
 

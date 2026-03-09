@@ -81,12 +81,13 @@ jest.mock('express-session', () => {
 jest.mock('multer', () => {
   const multerMock = jest.fn(() => ({
     single: jest.fn(() => (req, res, next) => {
-      req.file = { filename: 'test-upload.jpg', originalname: 'test.jpg' };
+      req.file = { filename: 'test-upload.jpg', originalname: 'test.jpg', buffer: Buffer.from('test'), mimetype: 'image/jpeg' };
       next();
     }),
     array: jest.fn(() => (req, res, next) => next()),
   }));
   multerMock.diskStorage = jest.fn(() => ({}));
+  multerMock.memoryStorage = jest.fn(() => ({}));
   return multerMock;
 });
 

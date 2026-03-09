@@ -94,8 +94,8 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
   try {
     const [user] = await db.select().from(users).where(eq(users.id, userId));
     if (user) {
-      const { password: _, ...userWithoutPassword } = user;
-      (req as any).user = { ...userWithoutPassword, isAdmin: isAdminUser(user.username) };
+      const { password: _, avatarData: _ad, avatarMime: _am, ...userWithoutSensitive } = user;
+      (req as any).user = { ...userWithoutSensitive, isAdmin: isAdminUser(user.username) };
     }
   } catch {
     // Swallow errors — treat as unauthenticated
@@ -107,7 +107,7 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
 // Sets req.user for compatibility with existing routes
 export async function isAuthenticated(req: Request, res: Response, next: NextFunction) {
   const userId = (req as any).session?.userId;
-  
+
   if (!userId) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -115,14 +115,14 @@ export async function isAuthenticated(req: Request, res: Response, next: NextFun
   try {
     // Fetch user from database and attach to request
     const [user] = await db.select().from(users).where(eq(users.id, userId));
-    
+
     if (!user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // Attach user to request for use in routes (without password)
-    const { password: _, ...userWithoutPassword } = user;
-    (req as any).user = { ...userWithoutPassword, isAdmin: isAdminUser(user.username) };
+    // Attach user to request for use in routes (without sensitive/binary fields)
+    const { password: _, avatarData: _ad, avatarMime: _am, ...userWithoutSensitive } = user;
+    (req as any).user = { ...userWithoutSensitive, isAdmin: isAdminUser(user.username) };
     
     next();
   } catch (error) {
@@ -161,8 +161,8 @@ export async function authenticateWebSocket(req: IncomingMessage): Promise<(Omit
     const [user] = await db.select().from(users).where(eq(users.id, userId));
     if (!user) return null;
 
-    const { password: _, ...userWithoutPassword } = user;
-    return { ...userWithoutPassword, isAdmin: isAdminUser(user.username) };
+    const { password: _, avatarData: _ad, avatarMime: _am, ...userSafe } = user;
+    return { ...userSafe, isAdmin: isAdminUser(user.username) };
   } catch (error) {
     console.error('WebSocket auth error:', error);
     return null;

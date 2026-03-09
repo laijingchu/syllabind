@@ -558,7 +558,8 @@ These pages provide the core learning experience. Readers see their dashboard, w
 
 | Route | Component | Purpose |
 |-------|-----------|---------|
-| `/` | `Dashboard.tsx` | Home - active binder progress or catalog |
+| `/` | `Dashboard.tsx` | Home - two-column layout: active binder progress + sidebar cards |
+| `/completed` | `CompletedJourneys.tsx` | Full list of completed binders with certificates |
 | `/binder/:id/week/:index` | `WeekView.tsx` | Main learning interface with readings & exercises |
 | `/binder/:id/completed` | `Completion.tsx` | Celebration screen post-completion |
 | `/profile` | `Profile.tsx` | Edit bio, social links, preferences |
@@ -2721,3 +2722,34 @@ Replaced CSS `border` with inset `outline` on Card components and card-like divs
 - `server/routes.ts` - POST `/api/admin/create-user` now accepts `{ email, role }` instead of `{ name, email }`
 - `client/src/pages/AdminSettings.tsx` - Replaced Name input with Reader/Curator RadioGroup
 - `server/__tests__/admin-create-user.test.ts` - Updated payloads, added isCurator test
+
+### Dashboard Redesign — Two-Column Layout with Sidebar Cards (2026-03-09)
+
+**Change:** Replaced the bifurcated dashboard (first-time welcome state vs. returning-user state) with a unified two-column grid layout. The primary column (8 of 12 cols on desktop) contains BinderReviewStatusCard, active binder progress, suggested binders, and CuratorRecruitCard. The sidebar column (4 of 12 cols) contains modular cards: OnboardingChecklist, CreditsCard, and FeedbackCard.
+
+**Key decisions:**
+- Removed the first-time welcome conditional branch — new users see the same layout with onboarding checklist and an empty active binder state
+- Completed journeys moved to a dedicated `/completed` page; the dashboard shows a subtle "View N completed" link instead
+- Sidebar cards self-hide by returning `null` when not applicable (e.g., BinderReviewStatusCard hides when no binders pending review; CuratorRecruitCard hides when user is already a featured curator)
+- Admin Settings expanded from 1 feedback URL to 3: `feedback_url_general`, `feedback_url_learners`, `feedback_url_curators`
+- Added `curator_learn_more_url` site setting for the CuratorRecruitCard "Learn More" button
+
+**localStorage keys introduced:**
+- `syllabind_browsed_binder` — set to "true" when viewing a binder in BinderOverview (not own binder)
+- `syllabind_onboarding_dismissed` — set to "true" when user dismisses the completed onboarding checklist
+
+**New files:**
+- `client/src/pages/CompletedJourneys.tsx` — dedicated completed binders page at `/completed`
+- `client/src/components/OnboardingChecklist.tsx` — 4-step checklist sidebar card
+- `client/src/components/CreditsCard.tsx` — AI credit balance sidebar card
+- `client/src/components/BinderReviewStatusCard.tsx` — pending review binders card (primary column, top)
+- `client/src/components/FeedbackCard.tsx` — feedback CTA sidebar card (uses `feedback_url_learners` site setting)
+- `client/src/components/CuratorRecruitCard.tsx` — curator recruitment card with featured binders (primary column, bottom)
+- 5 design system documentation pages for the new components
+
+**Modified files:**
+- `client/src/pages/Dashboard.tsx` — major rewrite: two-column grid, sidebar cards, removed welcome state
+- `client/src/pages/AdminSettings.tsx` — expanded feedback URL from 1 field to 3 (general, learners, curators)
+- `client/src/pages/BinderOverview.tsx` — added localStorage for `syllabind_browsed_binder`
+- `client/src/App.tsx` — added `/completed` route and 5 design system routes
+- `client/src/pages/design-system/DesignSystemLayout.tsx` — added 5 nav entries

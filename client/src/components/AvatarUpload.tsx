@@ -69,7 +69,7 @@ export function AvatarUpload({ currentAvatarUrl, name, onUpload, onRemove }: Ava
           className={`
             border-2 border-dashed rounded-md px-4 py-3 cursor-pointer transition-colors text-sm font-medium
             flex items-center gap-2 hover:bg-muted hover:border-border
-            ${isDragActive ? 'border-primary bg-primary-surface' : 'border-border'}
+            ${isDragActive ? 'border-primary bg-highlight' : 'border-border'}
           `}
         >
           <input {...getInputProps()} />

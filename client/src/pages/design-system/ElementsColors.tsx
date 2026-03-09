@@ -4,17 +4,16 @@ const neutralRampSteps = ['50','100','150','200','250','300','350','400','450','
 const semanticRampSteps = ['50','100','200','300','400','500','600','700','800','900'];
 
 const surfaceColors = [
-  { name: 'background', token: '--background', tw: 'bg-background', desc: 'The base canvas color for every page.', light: '--warm-50', dark: '--cool-800' },
+  { name: 'background', token: '--background', tw: 'bg-background', desc: 'The base canvas color for every page.', light: '--warm-100', dark: '--cool-850' },
   { name: 'card', token: '--card', tw: 'bg-card', desc: 'Surface color for cards, panels, and elevated containers.', light: '--warm-50', dark: '--cool-800' },
   { name: 'popover', token: '--popover', tw: 'bg-popover', desc: 'Surface color for dropdown menus, tooltips, and popovers.', light: '--warm-50', dark: '--cool-800' },
-  { name: 'muted', token: '--muted', tw: 'bg-muted', desc: 'Most passive variant surface. Tab lists, code blocks, separators, skeleton loaders.', light: '--warm-100', dark: '--cool-750' },
-  { name: 'highlight', token: '--highlight', tw: 'bg-highlight', desc: 'Mid-level highlight. Active navigation items, calendar today, selected states.', light: '--warm-150', dark: '--cool-700' },
+  { name: 'muted', token: '--muted', tw: 'bg-muted', desc: 'Most passive variant surface. Tab lists, code blocks, separators, skeleton loaders.', light: '--warm-150', dark: '--cool-750' },
+  { name: 'highlight', token: '--highlight', tw: 'bg-highlight', desc: 'Primary tinted surface. Active nav items, icon containers, progress tracks, selected states, skeleton loaders.', light: '--warm-200', dark: '--cool-700' },
   { name: 'secondary', token: '--secondary', tw: 'bg-secondary', desc: 'Most prominent variant surface. Secondary buttons, badges, interactive fills.', light: '--warm-200', dark: '--cool-650' },
-  { name: 'primary-inverted', token: '--primary-inverted', tw: 'bg-primary-inverted', desc: 'Solid primary fill. Primary buttons, tooltips, badges, checkboxes. The strong counterpart to primary-surface.', light: '--warm-900', dark: '--cool-50' },
+  { name: 'primary-inverted', token: '--primary-inverted', tw: 'bg-primary-inverted', desc: 'Solid primary fill. Primary buttons, tooltips, badges, checkboxes. The strong counterpart to highlight.', light: '--warm-900', dark: '--cool-50' },
 ];
 
 const semanticSurfaceColors = [
-  { name: 'primary-surface', token: '--primary-surface', tw: 'bg-primary-surface', desc: 'Tinted background for primary highlights, active nav items, selected states, and icon containers.', light: '--warm-150', dark: '--cool-700' },
   { name: 'warning-surface', token: '--warning-surface', tw: 'bg-warning-surface', desc: 'Tinted background for warning banners, badges, and icon containers.', light: '--warning-50', dark: '--warning-900' },
   { name: 'success-surface', token: '--success-surface', tw: 'bg-success-surface', desc: 'Tinted background for success banners, approval notices, and positive states.', light: '--success-50', dark: '--success-900' },
   { name: 'danger-surface', token: '--danger-surface', tw: 'bg-danger-surface', desc: 'Tinted background for error boxes, destructive action highlights.', light: '--danger-50', dark: '--danger-900' },
@@ -30,7 +29,7 @@ const elevationTokens = [
 
 const foregroundTextColors = [
   { name: 'foreground', token: '--foreground', tw: 'text-foreground', desc: 'Default text color. card-foreground and popover-foreground are aliases.', light: '--warm-950', dark: '--cool-50' },
-  { name: 'muted-foreground', token: '--muted-foreground', tw: 'text-muted-foreground', desc: 'De-emphasized text. Descriptions, timestamps, helper text, placeholders.', light: '--warm-500', dark: '--cool-400' },
+  { name: 'muted-foreground', token: '--muted-foreground', tw: 'text-muted-foreground', desc: 'De-emphasized text. Descriptions, timestamps, helper text, placeholders.', light: '--warm-550', dark: '--cool-400' },
   { name: 'secondary-foreground', token: '--secondary-foreground', tw: 'text-secondary-foreground', desc: 'Text on secondary surfaces.', light: '--warm-850', dark: '--cool-50', bg: '--secondary' },
   { name: 'highlight-foreground', token: '--highlight-foreground', tw: 'text-highlight-foreground', desc: 'Text on highlight surfaces.', light: '--warm-850', dark: '--cool-50', bg: '--highlight' },
   { name: 'foreground-inverted', token: '--foreground-inverted', tw: 'text-foreground-inverted', desc: 'Text on inverted surfaces (primary-inverted, danger-inverted). Contrasts against the inverted background in each mode.', light: '--warm-50', dark: '--cool-900', bg: '--primary-inverted' },
@@ -40,7 +39,7 @@ const foregroundTextColors = [
 
 
 const borderTokens = [
-  { name: 'border', token: '--border', tw: 'border-border', desc: 'Default dividers and card edges. Picked from the warm/cool ramp.', light: '--warm-200', dark: '--cool-750' },
+  { name: 'border', token: '--border', tw: 'border-border', desc: 'Default dividers and card edges. Picked from the warm/cool ramp.', light: '--warm-250', dark: '--cool-750' },
   { name: 'input', token: '--input', tw: 'border-input', desc: 'Form input outlines — text fields, selects, textareas.', light: '--warm-200', dark: '--cool-750' },
   { name: 'ring', token: '--ring', tw: 'ring-ring', desc: 'Focus ring color. Appears when tabbing or clicking into interactive elements.', light: '--warm-800', dark: '--cool-200' },
   { name: 'warning-border', token: '--warning-border', tw: 'border-warning-border', desc: 'Border for warning banners and badges. Picked from the warning ramp.', light: '--warning-200', dark: '--warning-800', bg: '--warning-surface' },
@@ -156,12 +155,12 @@ export default function ElementsColors() {
 --warm-300: 8 16% 82%;
 
 /* Semantic token references the ramp */
---border: var(--warm-300);              /* light mode */
---border: var(--cool-700);              /* dark mode */
+--border: var(--warm-250);              /* light mode */
+--border: var(--cool-750);              /* dark mode */
 
 /* How engineers use it */
 <Card />                                /* outline-border is the default */
-<Badge className="bg-primary-surface" />     /* 10% opacity variant */`}</CodeBlock>
+<Badge className="bg-highlight" />            /* tinted surface variant */`}</CodeBlock>
         </section>
 
         {/* Surface Colors */}
@@ -170,9 +169,9 @@ export default function ElementsColors() {
           <p className="text-base text-muted-foreground">
             Backgrounds and containers. In light mode, surfaces use a warm off-white (hue 8°)
             for a softer feel. In dark mode, the page canvas is a deep cool blue-gray.
-            Muted, highlight, and secondary form a three-step progression away from the background —
-            muted is closest to the canvas (most passive), highlight is a noticeable highlight,
-            and secondary is the most prominent variant surface.
+            The background sits one stop above the card surface to create visual separation.
+            Muted and secondary share the same ramp stop, while highlight is one step darker
+            for hover and active states.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {surfaceColors.map(c => (

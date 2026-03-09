@@ -2541,7 +2541,7 @@ export default function BinderEditor() {
               </p>
             )}
             {isGenerating && (
-              <Card className="mt-4 bg-primary-surface">
+              <Card className="mt-4 bg-highlight">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
                     <div className="relative">

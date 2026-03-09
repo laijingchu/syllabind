@@ -37,7 +37,7 @@ export default function ElementsSpacing() {
                 <code className="text-xs font-mono text-primary w-8 text-right shrink-0">{n}</code>
                 <span className="text-sm text-muted-foreground w-20 shrink-0">{n * 4}px</span>
                 <div
-                  className="h-4 rounded-sm bg-primary-surface border border-border"
+                  className="h-4 rounded-sm bg-highlight border border-border"
                   style={{ width: `${n * 4}px` }}
                 />
               </div>
@@ -64,7 +64,7 @@ export default function ElementsSpacing() {
             {radiusTokens.map(r => (
               <div key={r.token} className="space-y-2">
                 <div
-                  className="h-20 w-full bg-primary-surface border-2 border-border mx-auto"
+                  className="h-20 w-full bg-highlight border-2 border-border mx-auto"
                   style={{ borderRadius: r.resolved }}
                 />
                 <div className="text-center">
@@ -96,7 +96,7 @@ export default function ElementsSpacing() {
             ].map(r => (
               <div key={r.label} className="text-center space-y-2">
                 <div
-                  className="h-16 w-16 bg-primary-surface border border-border mx-auto"
+                  className="h-16 w-16 bg-highlight border border-border mx-auto"
                   style={{ borderRadius: r.radius }}
                 />
                 <p className="text-xs font-mono">{r.label}</p>

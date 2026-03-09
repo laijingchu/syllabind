@@ -100,7 +100,7 @@ export default function UIPill() {
           </div>
           <div className="text-base text-muted-foreground space-y-2">
             <p><strong className="text-foreground">Default:</strong> Solid fill. Active = <code className="text-primary bg-muted px-1 rounded">bg-foreground text-background</code>, Inactive = <code className="text-primary bg-muted px-1 rounded">bg-muted text-muted-foreground</code>. Used for primary filter controls.</p>
-            <p><strong className="text-foreground">Outline:</strong> Bordered. Active = <code className="text-primary bg-muted px-1 rounded">bg-primary-surface border-border</code>, Inactive = <code className="text-primary bg-muted px-1 rounded">border-border text-primary</code>. Used for secondary actions like demo topic chips.</p>
+            <p><strong className="text-foreground">Outline:</strong> Bordered. Active = <code className="text-primary bg-muted px-1 rounded">bg-highlight border-border</code>, Inactive = <code className="text-primary bg-muted px-1 rounded">border-border text-primary</code>. Used for secondary actions like demo topic chips.</p>
           </div>
         </section>
 

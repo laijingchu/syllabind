@@ -482,7 +482,7 @@ export default function CuratorDashboard() {
             <AnimatedCard delay={0.1}>
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-                  <div className="bg-primary-surface p-4 rounded-full">
+                  <div className="bg-highlight p-4 rounded-full">
                     <BookOpen className="h-8 w-8 text-primary" />
                   </div>
                   <div className="space-y-1">
