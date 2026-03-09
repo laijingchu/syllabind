@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import type { User } from "@shared/schema";
 
 async function fetchUser(): Promise<User | null> {
@@ -29,10 +30,9 @@ async function logout(): Promise<void> {
 }
 
 export function useAuth() {
-  // Separate state so the loading overlay persists through the full page
-  // navigation. useMutation's isPending resets to false as soon as onSuccess
-  // fires, but window.location.href still needs time to load the new page.
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ["/api/auth/me"],
@@ -47,8 +47,17 @@ export function useAuth() {
       setIsLoggingOut(true);
     },
     onSuccess: () => {
-      // Keep isLoggingOut true — the full page reload will unmount everything.
-      window.location.href = "/welcome";
+      // Set user to null but keep the query entry so isLoading stays false
+      // (avoids Router flashing a spinner and killing the "Come back soon!" overlay).
+      queryClient.setQueryData(["/api/auth/me"], null);
+      // Remove stale data (enrollments, binders, etc.) but preserve the auth query.
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey[0] !== "/api/auth/me",
+      });
+      setTimeout(() => {
+        setIsLoggingOut(false);
+        setLocation("/welcome");
+      }, 800);
     },
     onError: () => {
       setIsLoggingOut(false);

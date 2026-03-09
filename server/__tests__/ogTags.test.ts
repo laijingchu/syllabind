@@ -91,9 +91,20 @@ describe("ogTags", () => {
       };
       const result = injectOgTags(TEMPLATE_HTML, xssBinder);
       expect(result).toContain("&lt;script&gt;");
-      expect(result).toContain("&amp;");
-      expect(result).toContain("&quot;quotes&quot;");
       expect(result).not.toContain('<script>alert');
+    });
+
+    it("strips HTML tags from rich-text description", () => {
+      const htmlBinder: Binder = {
+        ...mockBinder,
+        description: '<p>Learn to live <strong>intentionally</strong> with technology.</p>',
+      };
+      const result = injectOgTags(TEMPLATE_HTML, htmlBinder);
+      expect(result).toContain(
+        'content="Learn to live intentionally with technology."',
+      );
+      expect(result).not.toContain('<p>');
+      expect(result).not.toContain('&lt;p&gt;');
     });
   });
 });

@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Loader2, Settings, UserPlus } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ArrowLeft, Loader2, Mail, Settings, UserPlus } from 'lucide-react';
 import { Link } from 'wouter';
 
 export default function AdminSettings() {
@@ -30,8 +31,8 @@ export default function AdminSettings() {
   const [wipBadgeSaving, setWipBadgeSaving] = useState(false);
 
   // Create User state
-  const [createName, setCreateName] = useState('');
   const [createEmail, setCreateEmail] = useState('');
+  const [createRole, setCreateRole] = useState<'reader' | 'curator'>('reader');
   const [creating, setCreating] = useState(false);
 
   // Redirect non-admin users
@@ -206,6 +207,12 @@ export default function AdminSettings() {
           Admin Settings
         </h1>
         <p className="text-muted-foreground">Configure platform-wide settings.</p>
+        <Link href="/admin/emails">
+          <Button variant="secondary" size="sm" className="mt-3">
+            <Mail className="mr-2 h-4 w-4" />
+            Email Previews
+          </Button>
+        </Link>
       </div>
 
       <Card>
@@ -220,15 +227,6 @@ export default function AdminSettings() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="create-name">Name</Label>
-            <Input
-              id="create-name"
-              placeholder="Jane Doe"
-              value={createName}
-              onChange={(e) => setCreateName(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
             <Label htmlFor="create-email">Email</Label>
             <Input
               id="create-email"
@@ -238,10 +236,23 @@ export default function AdminSettings() {
               onChange={(e) => setCreateEmail(e.target.value)}
             />
           </div>
+          <div className="space-y-2">
+            <Label>Role</Label>
+            <RadioGroup value={createRole} onValueChange={(v) => setCreateRole(v as 'reader' | 'curator')} className="flex gap-4">
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="reader" id="role-reader" />
+                <Label htmlFor="role-reader" className="font-normal cursor-pointer">Reader</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="curator" id="role-curator" />
+                <Label htmlFor="role-curator" className="font-normal cursor-pointer">Curator</Label>
+              </div>
+            </RadioGroup>
+          </div>
           <Button
             onClick={async () => {
-              if (!createName.trim() || !createEmail.trim()) {
-                toast({ title: 'Error', description: 'Name and email are required.', variant: 'destructive' });
+              if (!createEmail.trim()) {
+                toast({ title: 'Error', description: 'Email is required.', variant: 'destructive' });
                 return;
               }
               setCreating(true);
@@ -250,7 +261,7 @@ export default function AdminSettings() {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   credentials: 'include',
-                  body: JSON.stringify({ name: createName.trim(), email: createEmail.trim() }),
+                  body: JSON.stringify({ email: createEmail.trim(), role: createRole }),
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Failed to create user');
@@ -258,8 +269,8 @@ export default function AdminSettings() {
                   title: data.resent ? 'Welcome email resent' : 'Account created',
                   description: `Username: ${data.username}. ${data.emailSent ? 'Welcome email sent.' : 'Email could not be sent — share credentials manually.'}`,
                 });
-                setCreateName('');
                 setCreateEmail('');
+                setCreateRole('reader');
               } catch (err: any) {
                 toast({ title: 'Error', description: err.message, variant: 'destructive' });
               } finally {

@@ -13,7 +13,7 @@ import {
 } from "@shared/schema";
 import { hashPassword, comparePassword } from "./auth/emailAuth";
 import { sendEmail } from "./lib/brevo";
-import { buildWelcomeEmail } from "./lib/emailTemplates";
+import { buildWelcomeEmail, buildBinderSubmittedEmail, buildBinderApprovedEmail, buildBinderRejectedEmail } from "./lib/emailTemplates";
 import crypto from "crypto";
 import { registerStripeRoutes } from "./routes/stripe";
 import { registerWebhookRoutes } from "./routes/webhook";
@@ -60,6 +60,24 @@ const upload = multer({
     }
   }
 });
+
+function getBaseUrl(req: express.Request): string {
+  const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+  const host = req.headers['x-forwarded-host'] || req.get('host') || 'syllabind.com';
+  return `${proto}://${host}`;
+}
+
+async function getAdminEmails(): Promise<string[]> {
+  const raw = process.env.ADMIN_USERNAMES;
+  if (!raw) return [];
+  const usernames = raw.split(',').map(u => u.trim()).filter(Boolean);
+  const emails: string[] = [];
+  for (const username of usernames) {
+    const user = await storage.getUserByUsername(username);
+    if (user?.email) emails.push(user.email);
+  }
+  return emails;
+}
 
 export async function registerRoutes(
   httpServer: Server,
@@ -305,10 +323,14 @@ export async function registerRoutes(
     }
 
     try {
-      const { name, email } = req.body;
+      const { email, role } = req.body;
 
-      if (!name || !email) {
-        return res.status(400).json({ error: "Name and email are required" });
+      if (!email || !role) {
+        return res.status(400).json({ error: "Email and role are required" });
+      }
+
+      if (role !== 'reader' && role !== 'curator') {
+        return res.status(400).json({ error: "Role must be 'reader' or 'curator'" });
       }
 
       // Basic email format validation
@@ -332,7 +354,7 @@ export async function registerRoutes(
         await storage.updateUser(existingUser.id, { password: hashedPassword });
 
         const loginUrl = (process.env.APP_URL || `${req.protocol}://${req.get('host')}`) + '/login';
-        const { subject, html, text } = buildWelcomeEmail({ name: existingUser.name || name, email, tempPassword, loginUrl });
+        const { subject, html, text } = buildWelcomeEmail({ email, tempPassword, loginUrl });
         const fromEmail = process.env.BREVO_FROM || 'noreply@syllabind.com';
         const emailSent = await sendEmail({ to: email, from: fromEmail, subject, html, text });
 
@@ -351,7 +373,7 @@ export async function registerRoutes(
         email,
         password: hashedPassword,
         username,
-        name,
+        isCurator: role === 'curator',
         authProvider: 'email',
         mustChangePassword: true,
       });
@@ -365,7 +387,7 @@ export async function registerRoutes(
 
       // Send welcome email
       const loginUrl = (process.env.APP_URL || `${req.protocol}://${req.get('host')}`) + '/login';
-      const { subject, html, text } = buildWelcomeEmail({ name, email, tempPassword, loginUrl });
+      const { subject, html, text } = buildWelcomeEmail({ email, tempPassword, loginUrl });
       const fromEmail = process.env.BREVO_FROM || 'noreply@syllabind.com';
       const emailSent = await sendEmail({ to: email, from: fromEmail, subject, html, text });
 
@@ -405,11 +427,29 @@ export async function registerRoutes(
     if (binder.status !== 'pending_review') {
       return res.status(400).json({ error: "Binder is not pending review" });
     }
+    const note = req.body?.note || null;
     const updated = await storage.updateBinder(id, {
       status: 'published',
-      reviewNote: req.body?.note || null,
+      reviewNote: note,
       reviewedAt: new Date(),
     });
+
+    // Notify curator via email
+    if (binder.curatorId) {
+      const curator = await storage.getUserByUsername(binder.curatorId);
+      if (curator?.email) {
+        const baseUrl = getBaseUrl(req);
+        const fromEmail = process.env.BREVO_FROM || 'noreply@syllabind.com';
+        const { subject, html, text } = buildBinderApprovedEmail({
+          binderTitle: binder.title,
+          curatorName: curator.name || binder.curatorId,
+          binderUrl: `${baseUrl}/binder/${id}`,
+          note,
+        });
+        sendEmail({ to: curator.email, from: fromEmail, subject, html, text });
+      }
+    }
+
     res.json(updated);
   });
 
@@ -435,6 +475,23 @@ export async function registerRoutes(
       submittedAt: null,
       reviewedAt: new Date(),
     });
+
+    // Notify curator via email
+    if (binder.curatorId) {
+      const curator = await storage.getUserByUsername(binder.curatorId);
+      if (curator?.email) {
+        const baseUrl = getBaseUrl(req);
+        const fromEmail = process.env.BREVO_FROM || 'noreply@syllabind.com';
+        const { subject, html, text } = buildBinderRejectedEmail({
+          binderTitle: binder.title,
+          curatorName: curator.name || binder.curatorId,
+          reason,
+          editorUrl: `${baseUrl}/binder/${id}/edit`,
+        });
+        sendEmail({ to: curator.email, from: fromEmail, subject, html, text });
+      }
+    }
+
     res.json(updated);
   });
 
@@ -788,6 +845,21 @@ export async function registerRoutes(
           submittedAt: new Date(),
           reviewNote: null,
         });
+
+        // Notify admins via email
+        const baseUrl = getBaseUrl(req);
+        const curatorUser = await storage.getUserByUsername(username);
+        const adminEmails = await getAdminEmails();
+        const fromEmail = process.env.BREVO_FROM || 'noreply@syllabind.com';
+        const { subject, html, text } = buildBinderSubmittedEmail({
+          binderTitle: binder.title,
+          curatorName: curatorUser?.name || username,
+          reviewUrl: `${baseUrl}/admin/review`,
+        });
+        for (const adminEmail of adminEmails) {
+          sendEmail({ to: adminEmail, from: fromEmail, subject, html, text });
+        }
+
         return res.json(updated);
       } else {
         // Unlisted/private: publish directly (not in catalog)

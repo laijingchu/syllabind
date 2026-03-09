@@ -25,6 +25,7 @@ import CuratorProfile from "@/pages/CuratorProfile";
 import Login from "@/pages/Login";
 import Profile from "@/pages/Profile";
 import AdminSettings from "@/pages/AdminSettings";
+import AdminEmailPreviews from "@/pages/AdminEmailPreviews";
 import Settings from "@/pages/Settings";
 import Billing from "@/pages/Billing";
 import Pricing from "@/pages/Pricing";
@@ -143,6 +144,7 @@ function Router() {
         <Route path="/billing" component={() => <ProtectedRoute component={Billing} />} />
         <Route path="/pricing" component={Pricing} />
         <Route path="/admin/settings" component={() => <ProtectedRoute component={AdminSettings} />} />
+        <Route path="/admin/emails" component={() => <ProtectedRoute component={AdminEmailPreviews} />} />
 
         <Route path="/design-system" component={ElementsOverview} />
         <Route path="/design-system/colors" component={ElementsColors} />

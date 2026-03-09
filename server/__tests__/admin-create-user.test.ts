@@ -60,10 +60,14 @@ describe('Admin Create User', () => {
       }
 
       try {
-        const { name, email } = req.body;
+        const { email, role } = req.body;
 
-        if (!name || !email) {
-          return res.status(400).json({ error: 'Name and email are required' });
+        if (!email || !role) {
+          return res.status(400).json({ error: 'Email and role are required' });
+        }
+
+        if (role !== 'reader' && role !== 'curator') {
+          return res.status(400).json({ error: "Role must be 'reader' or 'curator'" });
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -86,7 +90,7 @@ describe('Admin Create User', () => {
 
           const { buildWelcomeEmail } = require('../lib/emailTemplates');
           const loginUrl = 'http://localhost:3000/login';
-          const { subject, html, text } = buildWelcomeEmail({ name: existingUser.name || name, email, tempPassword, loginUrl });
+          const { subject, html, text } = buildWelcomeEmail({ email, tempPassword, loginUrl });
           const emailSent = await sendEmail({ to: email, from: 'noreply@syllabind.com', subject, html, text });
 
           return res.json({ success: true, username: existingUser.username, emailSent, resent: true });
@@ -103,7 +107,7 @@ describe('Admin Create User', () => {
           email,
           password: hashedPassword,
           username,
-          name,
+          isCurator: role === 'curator',
           authProvider: 'email',
           mustChangePassword: true,
         });
@@ -116,7 +120,7 @@ describe('Admin Create User', () => {
 
         const { buildWelcomeEmail } = require('../lib/emailTemplates');
         const loginUrl = 'http://localhost:3000/login';
-        const { subject, html, text } = buildWelcomeEmail({ name, email, tempPassword, loginUrl });
+        const { subject, html, text } = buildWelcomeEmail({ email, tempPassword, loginUrl });
         const emailSent = await sendEmail({ to: email, from: 'noreply@syllabind.com', subject, html, text });
 
         res.json({ success: true, username: newUser.username, emailSent });
@@ -180,7 +184,7 @@ describe('Admin Create User', () => {
   // ========== POST /api/admin/create-user ==========
 
   describe('POST /api/admin/create-user', () => {
-    const validPayload = { name: 'New User', email: 'new@example.com' };
+    const validPayload = { email: 'new@example.com', role: 'reader' };
 
     it('creates a user successfully', async () => {
       const createdUser = { ...mockUser, username: 'new_abc123', id: 'new-id', mustChangePassword: true };
@@ -197,11 +201,27 @@ describe('Admin Create User', () => {
       expect(res.body.emailSent).toBe(true);
       expect(mockStorage.createUser).toHaveBeenCalledWith(expect.objectContaining({
         email: 'new@example.com',
-        name: 'New User',
+        isCurator: false,
         mustChangePassword: true,
         authProvider: 'email',
       }));
       expect(grantSignupCredits).toHaveBeenCalledWith('new-id');
+    });
+
+    it('sets isCurator to true when role is curator', async () => {
+      const createdUser = { ...mockUser, username: 'curator_abc', id: 'curator-id', mustChangePassword: true, isCurator: true };
+      mockStorage.getUserByEmail.mockResolvedValue(null);
+      mockStorage.createUser.mockResolvedValue(createdUser);
+
+      const res = await request(adminApp)
+        .post('/api/admin/create-user')
+        .send({ email: 'curator@example.com', role: 'curator' });
+
+      expect(res.status).toBe(200);
+      expect(mockStorage.createUser).toHaveBeenCalledWith(expect.objectContaining({
+        email: 'curator@example.com',
+        isCurator: true,
+      }));
     });
 
     it('resends welcome email for user who has not logged in', async () => {
@@ -253,7 +273,7 @@ describe('Admin Create User', () => {
     it('rejects missing fields', async () => {
       const res = await request(adminApp)
         .post('/api/admin/create-user')
-        .send({ name: 'Test' });
+        .send({ email: 'test@example.com' });
 
       expect(res.status).toBe(400);
       expect(res.body.error).toContain('required');
@@ -262,7 +282,7 @@ describe('Admin Create User', () => {
     it('rejects invalid email format', async () => {
       const res = await request(adminApp)
         .post('/api/admin/create-user')
-        .send({ name: 'Test', email: 'not-an-email' });
+        .send({ email: 'not-an-email', role: 'reader' });
 
       expect(res.status).toBe(400);
       expect(res.body.error).toContain('email');

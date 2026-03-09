@@ -129,6 +129,11 @@ Uses a timestamp-comparison approach (no notifications table). Two columns drive
 - "Dismiss" button in Curator Studio to acknowledge and clear notifications
 - "Mark all as read" button in Review Queue tab
 
+**Email notifications:** In addition to in-app notifications, email is sent via Brevo:
+- When a curator submits a binder for review → all admin users (from `ADMIN_USERNAMES`) receive an email with a link to the review queue
+- When an admin approves a binder → the curator receives an approval email (with optional reviewer note) linking to the published binder
+- When an admin rejects a binder → the curator receives a feedback email with the rejection reason and a link to the binder editor
+
 #### Weeks Table
 
 This table stores the weekly structure of each binder. Each binder can have multiple weeks, and each week can contain multiple steps (readings and exercises). Weeks are ordered by their index number, allowing curators to structure their binder chronologically.
@@ -574,6 +579,7 @@ These pages are only accessible to users who have enabled curator mode. They pro
 | `/curator/binder/:id/readers` | `BinderReaders.tsx` | Reader list, cohorts, submissions |
 | `/curator/profile` | `CuratorProfile.tsx` | Curator bio, expertise, social links |
 | `/admin` | `AdminSettings.tsx` | Admin-only: configure Slack URL and site settings |
+| `/admin/emails` | `AdminEmailPreviews.tsx` | Admin-only: preview all transactional email templates |
 
 ---
 
@@ -1095,7 +1101,7 @@ All user-generated HTML rendered via `dangerouslySetInnerHTML` is sanitized thro
 
 ### Email Infrastructure
 
-`server/lib/brevo.ts` — Brevo (formerly Sendinblue) email utility with lazy client init and graceful degradation (returns `false` when `BREVO_API_KEY` is not set). `server/lib/emailTemplates.ts` — branded HTML/text email builders (currently: `buildWelcomeEmail` for admin-created accounts).
+`server/lib/brevo.ts` — Brevo (formerly Sendinblue) email utility with lazy client init and graceful degradation (returns `false` when `BREVO_API_KEY` is not set). `server/lib/emailTemplates.ts` — branded HTML/text email builders: `buildWelcomeEmail` (admin-created accounts), `buildPasswordResetEmail`, `buildBinderSubmittedEmail` (notifies admins on submission), `buildBinderApprovedEmail` (notifies curator on approval), `buildBinderRejectedEmail` (notifies curator on rejection with feedback).
 
 ### Admin Account Creation
 
@@ -2705,3 +2711,13 @@ Replaced CSS `border` with inset `outline` on Card components and card-like divs
 - `server/routes.ts` - Applied `optionalAuth` to `GET /api/binders/:id`
 - `jest.setup.js` - Added `optionalAuth` to auth mock
 - `server/__tests__/routes-integration.test.ts` - Added 3 tests for private binder visibility
+
+### Admin Create User: Email + Role Flow (2026-03-09)
+
+**Change:** Replaced the admin "Create User Account" form from name+email to email+role (reader/curator) selection. The selected role sets the `isCurator` flag on the new account. Welcome email greeting changed from personalized ("Hi {name}") to generic ("Hi there,"), and the email subject changed to "Your Syllabind account is ready".
+
+**Files Modified:**
+- `server/lib/emailTemplates.ts` - Removed `name` from WelcomeEmailParams
+- `server/routes.ts` - POST `/api/admin/create-user` now accepts `{ email, role }` instead of `{ name, email }`
+- `client/src/pages/AdminSettings.tsx` - Replaced Name input with Reader/Curator RadioGroup
+- `server/__tests__/admin-create-user.test.ts` - Updated payloads, added isCurator test

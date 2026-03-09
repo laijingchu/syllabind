@@ -784,7 +784,7 @@ export default function BinderOverview() {
                 {slackUrl && binder?.status === 'published' && (
                   <Button variant="secondary" size="sm" onClick={handleJoinSlack} className="w-full gap-2">
                     <Hash className="h-4 w-4" />
-                    Join Slack Community
+                    Join learning community
                     {(!currentUser || !isPro) && (
                       <Badge className="bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
                     )}
@@ -793,7 +793,7 @@ export default function BinderOverview() {
 
                 <Button variant="secondary" size="sm" onClick={() => setShowShareDialog(true)} className="w-full gap-2">
                   <Share2 className="h-4 w-4" />
-                  Share with a Friend
+                  Share with friend
                 </Button>
               </div>
 
@@ -830,13 +830,13 @@ export default function BinderOverview() {
 
                 <Button variant="secondary" size="sm" className="w-full gap-2" disabled>
                   <Hash className="h-4 w-4" />
-                  Join Slack Community
+                  Join learning community
                   <Badge className="bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
                 </Button>
 
                 <Button variant="secondary" size="sm" className="w-full gap-2" disabled>
                   <Share2 className="h-4 w-4" />
-                  Share with a Friend
+                  Share with friend
                 </Button>
               </div>
             </div>

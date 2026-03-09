@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
-import { BookOpen, User, LogOut, Menu, X, Bug, Settings, CreditCard, Loader2, Sun, Moon } from 'lucide-react';
+import { BookOpen, User, LogOut, Menu, X, Bug, Settings, CreditCard, Loader2, Sun, Moon, Mail } from 'lucide-react';
 import { useTheme } from '@/hooks/use-theme';
 import { Button } from '@/components/ui/button';
 import {
@@ -302,6 +302,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         <DropdownMenuItem className="cursor-pointer">
                           <Settings className="mr-2 h-4 w-4" />
                           <span>Admin Settings</span>
+                        </DropdownMenuItem>
+                      </Link>
+                      <Link href="/admin/emails">
+                        <DropdownMenuItem className="cursor-pointer">
+                          <Mail className="mr-2 h-4 w-4" />
+                          <span>Email Previews</span>
                         </DropdownMenuItem>
                       </Link>
                     </>

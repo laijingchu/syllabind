@@ -10,7 +10,10 @@ const DEFAULT_DESCRIPTION =
  */
 export function injectOgTags(html: string, binder: Binder): string {
   const title = `${binder.title} | Syllabind`;
-  const description = binder.description || DEFAULT_DESCRIPTION;
+  const rawDescription = binder.description
+    ? stripHtml(binder.description)
+    : DEFAULT_DESCRIPTION;
+  const description = rawDescription || DEFAULT_DESCRIPTION;
 
   // Escape HTML entities to prevent injection
   const safeTitle = escapeHtml(title);
@@ -34,6 +37,20 @@ export function injectOgTags(html: string, binder: Binder): string {
   );
 
   return html;
+}
+
+/** Strip HTML tags and decode common entities to plain text */
+function stripHtml(str: string): string {
+  return str
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function escapeHtml(str: string): string {
