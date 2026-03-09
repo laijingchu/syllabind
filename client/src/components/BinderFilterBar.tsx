@@ -51,9 +51,7 @@ export function BinderFilterBar({
   const toggleCategory = (slug: string) => {
     if (!onCategoriesChange || !selectedCategories) return;
     onCategoriesChange(
-      selectedCategories.includes(slug)
-        ? selectedCategories.filter(s => s !== slug)
-        : [...selectedCategories, slug]
+      selectedCategories.includes(slug) ? [] : [slug]
     );
   };
 
@@ -99,7 +97,7 @@ export function BinderFilterBar({
         </div>
       </div>
 
-      {/* Category pills (multi-select) */}
+      {/* Category pills (single-select) */}
       {onCategoriesChange && categories && selectedCategories && (
         <div className="catalog-categories flex gap-1.5 flex-wrap">
           <Pill
