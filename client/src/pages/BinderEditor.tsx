@@ -909,6 +909,26 @@ export default function BinderEditor() {
               setJustCompletedWeek(null);
               setGenerationProgress({ currentWeek: 0, status: '' });
               setActiveWeekTab('week-1');
+
+              // Save state for preview and show toast (mirrors real generation_complete).
+              // Demo data isn't persisted to DB, so always use sessionStorage preview.
+              setFormData(prev => {
+                const json = JSON.stringify(prev);
+                sessionStorage.setItem('guestBinderPreview', json);
+                sessionStorage.setItem('guestEditorState', json);
+                return prev;
+              });
+              toast({
+                title: "Demo Binder Ready!",
+                description: "See how your binder looks to readers.",
+                action: (
+                  <ToastAction altText="View Preview" onClick={() => {
+                    setLocation('/create/preview');
+                  }}>
+                    View Preview
+                  </ToastAction>
+                ),
+              });
             }, 400);
           }
         }, endDelay);
@@ -2430,7 +2450,7 @@ export default function BinderEditor() {
                         <Button
                           variant="tertiary"
                           onClick={handleAutogenerateClick}
-                          disabled={isGenerating || !titleDraft || !formData.description}
+                          disabled={isGenerating || isDemoMode || !titleDraft || !formData.description}
                           className="gap-2"
                         >
                           <Wand2 className="h-4 w-4" />
@@ -2439,15 +2459,17 @@ export default function BinderEditor() {
                             : hasBinderContent
                               ? 'Regenerate with AI'
                               : 'Autogenerate with AI'}
-                          {hasBinderContent && isFreeTier && (
+                          {hasBinderContent && isFreeTier && !isDemoMode && (
                             <Badge className="ml-1 bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Free</Badge>
                           )}
                         </Button>
                       </span>
                     </TooltipTrigger>
-                    {(!titleDraft || !formData.description) && !isGenerating && (
+                    {isDemoMode && !isGenerating ? (
+                      <TooltipContent>Cannot regenerate a demo binder.</TooltipContent>
+                    ) : (!titleDraft || !formData.description) && !isGenerating ? (
                       <TooltipContent>Please fill in Title and Description.</TooltipContent>
-                    )}
+                    ) : null}
                   </Tooltip>
                 </TooltipProvider>
               </div>
@@ -2661,33 +2683,44 @@ export default function BinderEditor() {
                        {/* Regenerate Week Button */}
                        {!isNew && formData.id > 0 && (
                          <div className="pt-2">
-                           <Button
-                             variant="tertiary"
-                             size="sm"
-                             onClick={(e) => {
-                               if (isFreeTier) {
-                                 setShowUpgrade(true);
-                                 return;
-                               }
-                               const useMock = e.metaKey || e.ctrlKey;
-                               const hasWeekContent = week.steps.length > 0 || week.title || week.description;
-                               if (hasWeekContent) {
-                                 handleRegenerateWeekClick(week.index);
-                               } else {
-                                 handleRegenerateWeek(week.index, useMock);
-                               }
-                             }}
-                             disabled={isGenerating || regeneratingWeekIndex !== null}
-                             className="gap-2"
-                           >
-                             <Wand2 className="h-4 w-4" />
-                             {regeneratingWeekIndex === week.index
-                               ? 'Regenerating...'
-                               : 'Regenerate Week'}
-                             {isFreeTier && (
-                               <Badge className="ml-1 bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
-                             )}
-                           </Button>
+                           <TooltipProvider>
+                             <Tooltip>
+                               <TooltipTrigger asChild>
+                                 <span className="inline-flex">
+                                   <Button
+                                     variant="tertiary"
+                                     size="sm"
+                                     onClick={(e) => {
+                                       if (isFreeTier) {
+                                         setShowUpgrade(true);
+                                         return;
+                                       }
+                                       const useMock = e.metaKey || e.ctrlKey;
+                                       const hasWeekContent = week.steps.length > 0 || week.title || week.description;
+                                       if (hasWeekContent) {
+                                         handleRegenerateWeekClick(week.index);
+                                       } else {
+                                         handleRegenerateWeek(week.index, useMock);
+                                       }
+                                     }}
+                                     disabled={isGenerating || isDemoMode || regeneratingWeekIndex !== null}
+                                     className="gap-2"
+                                   >
+                                     <Wand2 className="h-4 w-4" />
+                                     {regeneratingWeekIndex === week.index
+                                       ? 'Regenerating...'
+                                       : 'Regenerate Week'}
+                                     {isFreeTier && !isDemoMode && (
+                                       <Badge className="ml-1 bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                                     )}
+                                   </Button>
+                                 </span>
+                               </TooltipTrigger>
+                               {isDemoMode && (
+                                 <TooltipContent>Cannot regenerate a demo binder.</TooltipContent>
+                               )}
+                             </Tooltip>
+                           </TooltipProvider>
                          </div>
                        )}
                     </div>
