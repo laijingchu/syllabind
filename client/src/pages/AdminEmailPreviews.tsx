@@ -16,7 +16,7 @@ interface EmailPreview {
   html: string;
 }
 
-const schedulingHint = '<p style="margin:0 0 24px; font-size:14px; color:#71717a;">If you\'ve added a scheduling link to your profile, readers can now book paid sessions with you through your binder page. You can set your own rate on your scheduling platform.</p>';
+const schedulingHint = '<p style="margin:0 0 24px; font-size:14px; color:#6b6560;">&#128197; If you\'ve added a scheduling link to your profile, readers can now book paid sessions with you through your binder page. &#128176; You can set your own rate on your scheduling platform.</p>';
 
 const previews: EmailPreview[] = [
   {
@@ -144,7 +144,7 @@ export default function AdminEmailPreviews() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="border rounded-lg overflow-hidden bg-[#f4f4f5]">
+          <div className="border rounded-lg overflow-hidden bg-[#faf9f6]">
             <iframe
               srcDoc={active.html}
               className="w-full border-0"
@@ -166,17 +166,18 @@ function emailShell(title: string, body: string): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600&family=Plus+Jakarta+Sans:wght@400;500&display=swap" rel="stylesheet">
   <title>${title}</title>
 </head>
-<body style="margin:0; padding:0; background-color:#f4f4f5; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color:#f4f4f5; padding:40px 20px;">
+<body style="margin:0; padding:0; background-color:#faf9f6; font-family:'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color:#faf9f6; padding:40px 20px;">
     <tr>
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:520px; background-color:#ffffff; border-radius:12px; overflow:hidden;">
           ${body}
           <tr>
-            <td style="padding:16px 32px; border-top:1px solid #e4e4e7; text-align:center;">
-              <p style="margin:0; font-size:13px; color:#a1a1aa;">Syllabind &mdash; Curated learning, structured for you.</p>
+            <td style="padding:16px 32px; border-top:1px solid #ede9e0; text-align:center;">
+              <p style="margin:0; font-size:13px; color:#9b9590;">Syllabind &mdash; Curated learning, structured for you.</p>
             </td>
           </tr>
         </table>
@@ -190,8 +191,8 @@ function emailShell(title: string, body: string): string {
 function heading(h1: string, sub?: string): string {
   return `<tr>
   <td style="padding:32px 32px 24px; text-align:center;">
-    <h1 style="margin:0 0 8px; font-size:24px; font-weight:600; color:#18181b;">${h1}</h1>
-    ${sub ? `<p style="margin:0; font-size:15px; color:#71717a;">${sub}</p>` : ''}
+    <h1 style="margin:0 0 8px; font-size:24px; font-weight:600; color:#0f0c09; font-family:'Bricolage Grotesque', 'Plus Jakarta Sans', sans-serif;">${h1}</h1>
+    ${sub ? `<p style="margin:0; font-size:15px; color:#6b6560;">${sub}</p>` : ''}
   </td>
 </tr>`;
 }
@@ -200,14 +201,14 @@ function cta(label: string): string {
   return `<table width="100%" cellpadding="0" cellspacing="0" role="presentation">
   <tr>
     <td align="center">
-      <a href="#" style="display:inline-block; padding:12px 32px; background-color:#18181b; color:#ffffff; text-decoration:none; border-radius:8px; font-size:15px; font-weight:500;">${label}</a>
+      <a href="#" style="display:inline-block; padding:12px 32px; background-color:#0f0c09; color:#faf9f6; text-decoration:none; border-radius:8px; font-size:15px; font-weight:500;">${label}</a>
     </td>
   </tr>
 </table>`;
 }
 
 function greyBox(content: string): string {
-  return `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color:#f4f4f5; border-radius:8px; margin-bottom:16px;">
+  return `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color:#faf9f6; border-radius:8px; margin-bottom:16px;">
   <tr>
     <td style="padding:16px;">
       ${content}
@@ -217,7 +218,7 @@ function greyBox(content: string): string {
 }
 
 function p(text: string): string {
-  return `<p style="margin:0 0 16px; font-size:15px; color:#3f3f46;">${text}</p>`;
+  return `<p style="margin:0 0 16px; font-size:15px; color:#4a4541;">${text}</p>`;
 }
 
 function buildWelcomeHtml(): string {
@@ -227,12 +228,12 @@ function buildWelcomeHtml(): string {
       ${p('Hi there,')}
       ${p("We've set up your Syllabind account. You can log in with the details below:")}
       ${greyBox(`
-        <p style="margin:0 0 8px; font-size:14px; color:#71717a;">Email</p>
-        <p style="margin:0 0 12px; font-size:15px; color:#18181b; font-weight:500;">jane@example.com</p>
-        <p style="margin:0 0 8px; font-size:14px; color:#71717a;">One-time code</p>
-        <p style="margin:0; font-size:15px; color:#18181b; font-family:monospace; font-weight:500;">aB3kQ9xZ</p>
+        <p style="margin:0 0 8px; font-size:14px; color:#6b6560;">Email</p>
+        <p style="margin:0 0 12px; font-size:15px; color:#0f0c09; font-weight:500;">jane@example.com</p>
+        <p style="margin:0 0 8px; font-size:14px; color:#6b6560;">One-time code</p>
+        <p style="margin:0; font-size:15px; color:#0f0c09; font-family:monospace; font-weight:500;">aB3kQ9xZ</p>
       `)}
-      <p style="margin:0 0 24px; font-size:14px; color:#71717a;">You'll choose your own password the first time you sign in.</p>
+      <p style="margin:0 0 24px; font-size:14px; color:#6b6560;">You'll choose your own password the first time you sign in.</p>
       ${cta('Sign in to Syllabind')}
     </td></tr>
   `);
@@ -245,7 +246,7 @@ function buildPasswordResetHtml(): string {
       ${p('Hi Jane,')}
       ${p('We received a request to reset your Syllabind password. Click the button below to choose a new one:')}
       ${cta('Reset password')}
-      <p style="margin:24px 0 0; font-size:14px; color:#71717a;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+      <p style="margin:24px 0 0; font-size:14px; color:#6b6560;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
     </td></tr>
   `);
 }
@@ -255,10 +256,10 @@ function buildSubmittedHtml(): string {
     ${heading('New Binder for Review', 'A curator has submitted a binder for your approval')}
     <tr><td style="padding:0 32px 24px;">
       ${greyBox(`
-        <p style="margin:0 0 8px; font-size:14px; color:#71717a;">Binder</p>
-        <p style="margin:0 0 12px; font-size:15px; color:#18181b; font-weight:500;">Digital Minimalism: A 4-Week Guide</p>
-        <p style="margin:0 0 8px; font-size:14px; color:#71717a;">Submitted by</p>
-        <p style="margin:0; font-size:15px; color:#18181b; font-weight:500;">Jane Smith</p>
+        <p style="margin:0 0 8px; font-size:14px; color:#6b6560;">Binder</p>
+        <p style="margin:0 0 12px; font-size:15px; color:#0f0c09; font-weight:500;">Digital Minimalism: A 4-Week Guide</p>
+        <p style="margin:0 0 8px; font-size:14px; color:#6b6560;">Submitted by</p>
+        <p style="margin:0; font-size:15px; color:#0f0c09; font-weight:500;">Jane Smith</p>
       `)}
       ${cta('Review binder')}
     </td></tr>
@@ -284,8 +285,8 @@ function buildApprovedWithNoteHtml(): string {
       ${p('Hi Jane,')}
       ${p('Great news! Your binder <strong>Digital Minimalism: A 4-Week Guide</strong> has been reviewed and approved. It\'s now published and visible in the catalog.')}
       ${greyBox(`
-        <p style="margin:0 0 8px; font-size:14px; color:#71717a;">Note from reviewer</p>
-        <p style="margin:0; font-size:15px; color:#3f3f46;">Great content! Consider adding a few more exercises in Week 3.</p>
+        <p style="margin:0 0 8px; font-size:14px; color:#6b6560;">Note from reviewer</p>
+        <p style="margin:0; font-size:15px; color:#4a4541;">Great content! Consider adding a few more exercises in Week 3.</p>
       `)}
       ${schedulingHint}
       ${cta('View your binder')}
@@ -300,7 +301,7 @@ function buildRejectedHtml(): string {
       ${p('Hi Jane,')}
       ${p('We\'ve reviewed your binder <strong>Digital Minimalism: A 4-Week Guide</strong> and have some feedback for you:')}
       ${greyBox(`
-        <p style="margin:0; font-size:15px; color:#3f3f46;">The binder looks promising, but Week 2 is missing reading links and the description could use more detail about what readers will learn. Please also check the broken link in Step 3 of Week 1.</p>
+        <p style="margin:0; font-size:15px; color:#4a4541;">The binder looks promising, but Week 2 is missing reading links and the description could use more detail about what readers will learn. Please also check the broken link in Step 3 of Week 1.</p>
       `)}
       ${p("Once you've made the changes, you can resubmit your binder for review.")}
       ${cta('Edit your binder')}
