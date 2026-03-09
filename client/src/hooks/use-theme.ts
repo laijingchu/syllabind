@@ -13,6 +13,14 @@ function applyTheme(theme: Theme) {
     root.classList.remove('light');
   }
   localStorage.setItem(STORAGE_KEY, theme);
+
+  // Update favicon stroke color to match theme
+  const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+  if (link) {
+    const stroke = theme === 'light' ? 'black' : 'white';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>`;
+    link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+  }
 }
 
 export function useTheme() {

@@ -7,8 +7,15 @@
       try {
         var t = localStorage.getItem('syllabind-ds-theme');
         var c = localStorage.getItem('syllabind-ds-theme-chosen');
-        if (t === 'light' && c) document.documentElement.classList.add('light');
+        var isLight = t === 'light' && c;
+        if (isLight) document.documentElement.classList.add('light');
         else if (t === 'light' && !c) localStorage.removeItem('syllabind-ds-theme');
+        // Set favicon stroke color to match theme (black for light, white for dark)
+        var link = document.querySelector('link[rel="icon"]');
+        if (link) {
+          var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="' + (isLight ? 'black' : 'white') + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>';
+          link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+        }
       } catch(e) {}
     </script>
     <meta charset="UTF-8" />
