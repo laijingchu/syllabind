@@ -355,6 +355,19 @@ export default function BinderEditor() {
     };
   });
 
+  // Local draft for the title input — syncs to formData only on blur
+  // to avoid autosave triggering (and showing a spinner) on every keystroke.
+  const [titleDraft, setTitleDraft] = useState(formData.title);
+  const prevFormTitleRef = useRef(formData.title);
+
+  // Sync titleDraft when formData.title changes from external sources (fetch, demo, etc.)
+  useEffect(() => {
+    if (formData.title !== prevFormTitleRef.current) {
+      prevFormTitleRef.current = formData.title;
+      setTitleDraft(formData.title);
+    }
+  }, [formData.title]);
+
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const debouncedFormData = useDebounce(formData, 1000);
@@ -406,7 +419,9 @@ export default function BinderEditor() {
   const basicsFieldsRef = useRef<HTMLDivElement>(null);
   const formDataRef = useRef(formData);
   formDataRef.current = formData;
-  const titleFilled = !!formData.title?.trim();
+  const titleDraftRef = useRef(titleDraft);
+  titleDraftRef.current = titleDraft;
+  const titleFilled = !!(titleDraft?.trim() || formData.title?.trim());
   const descText = formData.description?.replace(/<[^>]*>/g, '').trim() || '';
   const descFilled = descText.length > 0;
   const showFullForm = !startedAsNew || (basicsRevealed && titleFilled && descFilled) || isDemoMode || isGenerating;
@@ -422,7 +437,8 @@ export default function BinderEditor() {
       setTimeout(() => {
         if (basicsFieldsRef.current?.contains(document.activeElement)) return;
         // Check both fields are filled at the moment focus leaves
-        const title = formDataRef.current.title?.trim();
+        // Use titleDraftRef because formData.title only updates on blur
+        const title = titleDraftRef.current?.trim() || formDataRef.current.title?.trim();
         const desc = formDataRef.current.description;
         const descFilled = desc && desc !== '<p></p>' && desc.replace(/<[^>]*>/g, '').trim() !== '';
         if (title && descFilled) {
@@ -904,13 +920,18 @@ export default function BinderEditor() {
   const handleAutogenerateClick = (e: React.MouseEvent) => {
     const useMock = e.metaKey || e.ctrlKey;
 
-    if (!formData.title || !formData.description) {
+    if (!titleDraftRef.current?.trim() || !formData.description) {
       toast({
         title: "Missing Information",
         description: "Please fill in title and description before autogenerating.",
         variant: "destructive"
       });
       return;
+    }
+    // Flush titleDraft to formData in case blur hasn't propagated yet
+    if (titleDraftRef.current !== formData.title) {
+      prevFormTitleRef.current = titleDraftRef.current;
+      setFormData(prev => ({ ...prev, title: titleDraftRef.current }));
     }
 
     // Guest mode: show waitlist/signup popup
@@ -1000,7 +1021,8 @@ export default function BinderEditor() {
   // Redirect guest users to sign up, preserving their title
   const requireAuth = () => {
     if (!isGuestMode) return false;
-    const titleParam = formData.title?.trim() ? `?title=${encodeURIComponent(formData.title.trim())}` : '';
+    const currentTitle = titleDraftRef.current?.trim() || formData.title?.trim();
+    const titleParam = currentTitle ? `?title=${encodeURIComponent(currentTitle)}` : '';
     setLocation(`/login?mode=signup&redirect=${encodeURIComponent(`/curator/binder/new${titleParam}`)}`);
     return true;
   };
@@ -1037,7 +1059,7 @@ export default function BinderEditor() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ ...formData, curatorId: undefined, status: 'draft' })
+          body: JSON.stringify({ ...formData, title: titleDraftRef.current || formData.title, curatorId: undefined, status: 'draft' })
         });
         if (!res.ok) throw new Error('Failed to create binder');
         const created = await res.json();
@@ -1053,7 +1075,7 @@ export default function BinderEditor() {
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
-            title: formData.title,
+            title: titleDraftRef.current || formData.title,
             description: formData.description,
             audienceLevel: formData.audienceLevel,
             durationWeeks: formData.durationWeeks,
@@ -2045,7 +2067,7 @@ export default function BinderEditor() {
 
     // Logged-in: draft — Publish dropdown
     const descriptionText = formData.description?.replace(/<[^>]*>/g, '').trim() || '';
-    const isBasicsComplete = formData.title.trim().length > 0 && descriptionText.length > 0;
+    const isBasicsComplete = (titleDraft || formData.title).trim().length > 0 && descriptionText.length > 0;
 
     if (!isBasicsComplete) {
       return (
@@ -2104,7 +2126,7 @@ export default function BinderEditor() {
               <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                 {isDemoMode ? (
                   <span className="hidden sm:inline">Demo</span>
-                ) : (formData.title.trim() || formData.description.trim()) ? (
+                ) : (titleDraft.trim() || formData.description.trim()) ? (
                   <>
                     <AlertTriangle className="h-3 w-3 text-warning" />
                     <span className="hidden sm:inline">Progress not saved</span>
@@ -2211,8 +2233,14 @@ export default function BinderEditor() {
             <div className="space-y-2">
               <Label className="text-sm">Title <span className="text-destructive">*</span></Label>
               <Input
-                value={formData.title}
-                onChange={e => setFormData({...formData, title: e.target.value})}
+                value={titleDraft}
+                onChange={e => setTitleDraft(e.target.value)}
+                onBlur={() => {
+                  if (titleDraft !== formData.title) {
+                    prevFormTitleRef.current = titleDraft;
+                    setFormData(prev => ({ ...prev, title: titleDraft }));
+                  }
+                }}
                 placeholder="Create your dream course on anything"
                 className="text-base md:text-lg"
               />
@@ -2402,7 +2430,7 @@ export default function BinderEditor() {
                         <Button
                           variant="tertiary"
                           onClick={handleAutogenerateClick}
-                          disabled={isGenerating || !formData.title || !formData.description}
+                          disabled={isGenerating || !titleDraft || !formData.description}
                           className="gap-2"
                         >
                           <Wand2 className="h-4 w-4" />
@@ -2417,7 +2445,7 @@ export default function BinderEditor() {
                         </Button>
                       </span>
                     </TooltipTrigger>
-                    {(!formData.title || !formData.description) && !isGenerating && (
+                    {(!titleDraft || !formData.description) && !isGenerating && (
                       <TooltipContent>Please fill in Title and Description.</TooltipContent>
                     )}
                   </Tooltip>
@@ -2913,7 +2941,8 @@ export default function BinderEditor() {
                 if (waitlistUrl) {
                   window.open(waitlistUrl, '_blank');
                 } else {
-                  const titleParam = formData.title?.trim() ? `?title=${encodeURIComponent(formData.title.trim())}` : '';
+                  const currentTitle = titleDraftRef.current?.trim() || formData.title?.trim();
+                  const titleParam = currentTitle ? `?title=${encodeURIComponent(currentTitle)}` : '';
                   const redirect = encodeURIComponent(`/curator/binder/new${titleParam}`);
                   setLocation(`/login?mode=signup&redirect=${redirect}`);
                 }

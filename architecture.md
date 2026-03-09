@@ -2659,3 +2659,35 @@ Replaced CSS `border` with inset `outline` on Card components and card-like divs
 - Header `border-b` moved from `<header>` to inner `h-16` div so box-sizing includes the 1px
 - Elevation system: added parallel `.outline` selectors with `inset: 0` (no -1px adjustment needed)
 - Non-Card bordered divs in vertical flow (Dashboard progress/completed sections) also converted
+
+### BinderEditor Title Autosave Fix (2026-03-09)
+
+**Problem:** Typing in the binder title field triggered debounced autosave after every 1-second pause, causing the page to blink and show a saving spinner while the user was still composing the title.
+
+**Solution:** Introduced a local `titleDraft` state for the title input that only syncs to `formData` on blur. This prevents the debounced autosave from firing on each keystroke.
+
+**Key details:**
+- `titleDraft` state tracks the title input value locally
+- `prevFormTitleRef` tracks external changes to sync `titleDraft` when `formData.title` changes from server fetch, demo generation, etc.
+- `titleDraftRef` provides current value to event handlers (avoids stale closures from React batching)
+- All validation/action handlers (generate, requireAuth) use `titleDraftRef.current` to avoid reading stale `formData.title` when blur and click events fire in the same React batch
+- `titleFilled` and generate button `disabled` checks use `titleDraft` for immediate reactivity
+
+**Files Modified:**
+- `client/src/pages/BinderEditor.tsx` - Title input uses local draft state with blur-to-sync pattern
+
+### WebSocket Auth Fix for Neon Deployments (2026-03-09)
+
+**Problem:** On production deployments using Neon (`DATABASE_URL` contains `neon.tech`), WebSocket authentication always failed with "Authentication failed. Please log in again." when trying to autogenerate binder content.
+
+**Root cause:** When `isNeon` is true, no `connect-pg-simple` session store was created, so express-session fell back to its internal `MemoryStore`. But `authenticateWebSocket()` looked up sessions by querying the PostgreSQL `sessions` table directly via `db.execute()` — that table was empty because sessions were stored in memory. The session was never found, so auth always returned null.
+
+**Solution:**
+1. Always create an explicit session store (pgStore when not Neon, `MemoryStore` when Neon)
+2. Share the store reference via module-level `resolvedSessionStore`
+3. `authenticateWebSocket()` now uses `resolvedSessionStore.get(sessionId, cb)` instead of raw SQL, so it reads from the same backing store that express-session writes to
+4. Added `_setSessionStoreForTesting()` export for test injection
+
+**Files Modified:**
+- `server/auth/index.ts` - Session store always explicit, WebSocket auth uses store.get()
+- `server/__tests__/auth-index-coverage.test.ts` - Updated mocks to use session store instead of db.execute

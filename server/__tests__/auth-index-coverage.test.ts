@@ -10,7 +10,6 @@
 
 // Create a controllable mock for db queries
 const mockDbResult = jest.fn().mockResolvedValue([]);
-const mockDbExecute = jest.fn().mockResolvedValue({ rows: [] });
 
 function createControllableProxy() {
   const handler: ProxyHandler<object> = {
@@ -18,9 +17,6 @@ function createControllableProxy() {
       if (prop === 'then') {
         const result = mockDbResult();
         return result.then.bind(result);
-      }
-      if (prop === 'execute') {
-        return mockDbExecute;
       }
       return jest.fn().mockReturnValue(new Proxy({}, handler));
     },
@@ -44,7 +40,12 @@ jest.mock('cookie-signature', () => ({
   unsign: mockUnsign,
 }));
 
-import { isAuthenticated, authenticateWebSocket } from '../auth';
+import { isAuthenticated, authenticateWebSocket, _setSessionStoreForTesting } from '../auth';
+
+// Create a mock session store
+const mockStoreGet = jest.fn();
+const mockSessionStore = { get: mockStoreGet } as any;
+_setSessionStoreForTesting(mockSessionStore);
 
 const mockUser = {
   id: 'user-123',
@@ -116,7 +117,7 @@ describe('authenticateWebSocket (coverage)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockDbResult.mockResolvedValue([]);
-    mockDbExecute.mockResolvedValue({ rows: [] });
+    mockStoreGet.mockImplementation((_sid: string, cb: Function) => cb(null, null));
     mockUnsign.mockReturnValue(false);
   });
 
@@ -145,9 +146,18 @@ describe('authenticateWebSocket (coverage)', () => {
     expect(result).toBeNull();
   });
 
-  it('returns null when no session found in db', async () => {
+  it('returns null when no session found in store', async () => {
     mockUnsign.mockReturnValue('valid-session-id');
-    mockDbExecute.mockResolvedValueOnce({ rows: [] });
+    mockStoreGet.mockImplementation((_sid: string, cb: Function) => cb(null, null));
+    const req = { headers: { cookie: 'connect.sid=s%3Asession-id.valid-sig' } } as any;
+
+    const result = await authenticateWebSocket(req);
+    expect(result).toBeNull();
+  });
+
+  it('returns null when store returns an error', async () => {
+    mockUnsign.mockReturnValue('valid-session-id');
+    mockStoreGet.mockImplementation((_sid: string, cb: Function) => cb(new Error('store error'), null));
     const req = { headers: { cookie: 'connect.sid=s%3Asession-id.valid-sig' } } as any;
 
     const result = await authenticateWebSocket(req);
@@ -156,7 +166,7 @@ describe('authenticateWebSocket (coverage)', () => {
 
   it('returns null when session has no userId', async () => {
     mockUnsign.mockReturnValue('valid-session-id');
-    mockDbExecute.mockResolvedValueOnce({ rows: [{ sess: { otherField: true } }] });
+    mockStoreGet.mockImplementation((_sid: string, cb: Function) => cb(null, { otherField: true }));
     const req = { headers: { cookie: 'connect.sid=s%3Asession-id.valid-sig' } } as any;
 
     const result = await authenticateWebSocket(req);
@@ -165,7 +175,7 @@ describe('authenticateWebSocket (coverage)', () => {
 
   it('returns null when session userId exists but user not found', async () => {
     mockUnsign.mockReturnValue('valid-session-id');
-    mockDbExecute.mockResolvedValueOnce({ rows: [{ sess: { userId: 'user-123' } }] });
+    mockStoreGet.mockImplementation((_sid: string, cb: Function) => cb(null, { userId: 'user-123' }));
     mockDbResult.mockResolvedValueOnce([]); // user query returns empty
     const req = { headers: { cookie: 'connect.sid=s%3Asession-id.valid-sig' } } as any;
 
@@ -175,7 +185,7 @@ describe('authenticateWebSocket (coverage)', () => {
 
   it('returns user without password on success', async () => {
     mockUnsign.mockReturnValue('valid-session-id');
-    mockDbExecute.mockResolvedValueOnce({ rows: [{ sess: { userId: 'user-123' } }] });
+    mockStoreGet.mockImplementation((_sid: string, cb: Function) => cb(null, { userId: 'user-123' }));
     mockDbResult.mockResolvedValueOnce([mockUser]); // user query returns user
     const req = { headers: { cookie: 'connect.sid=s%3Asession-id.valid-sig' } } as any;
 
@@ -185,22 +195,9 @@ describe('authenticateWebSocket (coverage)', () => {
     expect((result as any).password).toBeUndefined();
   });
 
-  it('handles string session data', async () => {
-    mockUnsign.mockReturnValue('valid-session-id');
-    mockDbExecute.mockResolvedValueOnce({
-      rows: [{ sess: JSON.stringify({ userId: 'user-123' }) }],
-    });
-    mockDbResult.mockResolvedValueOnce([mockUser]);
-    const req = { headers: { cookie: 'connect.sid=s%3Asession-id.valid-sig' } } as any;
-
-    const result = await authenticateWebSocket(req);
-    expect(result).not.toBeNull();
-    expect(result!.username).toBe('testuser');
-  });
-
   it('returns null and logs error when exception occurs', async () => {
     mockUnsign.mockReturnValue('valid-session-id');
-    mockDbExecute.mockRejectedValueOnce(new Error('DB error'));
+    mockStoreGet.mockImplementation(() => { throw new Error('Store crash'); });
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
     const req = { headers: { cookie: 'connect.sid=s%3Asession-id.valid-sig' } } as any;
 
