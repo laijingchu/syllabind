@@ -141,6 +141,33 @@ describe('Routes Integration (real registerRoutes)', () => {
       const res = await request(app).get('/api/binders/999');
       expect(res.status).toBe(404);
     });
+
+    it('returns 404 for private binder when not authenticated', async () => {
+      mockStorage.getBinderWithContent.mockResolvedValue({ id: 1, title: 'Private', visibility: 'private', curatorId: 'curator1', weeks: [] });
+      mockStorage.getTagsByBinderId.mockResolvedValue([]);
+      mockStorage.listCategories.mockResolvedValue([]);
+      const res = await request(app).get('/api/binders/1');
+      expect(res.status).toBe(404);
+    });
+
+    it('returns private binder to its curator', async () => {
+      const authed = await createAuthedApp(mockCurator);
+      mockStorage.getBinderWithContent.mockResolvedValue({ id: 1, title: 'Private', visibility: 'private', curatorId: mockCurator.username, weeks: [] });
+      mockStorage.getTagsByBinderId.mockResolvedValue([]);
+      mockStorage.listCategories.mockResolvedValue([]);
+      const res = await request(authed).get('/api/binders/1');
+      expect(res.status).toBe(200);
+      expect(res.body.title).toBe('Private');
+    });
+
+    it('returns 404 for private binder to a different user', async () => {
+      const authed = await createAuthedApp(mockUser);
+      mockStorage.getBinderWithContent.mockResolvedValue({ id: 1, title: 'Private', visibility: 'private', curatorId: 'someone_else', weeks: [] });
+      mockStorage.getTagsByBinderId.mockResolvedValue([]);
+      mockStorage.listCategories.mockResolvedValue([]);
+      const res = await request(authed).get('/api/binders/1');
+      expect(res.status).toBe(404);
+    });
   });
 
   describe('PUT /api/binders/:id', () => {

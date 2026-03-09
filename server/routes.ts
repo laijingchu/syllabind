@@ -2,7 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupCustomAuth, isAuthenticated } from "./auth";
+import { setupCustomAuth, isAuthenticated, optionalAuth } from "./auth";
 import { isAdminUser } from "./auth/admin";
 import {
   insertBinderSchema,
@@ -544,7 +544,7 @@ export async function registerRoutes(
     res.json(binders);
   });
 
-  app.get("/api/binders/:id", async (req, res) => {
+  app.get("/api/binders/:id", optionalAuth, async (req, res) => {
     const id = parseInt(req.params.id);
     const binder = await storage.getBinderWithContent(id);
     if (!binder) return res.status(404).json({ message: "Binder not found" });

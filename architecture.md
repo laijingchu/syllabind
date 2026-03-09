@@ -2691,3 +2691,17 @@ Replaced CSS `border` with inset `outline` on Card components and card-like divs
 **Files Modified:**
 - `server/auth/index.ts` - Session store always explicit, WebSocket auth uses store.get()
 - `server/__tests__/auth-index-coverage.test.ts` - Updated mocks to use session store instead of db.execute
+
+### Private Binder 404 on View/Edit (2026-03-09)
+
+**Problem:** After publishing a private binder and clicking "View Binder" in the toast, the page showed "Loading..." forever. Navigating back to the edit page then showed all data gone (empty form).
+
+**Root cause:** The `GET /api/binders/:id` route had no authentication middleware, so `req.user` was always `undefined`. The visibility check `binder.visibility === 'private' && binder.curatorId !== currentUsername` always evaluated to `true` (since `currentUsername` was `undefined`), returning 404 for ALL private binders — even to the curator who owns them. Both BinderOverview (view page) and BinderEditor (edit page) use this same route.
+
+**Solution:** Added an `optionalAuth` middleware that populates `req.user` from the session if the user is logged in, but never returns 401 — allowing the route to remain publicly accessible for public/unlisted binders while correctly identifying the curator for private binder access.
+
+**Files Modified:**
+- `server/auth/index.ts` - Added `optionalAuth` middleware
+- `server/routes.ts` - Applied `optionalAuth` to `GET /api/binders/:id`
+- `jest.setup.js` - Added `optionalAuth` to auth mock
+- `server/__tests__/routes-integration.test.ts` - Added 3 tests for private binder visibility

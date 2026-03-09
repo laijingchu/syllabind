@@ -85,6 +85,24 @@ export function setupCustomAuth(app: Express): void {
   registerAppleAuthRoutes(app);
 }
 
+// Middleware that populates req.user if a valid session exists, but never 401s.
+// Use on public routes that need to know *who* is requesting (e.g. visibility checks).
+export async function optionalAuth(req: Request, res: Response, next: NextFunction) {
+  const userId = (req as any).session?.userId;
+  if (!userId) return next();
+
+  try {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (user) {
+      const { password: _, ...userWithoutPassword } = user;
+      (req as any).user = { ...userWithoutPassword, isAdmin: isAdminUser(user.username) };
+    }
+  } catch {
+    // Swallow errors — treat as unauthenticated
+  }
+  next();
+}
+
 // Middleware to check if user is authenticated
 // Sets req.user for compatibility with existing routes
 export async function isAuthenticated(req: Request, res: Response, next: NextFunction) {
