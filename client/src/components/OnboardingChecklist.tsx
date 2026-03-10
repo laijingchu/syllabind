@@ -7,7 +7,7 @@ import { CheckCircle2, Circle, PartyPopper, MessageSquareHeart } from 'lucide-re
 import { cn } from '@/lib/utils';
 
 const DISMISSED_KEY = 'syllabind_onboarding_dismissed';
-const BROWSED_KEY = 'syllabind_browsed_binder';
+const BROWSED_KEY = 'syllabind_browsed_binders';
 
 interface ChecklistItem {
   label: string;
@@ -39,19 +39,19 @@ export function OnboardingChecklist() {
       complete: !!(user.name && (user.bio || user.profileTitle) && user.avatarUrl),
     },
     {
-      label: 'Browse a binder',
+      label: 'Check out 3 interesting binders',
       href: '/catalog',
-      complete: localStorage.getItem(BROWSED_KEY) === 'true',
-    },
-    {
-      label: 'Build your own binder',
-      href: '/curator/binder/new',
-      complete: binders.some((b) => b.curatorId === user.username),
+      complete: (JSON.parse(localStorage.getItem(BROWSED_KEY) || '[]') as string[]).length >= 3,
     },
     {
       label: 'Enroll in a binder',
       href: '/catalog',
       complete: !!(enrollment?.activeBinderId || (enrollment?.completedBinderIds?.length ?? 0) > 0),
+    },
+    {
+      label: 'Build your own binder',
+      href: '/curator/binder/new',
+      complete: binders.some((b) => b.curatorId === user.username),
     },
   ];
 

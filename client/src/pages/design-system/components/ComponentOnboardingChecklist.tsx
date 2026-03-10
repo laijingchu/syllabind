@@ -22,8 +22,8 @@ export default function ComponentOnboardingChecklist() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Behavior</h2>
           <div className="text-base text-muted-foreground space-y-2">
-            <p><strong className="text-foreground">4 checklist items:</strong> Fill in profile, Browse a binder, Build a binder, Enroll in a binder.</p>
-            <p><strong className="text-foreground">Completion detection:</strong> Profile fields from user object, localStorage flag for browsing, binder ownership from store, enrollment data from store.</p>
+            <p><strong className="text-foreground">4 checklist items:</strong> Fill in profile, Check out 3 interesting binders, Build a binder, Enroll in a binder.</p>
+            <p><strong className="text-foreground">Completion detection:</strong> Profile fields from user object, localStorage array of visited binder IDs (requires 3 distinct binders), binder ownership from store, enrollment data from store.</p>
             <p><strong className="text-foreground">Dismiss:</strong> When all 4 steps are done, shows a congrats message with a Dismiss button that writes to <code className="text-primary bg-muted px-1 rounded">syllabind_onboarding_dismissed</code> in localStorage.</p>
           </div>
         </section>
@@ -40,8 +40,8 @@ export default function ComponentOnboardingChecklist() {
               </thead>
               <tbody className="divide-y divide-border">
                 <tr>
-                  <td className="p-3 font-mono text-xs">syllabind_browsed_binder</td>
-                  <td className="p-3 text-muted-foreground">Set to "true" when user views a binder in BinderOverview</td>
+                  <td className="p-3 font-mono text-xs">syllabind_browsed_binders</td>
+                  <td className="p-3 text-muted-foreground">JSON array of visited binder IDs; item completes when 3 distinct binders have been viewed</td>
                 </tr>
                 <tr>
                   <td className="p-3 font-mono text-xs">syllabind_onboarding_dismissed</td>

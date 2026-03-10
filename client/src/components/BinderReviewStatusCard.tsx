@@ -17,7 +17,7 @@ export function BinderReviewStatusCard() {
   );
   const reviewBinders = [...pendingBinders, ...revertedBinders];
 
-  if (reviewBinders.length === 0 && !user.isAdmin) return null;
+  if (reviewBinders.length === 0) return null;
 
   return (
     <Card className="binder-review-status">
@@ -25,9 +25,6 @@ export function BinderReviewStatusCard() {
         <CardTitle className="text-base">Binder Review Status</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {reviewBinders.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No binders pending review.</p>
-        ) : (
           <div className="space-y-4">
             {reviewBinders.map((binder) => {
               const isPending = binder.status === 'pending_review';
@@ -63,7 +60,6 @@ export function BinderReviewStatusCard() {
               );
             })}
           </div>
-        )}
         </CardContent>
       </Card>
   );

@@ -85,6 +85,7 @@ const componentsNav = [
   { href: '/design-system/components/page-header', label: 'PageHeader' },
   { href: '/design-system/components/review-queue-card', label: 'ReviewQueueCard' },
   { href: '/design-system/components/onboarding-checklist', label: 'OnboardingChecklist' },
+  { href: '/design-system/components/pro-onboarding-checklist', label: 'ProOnboardingChecklist' },
   { href: '/design-system/components/credits-card', label: 'CreditsCard' },
   { href: '/design-system/components/binder-review-status-card', label: 'BinderReviewStatusCard' },
   { href: '/design-system/components/feedback-card', label: 'FeedbackCard' },

@@ -2753,3 +2753,25 @@ Replaced CSS `border` with inset `outline` on Card components and card-like divs
 - `client/src/pages/BinderOverview.tsx` — added localStorage for `syllabind_browsed_binder`
 - `client/src/App.tsx` — added `/completed` route and 5 design system routes
 - `client/src/pages/design-system/DesignSystemLayout.tsx` — added 5 nav entries
+
+### Pro Onboarding Checklist (2026-03-10)
+
+**Change:** Added a Pro-exclusive onboarding checklist that guides upgraded users through pro features. Renders in the dashboard sidebar below the standard OnboardingChecklist.
+
+**4 checklist items:** Join exclusive community (Slack), Build more binders with AI (2+ binders), Enroll in another binder (2+ enrollments), Book 1:1 with featured curator (info dialog with static curator card demo).
+
+**Key decisions:**
+- Component self-hides when `isPro` is false or when dismissed
+- Uses localStorage for completion tracking of community join and office hour acknowledgment
+- BinderOverview sets `syllabind_pro_enrolled_another` flag on 2nd+ enrollment
+- OfficeHourInfoDialog is an inline sub-component showing a read-only replica of the curator card
+
+**New files:**
+- `client/src/components/ProOnboardingChecklist.tsx` — pro checklist + OfficeHourInfoDialog
+- `client/src/pages/design-system/components/ComponentProOnboardingChecklist.tsx` — design system docs
+
+**Modified files:**
+- `client/src/pages/Dashboard.tsx` — added ProOnboardingChecklist to sidebar
+- `client/src/pages/BinderOverview.tsx` — sets localStorage flag on 2nd+ enrollment
+- `client/src/App.tsx` — added design system route
+- `client/src/pages/design-system/DesignSystemLayout.tsx` — added nav entry

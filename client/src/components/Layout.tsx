@@ -266,7 +266,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-muted">
                     <Avatar className="h-9 w-9 border border-border">
                       <AvatarImage src={user.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${user.name}`} alt={user.name} />
-                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>{(user.name || user.username || '?').charAt(0)}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>

@@ -344,7 +344,7 @@ export default function BinderReaders() {
                             <div key={idx} className="p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:gap-6 items-start hover:bg-muted transition-colors">
                               <Avatar className="h-8 w-8 sm:h-10 sm:w-10 shrink-0">
                                 <AvatarImage src={reader.user.avatarUrl} />
-                                <AvatarFallback>{reader.user.name.charAt(0)}</AvatarFallback>
+                                <AvatarFallback>{(reader.user.name || reader.user.username || '?').charAt(0)}</AvatarFallback>
                               </Avatar>
 
                               <div className="flex-1 space-y-2 w-full min-w-0">

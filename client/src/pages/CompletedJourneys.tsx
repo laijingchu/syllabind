@@ -44,7 +44,7 @@ export default function CompletedJourneys() {
   }
 
   return (
-    <AnimatedPage className="max-w-page-wide mx-auto space-y-6">
+    <AnimatedPage className="space-y-6">
       <PageHeader
         title="Completed Journeys"
         backHref="/"
@@ -63,9 +63,9 @@ export default function CompletedJourneys() {
           }
         />
       ) : (
-        <div className="completed-journeys-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="completed-journeys-grid grid-12">
           {resolvedBinders.map((binder, index) => (
-            <AnimatedCard key={binder.id} delay={index * 0.05}>
+            <AnimatedCard key={binder.id} delay={index * 0.05} className="col-span-12 md:col-span-6">
               <div className="completed-journey-card flex items-center gap-4 p-4 outline outline-1 -outline-offset-1 outline-border rounded-xl bg-card hover:bg-muted transition-colors group">
                 <div className="bg-highlight p-3 rounded-full text-primary shrink-0">
                   <Award className="h-6 w-6" />

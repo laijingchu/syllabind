@@ -179,7 +179,7 @@ export async function registerWebhookRoutes(app: Express) {
                 const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
                 const lastGrant = user.creditsGrantedAt ? new Date(user.creditsGrantedAt) : null;
                 if (!lastGrant || lastGrant < monthStart) {
-                  await storage.grantCredits(userIdFromInvoice, PRO_CYCLE_CREDITS, 'subscription_grant', `Monthly ${PRO_CYCLE_CREDITS} credit grant`, `stripe:${paidInvoice.id}`);
+                  await storage.resetCreditsTo(userIdFromInvoice, PRO_CYCLE_CREDITS, 'subscription_grant', `Monthly ${PRO_CYCLE_CREDITS} credit reset (no rollover)`, `stripe:${paidInvoice.id}`);
                   await storage.updateUser(userIdFromInvoice, { creditsGrantedAt: now } as any);
                 }
               }

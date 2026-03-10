@@ -27,6 +27,8 @@ export const TEST_USER_IDS = {
   marcusj: "44444444-4444-4444-4444-444444444444",
   emilyd: "55555555-5555-5555-5555-555555555555",
   davidw: "66666666-6666-6666-6666-666666666666",
+  newfreejoe: "77777777-7777-7777-7777-777777777001",
+  newpropat: "88888888-8888-8888-8888-888888888001",
 } as const;
 
 async function seed() {
@@ -133,6 +135,29 @@ async function seed() {
         isCurator: false,
         avatarUrl: "https://api.dicebear.com/7.x/notionists/svg?seed=David",
         shareProfile: false,
+      },
+      // Brand new free user — no profile, no enrollments, no binders
+      {
+        id: TEST_USER_IDS.newfreejoe,
+        username: "newfreejoe",
+        email: "joe@example.com",
+        password: readerPassword,
+        isCurator: false,
+        subscriptionTier: 'free',
+        subscriptionStatus: 'free',
+        creditBalance: 0,
+      },
+      // New pro user — subscription active but no enrollments or binders yet
+      {
+        id: TEST_USER_IDS.newpropat,
+        username: "newpropat",
+        email: "pat@example.com",
+        password: readerPassword,
+        name: "Pat Taylor",
+        isCurator: false,
+        subscriptionTier: 'pro_monthly',
+        subscriptionStatus: 'pro',
+        creditBalance: 50,
       },
     ];
 
@@ -543,7 +568,7 @@ async function seed() {
     console.log("📊 Summary:");
     console.log(`   • ${1 + readers.length} users created`);
     console.log(`     - 1 curator (janesmith)`);
-    console.log(`     - ${readers.length} readers`);
+    console.log(`     - ${readers.length} readers (incl. 1 new free, 1 new pro)`);
     console.log(`   • 3 binders created`);
     console.log(`     - Digital Minimalism (4 weeks, 8 steps, public)`);
     console.log(`     - Systems Thinking 101 (2 weeks, 1 step, public)`);
@@ -558,7 +583,9 @@ async function seed() {
     console.log(`   • sarahchen (completed Digital Minimalism) - ID: ${TEST_USER_IDS.sarahchen}`);
     console.log(`   • marcusj (just started Digital Minimalism) - ID: ${TEST_USER_IDS.marcusj}`);
     console.log(`   • emilyd (in progress on Systems Thinking) - ID: ${TEST_USER_IDS.emilyd}`);
-    console.log(`   • davidw (completed Systems Thinking) - ID: ${TEST_USER_IDS.davidw}\n`);
+    console.log(`   • davidw (completed Systems Thinking) - ID: ${TEST_USER_IDS.davidw}`);
+    console.log(`   • newfreejoe (new free user, blank slate) - ID: ${TEST_USER_IDS.newfreejoe}`);
+    console.log(`   • newpropat (new pro user, no enrollments) - ID: ${TEST_USER_IDS.newpropat}\n`);
     console.log("🚀 Ready to test! Run: npm run dev");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 

@@ -40,6 +40,7 @@ const { storage, __storageMock: sm } = require('../storage');
 const mockFns = {
   deductCredits: storage.deductCredits as jest.Mock,
   grantCredits: storage.grantCredits as jest.Mock,
+  resetCreditsTo: storage.resetCreditsTo as jest.Mock,
   getCreditBalance: storage.getCreditBalance as jest.Mock,
   getUser: storage.getUser as jest.Mock,
   updateUser: storage.updateUser as jest.Mock,
@@ -189,12 +190,12 @@ describe('Credit Service', () => {
 
     it('should grant for pro_monthly users', async () => {
       mockFns.getUser.mockResolvedValue({ id: 'x', subscriptionTier: 'pro_monthly', creditsGrantedAt: null });
-      mockFns.grantCredits.mockResolvedValue({ transactionId: 1, newBalance: 260 });
+      mockFns.resetCreditsTo.mockResolvedValue({ transactionId: 1, newBalance: 130 });
       mockFns.updateUser.mockResolvedValue({});
 
       const result = await grantSubscriptionCredits('x');
       expect(result.granted).toBe(true);
-      expect(result.newBalance).toBe(260);
+      expect(result.newBalance).toBe(130);
     });
 
     it('should deduplicate monthly grants', async () => {

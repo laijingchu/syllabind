@@ -85,6 +85,7 @@ import ComponentErrorBoundary from "@/pages/design-system/components/ComponentEr
 import ComponentCuratorBinderCard from "@/pages/design-system/components/ComponentCuratorBinderCard";
 import ComponentReviewQueueCard from "@/pages/design-system/components/ComponentReviewQueueCard";
 import ComponentOnboardingChecklist from "@/pages/design-system/components/ComponentOnboardingChecklist";
+import ComponentProOnboardingChecklist from "@/pages/design-system/components/ComponentProOnboardingChecklist";
 import ComponentCreditsCard from "@/pages/design-system/components/ComponentCreditsCard";
 import ComponentBinderReviewStatusCard from "@/pages/design-system/components/ComponentBinderReviewStatusCard";
 import ComponentFeedbackCard from "@/pages/design-system/components/ComponentFeedbackCard";
@@ -211,6 +212,7 @@ function Router() {
         <Route path="/design-system/components/curator-binder-card" component={ComponentCuratorBinderCard} />
         <Route path="/design-system/components/review-queue-card" component={ComponentReviewQueueCard} />
         <Route path="/design-system/components/onboarding-checklist" component={ComponentOnboardingChecklist} />
+        <Route path="/design-system/components/pro-onboarding-checklist" component={ComponentProOnboardingChecklist} />
         <Route path="/design-system/components/credits-card" component={ComponentCreditsCard} />
         <Route path="/design-system/components/binder-review-status-card" component={ComponentBinderReviewStatusCard} />
         <Route path="/design-system/components/feedback-card" component={ComponentFeedbackCard} />

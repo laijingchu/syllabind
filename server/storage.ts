@@ -148,6 +148,7 @@ export interface IStorage {
   getCreditTransactions(userId: string, limit?: number, offset?: number): Promise<CreditTransaction[]>;
   deductCredits(userId: string, amount: number, type: string, description: string, metadata?: string): Promise<{ transactionId: number; newBalance: number }>;
   grantCredits(userId: string, amount: number, type: string, description: string, metadata?: string): Promise<{ transactionId: number; newBalance: number }>;
+  resetCreditsTo(userId: string, amount: number, type: string, description: string, metadata?: string): Promise<{ transactionId: number; newBalance: number }>;
   countActiveEnrollments(username: string): Promise<number>;
   countManualBinders(username: string): Promise<number>;
 
@@ -1217,6 +1218,28 @@ export class DatabaseStorage implements IStorage {
       INSERT INTO credit_transactions (user_id, amount, balance, type, description, metadata)
       SELECT ${userId}, ${amount}, updated.credit_balance, ${type}, ${description}, ${metadata ?? null}
       FROM updated
+      RETURNING id, balance
+    `);
+    const row = (result as any).rows?.[0];
+    if (!row) {
+      throw new Error('User not found');
+    }
+    return { transactionId: row.id, newBalance: row.balance };
+  }
+
+  async resetCreditsTo(userId: string, amount: number, type: string, description: string, metadata?: string): Promise<{ transactionId: number; newBalance: number }> {
+    // Reset balance to exact amount (no rollover). Records the delta as the transaction amount.
+    const result = await db.execute(sql`
+      WITH old AS (
+        SELECT credit_balance FROM users WHERE id = ${userId}
+      ), updated AS (
+        UPDATE users SET credit_balance = ${amount}
+        WHERE id = ${userId}
+        RETURNING credit_balance
+      )
+      INSERT INTO credit_transactions (user_id, amount, balance, type, description, metadata)
+      SELECT ${userId}, (${amount} - old.credit_balance), updated.credit_balance, ${type}, ${description}, ${metadata ?? null}
+      FROM updated, old
       RETURNING id, balance
     `);
     const row = (result as any).rows?.[0];

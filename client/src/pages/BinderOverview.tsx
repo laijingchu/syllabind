@@ -140,10 +140,15 @@ export default function BinderOverview() {
     }
   }, [binderId, currentUser]);
 
-  // Track that user browsed a binder (for onboarding checklist)
+  // Track that user browsed a binder (for onboarding checklist — requires 3 distinct binders)
   useEffect(() => {
     if (binder && currentUser && binder.curatorId !== currentUser.username) {
-      localStorage.setItem('syllabind_browsed_binder', 'true');
+      const key = 'syllabind_browsed_binders';
+      const visited: number[] = JSON.parse(localStorage.getItem(key) || '[]');
+      if (!visited.includes(binder.id)) {
+        visited.push(binder.id);
+        localStorage.setItem(key, JSON.stringify(visited));
+      }
     }
   }, [binder, currentUser]);
 
@@ -303,7 +308,11 @@ export default function BinderOverview() {
 
   const handleEnroll = async (shareProfile: boolean) => {
     try {
+      const hadPriorEnrollment = !!(enrollment?.activeBinderId || (enrollment?.completedBinderIds?.length ?? 0) > 0);
       await enrollInBinder(binder.id, shareProfile);
+      if (hadPriorEnrollment) {
+        localStorage.setItem('syllabind_pro_enrolled_another', 'true');
+      }
       setEnrollmentShareProfile(shareProfile);
       setShowPrivacyDialog(false);
       setLocation(`/binder/${binder.id}/week/1`);
@@ -379,6 +388,9 @@ export default function BinderOverview() {
 
   return (
     <AnimatedPage>
+      <Button variant="ghost" className="page-header-back -ml-3 mb-4" onClick={() => window.history.back()}>
+        <ArrowLeft className="mr-2 h-4 w-4" /> Back
+      </Button>
       {isGuestPreview && (
         <div className="preview-banner mb-6 bg-highlight border border-border text-foreground px-4 py-3 rounded-lg flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">

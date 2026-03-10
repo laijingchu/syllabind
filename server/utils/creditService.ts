@@ -116,11 +116,12 @@ export async function grantSubscriptionCredits(userId: string): Promise<{ grante
     }
   }
 
-  const result = await storage.grantCredits(
+  // Reset to PRO_CYCLE_CREDITS (no rollover of unused monthly credits)
+  const result = await storage.resetCreditsTo(
     userId,
     PRO_CYCLE_CREDITS,
     'subscription_grant',
-    `Monthly ${PRO_CYCLE_CREDITS} credit grant`
+    `Monthly ${PRO_CYCLE_CREDITS} credit reset (no rollover)`
   );
 
   // Update creditsGrantedAt timestamp

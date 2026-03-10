@@ -7,6 +7,7 @@ import { PlayCircle, CheckCircle2, Award, BookOpen, ArrowRight } from 'lucide-re
 import { BinderCard } from '@/components/BinderCard';
 import { ItemListCard } from '@/components/ItemList';
 import { OnboardingChecklist } from '@/components/OnboardingChecklist';
+import { ProOnboardingChecklist } from '@/components/ProOnboardingChecklist';
 import { CreditsCard } from '@/components/CreditsCard';
 import { FeedbackCard } from '@/components/FeedbackCard';
 import { CuratorRecruitCard } from '@/components/CuratorRecruitCard';
@@ -97,7 +98,7 @@ export default function Dashboard() {
   };
 
   return (
-    <AnimatedPage className="max-w-page-wide mx-auto space-y-8">
+    <AnimatedPage className="space-y-8">
       <header>
         <h1 className="text-3xl font-display text-foreground mb-1">
           {user?.name ? `Welcome back, ${user.name}` : 'Welcome back'}
@@ -282,9 +283,14 @@ export default function Dashboard() {
             )}
           </section>
 
+          {/* Curator recruitment card */}
+          <AnimatedCard delay={0.2}>
+            <CuratorRecruitCard />
+          </AnimatedCard>
+
           {/* Binders you made */}
           {myBinders.length > 0 && (
-            <AnimatedCard delay={0.2}>
+            <AnimatedCard delay={0.25}>
               <ItemListCard
                 title="Binders You Made"
                 action={{ label: 'Curator Studio \u2192', href: '/curator' }}
@@ -300,7 +306,7 @@ export default function Dashboard() {
 
           {/* Suggested binders (when not completed) */}
           {!isCompleted && !allCompleted && suggestedBinders.length > 0 && (
-            <AnimatedCard delay={0.2}>
+            <AnimatedCard delay={0.3}>
               <ItemListCard
                 title="Suggested Binders"
                 action={{ label: 'Browse Catalog \u2192', href: '/catalog' }}
@@ -315,17 +321,15 @@ export default function Dashboard() {
               />
             </AnimatedCard>
           )}
-
-          {/* Curator recruitment card */}
-          <AnimatedCard delay={0.3}>
-            <CuratorRecruitCard />
-          </AnimatedCard>
         </div>
 
         {/* Sidebar */}
         <aside className="dashboard-sidebar col-span-12 lg:col-span-4 space-y-6">
           <AnimatedCard delay={0.15}>
             <OnboardingChecklist />
+          </AnimatedCard>
+          <AnimatedCard delay={0.17}>
+            <ProOnboardingChecklist />
           </AnimatedCard>
           <AnimatedCard delay={0.2}>
             <CreditsCard />
