@@ -19,12 +19,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Clock, BookOpen, ChevronRight, Check, FileText, Dumbbell, User as UserIcon, Link as LinkIcon, Lock, Linkedin, Twitter, Globe, MessageCircle, AlertTriangle, Share2, X, CalendarDays, Hash, Eye, ArrowLeft } from 'lucide-react';
+import { Clock, BookOpen, ChevronRight, Check, FileText, Dumbbell, Link as LinkIcon, Lock, AlertTriangle, X, Eye, ArrowLeft } from 'lucide-react';
 import { ShareDialog } from '@/components/ShareDialog';
+import { CuratorClassmatesCard, ReaderAvatar } from '@/components/CuratorClassmatesCard';
 import { useState, useEffect } from 'react';
 import { cn, pluralize } from '@/lib/utils';
 import { sanitizeHtml } from '@/lib/sanitize';
@@ -40,7 +38,8 @@ export default function BinderOverview() {
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
-  const [upgradeVariant, setUpgradeVariant] = useState<'enrollment-gate' | 'pro-feature'>('enrollment-gate');
+  const [upgradeVariant, setUpgradeVariant] = useState<'enrollment-gate' | 'pro-feature' | 'enrollment-signup'>('enrollment-gate');
+  const [upgradeDescription, setUpgradeDescription] = useState<string | undefined>(undefined);
   const [slackUrl, setSlackUrl] = useState<string | null>(null);
   const [readers, setReaders] = useState<ReaderProfile[]>([]);
   const [totalEnrolled, setTotalEnrolled] = useState(0);
@@ -49,10 +48,11 @@ export default function BinderOverview() {
   const [enrollmentShareProfile, setEnrollmentShareProfile] = useState(false);
   const [existingEnrollment, setExistingEnrollment] = useState<{ id: number; currentWeekIndex: number; status: string } | null>(null);
   const [localCompletedStepIds, setLocalCompletedStepIds] = useState<number[]>([]);
+  const [flipTrigger, setFlipTrigger] = useState(0);
 
   const isGuestPreview = !!guestPreviewMatch;
   const binderId = match && params?.id ? parseInt(params.id) : undefined;
-  const { user: currentUser, completedStepIds: storeCompletedStepIds, refreshSubscriptionLimits } = useStore();
+  const { user: currentUser, completedStepIds: storeCompletedStepIds, refreshSubscriptionLimits, isAuthenticated } = useStore();
   const { toast } = useToast();
   const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
 
@@ -248,9 +248,6 @@ export default function BinderOverview() {
   const isActive = isEnrolled; // User is enrolled in this binder
   const isCompleted = enrollment?.completedBinderIds?.includes(binder.id);
 
-  const inProgressReaders = (readers || []).filter(l => l.status === 'in-progress');
-  const completedReaders = (readers || []).filter(l => l.status === 'completed');
-
   const handleStartClick = () => {
     // Already enrolled in this binder - just navigate to effective current week
     if (existingEnrollment) {
@@ -258,9 +255,11 @@ export default function BinderOverview() {
       return;
     }
 
-    // Not authenticated - redirect to login with returnTo
+    // Not authenticated - show enrollment signup modal
     if (!currentUser) {
-      setLocation(`/login?returnTo=${encodeURIComponent(`/binder/${binder.id}`)}`);
+      setUpgradeVariant('enrollment-signup');
+      setUpgradeDescription(undefined);
+      setShowUpgradePrompt(true);
       return;
     }
 
@@ -268,21 +267,20 @@ export default function BinderOverview() {
     // but show upgrade prompt proactively if they already have an active enrollment
     if (!isPro && enrollment?.activeBinderId && enrollment.activeBinderId !== binder.id) {
       setUpgradeVariant('enrollment-gate');
+      setUpgradeDescription(undefined);
       setShowUpgradePrompt(true);
       return;
     }
 
-    // Authenticated but not enrolled - show privacy dialog to enroll
-    setShowPrivacyDialog(true);
+    // Authenticated but not enrolled - flip sidebar to classmates, then show privacy dialog after flip completes
+    setFlipTrigger(n => n + 1);
+    setTimeout(() => setShowPrivacyDialog(true), 500);
   };
 
   const handleBookCall = () => {
-    if (!currentUser) {
-      setLocation(`/login?returnTo=${encodeURIComponent(`/binder/${binder.id}`)}`);
-      return;
-    }
-    if (!isPro) {
+    if (!currentUser || !isPro) {
       setUpgradeVariant('pro-feature');
+      setUpgradeDescription('Book a 1:1 office hour with the curator for personalized guidance, feedback, and deeper discussion on the material.');
       setShowUpgradePrompt(true);
       return;
     }
@@ -293,12 +291,9 @@ export default function BinderOverview() {
   };
 
   const handleJoinSlack = () => {
-    if (!currentUser) {
-      setLocation(`/login?returnTo=${encodeURIComponent(`/binder/${binder.id}`)}`);
-      return;
-    }
-    if (!isPro) {
+    if (!currentUser || !isPro) {
       setUpgradeVariant('pro-feature');
+      setUpgradeDescription('Join an exclusive Slack community of learners taking this binder. Connect, discuss, and grow together.');
       setShowUpgradePrompt(true);
       return;
     }
@@ -325,67 +320,15 @@ export default function BinderOverview() {
     }
   };
 
-  const ReaderAvatar = ({ reader }: { reader: ReaderProfile }) => {
-    const avatarSrc = reader.user.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${reader.user.name || reader.user.username}`;
-    const initial = (reader.user.name || reader.user.username || '?').charAt(0);
-    const [open, setOpen] = useState(false);
-    return (
-    <TooltipProvider delayDuration={0}>
-      <Tooltip open={open} onOpenChange={setOpen}>
-        <TooltipTrigger asChild>
-          <button type="button" className="group relative cursor-pointer" onClick={() => setOpen(prev => !prev)}>
-            <Avatar className="h-10 w-10 border-2 border-background ring-2 ring-transparent group-hover:ring-ring transition-all">
-              <AvatarImage src={avatarSrc} alt={reader.user.name || reader.user.username} />
-              <AvatarFallback className="bg-muted text-muted-foreground text-xs">
-                {initial}
-              </AvatarFallback>
-            </Avatar>
-            {reader.status === 'completed' && (
-              <div className="absolute -bottom-1 -right-1 bg-primary-inverted text-foreground-inverted rounded-full p-0.5 border border-background">
-                <Check className="h-2 w-2" />
-              </div>
-            )}
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="top" align="center" className="p-3 w-60 bg-popover text-popover-foreground border shadow-xl">
-          <div className="flex items-start gap-3">
-            <Avatar className="h-9 w-9 shrink-0 border border-border mt-0.5">
-              <AvatarImage src={avatarSrc} />
-              <AvatarFallback>{initial}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 space-y-1.5 min-w-0">
-              <div className="space-y-0.5">
-                <p className="font-medium text-sm leading-tight truncate">{reader.user.name}</p>
-                {reader.user.bio && <p className="text-xs text-muted-foreground line-clamp-2 leading-snug">{reader.user.bio}</p>}
-              </div>
-              <div className="flex gap-0.5 -ml-1">
-                {reader.user.linkedin && (
-                  <a href={`https://linkedin.com/in/${reader.user.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-[#0077b5] transition-colors">
-                    <Linkedin className="h-3.5 w-3.5" />
-                  </a>
-                )}
-                {reader.user.twitter && (
-                  <a href={`https://twitter.com/${reader.user.twitter}`} target="_blank" rel="noopener noreferrer" className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-[#1DA1F2] transition-colors">
-                    <Twitter className="h-3.5 w-3.5" />
-                  </a>
-                )}
-                {reader.user.threads && (
-                  <a href={`https://threads.net/@${reader.user.threads}`} target="_blank" rel="noopener noreferrer" className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                    <MessageCircle className="h-3.5 w-3.5" />
-                  </a>
-                )}
-                 {reader.user.website && (
-                  <a href={reader.user.website} target="_blank" rel="noopener noreferrer" className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-primary transition-colors">
-                    <Globe className="h-3.5 w-3.5" />
-                  </a>
-                )}
-              </div>
-            </div>
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
+  const handleShareProfileChange = async (checked: boolean) => {
+    if (enrollment?.id) {
+      await updateEnrollmentShareProfile(enrollment.id, checked);
+      setEnrollmentShareProfile(checked);
+      if (binderId) getReadersForBinder(binderId).then(({ classmates, totalEnrolled: total }) => {
+        setReaders(classmates);
+        setTotalEnrolled(total);
+      });
+    }
   };
 
   return (
@@ -458,7 +401,7 @@ export default function BinderOverview() {
           <div className="enrollment-section space-y-4">
             {isGuestPreview ? (
               <div className="flex flex-wrap gap-3">
-                <Button size="lg" onClick={() => setLocation('/login?mode=signup')}>
+                <Button size="lg" onClick={() => { setUpgradeVariant('enrollment-signup'); setUpgradeDescription(undefined); setShowUpgradePrompt(true); }}>
                   Sign up to Start
                 </Button>
                 <Button variant="secondary" onClick={() => setLocation('/create')}>
@@ -514,7 +457,7 @@ export default function BinderOverview() {
 
           <div className="binder-section space-y-6">
             <h2 className="text-2xl font-display">What you'll learn</h2>
-            <Accordion type="single" collapsible className="space-y-4" defaultValue={`week-${effectiveCurrentWeek}`}>
+            <Accordion type="multiple" className="space-y-4" defaultValue={[`week-${effectiveCurrentWeek}`]}>
               {binder.weeks.filter(w => w.steps.length > 0).map((week) => {
                 const weekDone = isActive && getWeekProgress(week.index) === 100;
                 const isCurrentWeek = isActive && effectiveCurrentWeek === week.index;
@@ -565,6 +508,9 @@ export default function BinderOverview() {
                     </AccordionTrigger>
                   <AccordionContent>
                     <div className="pl-16 pr-4 py-2 space-y-3">
+                      {week.description && (
+                        <p className="text-sm text-foreground -mt-1 mb-2">{week.description}</p>
+                      )}
                       {week.steps.filter(step => step.type !== 'reading' || step.url).map(step => {
                         const isDone = completedStepIds.includes(step.id);
                         const exerciseLink = step.type === 'exercise' ? getStepExercise(step.id) : null;
@@ -579,21 +525,29 @@ export default function BinderOverview() {
                                 {step.type === 'reading' ? <FileText className="h-3.5 w-3.5" /> : <Dumbbell className="h-3.5 w-3.5" />}
                               </div>
                               <span className={cn(isDone && "text-foreground font-medium")}>
-                                {isDone && step.type === 'reading' && step.url ? (
-                                  <a
-                                    href={step.url.startsWith('http') ? step.url : `https://${step.url}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="hover:underline text-primary"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {step.title}
-                                  </a>
-                                ) : (
-                                  step.title
+                                {step.type === 'reading' && step.mediaType && (
+                                  <span className="text-foreground">{step.mediaType} | </span>
                                 )}
+                                {step.type === 'exercise' && (
+                                  <span className="text-foreground">Project | </span>
+                                )}
+                                <span className={cn(!isAuthenticated || !isPro ? "blur-[3px] select-none inline-block" : "")}>
+                                  {isDone && step.type === 'reading' && step.url ? (
+                                    <a
+                                      href={step.url.startsWith('http') ? step.url : `https://${step.url}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="hover:underline text-primary"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {step.title}
+                                    </a>
+                                  ) : (
+                                    step.title
+                                  )}
+                                </span>
                               </span>
-                              <span className="text-xs opacity-70 ml-auto tabular-nums">{step.estimatedMinutes}m</span>
+                              {step.estimatedMinutes ? <span className="text-xs opacity-70 ml-auto tabular-nums">{step.estimatedMinutes}m</span> : null}
                             </div>
 
                             {isDone && exerciseLink && (
@@ -661,211 +615,28 @@ export default function BinderOverview() {
             </Accordion>
           </div>
 
-          {/* Classmates Section */}
-          {(inProgressReaders.length > 0 || completedReaders.length > 0 || isActive || isCompleted) && (
-            <div id="classmates-section" className="classmates-section pt-8 space-y-6 scroll-mt-24">
-               <div className="classmates-header flex justify-between items-center border-b pb-4">
-                 <h2 className="text-2xl font-display">Classmates</h2>
-                 <div className="flex items-center gap-4">
-                   {(isActive || isCompleted) && (
-                     <div className="flex items-center gap-2">
-                       <Switch
-                         id="share-profile"
-                         className="data-[state=unchecked]:bg-input"
-                         checked={enrollmentShareProfile}
-                         onCheckedChange={async (checked) => {
-                           if (enrollment?.id) {
-                             await updateEnrollmentShareProfile(enrollment.id, checked as boolean);
-                             setEnrollmentShareProfile(checked as boolean);
-                             if (binderId) getReadersForBinder(binderId).then(({ classmates, totalEnrolled }) => {
-                               setReaders(classmates);
-                               setTotalEnrolled(totalEnrolled);
-                             });
-                           }
-                         }}
-                       />
-                       <label
-                         htmlFor="share-profile"
-                         className="text-xs font-medium leading-none cursor-pointer text-muted-foreground select-none"
-                       >
-                         Appear in list
-                       </label>
-                     </div>
-                   )}
-                   <span className="text-sm text-muted-foreground">{totalEnrolled} enrolled</span>
-                 </div>
-               </div>
-
-               {inProgressReaders.length === 0 && completedReaders.length === 0 && (
-                 <p className="text-sm text-muted-foreground">Still waiting for curious readers!</p>
-               )}
-
-               <div className="classmates-grid grid grid-cols-1 sm:grid-cols-2 gap-8">
-                 {inProgressReaders.length > 0 && (
-                   <div className="classmates-group space-y-3">
-                     <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">In Progress</p>
-                     <div className="classmates-avatars flex -space-x-3 overflow-hidden py-1 pl-1">
-                       {inProgressReaders.map((reader, index) => (
-                         <div key={reader.user.id} style={{ zIndex: inProgressReaders.length - index, position: 'relative' }}>
-                            <ReaderAvatar reader={reader} />
-                         </div>
-                       ))}
-                     </div>
-                   </div>
-                 )}
-
-                 {completedReaders.length > 0 && (
-                    <div className="classmates-group space-y-3">
-                     <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Completed</p>
-                     <div className="classmates-avatars flex -space-x-3 overflow-hidden py-1 pl-1">
-                       {completedReaders.map((reader, index) => (
-                         <div key={reader.user.id} style={{ zIndex: completedReaders.length - index, position: 'relative' }}>
-                            <ReaderAvatar reader={reader} />
-                         </div>
-                       ))}
-                     </div>
-                   </div>
-                 )}
-               </div>
-
-               <p className="text-sm text-muted-foreground">
-                 Connect with others learning {binder.title}.{slackUrl && (
-                   <>
-                     {' '}
-                     <button onClick={handleJoinSlack} className="inline-flex items-center gap-1 text-primary hover:underline font-medium">
-                       Join Slack{(!currentUser || !isPro) && <Lock className="h-3 w-3" />}.
-                     </button>
-                   </>
-                 )}
-               </p>
-            </div>
-          )}
         </div>
 
-        <div className="curator-sidebar sticky top-24">
-          {curator ? (
-            <div className="curator-card border rounded-xl p-6 bg-card shadow-sm space-y-5">
-              <h3 className="font-medium text-lg border-b pb-3">Meet the Curator</h3>
-              <div className="curator-info flex items-start gap-4">
-                <Avatar className="h-14 w-14 border-2 border-border shrink-0">
-                  <AvatarImage src={curator.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${curator.name}`} alt={curator.name} />
-                  <AvatarFallback className="text-lg">{curator.name?.charAt(0) || '?'}</AvatarFallback>
-                </Avatar>
-                <div className="space-y-1 min-w-0">
-                  <h3 className="font-medium">{curator.name}</h3>
-                  {curator.profileTitle && (
-                    <p className="text-xs text-muted-foreground">{curator.profileTitle}</p>
-                  )}
-                  {curator.expertise && !curator.profileTitle && (
-                    <p className="text-xs text-muted-foreground">{curator.expertise}</p>
-                  )}
-                </div>
-              </div>
-
-              {curator.bio && (
-                <p className="text-sm text-muted-foreground leading-relaxed">{curator.bio}</p>
-              )}
-
-              {(curator.linkedin || curator.twitter || curator.threads || curator.website) && (
-                <div className="flex flex-wrap gap-2">
-                  {curator.linkedin && (
-                    <a href={`https://linkedin.com/in/${curator.linkedin}`} target="_blank" rel="noopener noreferrer" title="LinkedIn" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-muted hover:bg-muted text-muted-foreground hover:text-[#0077b5] transition-colors">
-                      <Linkedin className="h-[18px] w-[18px]" />
-                    </a>
-                  )}
-                  {curator.twitter && (
-                    <a href={`https://twitter.com/${curator.twitter}`} target="_blank" rel="noopener noreferrer" title="X / Twitter" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-muted hover:bg-muted text-muted-foreground hover:text-[#1DA1F2] transition-colors">
-                      <Twitter className="h-[18px] w-[18px]" />
-                    </a>
-                  )}
-                  {curator.threads && (
-                    <a href={`https://threads.net/@${curator.threads}`} target="_blank" rel="noopener noreferrer" title="Threads" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-muted hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                      <MessageCircle className="h-[18px] w-[18px]" />
-                    </a>
-                  )}
-                  {curator.website && (
-                    <a href={curator.website.startsWith('http') ? curator.website : `https://${curator.website}`} target="_blank" rel="noopener noreferrer" title="Website" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-muted hover:bg-muted text-muted-foreground hover:text-primary transition-colors">
-                      <Globe className="h-[18px] w-[18px]" />
-                    </a>
-                  )}
-                </div>
-              )}
-
-              <div className="flex flex-col gap-2">
-                {curator.schedulingUrl && binder?.showSchedulingLink !== false && (
-                  <Button variant="secondary" size="sm" onClick={handleBookCall} className="w-full gap-2">
-                    <CalendarDays className="h-4 w-4" />
-                    1:1 Office Hour
-                    {(!currentUser || !isPro) && (
-                      <Badge className="bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
-                    )}
-                  </Button>
-                )}
-
-                {slackUrl && binder?.status === 'published' && (
-                  <Button variant="secondary" size="sm" onClick={handleJoinSlack} className="w-full gap-2">
-                    <Hash className="h-4 w-4" />
-                    Join learning community
-                    {(!currentUser || !isPro) && (
-                      <Badge className="bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
-                    )}
-                  </Button>
-                )}
-
-                <Button variant="secondary" size="sm" onClick={() => setShowShareDialog(true)} className="w-full gap-2">
-                  <Share2 className="h-4 w-4" />
-                  Share with friend
-                </Button>
-              </div>
-
-              {canEdit && (
-                <p className="text-xs text-muted-foreground text-center pt-1">
-                  Only you can see this — <Link href={`/curator/binder/${binder.id}/edit`} className="underline hover:text-foreground transition-colors">edit this binder</Link>
-                </p>
-              )}
-            </div>
-          ) : isGuestPreview ? (
-            <div className="curator-card border rounded-xl p-6 bg-card shadow-sm space-y-5">
-              <h3 className="font-medium text-lg border-b pb-3">Meet the Curator</h3>
-              <div className="curator-info flex items-start gap-4">
-                <Avatar className="h-14 w-14 border-2 border-border shrink-0">
-                  <AvatarFallback className="text-lg bg-muted">
-                    <UserIcon className="h-6 w-6 text-muted-foreground" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="space-y-1 min-w-0">
-                  <h3 className="font-medium">Your Name</h3>
-                  <p className="text-xs text-muted-foreground">Your Title</p>
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                This is where your bio appears. Highlight your expertise and what makes you the right guide for this topic. Once your binder is published, you can add a scheduling link so readers can book paid 1:1 sessions with you.
-              </p>
-
-              <div className="flex flex-col gap-2">
-                <Button variant="secondary" size="sm" className="w-full gap-2" disabled>
-                  <CalendarDays className="h-4 w-4" />
-                  1:1 Office Hour
-                  <Badge className="bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
-                </Button>
-
-                <Button variant="secondary" size="sm" className="w-full gap-2" disabled>
-                  <Hash className="h-4 w-4" />
-                  Join learning community
-                  <Badge className="bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
-                </Button>
-
-                <Button variant="secondary" size="sm" className="w-full gap-2" disabled>
-                  <Share2 className="h-4 w-4" />
-                  Share with friend
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="curator-card border rounded-xl p-6 bg-card shadow-sm">
-              <p className="text-sm text-muted-foreground text-center py-4">Loading curator info...</p>
-            </div>
-          )}
+        <div className="sticky top-24">
+          <CuratorClassmatesCard
+            curator={curator}
+            binder={binder}
+            readers={readers}
+            totalEnrolled={totalEnrolled}
+            isActive={isActive}
+            isCompleted={!!isCompleted}
+            enrollmentShareProfile={enrollmentShareProfile}
+            onShareProfileChange={handleShareProfileChange}
+            onBookCall={handleBookCall}
+            onJoinSlack={handleJoinSlack}
+            onShareClick={() => setShowShareDialog(true)}
+            slackUrl={slackUrl}
+            currentUser={currentUser}
+            isPro={isPro}
+            canEdit={canEdit}
+            isGuestPreview={isGuestPreview}
+            flipTrigger={flipTrigger}
+          />
         </div>
       </div>
 
@@ -913,6 +684,8 @@ export default function BinderOverview() {
         open={showUpgradePrompt}
         onOpenChange={setShowUpgradePrompt}
         variant={upgradeVariant}
+        customDescription={upgradeDescription}
+        isAuthenticated={isAuthenticated}
         returnTo={`/binder/${binder.id}`}
       />
     </AnimatedPage>

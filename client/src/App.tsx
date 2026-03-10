@@ -83,6 +83,7 @@ import ComponentUpgradePrompt from "@/pages/design-system/components/ComponentUp
 import ComponentGeneratingWeekPlaceholder from "@/pages/design-system/components/ComponentGeneratingWeekPlaceholder";
 import ComponentErrorBoundary from "@/pages/design-system/components/ComponentErrorBoundary";
 import ComponentCuratorBinderCard from "@/pages/design-system/components/ComponentCuratorBinderCard";
+import ComponentCuratorClassmatesCard from "@/pages/design-system/components/ComponentCuratorClassmatesCard";
 import ComponentReviewQueueCard from "@/pages/design-system/components/ComponentReviewQueueCard";
 import ComponentOnboardingChecklist from "@/pages/design-system/components/ComponentOnboardingChecklist";
 import ComponentProOnboardingChecklist from "@/pages/design-system/components/ComponentProOnboardingChecklist";
@@ -91,6 +92,7 @@ import ComponentBinderReviewStatusCard from "@/pages/design-system/components/Co
 import ComponentFeedbackCard from "@/pages/design-system/components/ComponentFeedbackCard";
 import ComponentCuratorRecruitCard from "@/pages/design-system/components/ComponentCuratorRecruitCard";
 import ComponentItemList from "@/pages/design-system/components/ComponentItemList";
+import ComponentProFeaturesList from "@/pages/design-system/components/ComponentProFeaturesList";
 
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
@@ -215,6 +217,7 @@ function Router() {
         <Route path="/design-system/components/generating-week-placeholder" component={ComponentGeneratingWeekPlaceholder} />
         <Route path="/design-system/components/error-boundary" component={ComponentErrorBoundary} />
         <Route path="/design-system/components/curator-binder-card" component={ComponentCuratorBinderCard} />
+        <Route path="/design-system/components/curator-classmates-card" component={ComponentCuratorClassmatesCard} />
         <Route path="/design-system/components/review-queue-card" component={ComponentReviewQueueCard} />
         <Route path="/design-system/components/onboarding-checklist" component={ComponentOnboardingChecklist} />
         <Route path="/design-system/components/pro-onboarding-checklist" component={ComponentProOnboardingChecklist} />
@@ -223,6 +226,7 @@ function Router() {
         <Route path="/design-system/components/feedback-card" component={ComponentFeedbackCard} />
         <Route path="/design-system/components/curator-recruit-card" component={ComponentCuratorRecruitCard} />
         <Route path="/design-system/components/item-list" component={ComponentItemList} />
+        <Route path="/design-system/components/pro-features-list" component={ComponentProFeaturesList} />
 
         <Route component={NotFound} />
       </Switch>

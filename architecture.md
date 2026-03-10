@@ -617,6 +617,14 @@ These components are specific to Syllabind's functionality and compose the UI pr
   - Image preview with remove option
   - File upload handling
 
+- **`CuratorClassmatesCard.tsx`**: Shared "Meet the Curator" + Classmates flip card
+  - 3D flip card with curator info (front) and classmates list (back)
+  - Includes ReaderAvatar sub-component with tooltip showing bio and social links
+  - Used on both BinderOverview and WeekView pages
+  - Props: curator, binder, readers, enrollment state, callbacks for actions
+  - Share with friend button, office hour/community CTAs with Pro badges
+  - Share profile toggle, classmates grouped by in-progress/completed
+
 #### UI Primitives (`client/src/components/ui/`)
 
 These are generic, reusable components that form the building blocks of the application. They're built on Radix UI primitives and styled with TailwindCSS, providing a consistent design system across all pages. The components are organized into logical categories based on their purpose.
@@ -2308,12 +2316,13 @@ Also added a "Go to Week N" mobile button for past accessible but incomplete wee
 - Gating in `POST /api/binders` (curator limit) and `POST /api/enrollments` (Pro required)
 
 **Frontend:**
-- `UpgradePrompt` dialog component with two variants (`curator-limit`, `enrollment-gate`)
+- `UpgradePrompt` dialog component with variants (`curator-limit`, `enrollment-gate`, `pro-feature`, `insufficient-credits`, `featured-listing`, `enrollment-signup`)
+- `enrollment-signup` variant: shown to logged-out users clicking "Start this Binder" — BookOpen icon, free account features list, Sign up CTA with Log in link
 - `returnTo` parameter support — users return to where they were after payment
 - Subscription status in store with `isPro`, `subscriptionLimits`, `refreshSubscriptionLimits()`
 - Profile page subscription card with "Manage Billing" (Pro) or upgrade CTA (free)
 - CuratorDashboard gating at binder creation limit
-- BinderOverview enrollment gating with upgrade prompt
+- BinderOverview enrollment gating with upgrade prompt (logged-out → `enrollment-signup`, free limit → `enrollment-gate`)
 
 **Files Created:**
 - `server/lib/stripe.ts` — Stripe client singleton

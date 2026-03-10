@@ -6,6 +6,7 @@ const components = [
   { href: '/design-system/components/binder-card', name: 'BinderCard', desc: 'Displays a binder preview with cover image, title, curator info, metadata, and enrollment status. Used in the catalog and dashboard grids.' },
   { href: '/design-system/components/binder-filter-bar', name: 'BinderFilterBar', desc: 'Combines search, visibility pills, sort dropdown, and category filters for binder lists.' },
   { href: '/design-system/components/curator-binder-card', name: 'CuratorBinderCard', desc: 'Card for the curator studio binder list. Shows status badge, title, metadata, reader counts, and publish/edit/preview/analytics actions.' },
+  { href: '/design-system/components/curator-classmates-card', name: 'CuratorClassmatesCard', desc: '3D flip card showing curator profile (front) and classmates list (back). Shared across BinderOverview and WeekView sidebars.' },
   { href: '/design-system/components/empty-state', name: 'EmptyState', desc: 'Displays a centered message with icon and optional CTA when a list or view has no content.' },
   { href: '/design-system/components/error-boundary', name: 'ErrorBoundary', desc: 'Catches rendering errors in a subtree and displays a fallback UI instead of crashing the entire page.' },
   { href: '/design-system/components/generating-week-placeholder', name: 'GeneratingWeekPlaceholder', desc: 'Animated skeleton placeholder shown while AI generates week content in the Binder Editor.' },
@@ -14,6 +15,7 @@ const components = [
   { href: '/design-system/components/search-bar', name: 'SearchBar', desc: 'Provides a search input with optional result count display.' },
   { href: '/design-system/components/share-dialog', name: 'ShareDialog', desc: 'Modal for sharing a binder via link, social media, or embed code. Handles URL generation and copy-to-clipboard.' },
   { href: '/design-system/components/upgrade-prompt', name: 'UpgradePrompt', desc: 'Contextual upsell card that appears when a user hits a plan limit. Shows the blocked feature and a CTA to upgrade.' },
+  { href: '/design-system/components/pro-features-list', name: 'ProFeaturesList', desc: 'Single source of truth for Pro plan features. Used in UpgradePrompt and Pricing page to keep feature lists in sync.' },
 ];
 
 export default function ComponentsOverview() {

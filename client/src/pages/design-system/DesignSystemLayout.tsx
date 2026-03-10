@@ -79,6 +79,7 @@ const componentsNav = [
   { href: '/design-system/components/binder-card', label: 'BinderCard' },
   { href: '/design-system/components/binder-filter-bar', label: 'BinderFilterBar' },
   { href: '/design-system/components/curator-binder-card', label: 'CuratorBinderCard' },
+  { href: '/design-system/components/curator-classmates-card', label: 'CuratorClassmatesCard' },
   { href: '/design-system/components/empty-state', label: 'EmptyState' },
   { href: '/design-system/components/error-boundary', label: 'ErrorBoundary' },
   { href: '/design-system/components/generating-week-placeholder', label: 'GeneratingWeekPlaceholder' },

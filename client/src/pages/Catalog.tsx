@@ -38,9 +38,11 @@ export default function Catalog() {
 
   const taglines = [
     'If you could teach the world anything, what would you teach?',
-    'If you could learn anything, what do you want to learn?',
+    'If you could learn anything under the sun, what would you want to learn?',
     'Build a syllabus yourself, or with AI\'s help.',
-    'Then form a learning community around it (if you wish).',
+    'Connect the dots between fragmented information.',
+    'Learn by reading and doing, not just watching.',
+    'Gain validation and feedback from fellow learners and teachers.',
   ];
   const taglineTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 

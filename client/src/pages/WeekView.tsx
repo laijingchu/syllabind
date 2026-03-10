@@ -5,18 +5,19 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ExternalLink, Lock, CheckCircle, ChevronRight, ChevronLeft, Check, Share2, Loader2, Hash, CalendarDays, Crown, Linkedin, Twitter, MessageCircle, Globe } from 'lucide-react';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { ArrowLeft, ExternalLink, Lock, CheckCircle, ChevronRight, ChevronLeft, Check, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ShareDialog } from '@/components/ShareDialog';
+import { CuratorClassmatesCard } from '@/components/CuratorClassmatesCard';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useState, useEffect } from 'react';
 import { cn, pluralize } from '@/lib/utils';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Binder } from '@/lib/types';
+import { Binder, ReaderProfile } from '@/lib/types';
 
 export default function WeekView() {
   const [match, params] = useRoute('/binder/:id/week/:index');
@@ -29,7 +30,9 @@ export default function WeekView() {
     getSubmission,
     completedStepIds: storeCompletedStepIds,
     user: currentUser,
-    isPro
+    isPro,
+    getReadersForBinder,
+    updateEnrollmentShareProfile
   } = useStore();
   const [location, setLocation] = useLocation();
 
@@ -46,6 +49,9 @@ export default function WeekView() {
   const [curator, setCurator] = useState<any>(undefined);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [upgradeVariant, setUpgradeVariant] = useState<'enrollment-gate' | 'pro-feature'>('enrollment-gate');
+  const [readers, setReaders] = useState<ReaderProfile[]>([]);
+  const [totalEnrolled, setTotalEnrolled] = useState(0);
+  const [enrollmentShareProfile, setEnrollmentShareProfile] = useState(false);
 
   const binderId = params?.id ? parseInt(params.id) : undefined;
   const weekIndex = parseInt(params?.index || '1');
@@ -112,6 +118,29 @@ export default function WeekView() {
       .then(data => setSlackUrl(data.value || null))
       .catch(() => {});
   }, []);
+
+  // Fetch classmates for this binder
+  useEffect(() => {
+    if (binderId) {
+      getReadersForBinder(binderId).then(({ classmates, totalEnrolled }) => {
+        setReaders(classmates);
+        setTotalEnrolled(totalEnrolled);
+      });
+    }
+  }, [binderId]);
+
+  // Fetch enrollment share profile setting
+  useEffect(() => {
+    if (binderId && currentUser) {
+      fetch('/api/enrollments', { credentials: 'include' })
+        .then(res => res.ok ? res.json() : [])
+        .then((data: any[]) => {
+          const match = data.find((e: any) => e.binderId === binderId);
+          if (match) setEnrollmentShareProfile(match.shareProfile || false);
+        })
+        .catch(() => {});
+    }
+  }, [binderId, currentUser]);
 
   const week = binder?.weeks.find(w => w.index === weekIndex);
   const sortedWeeks = binder?.weeks ? [...binder.weeks].sort((a, b) => a.index - b.index) : [];
@@ -205,6 +234,17 @@ export default function WeekView() {
     }
   };
 
+  const handleShareProfileChange = async (checked: boolean) => {
+    if (localEnrollmentId) {
+      await updateEnrollmentShareProfile(localEnrollmentId, checked);
+      setEnrollmentShareProfile(checked);
+      if (binderId) getReadersForBinder(binderId).then(({ classmates, totalEnrolled: total }) => {
+        setReaders(classmates);
+        setTotalEnrolled(total);
+      });
+    }
+  };
+
   const handleExerciseChange = (stepId: number, val: string) => {
     setExerciseText(prev => ({ ...prev, [stepId]: val }));
   };
@@ -253,15 +293,12 @@ export default function WeekView() {
 
   return (
     <div className="pb-20">
-      <div className="flex justify-between items-center mb-4">
+      <div className="mb-4">
         <Link href={`/binder/${binder.id}`}>
           <a className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors">
             <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Back to Binder Overview</span><span className="sm:hidden">Back</span>
           </a>
         </Link>
-        <Button variant="ghost" size="sm" onClick={() => setShowShareDialog(true)}>
-          <Share2 className="h-4 w-4 mr-2" /> Share
-        </Button>
       </div>
 
       <header className="mb-6 sm:mb-10">
@@ -469,21 +506,57 @@ export default function WeekView() {
               <div className="hidden sm:block" />
             )}
 
-            {allDone && (
-              isLastWeek ? (
-                <Link href={`/binder/${binder.id}/completed`}>
-                  <Button size="lg" className="animate-pulse w-full sm:w-auto justify-center">
-                    Finish Binder <CheckCircle className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              ) : nextWeek ? (
-                <Link href={`/binder/${binder.id}/week/${nextWeek.index}`}>
-                  <Button className="w-full sm:w-auto justify-center">
-                    Next Week <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              ) : null
-            )}
+            {isLastWeek ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="w-full sm:w-auto">
+                      {allDone ? (
+                        <Link href={`/binder/${binder.id}/completed`}>
+                          <Button size="lg" className="animate-pulse w-full sm:w-auto justify-center">
+                            Finish Binder <CheckCircle className="ml-2 h-4 w-4" />
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Button size="lg" disabled className="w-full sm:w-auto justify-center">
+                          Finish Binder <CheckCircle className="ml-2 h-4 w-4" />
+                        </Button>
+                      )}
+                    </span>
+                  </TooltipTrigger>
+                  {!allDone && (
+                    <TooltipContent>
+                      <p>Complete readings first.</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+            ) : nextWeek ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="w-full sm:w-auto">
+                      {allDone ? (
+                        <Link href={`/binder/${binder.id}/week/${nextWeek.index}`}>
+                          <Button className="w-full sm:w-auto justify-center">
+                            Next Week <ChevronRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Button disabled className="w-full sm:w-auto justify-center">
+                          Next Week <ChevronRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      )}
+                    </span>
+                  </TooltipTrigger>
+                  {!allDone && (
+                    <TooltipContent>
+                      <p>Complete readings first.</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+            ) : null}
           </div>
         </div>
 
@@ -533,76 +606,22 @@ export default function WeekView() {
             )}
           </div>
 
-          {curator && (
-            <div className="curator-card border rounded-xl p-5 bg-card space-y-4">
-              <h3 className="font-medium text-sm border-b pb-3">Meet the Curator</h3>
-              <div className="curator-info flex items-start gap-3">
-                <Avatar className="h-12 w-12 border-2 border-border shrink-0">
-                  <AvatarImage src={curator.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${curator.name}`} alt={curator.name} />
-                  <AvatarFallback className="text-sm">{curator.name?.charAt(0) || '?'}</AvatarFallback>
-                </Avatar>
-                <div className="space-y-0.5 min-w-0">
-                  <h4 className="font-medium text-sm">{curator.name}</h4>
-                  {curator.profileTitle && (
-                    <p className="text-xs text-muted-foreground">{curator.profileTitle}</p>
-                  )}
-                  {curator.expertise && !curator.profileTitle && (
-                    <p className="text-xs text-muted-foreground">{curator.expertise}</p>
-                  )}
-                </div>
-              </div>
-
-              {curator.bio && (
-                <p className="text-xs text-muted-foreground leading-relaxed">{curator.bio}</p>
-              )}
-
-              {(curator.linkedin || curator.twitter || curator.threads || curator.website) && (
-                <div className="flex flex-wrap gap-2">
-                  {curator.linkedin && (
-                    <a href={`https://linkedin.com/in/${curator.linkedin}`} target="_blank" rel="noopener noreferrer" title="LinkedIn" className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted text-muted-foreground hover:text-[#0077b5] transition-colors">
-                      <Linkedin className="h-4 w-4" />
-                    </a>
-                  )}
-                  {curator.twitter && (
-                    <a href={`https://twitter.com/${curator.twitter}`} target="_blank" rel="noopener noreferrer" title="X / Twitter" className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted text-muted-foreground hover:text-[#1DA1F2] transition-colors">
-                      <Twitter className="h-4 w-4" />
-                    </a>
-                  )}
-                  {curator.threads && (
-                    <a href={`https://threads.net/@${curator.threads}`} target="_blank" rel="noopener noreferrer" title="Threads" className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                      <MessageCircle className="h-4 w-4" />
-                    </a>
-                  )}
-                  {curator.website && (
-                    <a href={curator.website.startsWith('http') ? curator.website : `https://${curator.website}`} target="_blank" rel="noopener noreferrer" title="Website" className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted text-muted-foreground hover:text-primary transition-colors">
-                      <Globe className="h-4 w-4" />
-                    </a>
-                  )}
-                </div>
-              )}
-
-              <div className="flex flex-col gap-2">
-                {curator.schedulingUrl && binder?.showSchedulingLink !== false && (
-                  <Button variant="secondary" size="sm" onClick={handleBookCall} className="w-full gap-2">
-                    <CalendarDays className="h-4 w-4" />
-                    1:1 Office Hour
-                    {(!currentUser || !isPro) && (
-                      <Badge className="bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
-                    )}
-                  </Button>
-                )}
-                {slackUrl && (
-                  <Button variant="secondary" size="sm" onClick={handleJoinSlack} className="w-full gap-2">
-                    <Hash className="h-4 w-4" />
-                    Join learning community
-                    {(!currentUser || !isPro) && (
-                      <Badge className="bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
-                    )}
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
+          <CuratorClassmatesCard
+            curator={curator}
+            binder={binder}
+            readers={readers}
+            totalEnrolled={totalEnrolled}
+            isActive={!!localEnrollmentId}
+            isCompleted={false}
+            enrollmentShareProfile={enrollmentShareProfile}
+            onShareProfileChange={handleShareProfileChange}
+            onBookCall={handleBookCall}
+            onJoinSlack={handleJoinSlack}
+            onShareClick={() => setShowShareDialog(true)}
+            slackUrl={slackUrl}
+            currentUser={currentUser}
+            isPro={isPro}
+          />
         </aside>
       </div>
 

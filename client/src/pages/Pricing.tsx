@@ -9,6 +9,7 @@ import { Link } from 'wouter';
 import { redirectToCheckout, type CheckoutPlan } from '@/lib/stripe';
 import { useToast } from '@/hooks/use-toast';
 import { useStore } from '@/lib/store';
+import { PRO_READER_FEATURES, PRO_CURATOR_FEATURES, PRO_BOTTOM_FEATURES, FREE_READER_FEATURES, FREE_CURATOR_FEATURES } from '@/components/ProFeaturesList';
 
 export default function Pricing() {
   const [annual, setAnnual] = useState(true);
@@ -39,15 +40,8 @@ export default function Pricing() {
       description: 'Get started with AI-powered learning.',
       includesFrom: null as string | null,
       proHighlights: [] as string[],
-      readerFeatures: [
-        '1 active enrollment',
-      ],
-      curatorFeatures: [
-        '100 lifetime AI credits for binder creation',
-        '3 manual binders',
-        'Up to 4-week AI binders',
-        'Unlisted/private publishing',
-      ],
+      readerFeatures: FREE_READER_FEATURES,
+      curatorFeatures: FREE_CURATOR_FEATURES,
       bottomFeatures: [] as string[],
       cta: isAuthenticated ? 'Current Plan' : 'Sign Up Free',
       disabled: isAuthenticated,
@@ -62,21 +56,9 @@ export default function Pricing() {
       badge: 'Most Popular',
       includesFrom: 'Free',
       proHighlights: [] as string[],
-      readerFeatures: [
-        'Unlimited enrollments',
-        { text: 'Join exclusive learning community', starred: true },
-        { text: 'Book 1:1 call with featured curator', starred: true },
-      ],
-      curatorFeatures: [
-        '130 AI credits/month for binder creation',
-        'Purchase additional AI credits',
-        'Create unlimited binders',
-        'Up to 6-week AI binders',
-        'Submit binder for featured listing',
-      ],
-      bottomFeatures: [
-        <span>Promote your paid video call sessions on your binders — set your own rate, add your scheduling link, <span className="font-bold underline">with no platform fee</span></span>,
-      ],
+      readerFeatures: PRO_READER_FEATURES,
+      curatorFeatures: PRO_CURATOR_FEATURES,
+      bottomFeatures: PRO_BOTTOM_FEATURES,
       cta: isPro && subscriptionTier !== 'lifetime' ? 'Current Plan' : annual ? 'Go Pro — $150/yr' : 'Go Pro — $14.99/mo',
       disabled: isPro && subscriptionTier !== 'lifetime',
       plan: (annual ? 'pro_annual' : 'pro_monthly') as CheckoutPlan,

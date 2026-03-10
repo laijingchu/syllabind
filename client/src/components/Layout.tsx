@@ -168,6 +168,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     >
                       <span className="font-medium">Curator Studio</span>
                     </button>
+                    <button
+                      onClick={() => handleMobileNavClick("/pricing")}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
+                        location === "/pricing" ? "bg-highlight text-primary" : "hover:bg-muted"
+                      )}
+                    >
+                      <span className="font-medium">Pricing</span>
+                    </button>
                     <div className="border-t my-4" />
                     <button
                       onClick={() => handleMobileNavClick("/profile")}

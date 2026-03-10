@@ -303,7 +303,7 @@ export default function BinderEditor() {
   const posthog = usePostHog();
   const [readers, setReaders] = useState<any[]>([]);
   const [showUpgrade, setShowUpgrade] = useState(false);
-  const [upgradeVariant, setUpgradeVariant] = useState<'pro-feature' | 'featured-listing'>('pro-feature');
+  const [upgradeVariant, setUpgradeVariant] = useState<'pro-feature' | 'featured-listing' | 'enrollment-signup'>('pro-feature');
 
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [binderTags, setBinderTags] = useState<Tag[]>([]);
@@ -385,8 +385,6 @@ export default function BinderEditor() {
   const [demoBinders, setDemoBinders] = useState<Array<{ id: number; title: string; description: string; audienceLevel: string; durationWeeks: number; weeks: Week[] }>>([]);
   const [isDemoMode, setIsDemoMode] = useState(false); // True after user taps a demo pill
   const [generationInfo, setGenerationInfo] = useState<{ creditBalance?: number; isPro: boolean; isAdmin?: boolean; subscriptionTier?: string; costs?: { per_week: number; improve_writing: number; auto_fill: number }; maxWeeks?: number; generationCount: number; generationLimit: number | null; remaining: number | null; cooldownRemaining: number } | null>(null);
-  const [showWaitlist, setShowWaitlist] = useState(false);
-  const [waitlistUrl, setWaitlistUrl] = useState<string | null>(null);
   const [showWeeklySection, setShowWeeklySection] = useState(false);
 
   // Check if Binder already has content (treat '<p></p>' as empty — TipTap's default)
@@ -622,13 +620,6 @@ export default function BinderEditor() {
   }, [initialDemoId, demoBinders, isDemoMode, hasBinderContent]);
 
   // Fetch waitlist URL in guest mode
-  useEffect(() => {
-    if (!isGuestMode) return;
-    fetch('/api/site-settings/waitlist_form_url')
-      .then(r => r.json())
-      .then(data => setWaitlistUrl(data.value || null))
-      .catch(() => {});
-  }, [isGuestMode]);
 
   // Fetch generation info for authenticated users
   const refreshGenerationInfo = () => {
@@ -720,7 +711,7 @@ export default function BinderEditor() {
     const count = parseInt(weeksStr);
     // Guest mode: 4+ weeks requires signup
     if (count > 3 && isGuestMode) {
-      setShowWaitlist(true);
+      showSignupModal();
       return;
     }
     if (count > 4 && isFreeTier) {
@@ -959,7 +950,7 @@ export default function BinderEditor() {
 
     // Guest mode: show waitlist/signup popup
     if (isGuestMode) {
-      setShowWaitlist(true);
+      showSignupModal();
       return;
     }
 
@@ -1041,12 +1032,16 @@ export default function BinderEditor() {
     setActiveWeekTab('week-1');
   };
 
+  // Show enrollment-signup modal for guest users, preserving their title in returnTo
+  const showSignupModal = () => {
+    setUpgradeVariant('enrollment-signup');
+    setShowUpgrade(true);
+  };
+
   // Redirect guest users to sign up, preserving their title
   const requireAuth = () => {
     if (!isGuestMode) return false;
-    const currentTitle = titleDraftRef.current?.trim() || formData.title?.trim();
-    const titleParam = currentTitle ? `?title=${encodeURIComponent(currentTitle)}` : '';
-    setLocation(`/login?mode=signup&redirect=${encodeURIComponent(`/curator/binder/new/edit${titleParam}`)}`);
+    showSignupModal();
     return true;
   };
 
@@ -2036,7 +2031,7 @@ export default function BinderEditor() {
             </TooltipTrigger>
             <TooltipContent>Preview</TooltipContent>
           </Tooltip>
-          {!user && <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>Sign up</Button>}
+          {!user && <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => showSignupModal()}>Sign up</Button>}
         </>
       ) : (
         <>
@@ -2047,7 +2042,7 @@ export default function BinderEditor() {
             <Eye className="h-4 w-4" /> Preview
           </Button>
           {!user && (
-            <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => setShowWaitlist(true)}>
+            <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => showSignupModal()}>
               Sign up
             </Button>
           )}
@@ -2985,39 +2980,8 @@ export default function BinderEditor() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <UpgradePrompt open={showUpgrade} onOpenChange={setShowUpgrade} variant={upgradeVariant} />
+      <UpgradePrompt open={showUpgrade} onOpenChange={setShowUpgrade} variant={upgradeVariant} isAuthenticated={!!user} returnTo="/create" />
 
-      {/* Waitlist popup for guest mode */}
-      <Dialog open={showWaitlist} onOpenChange={setShowWaitlist}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Join the Waitlist</DialogTitle>
-            <DialogDescription>
-              Sign up to get 2 free AI-generated binders with readings, exercises, and curated resources.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="ghost" onClick={() => setShowWaitlist(false)}>
-              Maybe Later
-            </Button>
-            <Button
-              onClick={() => {
-                if (waitlistUrl) {
-                  window.open(waitlistUrl, '_blank');
-                } else {
-                  const currentTitle = titleDraftRef.current?.trim() || formData.title?.trim();
-                  const titleParam = currentTitle ? `?title=${encodeURIComponent(currentTitle)}` : '';
-                  const redirect = encodeURIComponent(`/curator/binder/new/edit${titleParam}`);
-                  setLocation(`/login?mode=signup&redirect=${redirect}`);
-                }
-                setShowWaitlist(false);
-              }}
-            >
-              Join Waitlist
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
     </div>
   );

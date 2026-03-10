@@ -1,4 +1,15 @@
 import DesignSystemLayout, { CodeBlock } from '../DesignSystemLayout';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+
+function DemoCard({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-mono text-muted-foreground">{label}</p>
+      <div className="max-w-sm">{children}</div>
+    </div>
+  );
+}
 
 export default function ComponentBinderReviewStatusCard() {
   return (
@@ -19,11 +30,83 @@ export default function ComponentBinderReviewStatusCard() {
           </div>
         </section>
 
+        {/* Demo */}
+        <section className="space-y-4">
+          <h2 className="font-display text-xl font-medium">Demo</h2>
+          <div className="space-y-8">
+            <DemoCard label="Pending review">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Binder Review Status</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-1.5">
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <Badge variant="warning-surface" className="text-xs shrink-0">Pending Review</Badge>
+                      <span className="text-sm font-medium text-primary">Digital Minimalism</span>
+                      <span className="text-xs text-muted-foreground ml-auto shrink-0">Submitted 3 days ago</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </DemoCard>
+
+            <DemoCard label="Changes requested (with reviewer note)">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Binder Review Status</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-1.5">
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <Badge variant="warning-surface" className="text-xs shrink-0">Changes Requested</Badge>
+                      <span className="text-sm font-medium text-primary">Systems Thinking 101</span>
+                      <span className="text-xs text-muted-foreground ml-auto shrink-0">Reviewed 1 day ago</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground bg-background rounded-md p-2.5 mt-1.5">
+                      Week 3 needs more diverse sources. Consider adding a podcast or video alongside the articles.
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </DemoCard>
+
+            <DemoCard label="Multiple binders">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Binder Review Status</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <Badge variant="warning-surface" className="text-xs shrink-0">Pending Review</Badge>
+                        <span className="text-sm font-medium text-primary">Digital Minimalism</span>
+                        <span className="text-xs text-muted-foreground ml-auto shrink-0">Submitted 3 days ago</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <Badge variant="warning-surface" className="text-xs shrink-0">Changes Requested</Badge>
+                        <span className="text-sm font-medium text-primary">Systems Thinking 101</span>
+                        <span className="text-xs text-muted-foreground ml-auto shrink-0">Reviewed 1 day ago</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground bg-background rounded-md p-2.5 mt-1.5">
+                        Week 3 needs more diverse sources.
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </DemoCard>
+          </div>
+        </section>
+
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Data Source</h2>
           <div className="text-base text-muted-foreground space-y-2">
             <p>Filters binders from the store where <code className="text-primary bg-muted px-1 rounded">curatorId === user.username && status === 'pending_review'</code>.</p>
-            <p>Each item displays: title (linked to the editor), "Pending Review" badge (warning variant), submitted date, and optional reviewer note.</p>
+            <p>Each item displays: title (linked to the editor), status badge (warning variant), submission/review date, and optional reviewer note.</p>
           </div>
         </section>
 

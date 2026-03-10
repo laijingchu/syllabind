@@ -7,22 +7,25 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Crown, Coins, Zap } from 'lucide-react';
+import { Crown, Coins, Zap, BookOpen } from 'lucide-react';
+import { ProFeaturesList, FreePlanFeaturesList } from '@/components/ProFeaturesList';
 import { redirectToCheckout, type CheckoutPlan } from '@/lib/stripe';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 
 interface UpgradePromptProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  variant: 'curator-limit' | 'enrollment-gate' | 'pro-feature' | 'insufficient-credits' | 'featured-listing';
+  variant: 'curator-limit' | 'enrollment-gate' | 'pro-feature' | 'insufficient-credits' | 'featured-listing' | 'enrollment-signup';
   returnTo?: string;
   creditCost?: number;
+  customDescription?: string;
+  isAuthenticated?: boolean;
 }
 
-export function UpgradePrompt({ open, onOpenChange, variant, returnTo, creditCost }: UpgradePromptProps) {
+export function UpgradePrompt({ open, onOpenChange, variant, returnTo, creditCost, customDescription, isAuthenticated = true }: UpgradePromptProps) {
   const [loading, setLoading] = useState<string | null>(null);
   const [termsUrl, setTermsUrl] = useState<string | null>(null);
   const [privacyUrl, setPrivacyUrl] = useState<string | null>(null);
@@ -161,13 +164,42 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo, creditCos
     ? 'Get Featured in the Catalog'
     : variant === 'pro-feature'
     ? 'Unlock Pro Features'
+    : variant === 'enrollment-signup'
+    ? 'Start Learning Today'
     : 'Syllabind Pro Required';
 
   const description = variant === 'enrollment-gate'
     ? 'Free plan allows 1 active enrollment. Upgrade to Pro for unlimited enrollments and 130 monthly credits.'
     : variant === 'featured-listing'
     ? 'Featured binders appear in the public catalog for all readers to discover. An admin reviews your submission to ensure quality — well-structured weeks, thoughtful content, and a clear learning outcome. Upgrade to Pro to submit your binder for featured listing.'
+    : variant === 'enrollment-signup'
+    ? 'Create a free account to enroll in this binder and start your learning journey. Track your progress week by week, complete exercises, and connect with fellow readers.'
     : 'Upgrade to Pro for unlimited binders, enrollments, and 130 monthly AI credits.';
+
+  // Enrollment signup variant for logged-out users
+  if (variant === 'enrollment-signup') {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="bg-highlight p-2 rounded-full">
+                <BookOpen className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{customDescription || description}</DialogDescription>
+          </DialogHeader>
+          <FreePlanFeaturesList />
+          <SignUpButton returnTo={returnTo} />
+          <p className="text-center text-xs text-muted-foreground">
+            Already have an account?{' '}
+            <Link href={`/login?returnTo=${encodeURIComponent(returnTo || window.location.pathname)}`} className="underline hover:text-foreground transition-colors">Log in</Link>
+          </p>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -179,30 +211,26 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo, creditCos
             </div>
           </div>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogDescription>{customDescription || description}</DialogDescription>
         </DialogHeader>
-        <div className="border rounded-lg p-4 bg-muted space-y-2">
-          <p className="font-medium text-sm">Syllabind Pro includes:</p>
-          <ul className="text-sm text-muted-foreground space-y-1">
-            <li>- 130 AI credits per month</li>
-            <li>- Unlimited binder creation</li>
-            <li>- Unlimited enrollments</li>
-            <li>- Up to 6-week AI-generated binders</li>
-            <li>- Public binder submission</li>
-            <li>- Purchasable credit packages</li>
-          </ul>
-        </div>
-        <div className="space-y-2">
-          <Button className="w-full" onClick={() => handleUpgrade('pro_annual')} disabled={loading !== null}>
-            {loading === 'pro_annual' ? 'Redirecting...' : 'Annual — $12.50/mo (save 17%)'}
-          </Button>
-          <Button className="w-full" variant="secondary" onClick={() => handleUpgrade('pro_monthly')} disabled={loading !== null}>
-            {loading === 'pro_monthly' ? 'Redirecting...' : 'Monthly — $14.99/mo'}
-          </Button>
-        </div>
-        <p className="text-center text-xs text-muted-foreground">
-          <Link href="/pricing" className="underline hover:text-foreground transition-colors">See all plans</Link>
-        </p>
+        <ProFeaturesList />
+        {!isAuthenticated ? (
+          <SignUpButton returnTo={returnTo} />
+        ) : (
+          <>
+            <div className="space-y-2">
+              <Button className="w-full" onClick={() => handleUpgrade('pro_annual')} disabled={loading !== null}>
+                {loading === 'pro_annual' ? 'Redirecting...' : 'Annual — $12.50/mo (save 17%)'}
+              </Button>
+              <Button className="w-full" variant="secondary" onClick={() => handleUpgrade('pro_monthly')} disabled={loading !== null}>
+                {loading === 'pro_monthly' ? 'Redirecting...' : 'Monthly — $14.99/mo'}
+              </Button>
+            </div>
+            <p className="text-center text-xs text-muted-foreground">
+              <Link href="/pricing" className="underline hover:text-foreground transition-colors">See all plans</Link>
+            </p>
+          </>
+        )}
         {(termsUrl || privacyUrl) && (
           <p className="upgrade-legal text-center text-xs text-muted-foreground">
             By upgrading, you agree to our{' '}
@@ -213,5 +241,17 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo, creditCos
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function SignUpButton({ returnTo }: { returnTo?: string }) {
+  const [, setLocation] = useLocation();
+  return (
+    <Button
+      className="w-full"
+      onClick={() => setLocation(`/login?returnTo=${encodeURIComponent(returnTo || window.location.pathname)}`)}
+    >
+      Sign up
+    </Button>
   );
 }
