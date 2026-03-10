@@ -605,15 +605,16 @@ export default function BinderEditor() {
   }, [isNew]);
 
   // Auto-activate demo from ?demo=<id> URL param (captured at mount before auto-create replaces URL)
+  // Skip if content already exists (e.g. navigating back from preview)
   const demoAutoTriggered = useRef(false);
   useEffect(() => {
-    if (!initialDemoId || demoBinders.length === 0 || demoAutoTriggered.current || isDemoMode) return;
+    if (!initialDemoId || demoBinders.length === 0 || demoAutoTriggered.current || isDemoMode || hasBinderContent) return;
     const demo = demoBinders.find(d => String(d.id) === initialDemoId);
     if (demo) {
       demoAutoTriggered.current = true;
       handleDemoGenerate(demo);
     }
-  }, [initialDemoId, demoBinders, isDemoMode]);
+  }, [initialDemoId, demoBinders, isDemoMode, hasBinderContent]);
 
   // Fetch waitlist URL in guest mode
   useEffect(() => {

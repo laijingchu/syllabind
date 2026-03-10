@@ -140,7 +140,7 @@ export default function Catalog() {
     <>
       {/* Hero section */}
       <div className="hero-section flex flex-col items-center gap-5 mx-auto py-32">
-        <h1 className="font-display text-7xl text-foreground text-center">Create a syllabus on anything</h1>
+        <h1 className="font-display text-7xl text-foreground text-center">Curate a syllabus on anything</h1>
         <p className={`text-lg text-muted-foreground transition-opacity duration-400 ${taglineFading ? 'opacity-0' : 'opacity-100'}`}>
           {taglines[taglineIndex]}
         </p>
