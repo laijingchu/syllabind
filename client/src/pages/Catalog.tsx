@@ -40,6 +40,7 @@ export default function Catalog() {
     'If you could teach the world anything, what would you teach?',
     'If you could learn anything, what do you want to learn?',
     'Build a syllabus yourself, or with AI\'s help.',
+    'Then form a learning community around it (if you wish).',
   ];
   const taglineTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 

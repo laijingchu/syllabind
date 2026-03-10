@@ -620,33 +620,42 @@ export async function registerRoutes(
   });
 
   app.get("/api/binders/:id", optionalAuth, async (req, res) => {
-    const id = parseInt(req.params.id);
-    const binder = await storage.getBinderWithContent(id);
-    if (!binder) return res.status(404).json({ message: "Binder not found" });
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid binder id" });
 
-    // Visibility enforcement: private binders only visible to curator
-    const currentUsername = (req.user as any)?.username;
-    const isPreview = req.query.preview === 'true';
-    if (binder.visibility === 'private' && binder.curatorId !== currentUsername) {
-      return res.status(404).json({ message: "Binder not found" });
+      const binder = await storage.getBinderWithContent(id);
+      if (!binder) return res.status(404).json({ message: "Binder not found" });
+
+      // Visibility enforcement: private binders only visible to curator or admin
+      const currentUsername = (req.user as any)?.username;
+      const isAdminUser = (req.user as any)?.isAdmin === true;
+      if (binder.visibility === 'private' && binder.curatorId !== currentUsername && !isAdminUser) {
+        return res.status(404).json({ message: "Binder not found" });
+      }
+      // Unlisted: accessible by link (no catalog filtering needed here)
+
+      // Normalize week indices to 1-based (some binders have 0-based indices)
+      if (binder.weeks?.length > 0) {
+        const sorted = [...binder.weeks].sort((a, b) => a.index - b.index);
+        sorted.forEach((week, i) => { week.index = i + 1; });
+        binder.weeks = sorted;
+      }
+
+      // Attach tags and category
+      const [binderTagsResult, categoryList] = await Promise.all([
+        storage.getTagsByBinderId(id),
+        storage.listCategories(),
+      ]);
+      const category = (binder as any).categoryId
+        ? categoryList.find(c => c.id === (binder as any).categoryId) || null
+        : null;
+
+      res.json({ ...binder, tags: binderTagsResult, category });
+    } catch (err) {
+      console.error("Failed to fetch binder:", err);
+      res.status(500).json({ message: "Failed to fetch binder" });
     }
-    // Unlisted: accessible by link (no catalog filtering needed here)
-
-    // Normalize week indices to 1-based (some binders have 0-based indices)
-    if (binder.weeks?.length > 0) {
-      const sorted = [...binder.weeks].sort((a, b) => a.index - b.index);
-      sorted.forEach((week, i) => { week.index = i + 1; });
-      binder.weeks = sorted;
-    }
-
-    // Attach tags and category
-    const binderTagsResult = await storage.getTagsByBinderId(id);
-    const categoryList = await storage.listCategories();
-    const category = (binder as any).categoryId
-      ? categoryList.find(c => c.id === (binder as any).categoryId) || null
-      : null;
-
-    res.json({ ...binder, tags: binderTagsResult, category });
   });
 
   app.put("/api/binders/:id", isAuthenticated, async (req, res) => {

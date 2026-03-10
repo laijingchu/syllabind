@@ -8,7 +8,8 @@ import { isAdminUser } from "./admin";
 import { logSecurity } from "../lib/audit";
 import { grantSignupCredits } from "../utils/creditService";
 import { sendEmail } from "../lib/brevo";
-import { buildPasswordResetEmail } from "../lib/emailTemplates";
+import { buildPasswordResetEmail, buildFirstLoginNotificationEmail } from "../lib/emailTemplates";
+import { storage } from "../storage";
 
 const SALT_ROUNDS = 10;
 
@@ -122,6 +123,25 @@ export function registerEmailAuthRoutes(app: Express): void {
 
       // Set session
       (req as any).session.userId = user.id;
+
+      // Notify admins when an admin-added user logs in for the first time
+      if (user.mustChangePassword) {
+        const adminUsernames = (process.env.ADMIN_USERNAMES || '').split(',').map(u => u.trim()).filter(Boolean);
+        const fromEmail = process.env.BREVO_FROM || 'noreply@syllabind.com';
+        const loginTime = new Date().toUTCString();
+        const { subject, html, text } = buildFirstLoginNotificationEmail({
+          userEmail: user.email || email,
+          userName: user.name,
+          loginTime,
+        });
+        for (const adminUsername of adminUsernames) {
+          storage.getUserByUsername(adminUsername).then(adminUser => {
+            if (adminUser?.email) {
+              sendEmail({ to: adminUser.email, from: fromEmail, subject, html, text });
+            }
+          }).catch(() => {});
+        }
+      }
 
       // Return user without password
       const { password: _, avatarData: _ad, avatarMime: _am, ...userSafe } = user;

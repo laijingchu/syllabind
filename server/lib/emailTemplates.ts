@@ -320,6 +320,79 @@ Syllabind - Curated learning, structured for you.`;
   return { subject, html, text };
 }
 
+// ========== ADMIN FIRST LOGIN NOTIFICATION ==========
+
+interface FirstLoginNotificationParams {
+  userEmail: string;
+  userName: string | null;
+  loginTime: string;
+}
+
+export function buildFirstLoginNotificationEmail({ userEmail, userName, loginTime }: FirstLoginNotificationParams) {
+  const subject = `Platform user signed in for the first time: ${userEmail}`;
+  const displayName = userName || userEmail;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600&family=Plus+Jakarta+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <title>User First Login</title>
+</head>
+<body style="margin:0; padding:0; background-color:#faf9f6; font-family:'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color:#faf9f6; padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:520px; background-color:#ffffff; border-radius:12px; overflow:hidden;">
+          <tr>
+            <td style="padding:32px 32px 24px; text-align:center;">
+              <h1 style="margin:0 0 8px; font-size:24px; font-weight:600; color:#0f0c09; font-family:'Bricolage Grotesque', 'Plus Jakarta Sans', sans-serif;">User Signed In</h1>
+              <p style="margin:0; font-size:15px; color:#6b6560;">A user you added has logged in for the first time</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 32px 24px;">
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color:#faf9f6; border-radius:8px; margin-bottom:16px;">
+                <tr>
+                  <td style="padding:16px;">
+                    <p style="margin:0 0 8px; font-size:14px; color:#6b6560;">Name</p>
+                    <p style="margin:0 0 12px; font-size:15px; color:#0f0c09; font-weight:500;">${displayName}</p>
+                    <p style="margin:0 0 8px; font-size:14px; color:#6b6560;">Email</p>
+                    <p style="margin:0 0 12px; font-size:15px; color:#0f0c09; font-weight:500;">${userEmail}</p>
+                    <p style="margin:0 0 8px; font-size:14px; color:#6b6560;">Signed in at</p>
+                    <p style="margin:0; font-size:15px; color:#0f0c09; font-weight:500;">${loginTime}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 32px; border-top:1px solid #ede9e0; text-align:center;">
+              <p style="margin:0; font-size:13px; color:#9b9590;">Syllabind &mdash; Curated learning, structured for you.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`.trim();
+
+  const text = `A user you added has logged in for the first time.
+
+Name: ${displayName}
+Email: ${userEmail}
+Signed in at: ${loginTime}
+
+Syllabind - Curated learning, structured for you.`;
+
+  return { subject, html, text };
+}
+
+// ========== PASSWORD RESET ==========
+
 interface PasswordResetEmailParams {
   name: string;
   resetUrl: string;

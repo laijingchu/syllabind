@@ -67,6 +67,14 @@ const previews: EmailPreview[] = [
     subject: 'Feedback on your binder "Digital Minimalism"',
     html: buildRejectedHtml(),
   },
+  {
+    id: 'first-login',
+    label: 'User First Login',
+    description: 'Sent to admins when a user they created logs in for the first time.',
+    recipient: 'Admin',
+    subject: 'Platform user signed in for the first time: jane@example.com',
+    html: buildFirstLoginHtml(),
+  },
 ];
 
 export default function AdminEmailPreviews() {
@@ -305,6 +313,22 @@ function buildRejectedHtml(): string {
       `)}
       ${p("Once you've made the changes, you can resubmit your binder for review.")}
       ${cta('Edit your binder')}
+    </td></tr>
+  `);
+}
+
+function buildFirstLoginHtml(): string {
+  return emailShell('User Signed In', `
+    ${heading('User Signed In', 'A user you added has logged in for the first time')}
+    <tr><td style="padding:0 32px 24px;">
+      ${greyBox(`
+        <p style="margin:0 0 8px; font-size:14px; color:#6b6560;">Name</p>
+        <p style="margin:0 0 12px; font-size:15px; color:#0f0c09; font-weight:500;">Jane Smith</p>
+        <p style="margin:0 0 8px; font-size:14px; color:#6b6560;">Email</p>
+        <p style="margin:0 0 12px; font-size:15px; color:#0f0c09; font-weight:500;">jane@example.com</p>
+        <p style="margin:0 0 8px; font-size:14px; color:#6b6560;">Signed in at</p>
+        <p style="margin:0; font-size:15px; color:#0f0c09; font-weight:500;">Tue, 10 Mar 2026 14:32:00 GMT</p>
+      `)}
     </td></tr>
   `);
 }

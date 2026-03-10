@@ -192,7 +192,7 @@ export default function BinderOverview() {
   const isCuratorViewing = currentUser?.username === binder.curatorId;
   const isAdmin = currentUser?.isAdmin === true;
   const canEdit = isCuratorViewing || isAdmin;
-  if (!isGuestPreview && binder.visibility === 'private' && !isCuratorViewing) {
+  if (!isGuestPreview && binder.visibility === 'private' && !isCuratorViewing && !isAdmin) {
     return (
       <AnimatedPage className="max-w-2xl mx-auto text-center py-20 space-y-4">
         <h1 className="text-2xl font-display">Binder not found</h1>

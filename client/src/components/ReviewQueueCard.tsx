@@ -1,4 +1,4 @@
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -29,8 +29,9 @@ interface ReviewQueueCardProps {
 }
 
 export function ReviewQueueCard({ binder, actionInProgress, onApprove, onReject }: ReviewQueueCardProps) {
+  const [, setLocation] = useLocation();
   return (
-    <Card>
+    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setLocation(`/curator/binder/${binder.id}/edit`)}>
       <CardContent className="review-queue-card p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4">
         <div className="flex items-start gap-3 flex-1 min-w-0">
           {binder.curator && (
@@ -56,7 +57,7 @@ export function ReviewQueueCard({ binder, actionInProgress, onApprove, onReject 
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
           <Link href={`/curator/binder/${binder.id}/edit`}>
             <Button variant="secondary" size="icon" className="h-8 w-8">
               <Pencil className="h-4 w-4" />
