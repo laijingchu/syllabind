@@ -109,9 +109,9 @@ export default function Pricing() {
   return (
     <div className="py-12 space-y-32">
       <div className="text-center space-y-3">
-        <h1 className="text-4xl font-display font-medium">Simple, Transparent Pricing</h1>
+        <h1 className="text-4xl font-display font-medium">Ungate knowledge, uphold excellence.</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Start free with 100 AI credits. Upgrade when you need more power.
+          Take advantage of the founding deal.
         </p>
         <div className="flex items-center justify-center gap-3 pt-2">
           <span className={`text-sm ${!annual ? 'font-medium' : 'text-muted-foreground'}`}>Monthly</span>
