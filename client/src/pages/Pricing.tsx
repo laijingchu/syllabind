@@ -252,15 +252,15 @@ export default function Pricing() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-t">
+                <tr className="border-t bg-card">
                   <td className="p-3">Binder generation</td>
                   <td className="p-3 text-right font-mono">10/week</td>
                 </tr>
-                <tr className="border-t">
+                <tr className="border-t bg-card">
                   <td className="p-3">Week regeneration</td>
                   <td className="p-3 text-right font-mono">10</td>
                 </tr>
-                <tr className="border-t">
+                <tr className="border-t bg-card">
                   <td className="p-3">Improve writing</td>
                   <td className="p-3 text-right font-mono">1</td>
                 </tr>

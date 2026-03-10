@@ -2427,62 +2427,64 @@ export default function BinderEditor() {
           </div>
 
           <div className="pt-4 space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                {!showWeeklySection && !hasBinderContent && (
-                  <Button
-                    variant="default"
-                    onClick={() => {
-                      setShowWeeklySection(true);
-                      // Seed week 1 with a default reading + exercise
-                      setFormData(prev => {
-                        const week1 = prev.weeks.find(w => w.index === 1);
-                        if (!week1 || week1.steps.length > 0) return prev;
-                        return { ...prev, weeks: prev.weeks.map(w => w.index !== 1 ? w : {
-                          ...w,
-                          steps: [
-                            { id: generateTempId(), weekId: w.id, position: 1, type: 'reading' as const, title: '', estimatedMinutes: 15 },
-                            { id: generateTempId(), weekId: w.id, position: 2, type: 'exercise' as const, title: '', estimatedMinutes: 15 },
-                          ],
-                        }) };
-                      });
-                    }}
-                    className="gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Manually add resources
-                  </Button>
-                )}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="inline-flex">
-                        <Button
-                          variant="tertiary"
-                          onClick={handleAutogenerateClick}
-                          disabled={isGenerating || isDemoMode || !titleDraft || !formData.description}
-                          className="gap-2"
-                        >
-                          <Wand2 className="h-4 w-4" />
-                          {isGenerating
-                            ? 'Generating...'
-                            : hasBinderContent
-                              ? 'Regenerate with AI'
-                              : 'Autogenerate with AI'}
-                          {hasBinderContent && isFreeTier && !isDemoMode && (
-                            <Badge className="ml-1 bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Free</Badge>
-                          )}
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    {isDemoMode && !isGenerating ? (
-                      <TooltipContent>Cannot regenerate a demo binder.</TooltipContent>
-                    ) : (!titleDraft || !formData.description) && !isGenerating ? (
-                      <TooltipContent>Please fill in Title and Description.</TooltipContent>
-                    ) : null}
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              {!showWeeklySection && !hasBinderContent && (
+                <Button
+                  variant="default"
+                  onClick={() => {
+                    setShowWeeklySection(true);
+                    // Seed week 1 with a default reading + exercise
+                    setFormData(prev => {
+                      const week1 = prev.weeks.find(w => w.index === 1);
+                      if (!week1 || week1.steps.length > 0) return prev;
+                      return { ...prev, weeks: prev.weeks.map(w => w.index !== 1 ? w : {
+                        ...w,
+                        steps: [
+                          { id: generateTempId(), weekId: w.id, position: 1, type: 'reading' as const, title: '', estimatedMinutes: 15 },
+                          { id: generateTempId(), weekId: w.id, position: 2, type: 'exercise' as const, title: '', estimatedMinutes: 15 },
+                        ],
+                      }) };
+                    });
+                  }}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Manually add resources
+                </Button>
+              )}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <Button
+                        variant="tertiary"
+                        onClick={handleAutogenerateClick}
+                        disabled={isGenerating || isDemoMode || !titleDraft || !formData.description}
+                        className="gap-2"
+                      >
+                        <Wand2 className="h-4 w-4" />
+                        {isGenerating
+                          ? 'Generating...'
+                          : hasBinderContent
+                            ? 'Regenerate with AI'
+                            : 'Autogenerate with AI'}
+                        {hasBinderContent && isFreeTier && !isDemoMode && (
+                          <Badge className="ml-1 bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Free</Badge>
+                        )}
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {isDemoMode && !isGenerating ? (
+                    <TooltipContent>Cannot regenerate a demo binder.</TooltipContent>
+                  ) : (!titleDraft || !formData.description) && !isGenerating ? (
+                    <TooltipContent>Please fill in Title and Description.</TooltipContent>
+                  ) : null}
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            {/* Toggles row */}
+            {(user?.schedulingUrl || (user?.isAdmin && !isNew && formData.id > 0)) && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               {/* Scheduling link toggle -- only shown when curator has a scheduling URL */}
               {user?.schedulingUrl && (
                 <div className="scheduling-link-toggle flex items-center gap-2">
@@ -2539,6 +2541,7 @@ export default function BinderEditor() {
                 </div>
               )}
             </div>
+            )}
             {/* Credit info for authenticated users */}
             {!isGuestMode && generationInfo && !generationInfo.isAdmin && (
               <p className="text-xs text-muted-foreground">

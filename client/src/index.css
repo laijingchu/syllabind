@@ -159,11 +159,11 @@
 /* Primitive color ramps — pick from these for semantic tokens */
 :root {
   /* Warm neutral (hue 8 — rosy warm) */
-  --warm-50:  8 30% 98%;
-  --warm-100: 8 25% 96%;
-  --warm-150: 8 22% 94%;
-  --warm-200: 8 20% 91%;
-  --warm-250: 8 18% 87%;
+  --warm-50:  0 0% 100%;
+  --warm-100: 8 25% 98%;
+  --warm-150: 8 22% 96%;
+  --warm-200: 8 20% 94%;
+  --warm-250: 8 18% 91%;
   --warm-300: 8 16% 82%;
   --warm-350: 8 13% 74%;
   --warm-400: 8 10% 62%;
@@ -275,8 +275,8 @@
   --success-surface: var(--success-50);
   --danger-border: var(--danger-200);
   --danger-surface: var(--danger-50);
-  --border: var(--warm-250);
-  --input: var(--warm-200);
+  --border: var(--warm-350);
+  --input: var(--warm-350);
   --ring: var(--warm-800);
   --chart-1: 12 76% 61%;
   --chart-2: 173 58% 39%;

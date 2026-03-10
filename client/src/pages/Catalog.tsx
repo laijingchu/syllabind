@@ -144,7 +144,7 @@ export default function Catalog() {
         <p className={`text-lg text-muted-foreground transition-opacity duration-400 ${taglineFading ? 'opacity-0' : 'opacity-100'}`}>
           {taglines[taglineIndex]}
         </p>
-        <div className="create-binder-bar group relative w-full max-w-xl flex items-center rounded-full border border-border bg-background shadow-sm hover:shadow-md focus-within:shadow-md transition-shadow px-5 py-2">
+        <div className="create-binder-bar group relative w-full max-w-xl flex items-center rounded-full border border-border bg-card shadow-sm hover:shadow-md focus-within:shadow-md transition-shadow px-5 py-2">
           <Sparkles className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           <input
             value={newBinderTitle}

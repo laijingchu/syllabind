@@ -60,7 +60,7 @@ export function BinderFilterBar({
       {/* Top row: Visibility pills + Sort + Search */}
       <div className="catalog-search-row flex flex-col sm:flex-row sm:items-center gap-3">
         {onVisibilityChange && visibility !== undefined && (
-          <div className="catalog-visibility flex gap-1.5 shrink-0">
+          <div className="catalog-visibility flex flex-wrap gap-1.5">
             {visibilityOptions.map(opt => (
               <Pill
                 key={opt.value}

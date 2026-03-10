@@ -489,7 +489,7 @@ export default function WeekView() {
 
         {/* Sidebar — progress and actions */}
         <aside className="col-span-12 lg:col-span-4 space-y-6 lg:sticky lg:top-6">
-          <div className="border rounded-xl p-5 space-y-4">
+          <div className="border rounded-xl p-5 space-y-4 bg-card">
             <div className="text-center">
               <div className="text-3xl font-mono font-medium">{progress}%</div>
               <div className="text-xs text-muted-foreground mb-3">completed</div>

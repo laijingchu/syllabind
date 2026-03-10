@@ -373,7 +373,7 @@ export default function CuratorDashboard() {
 
       {/* Admin toggle bar */}
       {isAdmin && (
-        <div className="admin-toggle flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-lg">
+        <div className="admin-toggle flex items-center gap-2 px-4 py-2 border border-border rounded-lg">
           <Shield className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-medium text-foreground">Admin View</span>
           <div className="flex items-center gap-1 ml-auto bg-secondary rounded-md p-0.5">

@@ -21,7 +21,7 @@ export function CreditsCard() {
         <CardTitle className="text-base">Start a syllabus binder</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="group relative flex items-center rounded-full border border-border bg-background shadow-sm hover:shadow-md focus-within:shadow-md transition-shadow px-3 py-1.5">
+        <div className="group relative flex items-center rounded-full border border-border bg-card shadow-sm hover:shadow-md focus-within:shadow-md transition-shadow px-3 py-1.5">
           <Sparkles className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
           <input
             value={title}
