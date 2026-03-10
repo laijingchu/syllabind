@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 const DISMISSED_KEY = 'syllabind_pro_onboarding_dismissed';
 const JOINED_COMMUNITY_KEY = 'syllabind_joined_community';
 const ENROLLED_ANOTHER_KEY = 'syllabind_pro_enrolled_another';
+const ENROLLED_SECOND_KEY = 'syllabind_enrolled_second_binder';
 const OFFICE_HOUR_KEY = 'syllabind_office_hour_clicked';
 
 interface ChecklistItem {
@@ -106,6 +107,10 @@ export function ProOnboardingChecklist() {
     () => localStorage.getItem(OFFICE_HOUR_KEY) === 'true'
   );
 
+  const [enrolledSecond, setEnrolledSecond] = useState(
+    () => localStorage.getItem(ENROLLED_SECOND_KEY) === 'true'
+  );
+
   // Re-check localStorage flags on dialog close / focus
   useEffect(() => {
     if (!showOfficeHourDialog) {
@@ -137,7 +142,6 @@ export function ProOnboardingChecklist() {
   };
 
   const myBindersCount = binders.filter(b => b.curatorId === user.username).length;
-  const totalEnrollments = (enrollment?.completedBinderIds?.length ?? 0) + (enrollment?.activeBinderId ? 1 : 0);
 
   const items: ChecklistItem[] = [
     {
@@ -148,13 +152,13 @@ export function ProOnboardingChecklist() {
     },
     {
       label: 'Build more binders with AI',
-      href: '/curator/binder/new',
+      href: '/curator/binder/new/edit',
       complete: myBindersCount >= 2,
     },
     {
-      label: 'Enroll in another binder',
+      label: 'Enroll in second binder',
       href: '/catalog',
-      complete: totalEnrollments >= 2,
+      complete: enrolledSecond,
     },
     {
       label: 'Book 1:1 with featured curator',
@@ -226,6 +230,11 @@ export function ProOnboardingChecklist() {
                 </li>
               ))}
             </ul>
+          )}
+          {!allDone && (
+            <Button variant="ghost" size="sm" className="w-full text-muted-foreground" onClick={handleDismiss}>
+              Dismiss
+            </Button>
           )}
         </CardContent>
       </Card>

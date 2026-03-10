@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowLeft, Loader2, Mail, Settings, UserPlus } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Loader2, Mail, Settings, UserPlus, ListChecks } from 'lucide-react';
 import { Link } from 'wouter';
 
 export default function AdminSettings() {
@@ -39,7 +40,13 @@ export default function AdminSettings() {
   // Create User state
   const [createEmail, setCreateEmail] = useState('');
   const [createRole, setCreateRole] = useState<'reader' | 'curator'>('reader');
+  const [createTier, setCreateTier] = useState('free');
   const [creating, setCreating] = useState(false);
+
+  // Pro onboarding feature binder emails
+  const [featureBinderEmails, setFeatureBinderEmails] = useState<string[]>([]);
+  const [featureBinderEmailInput, setFeatureBinderEmailInput] = useState('');
+  const [featureBinderSaving, setFeatureBinderSaving] = useState(false);
 
   // Redirect non-admin users
   useEffect(() => {
@@ -61,8 +68,9 @@ export default function AdminSettings() {
       fetch('/api/site-settings/feedback_url_curators').then(r => r.json()),
       fetch('/api/site-settings/curator_learn_more_url').then(r => r.json()),
       fetch('/api/site-settings/wip_badge_url').then(r => r.json()),
+      fetch('/api/site-settings/feature_binder_emails').then(r => r.json()),
     ])
-      .then(([slackData, waitlistData, bugReportData, termsData, privacyData, feedbackGeneralData, feedbackLearnersData, feedbackCuratorsData, curatorLearnMoreData, wipBadgeData]) => {
+      .then(([slackData, waitlistData, bugReportData, termsData, privacyData, feedbackGeneralData, feedbackLearnersData, feedbackCuratorsData, curatorLearnMoreData, wipBadgeData, featureBinderData]) => {
         setSlackUrl(slackData.value || '');
         setWaitlistUrl(waitlistData.value || '');
         setBugReportUrl(bugReportData.value || '');
@@ -73,6 +81,7 @@ export default function AdminSettings() {
         setFeedbackUrlCurators(feedbackCuratorsData.value || '#feedback_curator');
         setCuratorLearnMoreUrl(curatorLearnMoreData.value || '#learnmore_curator');
         setWipBadgeUrl(wipBadgeData.value || '');
+        try { setFeatureBinderEmails(JSON.parse(featureBinderData.value || '[]')); } catch { setFeatureBinderEmails([]); }
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -230,7 +239,8 @@ export default function AdminSettings() {
   if (!user?.isAdmin) return null;
 
   return (
-    <div className="max-w-page-prose mx-auto space-y-6">
+    <div className="grid-12">
+    <div className="col-span-12 md:col-span-8 md:col-start-3 space-y-6">
       <div>
         <Link href="/">
           <Button variant="ghost" className="pl-0 mb-4 hover:bg-transparent hover:text-primary">
@@ -284,6 +294,20 @@ export default function AdminSettings() {
               </div>
             </RadioGroup>
           </div>
+          <div className="space-y-2">
+            <Label>Subscription Tier</Label>
+            <Select value={createTier} onValueChange={setCreateTier}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="free">Free (100 credits)</SelectItem>
+                <SelectItem value="pro_monthly">Pro Monthly (130 credits)</SelectItem>
+                <SelectItem value="pro_annual">Pro Annual (130 credits)</SelectItem>
+                <SelectItem value="lifetime">Founding Member (5,000 credits)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Button
             onClick={async () => {
               if (!createEmail.trim()) {
@@ -296,7 +320,7 @@ export default function AdminSettings() {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   credentials: 'include',
-                  body: JSON.stringify({ email: createEmail.trim(), role: createRole }),
+                  body: JSON.stringify({ email: createEmail.trim(), role: createRole, tier: createTier }),
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Failed to create user');
@@ -306,6 +330,7 @@ export default function AdminSettings() {
                 });
                 setCreateEmail('');
                 setCreateRole('reader');
+                setCreateTier('free');
               } catch (err: any) {
                 toast({ title: 'Error', description: err.message, variant: 'destructive' });
               } finally {
@@ -317,6 +342,106 @@ export default function AdminSettings() {
             {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create Account & Send Email
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Pro Onboarding — Feature Binder Emails */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ListChecks className="h-5 w-5" />
+            Pro Onboarding: Feature Binder Prompt
+          </CardTitle>
+          <CardDescription>
+            Add emails of Pro curator accounts who should see a "Submit a feature binder" step in their Pro onboarding checklist.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loading ? (
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          ) : (
+            <>
+              <div className="flex gap-2">
+                <Input
+                  type="email"
+                  placeholder="curator@example.com"
+                  value={featureBinderEmailInput}
+                  onChange={(e) => setFeatureBinderEmailInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const email = featureBinderEmailInput.trim().toLowerCase();
+                      if (email && !featureBinderEmails.includes(email)) {
+                        const updated = [...featureBinderEmails, email];
+                        setFeatureBinderEmails(updated);
+                        setFeatureBinderEmailInput('');
+                        fetch('/api/admin/settings', {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          credentials: 'include',
+                          body: JSON.stringify({ key: 'feature_binder_emails', value: JSON.stringify(updated) }),
+                        }).then(() => toast({ title: 'Saved', description: `${email} added.` }))
+                          .catch(() => toast({ title: 'Error', description: 'Failed to save.', variant: 'destructive' }));
+                      }
+                    }
+                  }}
+                />
+                <Button
+                  variant="secondary"
+                  disabled={featureBinderSaving}
+                  onClick={() => {
+                    const email = featureBinderEmailInput.trim().toLowerCase();
+                    if (!email) return;
+                    if (featureBinderEmails.includes(email)) {
+                      toast({ title: 'Already added', variant: 'destructive' });
+                      return;
+                    }
+                    setFeatureBinderSaving(true);
+                    const updated = [...featureBinderEmails, email];
+                    fetch('/api/admin/settings', {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
+                      body: JSON.stringify({ key: 'feature_binder_emails', value: JSON.stringify(updated) }),
+                    })
+                      .then(r => { if (!r.ok) throw new Error(); setFeatureBinderEmails(updated); setFeatureBinderEmailInput(''); toast({ title: 'Saved', description: `${email} added.` }); })
+                      .catch(() => toast({ title: 'Error', description: 'Failed to save.', variant: 'destructive' }))
+                      .finally(() => setFeatureBinderSaving(false));
+                  }}
+                >
+                  {featureBinderSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add'}
+                </Button>
+              </div>
+              {featureBinderEmails.length > 0 && (
+                <ul className="space-y-1">
+                  {featureBinderEmails.map((email) => (
+                    <li key={email} className="flex items-center justify-between text-sm py-1.5 px-2 rounded-md bg-muted">
+                      <span>{email}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs text-muted-foreground"
+                        onClick={() => {
+                          const updated = featureBinderEmails.filter(e => e !== email);
+                          setFeatureBinderEmails(updated);
+                          fetch('/api/admin/settings', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ key: 'feature_binder_emails', value: JSON.stringify(updated) }),
+                          })
+                            .then(() => toast({ title: 'Removed', description: `${email} removed.` }))
+                            .catch(() => toast({ title: 'Error', description: 'Failed to save.', variant: 'destructive' }));
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -613,6 +738,7 @@ export default function AdminSettings() {
           )}
         </CardContent>
       </Card>
+    </div>
     </div>
   );
 }

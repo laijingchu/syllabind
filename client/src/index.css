@@ -547,6 +547,7 @@
   animation: shimmer 3s ease-in-out infinite;
 }
 
+
 @keyframes pulse-border {
   0%, 100% {
     outline-color: hsl(var(--primary) / 0.3);
@@ -627,7 +628,7 @@
   color: hsl(var(--background));
 }
 .bg-action-gradient:hover {
-  animation: cta-shimmer 1.2s ease forwards;
+  animation: cta-shimmer 1.4s ease-in-out infinite;
 }
 /* Light mode: shimmer on black surface — use lighter, pastel tints */
 .light .bg-action-gradient {

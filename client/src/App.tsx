@@ -111,6 +111,9 @@ function ProtectedRoute({ component: Component, ...rest }: any) {
   return <Component {...rest} />;
 }
 
+// Stable component ref prevents React reconciliation remounts when URL params change
+const ProtectedBinderEditor = () => <ProtectedRoute component={BinderEditor} />;
+
 function Router() {
   const { user, isLoading } = useAuth();
 
@@ -144,8 +147,10 @@ function Router() {
         <Route path="/create/preview" component={BinderOverview} />
         <Route path="/create" component={BinderEditor} />
         <Route path="/curator" component={() => <ProtectedRoute component={CuratorDashboard} />} />
-        <Route path="/curator/binder/new" component={() => <ProtectedRoute component={BinderEditor} />} />
-        <Route path="/curator/binder/:id/edit" component={() => <ProtectedRoute component={BinderEditor} />} />
+        <Route path="/curator/binder/new">
+          <Redirect to="/curator/binder/new/edit" />
+        </Route>
+        <Route path="/curator/binder/:id/edit" component={ProtectedBinderEditor} />
         <Route path="/curator/binder/:id/readers" component={() => <ProtectedRoute component={BinderReaders} />} />
         <Route path="/curator/binder/:id/analytics" component={() => <ProtectedRoute component={BinderAnalytics} />} />
         <Route path="/curator/profile" component={() => <ProtectedRoute component={CuratorProfile} />} />

@@ -75,7 +75,7 @@ export default function Pricing() {
         'Submit binder for featured listing',
       ],
       bottomFeatures: [
-        <span>Promote your paid video call sessions on featured binder — set your own rate, add your scheduling link, <span className="font-bold underline">with no platform fee</span></span>,
+        <span>Promote your paid video call sessions on your binders — set your own rate, add your scheduling link, <span className="font-bold underline">with no platform fee</span></span>,
       ],
       cta: isPro && subscriptionTier !== 'lifetime' ? 'Current Plan' : annual ? 'Go Pro — $150/yr' : 'Go Pro — $14.99/mo',
       disabled: isPro && subscriptionTier !== 'lifetime',
@@ -108,19 +108,20 @@ export default function Pricing() {
 
   return (
     <div className="py-12 space-y-32">
-      <div className="text-center space-y-3">
-        <h1 className="text-4xl font-display font-medium">Ungate knowledge, uphold excellence.</h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Take advantage of the founding deal.
-        </p>
-        <div className="flex items-center justify-center gap-3 pt-2">
-          <span className={`text-sm ${!annual ? 'font-medium' : 'text-muted-foreground'}`}>Monthly</span>
-          <Switch checked={annual} onCheckedChange={setAnnual} />
-          <span className={`text-sm ${annual ? 'font-medium' : 'text-muted-foreground'}`}>
-            Annual <span className="text-success text-xs">(save 17%)</span>
-          </span>
+      <div className="space-y-8">
+        <div className="text-center space-y-3">
+          <h1 className="text-4xl font-display font-medium">Ungate knowledge, uphold excellence.</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <Badge className="bg-primary-inverted text-foreground-inverted shimmer-text border border-[hsl(var(--warm-300))] [animation-duration:9s]">Debut offer!</Badge> Get discounted pricing plans until August 2026
+          </p>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <span className={`text-sm ${!annual ? 'font-medium' : 'text-muted-foreground'}`}>Monthly</span>
+            <Switch checked={annual} onCheckedChange={setAnnual} />
+            <span className={`text-sm ${annual ? 'font-medium' : 'text-muted-foreground'}`}>
+              Annual <span className="text-success text-xs">(save 17%)</span>
+            </span>
+          </div>
         </div>
-      </div>
 
       <div className="grid-12">
         {plans.map(plan => (
@@ -211,6 +212,7 @@ export default function Pricing() {
             </CardContent>
           </Card>
         ))}
+      </div>
       </div>
 
       {/* Credit Packages & Cost Breakdown — side by side on the 12-col grid */}
@@ -325,7 +327,7 @@ export default function Pricing() {
             <AccordionTrigger>Why is approval necessary for featured binders?</AccordionTrigger>
             <AccordionContent className="text-muted-foreground">
               <p>Featured binders appear in our public catalog and represent the Syllabind community. We review submissions to ensure they meet a baseline quality standard — well-structured weeks, thoughtful content curation, and a clear learning outcome. This protects readers and helps great binders stand out. You can always publish unlisted or private binders without approval.</p>
-              <p className="mt-3">The approval process also ensures that curators who offer paid scheduling links are genuine experts on their binder's topic. Because readers are trusting — and paying — these curators for 1:1 guidance, we vet featured binders to maintain that trust.</p>
+              <p className="mt-3">While any curator can add a scheduling link to their binders, we encourage curators to only offer paid sessions on topics where they have genuine expertise — readers are trusting and paying for 1:1 guidance.</p>
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="priority-support">

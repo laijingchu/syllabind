@@ -71,7 +71,7 @@ const generateTempId = () => -Math.floor(Math.random() * 1000000); // Temporary 
 export function SaveStatus({ isSaving, lastSaved, className }: { isSaving: boolean; lastSaved: Date | null; className?: string }) {
   if (!isSaving && !lastSaved) return null;
   return (
-    <span className={cn("inline-flex items-center gap-1.5 w-[4.5rem]", className)}>
+    <span className={cn("inline-flex items-center gap-1.5", className)}>
       {isSaving ? (
         <>
           <Loader2 className="h-3 w-3 animate-spin shrink-0" />
@@ -289,34 +289,21 @@ function SortableStep({ step, idx, weekIndex, isJustCompleted, updateStep, remov
 export default function BinderEditor() {
   const [match, params] = useRoute('/curator/binder/:id/edit');
   const [location, setLocation] = useLocation();
-  const isNew = location === '/curator/binder/new' || location.startsWith('/create');
+  const isNew = params?.id === 'new' || location.startsWith('/create');
   const isGuestMode = location.startsWith('/create');
   // Track whether this session started as a new binder creation.
   // isNew flips to false when auto-create replaces the URL, but we still
   // need progressive disclosure until the user fills both title + description.
   const [startedAsNew] = useState(() => {
     const path = window.location.pathname;
-    const isNewRoute = path === '/curator/binder/new' || path.startsWith('/create');
-    if (isNewRoute) {
-      sessionStorage.setItem('binderStartedAsNew', '1');
-      return true;
-    }
-    // Survive remount after auto-create replaces /new → /curator/binder/:id/edit.
-    // Only honour the flag if binderAutoCreated is also present (same session).
-    // Otherwise the flag is stale from a previous create flow and would block
-    // data loading for every subsequent binder edit.
-    const wasNew = sessionStorage.getItem('binderStartedAsNew') === '1';
-    if (wasNew && !sessionStorage.getItem('binderAutoCreated')) {
-      sessionStorage.removeItem('binderStartedAsNew');
-      return false;
-    }
-    return wasNew;
+    return path === '/curator/binder/new/edit' || path.startsWith('/create');
   });
-  const { createBinder, updateBinder, refreshBinders, getSubmissionsForStep, getReadersForBinder, user, isPro } = useStore();
+  const { createBinder, updateBinder, refreshBinders, getSubmissionsForStep, getReadersForBinder, user, isPro, featureBinderCanSubmit, featureBinderEligible } = useStore();
   const isFreeTier = isGuestMode || !isPro;
   const posthog = usePostHog();
   const [readers, setReaders] = useState<any[]>([]);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeVariant, setUpgradeVariant] = useState<'pro-feature' | 'featured-listing'>('pro-feature');
 
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [binderTags, setBinderTags] = useState<Tag[]>([]);
@@ -328,12 +315,6 @@ export default function BinderEditor() {
 
   const defaultWeeks = isGuestMode ? 3 : 4;
   const [formData, setFormData] = useState<Binder>(() => {
-    // Restore form state after auto-create remount (/new → /:id/edit)
-    const saved = sessionStorage.getItem('binderAutoCreated');
-    if (saved && sessionStorage.getItem('binderStartedAsNew')) {
-      sessionStorage.removeItem('binderAutoCreated');
-      try { return JSON.parse(saved); } catch {}
-    }
     return {
       id: generateTempId(),
       title: initialTitle,
@@ -391,9 +372,7 @@ export default function BinderEditor() {
   const [showRegenerateWeekDialog, setShowRegenerateWeekDialog] = useState(false);
   const [weekToRegenerate, setWeekToRegenerate] = useState<number | null>(null);
   const [originalWeeks, setOriginalWeeks] = useState<Week[]>([]); // Store weeks from database
-  // Don't show loading spinner if we just auto-created (binderStartedAsNew means
-  // the component remounted after URL changed from /new → /:id/edit)
-  const [isLoadingContent, setIsLoadingContent] = useState(!isNew && !!params?.id && !sessionStorage.getItem('binderStartedAsNew'));
+  const [isLoadingContent, setIsLoadingContent] = useState(!isNew && !!params?.id && params?.id !== 'new');
   const [activeWeekTab, setActiveWeekTab] = useState('week-1'); // Controlled tab for auto-switching during generation
   const generationWsRef = useRef<WebSocket | null>(null); // Persist WS ref for cancel support
   const isGeneratingRef = useRef(false); // Ref for ws.onclose (avoids stale closure)
@@ -443,7 +422,6 @@ export default function BinderEditor() {
         const descFilled = desc && desc !== '<p></p>' && desc.replace(/<[^>]*>/g, '').trim() !== '';
         if (title && descFilled) {
           setBasicsRevealed(true);
-          sessionStorage.removeItem('binderStartedAsNew');
         }
       }, 150);
     };
@@ -463,7 +441,6 @@ export default function BinderEditor() {
         setFormData(restored);
         setShowWeeklySection(true);
         setBasicsRevealed(true);
-        sessionStorage.removeItem('binderStartedAsNew');
         sessionStorage.removeItem('guestEditorState');
       }
     } catch { /* ignore parse errors */ }
@@ -473,8 +450,8 @@ export default function BinderEditor() {
   useEffect(() => {
     // Skip fetch if generation or demo is in progress -- those handlers manage formData
     if (isGeneratingRef.current || isDemoRef.current) return;
-    // Skip fetch if we just auto-created this binder (remount after /new → /:id/edit)
-    if (sessionStorage.getItem('binderStartedAsNew')) return;
+    // Skip fetch if we just auto-created this binder (same component, URL changed via replaceState)
+    if (justCreatedRef.current) { justCreatedRef.current = false; return; }
 
     if (!isNew && params?.id) {
       const binderId = parseInt(params.id);
@@ -524,7 +501,7 @@ export default function BinderEditor() {
           const hasContent = weeksArray.some(w =>
             w.steps?.length > 0 || w.title || (w.description && w.description !== '<p></p>')
           );
-          if (hasContent && !sessionStorage.getItem('binderStartedAsNew')) {
+          if (hasContent) {
             setShowWeeklySection(true);
           }
           setIsLoadingContent(false);
@@ -539,6 +516,7 @@ export default function BinderEditor() {
   // Auto-create effect: when user types a title on /new, create the record in the DB
   // so that subsequent auto-saves work and content persists across refresh
   const isCreatingRef = useRef(false);
+  const justCreatedRef = useRef(false);
   useEffect(() => {
     if (isGuestMode || isDemoRef.current) return; // Skip in guest/demo mode
     if (formData.id >= 0 || !formData.title?.trim() || isCreatingRef.current) return;
@@ -546,24 +524,31 @@ export default function BinderEditor() {
     isCreatingRef.current = true;
     (async () => {
       try {
+        setIsSaving(true);
         const res = await fetch('/api/binders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ ...formData, curatorId: undefined, status: 'draft' })
         });
-        if (!res.ok) throw new Error('Failed to create binder');
+        if (!res.ok) {
+          const text = await res.text();
+          let msg = `Server returned ${res.status}`;
+          try { const j = JSON.parse(text); msg = j.error || j.message || msg; } catch { msg = text.slice(0, 200) || msg; }
+          throw new Error(msg);
+        }
         const created = await res.json();
-        // Save form state so it survives the remount when wouter switches routes
-        const updatedForm = { ...formData, id: created.id };
-        sessionStorage.setItem('binderAutoCreated', JSON.stringify(updatedForm));
+        justCreatedRef.current = true;
         setFormData(prev => ({ ...prev, id: created.id }));
-        window.history.replaceState(null, '', `/curator/binder/${created.id}/edit`);
         setLastSaved(new Date());
+        await refreshBinders();
+        window.history.replaceState(null, '', `/curator/binder/${created.id}/edit`);
       } catch (err) {
         console.error('Failed to auto-create binder:', err);
+        toast({ title: 'Failed to create binder', description: err instanceof Error ? err.message : 'Please try again.', variant: 'destructive' });
       } finally {
         isCreatingRef.current = false;
+        setIsSaving(false);
       }
     })();
   }, [debouncedFormData.title]);
@@ -617,6 +602,19 @@ export default function BinderEditor() {
       .then(data => setDemoBinders(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, [isNew]);
+
+  // Auto-activate demo from ?demo=<id> URL param
+  const demoAutoTriggered = useRef(false);
+  useEffect(() => {
+    if (!isNew || demoBinders.length === 0 || demoAutoTriggered.current || isDemoMode) return;
+    const demoParam = new URLSearchParams(window.location.search).get('demo');
+    if (!demoParam) return;
+    const demo = demoBinders.find(d => String(d.id) === demoParam);
+    if (demo) {
+      demoAutoTriggered.current = true;
+      handleDemoGenerate(demo);
+    }
+  }, [isNew, demoBinders, isDemoMode]);
 
   // Fetch waitlist URL in guest mode
   useEffect(() => {
@@ -1043,7 +1041,7 @@ export default function BinderEditor() {
     if (!isGuestMode) return false;
     const currentTitle = titleDraftRef.current?.trim() || formData.title?.trim();
     const titleParam = currentTitle ? `?title=${encodeURIComponent(currentTitle)}` : '';
-    setLocation(`/login?mode=signup&redirect=${encodeURIComponent(`/curator/binder/new${titleParam}`)}`);
+    setLocation(`/login?mode=signup&redirect=${encodeURIComponent(`/curator/binder/new/edit${titleParam}`)}`);
     return true;
   };
 
@@ -2114,9 +2112,21 @@ export default function BinderEditor() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
-          <DropdownMenuItem onClick={() => user?.isAdmin ? handleSave('published', 'public') : (() => { setPendingVisibility('public'); setShowReviewConfirmDialog(true); })()}>
-            <Globe className="h-4 w-4 mr-2" /> Public
-            <span className="ml-auto text-xs text-muted-foreground">{user?.isAdmin ? 'Catalog' : 'To be featured'}</span>
+          <DropdownMenuItem onClick={() => {
+            if (user?.isAdmin) {
+              handleSave('published', 'public');
+            } else if (isPro || featureBinderCanSubmit) {
+              setPendingVisibility('public');
+              setShowReviewConfirmDialog(true);
+            } else if (featureBinderEligible && !featureBinderCanSubmit) {
+              toast({ title: 'Limit reached', description: 'Free accounts can submit one binder for feature review.', variant: 'destructive' });
+            } else {
+              setUpgradeVariant('featured-listing');
+              setShowUpgrade(true);
+            }
+          }}>
+            <Globe className="h-4 w-4 mr-2" /> Feature
+            <span className="ml-auto text-xs text-muted-foreground">{user?.isAdmin ? 'Catalog' : (isPro || featureBinderCanSubmit) ? 'Submit for review' : (featureBinderEligible ? 'Limit reached' : 'Pro required')}</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => user?.isAdmin ? handleSave('published', 'unlisted') : handlePublishAction('unlisted')}>
             <EyeOff className="h-4 w-4 mr-2" /> Unlisted
@@ -2160,7 +2170,7 @@ export default function BinderEditor() {
             ) : (
               <SaveStatus isSaving={isSaving} lastSaved={lastSaved} />
             )}
-            {!isNew && (
+            {(!isNew || formData.id >= 0) && (
               <>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -2172,7 +2182,7 @@ export default function BinderEditor() {
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Link href={`/curator/binder/${params?.id}/analytics`}>
+                    <Link href={`/curator/binder/${formData.id}/analytics`}>
                       <Button variant="secondary" size="icon" className="h-8 w-8">
                         <BarChart2 className="h-4 w-4" />
                       </Button>
@@ -2182,7 +2192,7 @@ export default function BinderEditor() {
                 </Tooltip>
               </>
             )}
-            {!isNew && (
+            {(!isNew || formData.id >= 0) && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -2199,10 +2209,10 @@ export default function BinderEditor() {
               </Tooltip>
             )}
             <ActionButtons compact />
-            {!isNew && (
+            {(!isNew || formData.id >= 0) && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Link href={formData.status === 'published' ? `/binder/${params?.id}` : `/binder/${params?.id}?preview=true`}>
+                  <Link href={formData.status === 'published' ? `/binder/${formData.id}` : `/binder/${formData.id}?preview=true`}>
                     <Button variant="secondary" size="icon" className="h-8 w-8">
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -2211,10 +2221,10 @@ export default function BinderEditor() {
                 <TooltipContent>Preview</TooltipContent>
               </Tooltip>
             )}
-            {!isNew && (
+            {(!isNew || formData.id >= 0) && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Link href={`/curator/binder/${params?.id}/readers`}>
+                  <Link href={`/curator/binder/${formData.id}/readers`}>
                     <Button variant="secondary" size="icon" className="h-8 w-8">
                       <Users className="h-4 w-4" />
                     </Button>
@@ -2954,7 +2964,7 @@ export default function BinderEditor() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <UpgradePrompt open={showUpgrade} onOpenChange={setShowUpgrade} variant="pro-feature" />
+      <UpgradePrompt open={showUpgrade} onOpenChange={setShowUpgrade} variant={upgradeVariant} />
 
       {/* Waitlist popup for guest mode */}
       <Dialog open={showWaitlist} onOpenChange={setShowWaitlist}>
@@ -2976,7 +2986,7 @@ export default function BinderEditor() {
                 } else {
                   const currentTitle = titleDraftRef.current?.trim() || formData.title?.trim();
                   const titleParam = currentTitle ? `?title=${encodeURIComponent(currentTitle)}` : '';
-                  const redirect = encodeURIComponent(`/curator/binder/new${titleParam}`);
+                  const redirect = encodeURIComponent(`/curator/binder/new/edit${titleParam}`);
                   setLocation(`/login?mode=signup&redirect=${redirect}`);
                 }
                 setShowWaitlist(false);

@@ -5,7 +5,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ExternalLink, Lock, CheckCircle, ChevronRight, ChevronLeft, Check, Share2, Loader2, Hash, CalendarDays, Crown } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Lock, CheckCircle, ChevronRight, ChevronLeft, Check, Share2, Loader2, Hash, CalendarDays, Crown, Linkedin, Twitter, MessageCircle, Globe } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import { ShareDialog } from '@/components/ShareDialog';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
@@ -184,6 +185,7 @@ export default function WeekView() {
     }
     if (curator?.schedulingUrl) {
       window.open(curator.schedulingUrl, '_blank', 'noopener,noreferrer');
+      localStorage.setItem('syllabind_office_hour_clicked', 'true');
     }
   };
 
@@ -199,6 +201,7 @@ export default function WeekView() {
     }
     if (slackUrl) {
       window.open(slackUrl, '_blank', 'noopener,noreferrer');
+      localStorage.setItem('syllabind_joined_community', 'true');
     }
   };
 
@@ -249,273 +252,358 @@ export default function WeekView() {
   const allDone = allReadingsDone;
 
   return (
-    <div className="max-w-page-narrow mx-auto pb-20">
+    <div className="pb-20">
+      <div className="flex justify-between items-center mb-4">
+        <Link href={`/binder/${binder.id}`}>
+          <a className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors">
+            <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Back to Binder Overview</span><span className="sm:hidden">Back</span>
+          </a>
+        </Link>
+        <Button variant="ghost" size="sm" onClick={() => setShowShareDialog(true)}>
+          <Share2 className="h-4 w-4 mr-2" /> Share
+        </Button>
+      </div>
+
       <header className="mb-6 sm:mb-10">
-        <div className="flex justify-between items-center mb-4">
-          <Link href={`/binder/${binder.id}`}>
-            <a className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors">
-              <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Back to Binder Overview</span><span className="sm:hidden">Back</span>
-            </a>
-          </Link>
-          <Button variant="ghost" size="sm" onClick={() => setShowShareDialog(true)}>
-            <Share2 className="h-4 w-4 mr-2" /> Share
-          </Button>
-        </div>
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 sm:gap-4 mb-4">
-          <div className="min-w-0">
-            <h2 className="text-xs sm:text-sm font-medium text-primary uppercase tracking-wider mb-1 truncate">{binder.title}</h2>
-            <h1 className="text-2xl sm:text-3xl font-display">{week.title || pluralize(week.index, 'Week')}</h1>
-            {week.description && (
-              <div
-                className="text-muted-foreground mt-2 prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 max-w-none text-sm sm:text-base"
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(week.description) }}
-              />
-            )}
-          </div>
-          <div className="flex items-center sm:block sm:text-right gap-2">
-             <div className="text-xl sm:text-2xl font-mono font-medium">{progress}%</div>
-             <div className="text-xs text-muted-foreground">completed</div>
-          </div>
-        </div>
-        <Progress value={progress} className="h-2" />
-        {(slackUrl || (curator?.schedulingUrl && binder?.showSchedulingLink !== false)) && (
-          <div className="flex flex-wrap gap-3 mt-4">
-            {slackUrl && (
-              <Button variant="secondary" size="sm" onClick={handleJoinSlack} className="gap-2">
-                <Hash className="h-4 w-4" />
-                Join Slack
-                {(!currentUser || !isPro) && (
-                  <span className="flex items-center gap-0.5 text-muted-foreground">
-                    <Crown className="h-3 w-3" />
-                    <Lock className="h-3 w-3" />
-                  </span>
-                )}
-              </Button>
-            )}
-            {curator?.schedulingUrl && binder?.showSchedulingLink !== false && (
-              <Button variant="secondary" size="sm" onClick={handleBookCall} className="gap-2">
-                <CalendarDays className="h-4 w-4" />
-                1:1 Office Hour
-                {(!currentUser || !isPro) && (
-                  <span className="flex items-center gap-0.5 text-muted-foreground">
-                    <Crown className="h-3 w-3" />
-                    <Lock className="h-3 w-3" />
-                  </span>
-                )}
-              </Button>
-            )}
-          </div>
+        <h2 className="text-xs sm:text-sm font-medium text-primary uppercase tracking-wider mb-1 truncate">{binder.title}</h2>
+        <h1 className="text-2xl sm:text-3xl font-display">{week.title || pluralize(week.index, 'Week')}</h1>
+        {week.description && (
+          <div
+            className="text-muted-foreground mt-2 prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 max-w-none text-sm sm:text-base"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(week.description) }}
+          />
         )}
       </header>
 
-      <div className="space-y-8">
-        {week.steps.length === 0 && (
-           <div className="text-center py-10 text-muted-foreground italic">No steps for this week yet.</div>
-        )}
+      <div className="grid-12 items-start">
+        {/* Main content — steps list */}
+        <div className="col-span-12 lg:col-span-8 space-y-8">
+          {week.steps.length === 0 && (
+            <div className="text-center py-10 text-muted-foreground italic">No steps for this week yet.</div>
+          )}
 
-        {week.steps
-          .filter(step => step.type !== 'reading' || step.url)
-          .map((step, idx) => {
-          const isDone = isStepCompleted(step.id);
+          {week.steps
+            .filter(step => step.type !== 'reading' || step.url)
+            .map((step, idx) => {
+            const isDone = isStepCompleted(step.id);
 
-          return (
-            <motion.div
-              key={step.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className={cn(
-                "p-4 sm:p-6 rounded-xl border bg-card transition-all duration-300",
-                isDone ? "border-border bg-background" : "border-border shadow-sm hover:shadow-md"
-              )}
-            >
-              <div className="flex gap-3 sm:gap-4 items-start">
-                <div className="mt-0.5 sm:mt-1 shrink-0">
-                   {step.type === 'reading' ? (
-                     <Checkbox
-                       checked={isDone}
-                       onCheckedChange={(c) => c ? handleMarkComplete(step.id) : handleMarkIncomplete(step.id)}
-                       className="h-5 w-5 sm:h-6 sm:w-6 border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                     />
-                   ) : (
-                     <Checkbox
-                       checked={isDone}
-                       disabled={!isDone}
-                       onCheckedChange={(c) => {
-                         if (!c) {
-                           const submission = getSubmission(step.id);
-                           if (submission?.answer) {
-                             setExerciseText(prev => ({ ...prev, [step.id]: submission.answer }));
+            return (
+              <motion.div
+                key={step.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                className={cn(
+                  "p-4 sm:p-6 rounded-xl border bg-card transition-all duration-300",
+                  isDone ? "border-border bg-background" : "border-border shadow-sm hover:shadow-md"
+                )}
+              >
+                <div className="flex gap-3 sm:gap-4 items-start">
+                  <div className="mt-0.5 sm:mt-1 shrink-0">
+                     {step.type === 'reading' ? (
+                       <Checkbox
+                         checked={isDone}
+                         onCheckedChange={(c) => c ? handleMarkComplete(step.id) : handleMarkIncomplete(step.id)}
+                         className="h-5 w-5 sm:h-6 sm:w-6 border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                       />
+                     ) : (
+                       <Checkbox
+                         checked={isDone}
+                         disabled={!isDone}
+                         onCheckedChange={(c) => {
+                           if (!c) {
+                             const submission = getSubmission(step.id);
+                             if (submission?.answer) {
+                               setExerciseText(prev => ({ ...prev, [step.id]: submission.answer }));
+                             }
+                             handleMarkIncomplete(step.id);
                            }
-                           handleMarkIncomplete(step.id);
-                         }
-                       }}
-                       className="h-5 w-5 sm:h-6 sm:w-6 border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                     />
-                   )}
-                </div>
-
-                <div className="flex-1 space-y-2 sm:space-y-3 min-w-0">
-                  <div className="space-y-1">
-                    <h3 className={cn("text-base sm:text-lg font-display font-medium leading-tight", isDone && "text-muted-foreground line-through decoration-border")}>
-                      {step.title}
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {step.creationDate && (() => {
-                        // Handle both YYYY-MM-DD (ISO) and dd/mm/yyyy (legacy) formats
-                        let date: Date;
-                        const parts = step.creationDate.split('/');
-                        if (parts.length === 3 && parts[2].length === 4) {
-                          // dd/mm/yyyy legacy format
-                          date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-                        } else {
-                          date = new Date(step.creationDate);
-                        }
-                        return !isNaN(date.getTime()) ? (
-                          <span className="text-xs text-muted-foreground">
-                            {date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                          </span>
-                        ) : null;
-                      })()}
-                      {step.estimatedMinutes && (
-                        <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 sm:py-1 rounded-full">
-                          {pluralize(step.estimatedMinutes, 'min')}
-                        </span>
-                      )}
-                    </div>
+                         }}
+                         className="h-5 w-5 sm:h-6 sm:w-6 border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                       />
+                     )}
                   </div>
 
-                  {step.note && (
-                    <div
-                      className="text-muted-foreground text-sm prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 max-w-none"
-                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(step.note) }}
-                    />
-                  )}
+                  <div className="flex-1 space-y-2 sm:space-y-3 min-w-0">
+                    <div className="space-y-1">
+                      <h3 className={cn("text-base sm:text-lg font-display font-medium leading-tight", isDone && "text-muted-foreground line-through decoration-border")}>
+                        {step.title}
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {step.creationDate && (() => {
+                          // Handle both YYYY-MM-DD (ISO) and dd/mm/yyyy (legacy) formats
+                          let date: Date;
+                          const parts = step.creationDate.split('/');
+                          if (parts.length === 3 && parts[2].length === 4) {
+                            // dd/mm/yyyy legacy format
+                            date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                          } else {
+                            date = new Date(step.creationDate);
+                          }
+                          return !isNaN(date.getTime()) ? (
+                            <span className="text-xs text-muted-foreground">
+                              {date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                            </span>
+                          ) : null;
+                        })()}
+                        {step.estimatedMinutes && (
+                          <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 sm:py-1 rounded-full">
+                            {pluralize(step.estimatedMinutes, 'min')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
-                  {step.type === 'reading' && step.url && (
-                    <a
-                      href={step.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center text-sm font-medium text-primary hover:underline mt-2"
-                      onClick={() => !isDone && handleMarkComplete(step.id)} // Optional: auto-complete on click
-                    >
-                      Open link <ExternalLink className="h-3 w-3 ml-1" />
-                    </a>
-                  )}
-
-                  {step.type === 'exercise' && (
-                    <div className="mt-4 space-y-3">
+                    {step.note && (
                       <div
-                        className="text-sm font-medium mb-2 prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 max-w-none"
-                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(step.promptText || '') }}
+                        className="text-muted-foreground text-sm prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 max-w-none"
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(step.note) }}
                       />
-                      {!isDone ? (
-                        <div className="space-y-4">
-                          <Input
-                            placeholder="Paste your link here (e.g., https://...)"
-                            className="bg-background"
-                            value={exerciseText[step.id] || ''}
-                            onChange={(e) => handleExerciseChange(step.id, e.target.value)}
-                          />
-                          <div className="flex items-center space-x-2">
-                             <Checkbox
-                                id={`share-${step.id}`}
-                                checked={isShared[step.id] || false}
-                                onCheckedChange={(c) => handleShareChange(step.id, c as boolean)}
-                             />
-                             <Label htmlFor={`share-${step.id}`} className="text-sm text-muted-foreground font-normal cursor-pointer select-none">
-                               Share submission with Curator for feedback
-                             </Label>
-                          </div>
-                          <Button
-                            onClick={() => handleExerciseSubmit(step.id)}
-                            disabled={!exerciseText[step.id]?.trim() || submittingStepId === step.id}
-                          >
-                            {submittingStepId === step.id ? (
-                              <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Submitting...</>
-                            ) : 'Submit'}
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                           <div className="bg-background border p-3 sm:p-4 rounded-lg text-sm text-muted-foreground group">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0 flex-1">
-                                  <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-primary flex items-center gap-2">
-                                    Your Link
-                                    {getSubmission(step.id)?.isShared && <Badge variant="tertiary" className="text-[10px] h-4 px-1">Shared</Badge>}
-                                  </div>
-                                  <a
-                                    href={exerciseText[step.id]?.startsWith('http') ? exerciseText[step.id] : `https://${exerciseText[step.id]}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary hover:underline font-medium break-all text-sm"
-                                  >
-                                    {exerciseText[step.id] || getSubmission(step.id)?.answer}
-                                  </a>
-                                </div>
-                              </div>
-                           </div>
+                    )}
 
-                           {getSubmission(step.id)?.grade && (
-                             <div className="bg-highlight border border-border p-4 rounded-lg space-y-2">
-                                <div className="flex justify-between items-center">
-                                  <h4 className="font-semibold text-sm">Curator Feedback</h4>
-                                  <Badge>{getSubmission(step.id)?.grade}</Badge>
-                                </div>
-                                {getSubmission(step.id)?.feedback && (
-                                   <div
-                                     className="text-sm prose dark:prose-invert max-w-none"
-                                     dangerouslySetInnerHTML={{ __html: sanitizeHtml(getSubmission(step.id)?.feedback || '') }}
-                                   />
-                                )}
-                                {getSubmission(step.id)?.rubricUrl && (
-                                  <div className="pt-2 border-t border-border mt-2">
-                                    <a href={getSubmission(step.id)?.rubricUrl} target="_blank" rel="noopener noreferrer" className="text-xs flex items-center gap-1 text-primary hover:underline">
-                                      <ExternalLink className="h-3 w-3" /> View Rubric
+                    {step.type === 'reading' && step.url && (
+                      <a
+                        href={step.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center text-sm font-medium text-primary hover:underline mt-2"
+                        onClick={() => !isDone && handleMarkComplete(step.id)}
+                      >
+                        Open link <ExternalLink className="h-3 w-3 ml-1" />
+                      </a>
+                    )}
+
+                    {step.type === 'exercise' && (
+                      <div className="mt-4 space-y-3">
+                        <div
+                          className="text-sm font-medium mb-2 prose dark:prose-invert prose-p:my-1 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 max-w-none"
+                          dangerouslySetInnerHTML={{ __html: sanitizeHtml(step.promptText || '') }}
+                        />
+                        {!isDone ? (
+                          <div className="space-y-4">
+                            <Input
+                              placeholder="Paste your link here (e.g., https://...)"
+                              className="bg-background"
+                              value={exerciseText[step.id] || ''}
+                              onChange={(e) => handleExerciseChange(step.id, e.target.value)}
+                            />
+                            <div className="flex items-center space-x-2">
+                               <Checkbox
+                                  id={`share-${step.id}`}
+                                  checked={isShared[step.id] || false}
+                                  onCheckedChange={(c) => handleShareChange(step.id, c as boolean)}
+                               />
+                               <Label htmlFor={`share-${step.id}`} className="text-sm text-muted-foreground font-normal cursor-pointer select-none">
+                                 Share submission with Curator for feedback
+                               </Label>
+                            </div>
+                            <Button
+                              onClick={() => handleExerciseSubmit(step.id)}
+                              disabled={!exerciseText[step.id]?.trim() || submittingStepId === step.id}
+                            >
+                              {submittingStepId === step.id ? (
+                                <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Submitting...</>
+                              ) : 'Submit'}
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                             <div className="bg-background border p-3 sm:p-4 rounded-lg text-sm text-muted-foreground group">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0 flex-1">
+                                    <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-primary flex items-center gap-2">
+                                      Your Link
+                                      {getSubmission(step.id)?.isShared && <Badge variant="tertiary" className="text-[10px] h-4 px-1">Shared</Badge>}
+                                    </div>
+                                    <a
+                                      href={exerciseText[step.id]?.startsWith('http') ? exerciseText[step.id] : `https://${exerciseText[step.id]}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-primary hover:underline font-medium break-all text-sm"
+                                    >
+                                      {exerciseText[step.id] || getSubmission(step.id)?.answer}
                                     </a>
                                   </div>
-                                )}
+                                </div>
                              </div>
-                           )}
-                        </div>
-                      )}
-                    </div>
+
+                             {getSubmission(step.id)?.grade && (
+                               <div className="bg-highlight border border-border p-4 rounded-lg space-y-2">
+                                  <div className="flex justify-between items-center">
+                                    <h4 className="font-semibold text-sm">Curator Feedback</h4>
+                                    <Badge>{getSubmission(step.id)?.grade}</Badge>
+                                  </div>
+                                  {getSubmission(step.id)?.feedback && (
+                                     <div
+                                       className="text-sm prose dark:prose-invert max-w-none"
+                                       dangerouslySetInnerHTML={{ __html: sanitizeHtml(getSubmission(step.id)?.feedback || '') }}
+                                     />
+                                  )}
+                                  {getSubmission(step.id)?.rubricUrl && (
+                                    <div className="pt-2 border-t border-border mt-2">
+                                      <a href={getSubmission(step.id)?.rubricUrl} target="_blank" rel="noopener noreferrer" className="text-xs flex items-center gap-1 text-primary hover:underline">
+                                        <ExternalLink className="h-3 w-3" /> View Rubric
+                                      </a>
+                                    </div>
+                                  )}
+                               </div>
+                             )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+
+          <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-6 sm:pt-8 border-t">
+            {prevWeek ? (
+              <Link href={`/binder/${binder.id}/week/${prevWeek.index}`}>
+                <Button variant="ghost" className="w-full sm:w-auto justify-center">
+                  <ChevronLeft className="mr-2 h-4 w-4" /> Previous Week
+                </Button>
+              </Link>
+            ) : (
+              <div className="hidden sm:block" />
+            )}
+
+            {allDone && (
+              isLastWeek ? (
+                <Link href={`/binder/${binder.id}/completed`}>
+                  <Button size="lg" className="animate-pulse w-full sm:w-auto justify-center">
+                    Finish Binder <CheckCircle className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              ) : nextWeek ? (
+                <Link href={`/binder/${binder.id}/week/${nextWeek.index}`}>
+                  <Button className="w-full sm:w-auto justify-center">
+                    Next Week <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              ) : null
+            )}
+          </div>
+        </div>
+
+        {/* Sidebar — progress and actions */}
+        <aside className="col-span-12 lg:col-span-4 space-y-6 lg:sticky lg:top-6">
+          <div className="border rounded-xl p-5 space-y-4">
+            <div className="text-center">
+              <div className="text-3xl font-mono font-medium">{progress}%</div>
+              <div className="text-xs text-muted-foreground mb-3">completed</div>
+              <Progress value={progress} className="h-2" />
+            </div>
+
+            {/* Week navigation */}
+            {sortedWeeks.length > 1 && (
+              <div className="space-y-2 pt-2 border-t">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Weeks</p>
+                {sortedWeeks.map((w, i) => {
+                  const wp = getWeekProgress(w.index);
+                  const isCurrent = w.index === weekIndex;
+                  const prevW = i > 0 ? sortedWeeks[i - 1] : null;
+                  const isWeekLocked = prevW ? !prevW.steps
+                    .filter(s => s.type === 'reading' && s.url)
+                    .every(s => completedStepIds.includes(s.id)) : false;
+
+                  if (isWeekLocked) {
+                    return (
+                      <div key={w.index} className="flex items-center justify-between text-sm p-2 rounded-lg text-muted-foreground opacity-60 cursor-not-allowed">
+                        <span className="truncate">{w.title || `Week ${w.index}`}</span>
+                        <Lock className="h-3.5 w-3.5 shrink-0 ml-2" />
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <Link key={w.index} href={`/binder/${binder.id}/week/${w.index}`}>
+                      <div className={cn(
+                        "flex items-center justify-between text-sm p-2 rounded-lg cursor-pointer transition-colors",
+                        isCurrent ? "bg-primary/10 font-medium" : "hover:bg-muted"
+                      )}>
+                        <span className="truncate">{w.title || `Week ${w.index}`}</span>
+                        <span className="text-xs text-muted-foreground font-mono shrink-0 ml-2">{wp}%</span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {curator && (
+            <div className="curator-card border rounded-xl p-5 bg-card space-y-4">
+              <h3 className="font-medium text-sm border-b pb-3">Meet the Curator</h3>
+              <div className="curator-info flex items-start gap-3">
+                <Avatar className="h-12 w-12 border-2 border-border shrink-0">
+                  <AvatarImage src={curator.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${curator.name}`} alt={curator.name} />
+                  <AvatarFallback className="text-sm">{curator.name?.charAt(0) || '?'}</AvatarFallback>
+                </Avatar>
+                <div className="space-y-0.5 min-w-0">
+                  <h4 className="font-medium text-sm">{curator.name}</h4>
+                  {curator.profileTitle && (
+                    <p className="text-xs text-muted-foreground">{curator.profileTitle}</p>
+                  )}
+                  {curator.expertise && !curator.profileTitle && (
+                    <p className="text-xs text-muted-foreground">{curator.expertise}</p>
                   )}
                 </div>
               </div>
-            </motion.div>
-          );
-        })}
-      </div>
 
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t">
-         {prevWeek ? (
-           <Link href={`/binder/${binder.id}/week/${prevWeek.index}`}>
-             <Button variant="ghost" className="w-full sm:w-auto justify-center">
-               <ChevronLeft className="mr-2 h-4 w-4" /> Previous Week
-             </Button>
-           </Link>
-         ) : (
-           <div className="hidden sm:block" />
-         )}
+              {curator.bio && (
+                <p className="text-xs text-muted-foreground leading-relaxed">{curator.bio}</p>
+              )}
 
-         {allDone && (
-           isLastWeek ? (
-             <Link href={`/binder/${binder.id}/completed`}>
-               <Button size="lg" className="animate-pulse w-full sm:w-auto justify-center">
-                 Finish Binder <CheckCircle className="ml-2 h-4 w-4" />
-               </Button>
-             </Link>
-           ) : nextWeek ? (
-             <Link href={`/binder/${binder.id}/week/${nextWeek.index}`}>
-               <Button className="w-full sm:w-auto justify-center">
-                 Next Week <ChevronRight className="ml-2 h-4 w-4" />
-               </Button>
-             </Link>
-           ) : null
-         )}
+              {(curator.linkedin || curator.twitter || curator.threads || curator.website) && (
+                <div className="flex flex-wrap gap-2">
+                  {curator.linkedin && (
+                    <a href={`https://linkedin.com/in/${curator.linkedin}`} target="_blank" rel="noopener noreferrer" title="LinkedIn" className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted text-muted-foreground hover:text-[#0077b5] transition-colors">
+                      <Linkedin className="h-4 w-4" />
+                    </a>
+                  )}
+                  {curator.twitter && (
+                    <a href={`https://twitter.com/${curator.twitter}`} target="_blank" rel="noopener noreferrer" title="X / Twitter" className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted text-muted-foreground hover:text-[#1DA1F2] transition-colors">
+                      <Twitter className="h-4 w-4" />
+                    </a>
+                  )}
+                  {curator.threads && (
+                    <a href={`https://threads.net/@${curator.threads}`} target="_blank" rel="noopener noreferrer" title="Threads" className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors">
+                      <MessageCircle className="h-4 w-4" />
+                    </a>
+                  )}
+                  {curator.website && (
+                    <a href={curator.website.startsWith('http') ? curator.website : `https://${curator.website}`} target="_blank" rel="noopener noreferrer" title="Website" className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted text-muted-foreground hover:text-primary transition-colors">
+                      <Globe className="h-4 w-4" />
+                    </a>
+                  )}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-2">
+                {curator.schedulingUrl && binder?.showSchedulingLink !== false && (
+                  <Button variant="secondary" size="sm" onClick={handleBookCall} className="w-full gap-2">
+                    <CalendarDays className="h-4 w-4" />
+                    1:1 Office Hour
+                    {(!currentUser || !isPro) && (
+                      <Badge className="bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                    )}
+                  </Button>
+                )}
+                {slackUrl && (
+                  <Button variant="secondary" size="sm" onClick={handleJoinSlack} className="w-full gap-2">
+                    <Hash className="h-4 w-4" />
+                    Join learning community
+                    {(!currentUser || !isPro) && (
+                      <Badge className="bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </aside>
       </div>
 
       <ShareDialog

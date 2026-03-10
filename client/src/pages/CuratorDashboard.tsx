@@ -27,12 +27,13 @@ import { CuratorBinderCard } from '@/components/CuratorBinderCard';
 import type { Binder, Category } from '@/lib/types';
 
 export default function CuratorDashboard() {
-  const { binders, user, getReadersForBinder, batchDeleteBinders, subscriptionLimits, refreshBinders, notificationItems, acknowledgeNotifications, refreshNotifications, pendingReviewCount } = useStore();
+  const { binders, user, getReadersForBinder, batchDeleteBinders, subscriptionLimits, refreshBinders, notificationItems, acknowledgeNotifications, refreshNotifications, pendingReviewCount, isPro, featureBinderCanSubmit, featureBinderEligible } = useStore();
   const [readerCounts, setReaderCounts] = useState<Record<number, { total: number, active: number }>>({});
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [upgradeVariant, setUpgradeVariant] = useState<'curator-limit' | 'featured-listing'>('curator-limit');
   const [showReviewConfirmDialog, setShowReviewConfirmDialog] = useState(false);
   const [reviewChecks, setReviewChecks] = useState({ expert: false, vetted: false });
   const [pendingPublishId, setPendingPublishId] = useState<number | null>(null);
@@ -43,6 +44,10 @@ export default function CuratorDashboard() {
   const [categories, setCategories] = useState<Category[]>([]);
 
   // Fetch categories on mount
+  useEffect(() => {
+    refreshBinders();
+  }, []);
+
   useEffect(() => {
     fetch('/api/categories')
       .then(res => res.json())
@@ -325,7 +330,7 @@ export default function CuratorDashboard() {
             </Button>
           </Link>
           {subscriptionLimits?.canCreateMore !== false ? (
-            <Link href="/curator/binder/new">
+            <Link href="/curator/binder/new/edit">
               <Button size="sm">
                 <Plus className="mr-2 h-4 w-4" />Create New
               </Button>
@@ -494,7 +499,7 @@ export default function CuratorDashboard() {
                     </p>
                   </div>
                   {adminView === 'mine' && (
-                    <Link href="/curator/binder/new">
+                    <Link href="/curator/binder/new/edit">
                       <Button>
                         <Plus className="mr-2 h-4 w-4" />
                         Create Your First Binder
@@ -514,12 +519,22 @@ export default function CuratorDashboard() {
                   onToggleSelect={handleToggleSelect}
                   readerCount={readerCounts[binder.id]}
                   isAdmin={isAdmin}
+                  isPro={isPro}
+                  featureBinderCanSubmit={featureBinderCanSubmit}
+                  featureBinderEligible={featureBinderEligible}
                   isOtherCurator={adminView === 'others' && binder.curatorId !== user?.username}
                   hasApprovalNotification={notificationItems.some(n => n.binderId === binder.id && n.type === 'approved')}
                   onPublish={handlePublish}
                   onUnpublish={handleUnpublish}
                   onWithdraw={handleWithdraw}
                   onRequestReview={(id) => { setPendingPublishId(id); setShowReviewConfirmDialog(true); }}
+                  onUpgrade={() => {
+                    if (featureBinderEligible && !featureBinderCanSubmit) {
+                      toast({ title: 'Limit reached', description: 'Free accounts can submit one binder for feature review.', variant: 'destructive' });
+                    } else {
+                      setUpgradeVariant('featured-listing'); setShowUpgradePrompt(true);
+                    }
+                  }}
                 />
               </AnimatedCard>
               ))}
@@ -613,7 +628,7 @@ export default function CuratorDashboard() {
       <UpgradePrompt
         open={showUpgradePrompt}
         onOpenChange={setShowUpgradePrompt}
-        variant="curator-limit"
+        variant={upgradeVariant}
         returnTo="/curator"
       />
     </AnimatedPage>

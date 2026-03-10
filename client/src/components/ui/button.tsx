@@ -12,7 +12,7 @@ const buttonVariants = cva(
       variant: {
         default:
            // Primary CTA — color set by .bg-action-gradient per theme
-           "bg-action-gradient border border-border",
+           "bg-action-gradient border border-border no-default-hover-elevate",
         destructive:
           "bg-danger-inverted text-foreground-inverted shadow-sm border-danger-border",
         "secondary-destructive":
@@ -21,7 +21,7 @@ const buttonVariants = cva(
           // @replit Shows the background color of whatever card / sidebar / highlight background it is inside of.
           // Inherits the current text color. Uses shadow-xs. no shadow on active
           // No hover state
-          " border [border-color:hsl(var(--button-outline))] shadow-xs active:shadow-none ",
+          " border [border-color:hsl(var(--button-outline))] shadow-xs active:shadow-none no-default-hover-elevate",
         tertiary:
           // @replit border, no hover, no shadow, secondary border.
           "bg-secondary text-secondary-foreground",

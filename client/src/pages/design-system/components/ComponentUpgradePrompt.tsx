@@ -66,8 +66,8 @@ export default function ComponentUpgradePrompt() {
                 </ul>
               </div>
               <div className="space-y-2">
-                <Button className="w-full">Go Pro — $14.99/mo</Button>
-                <Button className="w-full" variant="secondary">Annual — $150/yr (save 17%)</Button>
+                <Button className="w-full">Annual — $12.50/mo (save 17%)</Button>
+                <Button className="w-full" variant="secondary">Monthly — $14.99/mo</Button>
               </div>
               <p className="text-center text-sm text-muted-foreground underline">See all plans</p>
             </DemoCard>
@@ -95,8 +95,8 @@ export default function ComponentUpgradePrompt() {
                 </ul>
               </div>
               <div className="space-y-2">
-                <Button className="w-full">Go Pro — $14.99/mo</Button>
-                <Button className="w-full" variant="secondary">Annual — $150/yr (save 17%)</Button>
+                <Button className="w-full">Annual — $12.50/mo (save 17%)</Button>
+                <Button className="w-full" variant="secondary">Monthly — $14.99/mo</Button>
               </div>
               <p className="text-center text-sm text-muted-foreground underline">See all plans</p>
             </DemoCard>
@@ -145,9 +145,9 @@ export default function ComponentUpgradePrompt() {
               <div className="space-y-2">
                 <Button className="w-full">
                   <Zap className="h-4 w-4 mr-2" />
-                  Go Pro — $14.99/mo
+                  Annual — $12.50/mo (save 17%)
                 </Button>
-                <Button className="w-full" variant="secondary">Annual — $150/yr (save 17%)</Button>
+                <Button className="w-full" variant="secondary">Monthly — $14.99/mo</Button>
               </div>
               <p className="text-center text-sm text-muted-foreground underline">See all plans</p>
               <div className="flex justify-end">

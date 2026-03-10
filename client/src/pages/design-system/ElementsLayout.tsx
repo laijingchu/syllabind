@@ -6,7 +6,7 @@ const widthTokens = [
   { token: 'max-w-page-wide', css: '--container-page-wide', value: '64rem (1024px)', px: '1024px', usage: 'Curator Dashboard, Pricing, Analytics' },
   { token: 'max-w-page-default', css: '--container-page-default', value: '56rem (896px)', px: '896px', usage: 'Binder Editor, Binder Overview, Dashboard' },
   { token: 'max-w-page-narrow', css: '--container-page-narrow', value: '48rem (768px)', px: '768px', usage: 'Week View, reading-focused layouts' },
-  { token: 'max-w-page-prose', css: '--container-page-prose', value: '42rem (672px)', px: '672px', usage: 'Settings, Billing, Profile forms' },
+  { token: 'max-w-page-prose', css: '--container-page-prose', value: '42rem (672px)', px: '672px', usage: 'Prose-focused content' },
 ];
 
 const baselineTable = [

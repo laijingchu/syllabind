@@ -21,7 +21,7 @@ import multer from "multer";
 import { client, CLAUDE_MODEL } from "./utils/claudeClient";
 import {
   CREDIT_COSTS, FREE_ENROLLMENT_LIMIT, FREE_MANUAL_BINDER_LIMIT,
-  FREE_MAX_WEEKS, PRO_MAX_WEEKS,
+  FREE_MAX_WEEKS, PRO_MAX_WEEKS, FREE_TIER_CREDITS, PRO_CYCLE_CREDITS,
   reserveCredits, refundCredits, getGenerationCost, getMaxWeeks, isProTier,
   grantSignupCredits
 } from "./utils/creditService";
@@ -53,6 +53,7 @@ const upload = multer({
 });
 
 function getBaseUrl(req: express.Request): string {
+  if (process.env.APP_URL) return process.env.APP_URL;
   const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
   const host = req.headers['x-forwarded-host'] || req.get('host') || 'syllabind.com';
   return `${proto}://${host}`;
@@ -325,7 +326,7 @@ export async function registerRoutes(
     }
 
     try {
-      const { email, role } = req.body;
+      const { email, role, tier } = req.body;
 
       if (!email || !role) {
         return res.status(400).json({ error: "Email and role are required" });
@@ -334,6 +335,9 @@ export async function registerRoutes(
       if (role !== 'reader' && role !== 'curator') {
         return res.status(400).json({ error: "Role must be 'reader' or 'curator'" });
       }
+
+      const validTiers = ['free', 'pro_monthly', 'pro_annual', 'lifetime'];
+      const selectedTier = tier && validTiers.includes(tier) ? tier : 'free';
 
       // Basic email format validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -370,6 +374,21 @@ export async function registerRoutes(
       // Generate username from email
       const username = email.split('@')[0] + '_' + Date.now().toString(36);
 
+      // Determine credits based on tier
+      const tierCredits: Record<string, number> = {
+        free: FREE_TIER_CREDITS,
+        pro_monthly: PRO_CYCLE_CREDITS,
+        pro_annual: PRO_CYCLE_CREDITS,
+        lifetime: 5000,
+      };
+      const creditBalance = tierCredits[selectedTier] ?? FREE_TIER_CREDITS;
+      const subscriptionStatus = selectedTier === 'free' ? 'free' : 'pro';
+
+      // Admin-granted Pro accounts expire after 30 days (no Stripe subscription to renew)
+      const proExpiresAt = (selectedTier === 'pro_monthly' || selectedTier === 'pro_annual')
+        ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        : null;
+
       // Create user
       const newUser = await storage.createUser({
         email,
@@ -378,14 +397,11 @@ export async function registerRoutes(
         isCurator: role === 'curator',
         authProvider: 'email',
         mustChangePassword: true,
-      });
-
-      // Grant signup credits
-      try {
-        await grantSignupCredits(newUser.id);
-      } catch (err) {
-        console.error('[AdminCreateUser] Failed to grant signup credits:', err);
-      }
+        subscriptionTier: selectedTier,
+        subscriptionStatus,
+        creditBalance,
+        ...(proExpiresAt ? { proExpiresAt } : {}),
+      } as any);
 
       // Send welcome email
       const loginUrl = (process.env.APP_URL || `${req.protocol}://${req.get('host')}`) + '/login';
@@ -716,34 +732,43 @@ export async function registerRoutes(
   });
 
   app.post("/api/binders", isAuthenticated, async (req, res) => {
-    const username = (req.user as any).username;
-    const user = req.user as any;
+    try {
+      const username = (req.user as any).username;
+      const user = req.user as any;
 
-    // Check if user is a curator (or admin)
-    if (!user.isCurator && !user.isAdmin) {
-      return res.status(403).json({ error: "Curator access required" });
-    }
-
-    // Free curators limited to 3 manual (non-AI) binders (admins bypass, Pro unlimited)
-    if (!isProTier(user.subscriptionTier || 'free') && !user.isAdmin) {
-      const manualCount = await storage.countManualBinders(username);
-      if (manualCount >= FREE_MANUAL_BINDER_LIMIT) {
-        return res.status(403).json({ error: "SUBSCRIPTION_REQUIRED", message: `Free plan limited to ${FREE_MANUAL_BINDER_LIMIT} manual binders. Upgrade to Pro for unlimited.` });
+      // Auto-promote to curator on first binder creation
+      if (!user.isCurator && !user.isAdmin) {
+        await storage.updateUser(user.id, { isCurator: true });
+        user.isCurator = true;
       }
+
+      // Free curators limited to 3 manual (non-AI) binders (admins bypass, Pro unlimited)
+      if (!isProTier(user.subscriptionTier || 'free') && !user.isAdmin) {
+        const manualCount = await storage.countManualBinders(username);
+        if (manualCount >= FREE_MANUAL_BINDER_LIMIT) {
+          return res.status(403).json({ error: "SUBSCRIPTION_REQUIRED", message: `Free plan limited to ${FREE_MANUAL_BINDER_LIMIT} manual binders. Upgrade to Pro for unlimited.` });
+        }
+      }
+
+      const parsed = insertBinderSchema.safeParse({ ...req.body, curatorId: username });
+      if (!parsed.success) {
+        console.error('[POST /api/binders] Validation failed:', JSON.stringify(parsed.error.issues, null, 2));
+        return res.status(400).json(parsed.error);
+      }
+      const binder = await storage.createBinder(parsed.data);
+
+      // Save weeks and steps if provided
+      const weeksData = req.body.weeks;
+      if (Array.isArray(weeksData) && weeksData.length > 0) {
+        const savedWeeks = await storage.saveWeeksAndSteps(binder.id, weeksData);
+        return res.json({ ...binder, weeks: savedWeeks });
+      }
+
+      res.json(binder);
+    } catch (err) {
+      console.error('[POST /api/binders] Unhandled error:', err);
+      res.status(500).json({ error: 'Internal server error', message: String(err) });
     }
-
-    const parsed = insertBinderSchema.safeParse({ ...req.body, curatorId: username });
-    if (!parsed.success) return res.status(400).json(parsed.error);
-    const binder = await storage.createBinder(parsed.data);
-
-    // Save weeks and steps if provided
-    const weeksData = req.body.weeks;
-    if (Array.isArray(weeksData) && weeksData.length > 0) {
-      const savedWeeks = await storage.saveWeeksAndSteps(binder.id, weeksData);
-      return res.json({ ...binder, weeks: savedWeeks });
-    }
-
-    res.json(binder);
   });
 
   // Get curator's binders (including drafts)
@@ -751,10 +776,6 @@ export async function registerRoutes(
   app.get("/api/curator/binders", isAuthenticated, async (req, res) => {
     const username = (req.user as any).username;
     const user = req.user as any;
-
-    if (!user.isCurator && !user.isAdmin) {
-      return res.status(403).json({ error: "Curator access required" });
-    }
 
     if (user.isAdmin && req.query.all === 'true') {
       const binders = await storage.listBinders();
@@ -836,9 +857,35 @@ export async function registerRoutes(
     // Non-admin curator
     if (binder.status === 'draft') {
       if (visibility === 'public') {
-        // Free users cannot submit public binders for review
+        // Free users cannot submit public binders for review (unless feature-eligible)
         if (!isProTier((req.user as any).subscriptionTier || 'free') && !isAdmin) {
-          return res.status(403).json({ error: "SUBSCRIPTION_REQUIRED", message: "Pro subscription required to submit public binders for review. Unlisted and private publishing is available on the free plan." });
+          // Check feature_binder_emails eligibility
+          const userEmail = (req.user as any).email?.toLowerCase();
+          const emailsSetting = await storage.getSiteSetting('feature_binder_emails');
+          let isFeatureEligible = false;
+          if (userEmail && emailsSetting) {
+            try {
+              const emails: string[] = JSON.parse(emailsSetting);
+              isFeatureEligible = emails.includes(userEmail);
+            } catch {}
+          }
+
+          if (!isFeatureEligible) {
+            return res.status(403).json({ error: "SUBSCRIPTION_REQUIRED", message: "Pro subscription required to submit public binders for review. Unlisted and private publishing is available on the free plan." });
+          }
+
+          // Enforce 1-binder limit for feature-eligible free users
+          const curatorBinders = await storage.getBindersByCurator(username);
+          const activeFeature = curatorBinders.filter(b =>
+            b.id !== id &&
+            (b.status === 'pending_review' || (b.status === 'published' && b.visibility === 'public'))
+          );
+          if (activeFeature.length >= 1) {
+            return res.status(403).json({
+              error: "FEATURE_LIMIT_REACHED",
+              message: "Free accounts can submit one binder for feature review."
+            });
+          }
         }
         // Public = catalog listing, requires admin review
         const updated = await storage.updateBinder(id, {
@@ -882,6 +929,44 @@ export async function registerRoutes(
     }
 
     res.json(binder);
+  });
+
+  // Feature binder eligibility check for free users
+  app.get("/api/feature-binder-eligibility", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
+    const userEmail = user.email?.toLowerCase();
+    const username = user.username;
+
+    // Pro users don't need this — they have unlimited feature submissions
+    if (isProTier(user.subscriptionTier || 'free') || user.isAdmin) {
+      return res.json({ eligible: false, canSubmit: false, activeFeatureBinderId: null });
+    }
+
+    let eligible = false;
+    if (userEmail) {
+      const emailsSetting = await storage.getSiteSetting('feature_binder_emails');
+      if (emailsSetting) {
+        try {
+          const emails: string[] = JSON.parse(emailsSetting);
+          eligible = emails.includes(userEmail);
+        } catch {}
+      }
+    }
+
+    if (!eligible) {
+      return res.json({ eligible: false, canSubmit: false, activeFeatureBinderId: null });
+    }
+
+    const curatorBinders = await storage.getBindersByCurator(username);
+    const activeFeature = curatorBinders.find(b =>
+      b.status === 'pending_review' || (b.status === 'published' && b.visibility === 'public')
+    );
+
+    return res.json({
+      eligible: true,
+      canSubmit: !activeFeature,
+      activeFeatureBinderId: activeFeature?.id || null,
+    });
   });
 
   // Enrollment API
@@ -1178,10 +1263,6 @@ export async function registerRoutes(
     const username = (req.user as any).username;
     const user = req.user as any;
 
-    if (!user.isCurator && !user.isAdmin) {
-      return res.status(403).json({ error: "Curator access required" });
-    }
-
     const { binderId } = req.body;
 
     if (!binderId || typeof binderId !== 'number') {
@@ -1289,10 +1370,6 @@ export async function registerRoutes(
   app.post("/api/regenerate-week", isAuthenticated, async (req, res) => {
     const username = (req.user as any).username;
     const user = req.user as any;
-
-    if (!user.isCurator && !user.isAdmin) {
-      return res.status(403).json({ error: "Curator access required" });
-    }
 
     const { binderId, weekIndex } = req.body;
 

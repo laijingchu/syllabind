@@ -50,6 +50,7 @@ async function fulfillCheckoutSession(session: Stripe.Checkout.Session, stripe: 
         // Grant credits
         if (fulfillment.credits) {
           const isCreditPackage = plan.startsWith('credits_');
+          const isSubscription = !isCreditPackage && plan !== 'lifetime';
           const type = isCreditPackage ? 'package_purchase' : 'subscription_grant';
           const desc = isCreditPackage
             ? `Credit package: ${fulfillment.credits} credits`
@@ -57,7 +58,13 @@ async function fulfillCheckoutSession(session: Stripe.Checkout.Session, stripe: 
               ? `Lifetime membership: ${fulfillment.credits} credits`
               : `Pro subscription: ${fulfillment.credits} monthly credits`;
 
-          await storage.grantCredits(userId, fulfillment.credits, type, desc, `stripe:${paymentIntent || session.id}`);
+          if (isSubscription) {
+            // Reset to exact Pro credit amount (not additive) — matches monthly renewal behavior
+            await storage.resetCreditsTo(userId, fulfillment.credits, type, desc, `stripe:${paymentIntent || session.id}`);
+          } else {
+            // Credit packages and lifetime are additive
+            await storage.grantCredits(userId, fulfillment.credits, type, desc, `stripe:${paymentIntent || session.id}`);
+          }
 
           // Set creditsGrantedAt for deduplication (subscriptions only)
           if (!isCreditPackage && plan !== 'lifetime') {

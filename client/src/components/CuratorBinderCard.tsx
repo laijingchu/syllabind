@@ -20,12 +20,16 @@ interface CuratorBinderRowProps {
   onToggleSelect: (id: number) => void;
   readerCount?: { total: number; active: number };
   isAdmin?: boolean;
+  isPro?: boolean;
+  featureBinderCanSubmit?: boolean;
+  featureBinderEligible?: boolean;
   isOtherCurator?: boolean;
   hasApprovalNotification?: boolean;
   onPublish: (id: number, visibility: string) => void;
   onUnpublish: (id: number) => void;
   onWithdraw: (id: number) => void;
   onRequestReview: (id: number) => void;
+  onUpgrade?: () => void;
 }
 
 export function CuratorBinderCard({
@@ -34,12 +38,16 @@ export function CuratorBinderCard({
   onToggleSelect,
   readerCount,
   isAdmin,
+  isPro,
+  featureBinderCanSubmit,
+  featureBinderEligible,
   isOtherCurator,
   hasApprovalNotification,
   onPublish,
   onUnpublish,
   onWithdraw,
   onRequestReview,
+  onUpgrade,
 }: CuratorBinderRowProps) {
   return (
     <Card className={`curator-binder-card relative hover:shadow-md transition-shadow cursor-pointer ${selected ? 'ring-2 ring-primary' : ''}`}>
@@ -117,9 +125,20 @@ export function CuratorBinderCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem onClick={() => isAdmin ? onPublish(binder.id, 'public') : onRequestReview(binder.id)}>
-                  <Globe className="h-4 w-4 mr-2" /> Public
-                  <span className="ml-auto text-xs text-muted-foreground">{isAdmin ? 'Catalog' : 'To be featured'}</span>
+                <DropdownMenuItem onClick={() => {
+                  if (isAdmin) {
+                    onPublish(binder.id, 'public');
+                  } else if (isPro || featureBinderCanSubmit) {
+                    onRequestReview(binder.id);
+                  } else if (featureBinderEligible && !featureBinderCanSubmit) {
+                    // Feature-eligible but already has an active featured binder
+                    onUpgrade?.(); // Will show limit-reached toast in dashboard
+                  } else {
+                    onUpgrade?.();
+                  }
+                }}>
+                  <Globe className="h-4 w-4 mr-2" /> Feature
+                  <span className="ml-auto text-xs text-muted-foreground">{isAdmin ? 'Catalog' : (isPro || featureBinderCanSubmit) ? 'Submit for review' : (featureBinderEligible ? 'Limit reached' : 'Pro required')}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onPublish(binder.id, 'unlisted')}>
                   <EyeOff className="h-4 w-4 mr-2" /> Unlisted

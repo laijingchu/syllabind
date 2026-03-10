@@ -25,7 +25,7 @@ export function CuratorRecruitCard() {
   const steps = [
     { icon: BookMarked, label: 'Create a binder with your vetted resources', description: 'Showcase books, articles, and audiovisual content you\'ve personally vetted' },
     { icon: Send, label: 'Submit for review', description: 'Our team reviews your binder for quality and fit' },
-    { icon: Star, label: 'Get featured, get paid fairly', description: 'Show your scheduling link on your featured binder, and keep 100% of what you earn' },
+    { icon: Star, label: 'Get featured, get paid fairly', description: 'Show your scheduling link on any binder, and keep 100% of what you earn' },
   ];
 
   return (
@@ -53,7 +53,7 @@ export function CuratorRecruitCard() {
           </ol>
 
           <div className="flex gap-3">
-            <Link href="/curator/binder/new">
+            <Link href="/curator/binder/new/edit">
               <Button className="gap-2">
                 Craft Your Binder
                 <ArrowRight className="h-4 w-4" />

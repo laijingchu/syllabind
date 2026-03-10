@@ -72,6 +72,7 @@ export const users = pgTable("users", {
   creditBalance: integer("credit_balance").notNull().default(0),
   subscriptionTier: text("subscription_tier").notNull().default('free'), // 'free' | 'pro_monthly' | 'pro_annual' | 'lifetime'
   creditsGrantedAt: timestamp("credits_granted_at"),
+  proExpiresAt: timestamp("pro_expires_at"), // Admin-granted Pro accounts auto-downgrade after this date
 });
 
 // Admin-managed categories for binder discovery

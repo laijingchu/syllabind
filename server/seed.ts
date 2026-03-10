@@ -145,7 +145,7 @@ async function seed() {
         isCurator: false,
         subscriptionTier: 'free',
         subscriptionStatus: 'free',
-        creditBalance: 0,
+        creditBalance: 100,
       },
       // New pro user — subscription active but no enrollments or binders yet
       {
@@ -157,7 +157,7 @@ async function seed() {
         isCurator: false,
         subscriptionTier: 'pro_monthly',
         subscriptionStatus: 'pro',
-        creditBalance: 50,
+        creditBalance: 120,
       },
     ];
 

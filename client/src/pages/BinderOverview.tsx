@@ -288,6 +288,7 @@ export default function BinderOverview() {
     }
     if (curator?.schedulingUrl) {
       window.open(curator.schedulingUrl, '_blank', 'noopener,noreferrer');
+      localStorage.setItem('syllabind_office_hour_clicked', 'true');
     }
   };
 
@@ -303,6 +304,7 @@ export default function BinderOverview() {
     }
     if (slackUrl) {
       window.open(slackUrl, '_blank', 'noopener,noreferrer');
+      localStorage.setItem('syllabind_joined_community', 'true');
     }
   };
 
@@ -790,7 +792,7 @@ export default function BinderOverview() {
               )}
 
               <div className="flex flex-col gap-2">
-                {curator.schedulingUrl && binder?.showSchedulingLink !== false && binder?.status === 'published' && (
+                {curator.schedulingUrl && binder?.showSchedulingLink !== false && (
                   <Button variant="secondary" size="sm" onClick={handleBookCall} className="w-full gap-2">
                     <CalendarDays className="h-4 w-4" />
                     1:1 Office Hour
@@ -877,14 +879,26 @@ export default function BinderOverview() {
             <X className="h-4 w-4" />
           </button>
           <AlertDialogHeader>
-            <AlertDialogTitle>Join and Connect?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Would you like to share your profile with other classmates? This allows you to connect with others learning {binder.title}.
+            <AlertDialogTitle>Learn Together, Not Alone</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>Skip the small talk with new connections! Show that you are reading this binder in the Classmate's List and let others reach out to you via Linkedin or your other socials.</p>
+                <p>No other personal information will be shared without your permission. You can hide your visibility anytime in the Classmates List section.</p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {readers.slice(0, 5).length > 0 && (
+            <div className="flex -space-x-3 overflow-hidden py-1 pl-1">
+              {readers.slice(0, 5).map((reader, index) => (
+                <div key={reader.user.id} style={{ zIndex: 5 - index, position: 'relative' }}>
+                  <ReaderAvatar reader={reader} />
+                </div>
+              ))}
+            </div>
+          )}
           <AlertDialogFooter>
-            <Button variant="secondary" onClick={() => handleEnroll(false)}>Join Privately</Button>
-            <Button onClick={() => handleEnroll(true)}>Join & Share Profile</Button>
+            <Button variant="secondary" onClick={() => handleEnroll(false)}>Learn alone</Button>
+            <Button onClick={() => handleEnroll(true)}>Add me to Classmates List</Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -113,8 +113,9 @@ export default function Profile() {
   };
 
   return (
-    <div className="max-w-page-prose mx-auto space-y-6">
-      <div>
+    <div className="grid-12 gap-y-6">
+      {/* Header */}
+      <div className="col-span-12">
         <Link href="/">
           <Button variant="ghost" className="pl-0 mb-4 hover:bg-transparent hover:text-primary">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
@@ -125,19 +126,18 @@ export default function Profile() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <Card>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="col-span-12 grid-12 gap-y-6">
+
+          {/* Left — Identity */}
+          <Card className="col-span-12 md:col-span-6">
             <CardHeader>
-              <CardTitle>Public Information</CardTitle>
-              <CardDescription>
-                This information will be displayed on your profile and to other readers.
-              </CardDescription>
+              <CardTitle>Identity</CardTitle>
+              <CardDescription>Your public name, photo, and bio.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              
               <div className="space-y-2">
                 <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Profile Picture</label>
-                <AvatarUpload 
+                <AvatarUpload
                   currentAvatarUrl={user.avatarUrl}
                   name={user.name}
                   onUpload={handleAvatarUpload}
@@ -169,9 +169,7 @@ export default function Profile() {
                     <FormControl>
                       <Input placeholder="e.g. Product Designer at Acme" {...field} />
                     </FormControl>
-                    <FormDescription>
-                      A short headline, like your role or expertise.
-                    </FormDescription>
+                    <FormDescription>A short headline, like your role or expertise.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -184,86 +182,87 @@ export default function Profile() {
                   <FormItem>
                     <FormLabel>Bio</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Tell us a little about yourself" 
-                        className="resize-none" 
-                        {...field} 
-                      />
+                      <Textarea placeholder="Tell us a little about yourself" className="resize-none" {...field} />
                     </FormControl>
-                    <FormDescription>
-                      Max 160 characters.
-                    </FormDescription>
+                    <FormDescription>Max 160 characters.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Right — Links */}
+          <Card className="col-span-12 md:col-span-6">
+            <CardHeader>
+              <CardTitle>Links</CardTitle>
+              <CardDescription>Social profiles and scheduling.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <FormField
+                control={form.control}
+                name="linkedin"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>LinkedIn Username</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center">
+                        <span className="text-muted-foreground text-sm mr-2 select-none">in/</span>
+                        <Input placeholder="username" {...field} />
+                      </div>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="linkedin"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>LinkedIn Username</FormLabel>
-                      <FormControl>
-                        <div className="flex items-center">
-                          <span className="text-muted-foreground text-sm mr-2 select-none">in/</span>
-                          <Input placeholder="username" {...field} />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="twitter"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>X (Twitter) Handle</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center">
+                        <span className="text-muted-foreground text-sm mr-2 select-none">@</span>
+                        <Input placeholder="username" {...field} />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="twitter"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>X (Twitter) Handle</FormLabel>
-                      <FormControl>
-                        <div className="flex items-center">
-                          <span className="text-muted-foreground text-sm mr-2 select-none">@</span>
-                          <Input placeholder="username" {...field} />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="threads"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Threads Handle</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center">
+                        <span className="text-muted-foreground text-sm mr-2 select-none">@</span>
+                        <Input placeholder="username" {...field} />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="threads"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Threads Handle</FormLabel>
-                      <FormControl>
-                         <div className="flex items-center">
-                          <span className="text-muted-foreground text-sm mr-2 select-none">@</span>
-                          <Input placeholder="username" {...field} />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="website"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Website</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="website"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Website</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
@@ -275,25 +274,25 @@ export default function Profile() {
                       <Input placeholder="https://calendly.com/you" {...field} />
                     </FormControl>
                     <FormDescription>
-                      Link to your scheduling page (Calendly, Cal.com, etc.). Shown to Pro readers on your binders.
+                      Link to your scheduling page (Calendly, Cal.com, etc.). Shown on any of your binders. Only offer paid sessions on topics that align with your expertise.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
             </CardContent>
           </Card>
 
-          <div className="flex justify-end">
+          {/* Save */}
+          <div className="col-span-12 flex justify-end">
             <Button type="submit" size="lg" disabled={isSaving}>
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Changes
             </Button>
           </div>
+
         </form>
       </Form>
-
     </div>
   );
 }

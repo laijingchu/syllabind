@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import DesignSystemLayout, { CodeBlock } from './DesignSystemLayout';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 
 export default function ElementsAnimations() {
@@ -102,6 +103,33 @@ export default function ElementsAnimations() {
 
 /* Usage */
 <span className="shimmer-text">Try a demo:</span>`}</CodeBlock>
+        </section>
+
+        {/* Shimmer Badge */}
+        <section className="space-y-4">
+          <h2 className="font-display text-xl font-medium">Shimmer Badge — Promotional Label</h2>
+          <p className="text-base text-muted-foreground">
+            A pill-shaped black badge with white text and a gloss sweep animation. Used for time-sensitive
+            promotional labels like "Debut offer!" on the pricing page. The sweep runs on a 3s loop,
+            catching the eye without being distracting. Keep badge text short (2–4 words).
+          </p>
+          <div className="border border-border rounded-lg p-6 bg-card flex items-center gap-6">
+            <Badge className="bg-primary-inverted text-foreground-inverted shimmer-text">Debut offer!</Badge>
+            <Badge className="bg-primary-inverted text-foreground-inverted shimmer-text">New</Badge>
+            <Badge className="bg-primary-inverted text-foreground-inverted shimmer-text">Limited time</Badge>
+          </div>
+          <div className="border border-border rounded-lg p-4 text-base text-muted-foreground">
+            <p>
+              <strong className="text-foreground">When to use:</strong> Short promotional or status labels
+              that need to stand out from surrounding text — e.g., pricing banners, launch announcements.
+              Use at most once per page. Not suitable for interactive elements or status that changes
+              frequently.
+            </p>
+          </div>
+          <CodeBlock>{`/* Combines the Badge component (bg-primary-inverted) with shimmer-text */
+<Badge className="bg-primary-inverted text-foreground-inverted shimmer-text">
+  Debut offer!
+</Badge>`}</CodeBlock>
         </section>
 
         {/* Pulse Border */}
@@ -220,7 +248,7 @@ export default function ElementsAnimations() {
               <span className="animate-ellipsis" />
             </div>
             <div>
-              <span className="text-sm">Come back soon!</span>
+              <span className="text-sm">Come back soon</span>
               <span className="animate-ellipsis" />
             </div>
           </div>

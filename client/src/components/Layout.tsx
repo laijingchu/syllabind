@@ -116,7 +116,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="text-lg text-muted-foreground">
-              Come back soon!<span className="inline-flex w-[1.5em]"><span className="animate-ellipsis" /></span>
+              Come back soon<span className="inline-flex w-[1.5em]"><span className="animate-ellipsis" /></span>
             </span>
           </div>
         </div>

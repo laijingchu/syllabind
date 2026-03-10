@@ -10,7 +10,8 @@ export default function UIButton() {
           <h1 className="font-display text-3xl font-medium mb-2">Button</h1>
           <p className="text-lg text-muted-foreground">
             The primary interactive element for triggering actions. Supports 7 visual variants
-            and 4 sizes, with a flat elevation system for hover and active feedback.
+            and 4 sizes. Primary buttons use a looping prismatic shimmer on hover; all variants
+            use an elevation overlay on active/press.
           </p>
         </div>
 
@@ -38,7 +39,7 @@ export default function UIButton() {
             </div>
           </div>
           <div className="text-base text-muted-foreground space-y-1">
-            <p><strong className="text-foreground">default</strong> — Black fill with a subtle prismatic shimmer on hover. Main CTAs, "Enroll", form submissions.</p>
+            <p><strong className="text-foreground">default</strong> — Black fill with a looping prismatic shimmer on hover (no dimming overlay). Main CTAs, "Enroll", form submissions.</p>
             <p><strong className="text-foreground">secondary</strong> — Transparent with border and shadow. "Cancel", filter toggles, secondary actions.</p>
             <p><strong className="text-foreground">tertiary</strong> — Muted fill, no border. Supporting actions beside a primary button.</p>
             <p><strong className="text-foreground">ghost</strong> — No background or border. Icon buttons, back buttons, nav links.</p>
@@ -91,7 +92,7 @@ export default function UIButton() {
             </div>
           </div>
           <p className="text-base text-muted-foreground">
-            Hover and active states use the elevation overlay system (<code className="text-primary bg-muted px-1 rounded">hover-elevate</code> and <code className="text-primary bg-muted px-1 rounded">active-elevate-2</code>) rather than color shifts. Disabled buttons reduce opacity to 50%.
+            Primary buttons loop a prismatic shimmer on hover (<code className="text-primary bg-muted px-1 rounded">cta-shimmer</code>) — no dimming overlay. Secondary buttons also suppress the hover overlay. All variants use <code className="text-primary bg-muted px-1 rounded">active-elevate-2</code> for press feedback. Disabled buttons reduce opacity to 50%.
           </p>
         </section>
 
@@ -115,15 +116,14 @@ export default function UIButton() {
         <section className="space-y-4">
           <h2 className="font-display text-xl font-medium">Design Tokens</h2>
           <div className="border border-border rounded-lg p-4">
-            <TokenRow token=".bg-action-gradient" value="Black base with translucent prismatic shimmer sweep on hover (blue→purple→rose light band)" />
+            <TokenRow token=".bg-action-gradient" value="Black base with translucent prismatic shimmer that loops continuously on hover (blue→purple→rose light band). No dimming overlay on primary/secondary — shimmer is the sole hover affordance." />
             <TokenRow token="--foreground-inverted" value="Text on primary and destructive buttons" />
             <TokenRow token="--button-outline" value="Border color for secondary variant" />
             <TokenRow token="--secondary" value="Fill for tertiary variant" />
             <TokenRow token="--danger-inverted" value="Solid danger fill for destructive variant" />
             <TokenRow token="--danger-surface" value="Tinted fill for secondary-destructive variant" />
             <TokenRow token="--danger-border" value="Border for destructive and secondary-destructive variants" />
-            <TokenRow token="--elevate-1" value="Hover overlay" />
-            <TokenRow token="--elevate-2" value="Active/press overlay" />
+            <TokenRow token="--elevate-2" value="Active/press overlay (hover overlay removed from primary/secondary)" />
             <TokenRow token="--ring" value="Focus ring color" />
           </div>
         </section>

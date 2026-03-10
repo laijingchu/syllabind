@@ -17,7 +17,7 @@ import { Link } from 'wouter';
 interface UpgradePromptProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  variant: 'curator-limit' | 'enrollment-gate' | 'pro-feature' | 'insufficient-credits';
+  variant: 'curator-limit' | 'enrollment-gate' | 'pro-feature' | 'insufficient-credits' | 'featured-listing';
   returnTo?: string;
   creditCost?: number;
 }
@@ -133,12 +133,12 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo, creditCos
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Button className="w-full" onClick={() => handleUpgrade('pro_monthly')} disabled={loading !== null}>
+            <Button className="w-full" onClick={() => handleUpgrade('pro_annual')} disabled={loading !== null}>
               <Zap className="h-4 w-4 mr-2" />
-              {loading === 'pro_monthly' ? 'Redirecting...' : 'Go Pro — $14.99/mo'}
+              {loading === 'pro_annual' ? 'Redirecting...' : 'Annual — $12.50/mo (save 17%)'}
             </Button>
-            <Button className="w-full" variant="secondary" onClick={() => handleUpgrade('pro_annual')} disabled={loading !== null}>
-              {loading === 'pro_annual' ? 'Redirecting...' : 'Annual — $150/yr (save 17%)'}
+            <Button className="w-full" variant="secondary" onClick={() => handleUpgrade('pro_monthly')} disabled={loading !== null}>
+              {loading === 'pro_monthly' ? 'Redirecting...' : 'Monthly — $14.99/mo'}
             </Button>
           </div>
           <p className="text-center text-xs text-muted-foreground">
@@ -154,15 +154,19 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo, creditCos
     );
   }
 
-  // Standard upgrade prompt for curator-limit, enrollment-gate, pro-feature
+  // Standard upgrade prompt for curator-limit, enrollment-gate, pro-feature, featured-listing
   const title = variant === 'curator-limit'
     ? 'Upgrade to Syllabind Pro'
+    : variant === 'featured-listing'
+    ? 'Get Featured in the Catalog'
     : variant === 'pro-feature'
     ? 'Unlock Pro Features'
     : 'Syllabind Pro Required';
 
   const description = variant === 'enrollment-gate'
     ? 'Free plan allows 1 active enrollment. Upgrade to Pro for unlimited enrollments and 130 monthly credits.'
+    : variant === 'featured-listing'
+    ? 'Featured binders appear in the public catalog for all readers to discover. An admin reviews your submission to ensure quality — well-structured weeks, thoughtful content, and a clear learning outcome. Upgrade to Pro to submit your binder for featured listing.'
     : 'Upgrade to Pro for unlimited binders, enrollments, and 130 monthly AI credits.';
 
   return (
@@ -189,11 +193,11 @@ export function UpgradePrompt({ open, onOpenChange, variant, returnTo, creditCos
           </ul>
         </div>
         <div className="space-y-2">
-          <Button className="w-full" onClick={() => handleUpgrade('pro_monthly')} disabled={loading !== null}>
-            {loading === 'pro_monthly' ? 'Redirecting...' : 'Go Pro — $14.99/mo'}
+          <Button className="w-full" onClick={() => handleUpgrade('pro_annual')} disabled={loading !== null}>
+            {loading === 'pro_annual' ? 'Redirecting...' : 'Annual — $12.50/mo (save 17%)'}
           </Button>
-          <Button className="w-full" variant="secondary" onClick={() => handleUpgrade('pro_annual')} disabled={loading !== null}>
-            {loading === 'pro_annual' ? 'Redirecting...' : 'Annual — $150/yr (save 17%)'}
+          <Button className="w-full" variant="secondary" onClick={() => handleUpgrade('pro_monthly')} disabled={loading !== null}>
+            {loading === 'pro_monthly' ? 'Redirecting...' : 'Monthly — $14.99/mo'}
           </Button>
         </div>
         <p className="text-center text-xs text-muted-foreground">

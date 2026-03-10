@@ -96,6 +96,7 @@ draft ──(curator publishes unlisted/private)──> published (direct, no re
 ```
 - **Visibility-aware review**: Only `public` visibility requires admin review for non-admin curators. `unlisted` and `private` binders publish directly (they don't appear in the catalog).
 - Non-admin curators submitting as `public` get `pending_review` status with a confirmation modal (checkboxes for domain expertise and content vetting)
+- **Feature binder eligibility for free users**: Admins can add emails to the `feature_binder_emails` site setting. Free users whose email is listed can submit **one** binder for featured review (pending_review → published with public visibility). The limit resets after rejection (status returns to draft). Pro users are unaffected — unlimited submissions. Eligibility is checked via `GET /api/feature-binder-eligibility` and exposed in the store as `featureBinderEligible` / `featureBinderCanSubmit`. The "Submit a feature binder" checklist item appears in the free onboarding checklist (not Pro) and re-shows the checklist if previously dismissed.
 - Admins can approve (→ `published`) or reject with feedback (→ `draft` with `reviewNote`)
 - Admins bypass the review gate and can publish directly for all visibilities
 - Pending binders do not appear in the catalog (`searchCatalog` filters `status='published'`)
@@ -574,8 +575,9 @@ These pages are only accessible to users who have enabled curator mode. They pro
 | Route | Component | Purpose |
 |-------|-----------|---------|
 | `/curator` | `CuratorDashboard.tsx` | List of created binders with management |
-| `/curator/binder/new` | `BinderEditor.tsx` | Build new binder (WYSIWYG editor) |
+| `/curator/binder/new/edit` | `BinderEditor.tsx` | Build new binder (WYSIWYG editor) — `params.id = "new"` |
 | `/curator/binder/:id/edit` | `BinderEditor.tsx` | Edit existing binder (auto-save) |
+| `/curator/binder/new` | (redirect) | Redirects to `/curator/binder/new/edit` for backwards compat |
 | `/curator/binder/:id/analytics` | `BinderAnalytics.tsx` | Reader progress visualization |
 | `/curator/binder/:id/readers` | `BinderReaders.tsx` | Reader list, cohorts, submissions |
 | `/curator/profile` | `CuratorProfile.tsx` | Curator bio, expertise, social links |
@@ -977,7 +979,7 @@ GET    /api/credits/history  - Paginated credit transaction log
 ```
 
 **Webhook Events Handled:**
-- `checkout.session.completed` → Upgrade user, grant credits based on plan
+- `checkout.session.completed` → Upgrade user, reset credits for subscriptions (Pro monthly/annual uses `resetCreditsTo`), additive grant for lifetime and credit packages
 - `customer.subscription.updated` → Sync subscription status
 - `customer.subscription.deleted` → Downgrade user to free, reset tier
 - `invoice.payment_succeeded` → Confirm Pro status + grant monthly credits (deduped)
@@ -1823,7 +1825,7 @@ WebSocket /ws/regenerate-week/:binderId/:weekIndex - Stream regeneration
 
 1. **Dashboard.tsx — New welcome screen for users with no enrollments:**
    - Replaced the `<Catalog />` early-return with a two-card welcome screen
-   - "Build your own course" card (Wand2 icon + AI badge) → links to `/curator/binder/new`
+   - "Build your own course" card (Wand2 icon + AI badge) → links to `/curator/binder/new/edit`
    - "Choose from existing courses" card (BookOpen icon) → links to `/catalog`
    - Uses AnimatedPage/AnimatedCard for entrance animations
 
@@ -2508,7 +2510,7 @@ Three workstreams to manage AI generation costs (~$0.5-1 per generation) and con
 
 **Form Reset ("Start Over"):** A "Start Over" ghost button appears in the header when `isGuestMode && hasBinderContent && !isGenerating`. It resets `formData` to empty defaults, clears `isDemoMode`, and returns to `week-1` — causing demo topic chips to reappear so the user can try another demo.
 
-**Autogenerate in Guest Mode:** The "Autogenerate with AI" button calls `requireAuth()` which redirects to `/login?mode=signup&redirect=/curator/binder/new?title=...`, preserving the user's typed topic. After signup, they land on the authenticated editor with their title pre-filled and can generate immediately. The waitlist popup is retained for the "Sign up" header button and duration > 3 weeks selector.
+**Autogenerate in Guest Mode:** The "Autogenerate with AI" button calls `requireAuth()` which redirects to `/login?mode=signup&redirect=/curator/binder/new/edit?title=...`, preserving the user's typed topic. After signup, they land on the authenticated editor with their title pre-filled and can generate immediately. The waitlist popup is retained for the "Sign up" header button and duration > 3 weeks selector.
 
 **Storage:**
 - `getDemoBinders()`: Returns `BinderWithContent[]` — full binder data with weeks and steps via `getBinderWithContent()`.
@@ -2648,7 +2650,7 @@ Semantic width tokens in `@theme inline` using `--container-*` namespace (genera
 | `--container-page-wide` | 64rem (1024px) | CuratorDashboard, Pricing, Analytics |
 | `--container-page-default` | 56rem (896px) | BinderEditor, BinderOverview, Dashboard |
 | `--container-page-narrow` | 48rem (768px) | WeekView, reading-focused layouts |
-| `--container-page-prose` | 42rem (672px) | Settings, Billing, Profile, AdminSettings |
+| `--container-page-prose` | 42rem (672px) | Prose-focused content |
 
 ### Debug Overlays
 - `Ctrl+Shift+G` toggles 4px baseline grid overlay (Layout.tsx, dev-only)
@@ -2712,6 +2714,32 @@ Replaced CSS `border` with inset `outline` on Card components and card-like divs
 - `server/routes.ts` - Applied `optionalAuth` to `GET /api/binders/:id`
 - `jest.setup.js` - Added `optionalAuth` to auth mock
 - `server/__tests__/routes-integration.test.ts` - Added 3 tests for private binder visibility
+
+### Auto-Promote to Curator on Binder Creation (2026-03-10)
+
+**Problem:** Non-curator users navigating to the binder editor and typing a title would silently fail — the `POST /api/binders` endpoint returned 403 ("Curator access required") and the error was swallowed. No `isCurator` toggle existed in the UI.
+
+**Solution:** Changed `POST /api/binders` to auto-promote the user to curator (`isCurator = true`) instead of returning 403. Added error toast in the auto-create effect so failures are visible. Updated test from expecting 403 to verifying auto-promotion.
+
+**Files Modified:**
+- `server/routes.ts` — Auto-promote to curator on POST /api/binders
+- `client/src/pages/BinderEditor.tsx` — Added error toast on auto-create failure
+- `server/__tests__/routes-integration.test.ts` — Updated test to verify auto-promotion
+
+### Binder Auto-Create Race Condition Fix via Route Consolidation (2026-03-10)
+
+**Problem:** When creating a new binder on `/curator/binder/new`, the auto-create effect called `window.history.replaceState()` to update the URL to `/curator/binder/:id/edit`. Because these were separate `<Route>` entries, wouter unmounted and remounted the component, discarding all in-flight state updates (`setLastSaved`, `setFormData`, `setIsSaving`). A sessionStorage bridge was built to survive the remount but was fragile.
+
+**Solution:** Changed the "new binder" URL from `/curator/binder/new` to `/curator/binder/new/edit`. Both URLs now match the single route pattern `/curator/binder/:id/edit` (`params.id = "new"` vs `params.id = "123"`). When `replaceState` changes the URL after auto-create, wouter re-renders (new params) but does NOT unmount/remount — state is preserved. The entire sessionStorage bridge (`binderAutoCreated`, `binderStartedAsNew`) was removed. A `justCreatedRef` guards the fetch effect from re-fetching immediately after create. Old URL `/curator/binder/new` redirects for backwards compatibility.
+
+**Files Modified:**
+- `client/src/App.tsx` - Route consolidation, stable component ref, redirect from old URL
+- `client/src/pages/BinderEditor.tsx` - Removed sessionStorage bridge, simplified state init, added justCreatedRef
+- `client/src/pages/CuratorDashboard.tsx` - Updated 2 links to new URL
+- `client/src/pages/Catalog.tsx` - Updated 1 setLocation to new URL
+- `client/src/components/OnboardingChecklist.tsx` - Updated 1 href
+- `client/src/components/ProOnboardingChecklist.tsx` - Updated 1 href
+- `client/src/components/CuratorRecruitCard.tsx` - Updated 1 link
 
 ### Admin Create User: Email + Role Flow (2026-03-09)
 

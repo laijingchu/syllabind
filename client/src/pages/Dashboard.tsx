@@ -324,7 +324,7 @@ export default function Dashboard() {
         </div>
 
         {/* Sidebar */}
-        <aside className="dashboard-sidebar col-span-12 lg:col-span-4 space-y-6">
+        <aside className="dashboard-sidebar col-span-12 lg:col-span-4 space-y-6 [&>:empty]:hidden">
           <AnimatedCard delay={0.15}>
             <OnboardingChecklist />
           </AnimatedCard>

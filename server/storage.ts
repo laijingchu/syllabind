@@ -241,8 +241,7 @@ export class DatabaseStorage implements IStorage {
         twitter: row.curatorTwitter,
         threads: row.curatorThreads,
         website: row.curatorWebsite,
-        // Only expose scheduling URL for published binders
-        schedulingUrl: row.binder.status === 'published' ? row.curatorSchedulingUrl : null,
+        schedulingUrl: row.curatorSchedulingUrl,
       } : undefined,
     }));
   }

@@ -22,6 +22,7 @@ export function ShareDialog({ open, onOpenChange, title = "Share this page" }: S
     try {
       await navigator.clipboard.writeText(currentUrl);
       posthog?.capture('link_shared', { url: currentUrl });
+      localStorage.setItem('syllabind_shared_with_friend', 'true');
       setCopied(true);
       toast({
         title: "Link Copied!",

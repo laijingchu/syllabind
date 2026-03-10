@@ -141,9 +141,19 @@ export function registerEmailAuthRoutes(app: Express): void {
         return res.status(401).json(null);
       }
 
-      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      let [user] = await db.select().from(users).where(eq(users.id, userId));
       if (!user) {
         return res.status(401).json(null);
+      }
+
+      // Auto-downgrade expired admin-granted Pro accounts
+      if (user.proExpiresAt && new Date(user.proExpiresAt) < new Date() && user.subscriptionTier !== 'free') {
+        await db.update(users).set({
+          subscriptionTier: 'free',
+          subscriptionStatus: 'free',
+          proExpiresAt: null,
+        }).where(eq(users.id, userId));
+        [user] = await db.select().from(users).where(eq(users.id, userId));
       }
 
       // Return user without password

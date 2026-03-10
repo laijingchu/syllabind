@@ -17,11 +17,18 @@ export function CreditsCard() {
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="credits-balance text-3xl font-mono font-semibold">{creditBalance}</p>
-        <Link href="/billing">
-          <Button variant="secondary" size="sm" className="w-full">
-            {isPro ? 'Get More' : 'Upgrade'}
-          </Button>
-        </Link>
+        <div className="flex flex-col gap-1">
+          <Link href="/billing">
+            <Button variant="secondary" size="sm" className="w-full">
+              {isPro ? 'Get More' : 'Upgrade'}
+            </Button>
+          </Link>
+          <Link href="/curator/binder/new/edit">
+            <Button variant="ghost" size="sm" className="w-full text-muted-foreground">
+              Use it to create your binder
+            </Button>
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );

@@ -141,7 +141,8 @@ export default function Settings() {
   }
 
   return (
-    <div className="max-w-page-prose mx-auto space-y-6">
+    <div className="grid-12">
+    <div className="col-span-12 md:col-span-8 md:col-start-3 space-y-6">
       <div>
         <Link href="/">
           <Button variant="ghost" className="pl-0 mb-4 hover:bg-transparent hover:text-primary">
@@ -276,6 +277,7 @@ export default function Settings() {
           </AlertDialog>
         </CardContent>
       </Card>
+    </div>
     </div>
   );
 }

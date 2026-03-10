@@ -24,13 +24,13 @@ export default function Billing() {
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [txLoading, setTxLoading] = useState(false);
 
-  // Handle ?subscription=success query param
+  // Refresh credits on mount so balance is always current
   useEffect(() => {
+    refreshCredits();
     const params = new URLSearchParams(window.location.search);
     if (params.get('subscription') === 'success') {
       toast({ title: 'Welcome to Syllabind Pro!', description: 'Your subscription is now active.' });
       refreshSubscriptionLimits();
-      refreshCredits();
       const url = new URL(window.location.href);
       url.searchParams.delete('subscription');
       window.history.replaceState({}, '', url.pathname + url.search);
@@ -66,7 +66,8 @@ export default function Billing() {
   };
 
   return (
-    <div className="max-w-page-prose mx-auto space-y-6">
+    <div className="grid-12">
+    <div className="col-span-12 md:col-span-8 md:col-start-3 space-y-6">
       <div>
         <Link href="/">
           <Button variant="ghost" className="pl-0 mb-4 hover:bg-transparent hover:text-primary">
@@ -112,12 +113,12 @@ export default function Billing() {
           ) : !isAdmin ? (
             <div className="space-y-3">
               <div className="space-y-2">
-                <Button className="w-full" onClick={() => handleCheckout('pro_monthly')} disabled={checkoutLoading !== null}>
+                <Button className="w-full" onClick={() => handleCheckout('pro_annual')} disabled={checkoutLoading !== null}>
                   <Zap className="mr-2 h-4 w-4" />
-                  {checkoutLoading === 'pro_monthly' ? 'Redirecting...' : 'Go Pro — $14.99/mo'}
+                  {checkoutLoading === 'pro_annual' ? 'Redirecting...' : 'Annual — $12.50/mo (save 17%)'}
                 </Button>
-                <Button className="w-full" variant="secondary" onClick={() => handleCheckout('pro_annual')} disabled={checkoutLoading !== null}>
-                  {checkoutLoading === 'pro_annual' ? 'Redirecting...' : 'Annual — $150/yr (save 17%)'}
+                <Button className="w-full" variant="secondary" onClick={() => handleCheckout('pro_monthly')} disabled={checkoutLoading !== null}>
+                  {checkoutLoading === 'pro_monthly' ? 'Redirecting...' : 'Monthly — $14.99/mo'}
                 </Button>
                 <Button className="w-full" variant="secondary" onClick={() => handleCheckout('lifetime')} disabled={checkoutLoading !== null}>
                   {checkoutLoading === 'lifetime' ? 'Redirecting...' : 'Founding Member — $500 (lifetime)'}
@@ -197,6 +198,7 @@ export default function Billing() {
           </CardContent>
         </Card>
       )}
+    </div>
     </div>
   );
 }

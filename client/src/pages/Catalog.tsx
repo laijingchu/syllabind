@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'wouter';
 import { BinderCard } from '@/components/BinderCard';
 import { AnimatedPage, AnimatedCard } from '@/components/ui/animated-container';
 import { Button } from '@/components/ui/button';
 import { BinderFilterBar } from '@/components/BinderFilterBar';
-import { Loader2, Sparkles, ArrowRight } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
+import { Pill } from '@/components/ui/pill';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useAuth } from '@/hooks/use-auth';
 import type { Binder, Category } from '@/lib/types';
@@ -31,11 +32,41 @@ export default function Catalog() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [newBinderTitle, setNewBinderTitle] = useState('');
+  const [demoBinders, setDemoBinders] = useState<Array<{ id: number; title: string }>>([]);
+  const [taglineIndex, setTaglineIndex] = useState(0);
+  const [taglineFading, setTaglineFading] = useState(false);
+
+  const taglines = [
+    'If you could teach the world anything, what would you teach?',
+    'If you could learn anything, what do you want to learn?',
+    'Build a syllabus yourself, or with AI\'s help.',
+  ];
+  const taglineTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // Fetch demo binders for pills
+  useEffect(() => {
+    fetch('/api/demo-binders')
+      .then(res => res.json())
+      .then(data => setDemoBinders(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const cycle = () => {
+      setTaglineFading(true);
+      taglineTimer.current = setTimeout(() => {
+        setTaglineIndex(i => (i + 1) % taglines.length);
+        setTaglineFading(false);
+      }, 400);
+    };
+    const interval = setInterval(cycle, 4000);
+    return () => { clearInterval(interval); clearTimeout(taglineTimer.current); };
+  }, []);
 
   const handleCreate = () => {
     const titleParam = newBinderTitle.trim() ? `?title=${encodeURIComponent(newBinderTitle.trim())}` : '';
     if (user) {
-      setLocation(`/curator/binder/new${titleParam}`);
+      setLocation(`/curator/binder/new/edit${titleParam}`);
     } else {
       setLocation(`/create${titleParam}`);
     }
@@ -107,39 +138,47 @@ export default function Catalog() {
 
   return (
     <>
-      {/* Hero section - logged out only */}
-      {!user && (
-        <div className="hero-section flex flex-col items-center gap-5 max-w-xl mx-auto py-32">
-          <h1 className="font-display text-7xl text-foreground">Syllabind</h1>
-          <p className="text-lg text-muted-foreground">Create your own knowledge binder on any topic</p>
-          <div className="create-binder-bar group relative w-full flex items-center rounded-full border border-border bg-background shadow-sm hover:shadow-md focus-within:shadow-md transition-shadow px-5 py-2">
-            <Sparkles className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <input
-              value={newBinderTitle}
-              onChange={e => setNewBinderTitle(e.target.value)}
-              placeholder="e.g. Intro to Systems Thinking"
-              className="flex-1 bg-transparent border-0 outline-none text-base px-3 py-1 placeholder:text-muted-foreground"
-              onKeyDown={e => e.key === 'Enter' && newBinderTitle.trim() && handleCreate()}
-            />
-            {newBinderTitle.trim() && (
-              <Button
-                size="sm"
-                onClick={handleCreate}
-                className="rounded-full h-8 px-4 text-sm"
-              >
-                Create
-              </Button>
-            )}
-          </div>
-          <a
-            href="/create"
-            onClick={e => { e.preventDefault(); setLocation('/create'); }}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
-          >
-            See how it works <ArrowRight className="h-3.5 w-3.5" />
-          </a>
+      {/* Hero section */}
+      <div className="hero-section flex flex-col items-center gap-5 mx-auto py-32">
+        <h1 className="font-display text-7xl text-foreground text-center">Create a syllabus on anything</h1>
+        <p className={`text-lg text-muted-foreground transition-opacity duration-400 ${taglineFading ? 'opacity-0' : 'opacity-100'}`}>
+          {taglines[taglineIndex]}
+        </p>
+        <div className="create-binder-bar group relative w-full max-w-xl flex items-center rounded-full border border-border bg-background shadow-sm hover:shadow-md focus-within:shadow-md transition-shadow px-5 py-2">
+          <Sparkles className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <input
+            value={newBinderTitle}
+            onChange={e => setNewBinderTitle(e.target.value)}
+            placeholder="e.g. Intro to Systems Thinking"
+            className="flex-1 bg-transparent border-0 outline-none text-base px-3 py-1 placeholder:text-muted-foreground"
+            onKeyDown={e => e.key === 'Enter' && newBinderTitle.trim() && handleCreate()}
+          />
+          {newBinderTitle.trim() && (
+            <Button
+              size="sm"
+              onClick={handleCreate}
+              className="rounded-full h-8 px-4 text-sm"
+            >
+              Create
+            </Button>
+          )}
         </div>
-      )}
+        {demoBinders.length > 0 && (
+          <div className="demo-topic-chips flex flex-wrap items-center justify-center gap-2">
+            <span className="text-xs font-medium shimmer-text">Try a demo:</span>
+            {demoBinders.map((demo) => (
+              <Pill
+                key={demo.id}
+                variant="outline"
+                size="sm"
+                onClick={() => setLocation(user ? `/curator/binder/new/edit?demo=${demo.id}` : `/create?demo=${demo.id}`)}
+              >
+                {demo.title}
+              </Pill>
+            ))}
+          </div>
+        )}
+      </div>
       <AnimatedPage className="space-y-8">
         <div className="text-center max-w-2xl mx-auto space-y-4">
           <h1 className="text-4xl font-display text-foreground">📒 Featured binders</h1>

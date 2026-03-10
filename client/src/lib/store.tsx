@@ -55,6 +55,11 @@ interface StoreContextType {
   creditCosts: CreditCosts;
   refreshCredits: () => Promise<void>;
 
+  // Feature binder eligibility (free users)
+  featureBinderEligible: boolean;
+  featureBinderCanSubmit: boolean;
+  refreshFeatureEligibility: () => Promise<void>;
+
   // Notifications
   hasUnreadNotifications: boolean;
   notificationItems: Array<{ binderId: number; title: string; type: 'approved' | 'rejected' }>;
@@ -85,6 +90,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [creditCosts, setCreditCosts] = useState<CreditCosts>({ per_week: 10, improve_writing: 1, auto_fill: 0 });
 
   const isPro = ['pro_monthly', 'pro_annual', 'lifetime'].includes(user?.subscriptionTier || subscriptionTier) || user?.isAdmin === true;
+
+  const [featureBinderEligible, setFeatureBinderEligible] = useState(false);
+  const [featureBinderCanSubmit, setFeatureBinderCanSubmit] = useState(false);
 
   // Fetch binders on mount
   useEffect(() => {
@@ -208,6 +216,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const refreshFeatureEligibility = async () => {
+    try {
+      const res = await fetch('/api/feature-binder-eligibility', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setFeatureBinderEligible(data.eligible);
+        setFeatureBinderCanSubmit(data.canSubmit);
+      }
+    } catch (err) {
+      console.error('Failed to fetch feature eligibility:', err);
+    }
+  };
+
   // Fetch subscription limits and credits when user logs in
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
@@ -219,6 +240,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setSubscriptionTier('free');
     }
   }, [isAuthenticated, isLoading]);
+
+  // Fetch feature binder eligibility for free curators
+  useEffect(() => {
+    if (isAuthenticated && !isLoading && user?.isCurator && !isPro) {
+      refreshFeatureEligibility();
+    } else {
+      setFeatureBinderEligible(false);
+      setFeatureBinderCanSubmit(false);
+    }
+  }, [isAuthenticated, isLoading, user?.isCurator, isPro]);
 
   // Fetch notifications when user logs in
   useEffect(() => {
@@ -294,6 +325,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
 
       const newEnrollment = await res.json();
+      // Track if this is the user's second+ enrollment (for Pro onboarding checklist)
+      if (enrollment?.activeBinderId || (enrollment?.completedBinderIds?.length ?? 0) > 0) {
+        localStorage.setItem('syllabind_enrolled_second_binder', 'true');
+      }
       setEnrollment(prev => ({
         id: newEnrollment.id,
         activeBinderId: newEnrollment.binderId,
@@ -656,6 +691,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       subscriptionTier,
       creditCosts,
       refreshCredits,
+      featureBinderEligible,
+      featureBinderCanSubmit,
+      refreshFeatureEligibility,
       hasUnreadNotifications,
       notificationItems,
       pendingReviewCount,

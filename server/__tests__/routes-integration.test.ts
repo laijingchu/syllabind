@@ -255,12 +255,14 @@ describe('Routes Integration (real registerRoutes)', () => {
       expect(res.status).toBe(401);
     });
 
-    it('returns 403 when user is not curator', async () => {
+    it('auto-promotes non-curator to curator on binder creation', async () => {
       const authed = await createAuthedApp({ ...mockUser, isCurator: false });
-      const res = await request(authed).post('/api/binders').send({
-        title: 'X', description: 'Y', audienceLevel: 'Beginner', durationWeeks: 4
-      });
-      expect(res.status).toBe(403);
+      const binderData = { title: 'X', description: 'Y', audienceLevel: 'Beginner', durationWeeks: 4 };
+      mockStorage.updateUser.mockResolvedValue({ ...mockUser, isCurator: true });
+      mockStorage.createBinder.mockResolvedValue({ id: 1, ...binderData });
+      const res = await request(authed).post('/api/binders').send(binderData);
+      expect(res.status).toBe(200);
+      expect(mockStorage.updateUser).toHaveBeenCalledWith(mockUser.id, { isCurator: true });
     });
 
     it('creates binder when authorized curator', async () => {
@@ -279,13 +281,7 @@ describe('Routes Integration (real registerRoutes)', () => {
       expect(res.status).toBe(401);
     });
 
-    it('returns 403 when not a curator', async () => {
-      const authed = await createAuthedApp({ ...mockUser, isCurator: false });
-      const res = await request(authed).get('/api/curator/binders');
-      expect(res.status).toBe(403);
-    });
-
-    it('returns binders for curator', async () => {
+    it('returns binders for any authenticated user', async () => {
       const authed = await createAuthedApp(mockCurator);
       const binders = [{ id: 1, title: 'Mine' }];
       mockStorage.getBindersByCurator.mockResolvedValue(binders);
@@ -660,10 +656,11 @@ describe('Routes Integration (real registerRoutes)', () => {
   // ========== AI GENERATION ==========
 
   describe('POST /api/generate-binder', () => {
-    it('returns 403 when not curator', async () => {
+    it('allows non-curator users to generate', async () => {
       const authed = await createAuthedApp({ ...mockUser, isCurator: false });
-      const res = await request(authed).post('/api/generate-binder').send({ binderId: 1 });
-      expect(res.status).toBe(403);
+      const res = await request(authed).post('/api/generate-binder').send({});
+      // Returns 400 (bad request) not 403 — no curator guard
+      expect(res.status).toBe(400);
     });
 
     it('returns 400 when binderId missing', async () => {
