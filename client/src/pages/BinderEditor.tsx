@@ -404,7 +404,7 @@ export default function BinderEditor() {
   const titleFilled = !!(titleDraft?.trim() || formData.title?.trim());
   const descText = formData.description?.replace(/<[^>]*>/g, '').trim() || '';
   const descFilled = descText.length > 0;
-  const showFullForm = !startedAsNew || (basicsRevealed && titleFilled && descFilled) || isDemoMode || isGenerating;
+  const showFullForm = !startedAsNew || basicsRevealed || isDemoMode || isGenerating;
 
   useEffect(() => {
     if (!startedAsNew || basicsRevealed || isDemoMode || isGenerating) return;
@@ -439,9 +439,14 @@ export default function BinderEditor() {
     try {
       const restored = JSON.parse(saved);
       if (restored.weeks?.length > 0 && restored.weeks.some((w: any) => w.steps?.length > 0 || w.title)) {
-        setFormData(restored);
+        const { _isDemoMode, ...restoredFormData } = restored;
+        setFormData(restoredFormData);
         setShowWeeklySection(true);
         setBasicsRevealed(true);
+        if (_isDemoMode) {
+          setIsDemoMode(true);
+          isDemoRef.current = true;
+        }
         sessionStorage.removeItem('guestEditorState');
       }
     } catch { /* ignore parse errors */ }
@@ -911,14 +916,14 @@ export default function BinderEditor() {
               // Save state for preview and show toast (mirrors real generation_complete).
               // Demo data isn't persisted to DB, so always use sessionStorage preview.
               setFormData(prev => {
-                const json = JSON.stringify(prev);
-                sessionStorage.setItem('guestBinderPreview', json);
-                sessionStorage.setItem('guestEditorState', json);
+                sessionStorage.setItem('guestBinderPreview', JSON.stringify(prev));
+                sessionStorage.setItem('guestEditorState', JSON.stringify({ ...prev, _isDemoMode: true }));
                 return prev;
               });
               toast({
                 title: "Demo Binder Ready!",
                 description: "See how your binder looks to readers.",
+                duration: Infinity,
                 action: (
                   <ToastAction altText="View Preview" onClick={() => {
                     setLocation('/create/preview');
@@ -1394,6 +1399,7 @@ export default function BinderEditor() {
             toast({
               title: "Binder Generated!",
               description: "Your binder is ready. Want to see how it looks?",
+              duration: Infinity,
               action: (
                 <ToastAction altText="View Preview" onClick={() => {
                   if (isGuestMode) {
@@ -2273,6 +2279,7 @@ export default function BinderEditor() {
                 }}
                 placeholder="Create your dream course on anything"
                 className="text-base md:text-lg"
+                autoFocus
               />
               {isNew && demoBinders.length > 0 && !hasBinderContent && !isGenerating && (
                 <div className="demo-topic-chips flex flex-wrap items-center gap-2 pt-1">
@@ -2302,6 +2309,17 @@ export default function BinderEditor() {
               />
             </div>
           </div>
+          {!showFullForm && (
+            <div className="flex justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setBasicsRevealed(true)}
+              >
+                Continue
+              </Button>
+            </div>
+          )}
           {showFullForm && (<>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
             <div className="space-y-2">
@@ -2330,10 +2348,10 @@ export default function BinderEditor() {
                     <SelectItem key={n} value={n.toString()}>
                       <span className="flex items-center gap-2">
                         {n} {n === 1 ? 'Week' : 'Weeks'}
-                        {isGuestMode && n === 4 && (
+                        {isGuestMode && !isDemoMode && n === 4 && (
                           <Badge className="ml-1 bg-success text-foreground-success-inverted text-[10px] py-0 px-1.5 leading-tight">Free Sign Up</Badge>
                         )}
-                        {isGuestMode && n > 4 && (
+                        {isGuestMode && !isDemoMode && n > 4 && (
                           <Badge className="ml-1 bg-primary-inverted text-foreground-inverted text-[10px] py-0 px-1.5 leading-tight">Pro</Badge>
                         )}
                         {!isGuestMode && n > 4 && isFreeTier && (

@@ -249,11 +249,6 @@ export function OnboardingChecklist() {
               ))}
             </ul>
           )}
-          {!allDone && (
-            <Button variant="ghost" size="sm" className="w-full text-muted-foreground" onClick={handleDismiss}>
-              Dismiss
-            </Button>
-          )}
         </CardContent>
       </Card>
       {featureBinderEligible && (

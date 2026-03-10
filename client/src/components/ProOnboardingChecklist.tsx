@@ -231,11 +231,6 @@ export function ProOnboardingChecklist() {
               ))}
             </ul>
           )}
-          {!allDone && (
-            <Button variant="ghost" size="sm" className="w-full text-muted-foreground" onClick={handleDismiss}>
-              Dismiss
-            </Button>
-          )}
         </CardContent>
       </Card>
       <OfficeHourInfoDialog open={showOfficeHourDialog} onOpenChange={setShowOfficeHourDialog} />
