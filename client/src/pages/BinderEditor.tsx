@@ -312,6 +312,7 @@ export default function BinderEditor() {
   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
 
   const initialTitle = isNew ? new URLSearchParams(window.location.search).get('title') || '' : '';
+  const [initialDemoId] = useState(() => isNew ? new URLSearchParams(window.location.search).get('demo') : null);
 
   const defaultWeeks = isGuestMode ? 3 : 4;
   const [formData, setFormData] = useState<Binder>(() => {
@@ -603,18 +604,16 @@ export default function BinderEditor() {
       .catch(() => {});
   }, [isNew]);
 
-  // Auto-activate demo from ?demo=<id> URL param
+  // Auto-activate demo from ?demo=<id> URL param (captured at mount before auto-create replaces URL)
   const demoAutoTriggered = useRef(false);
   useEffect(() => {
-    if (!isNew || demoBinders.length === 0 || demoAutoTriggered.current || isDemoMode) return;
-    const demoParam = new URLSearchParams(window.location.search).get('demo');
-    if (!demoParam) return;
-    const demo = demoBinders.find(d => String(d.id) === demoParam);
+    if (!initialDemoId || demoBinders.length === 0 || demoAutoTriggered.current || isDemoMode) return;
+    const demo = demoBinders.find(d => String(d.id) === initialDemoId);
     if (demo) {
       demoAutoTriggered.current = true;
       handleDemoGenerate(demo);
     }
-  }, [isNew, demoBinders, isDemoMode]);
+  }, [initialDemoId, demoBinders, isDemoMode]);
 
   // Fetch waitlist URL in guest mode
   useEffect(() => {
