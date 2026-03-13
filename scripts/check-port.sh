@@ -1,5 +1,6 @@
 #!/bin/bash
 PORT=${PORT:-5000}
+PORT=5000
 
 # Simple port check - just verify port is available
 if timeout 1 bash -c "echo > /dev/tcp/localhost/$PORT" 2>/dev/null; then

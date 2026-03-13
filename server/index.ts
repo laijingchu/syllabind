@@ -237,7 +237,7 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Default to 3000 if not specified.
   // this serves both the API and the client.
-  const port = parseInt(process.env.PORT || "3000", 10);
+  const port = parseInt(process.env.PORT || "5000", 10);
   httpServer.listen(
     {
       port,
