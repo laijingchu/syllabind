@@ -39,6 +39,8 @@ export function useAuth() {
     queryFn: fetchUser,
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: true,
+    refetchInterval: 1000 * 60 * 10, // revalidate session every 10 min
   });
 
   const logoutMutation = useMutation({
