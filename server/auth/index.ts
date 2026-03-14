@@ -9,7 +9,7 @@ import { registerEmailAuthRoutes } from "./emailAuth";
 import { registerGoogleAuthRoutes } from "./googleAuth";
 import { registerAppleAuthRoutes } from "./appleAuth";
 import { isAdminUser } from "./admin";
-import { db, isNeon } from "../db";
+import { db } from "../db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { createRateLimiter } from "../utils/rateLimiter";
@@ -38,21 +38,15 @@ export function setupCustomAuth(app: Express): void {
   // Session configuration
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
 
-  let sessionStore: session.Store;
-  if (!isNeon) {
-    const pgStore = connectPg(session);
-    sessionStore = new pgStore({
-      conString: process.env.DATABASE_URL,
-      createTableIfMissing: false,
-      ttl: sessionTtl,
-      tableName: "sessions",
-    });
-  } else {
-    sessionStore = new session.MemoryStore();
-  }
+  const pgStore = connectPg(session);
+  const sessionStore = new pgStore({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: false,
+    ttl: sessionTtl,
+    tableName: "sessions",
+  });
 
   // Share the store so authenticateWebSocket can look up sessions
-  // from the same backing store (MemoryStore when isNeon, pgStore otherwise)
   resolvedSessionStore = sessionStore;
 
   app.set("trust proxy", 1);
@@ -62,6 +56,7 @@ export function setupCustomAuth(app: Express): void {
     secret: resolvedSessionSecret,
     resave: false,
     saveUninitialized: false,
+    rolling: true,
     cookie: {
       httpOnly: true,
       secure: isProduction,
@@ -148,7 +143,7 @@ export async function authenticateWebSocket(req: IncomingMessage): Promise<(Omit
     const sessionId = cookieSignature.unsign(decoded.slice(2), resolvedSessionSecret);
     if (sessionId === false) return null;
 
-    // Look up session via the session store (works with both pgStore and MemoryStore)
+    // Look up session via the session store
     const sess = await new Promise<any>((resolve) => {
       resolvedSessionStore.get(sessionId as string, (err, session) => {
         if (err || !session) return resolve(null);
